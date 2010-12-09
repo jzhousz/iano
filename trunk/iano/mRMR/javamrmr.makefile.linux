@@ -1,0 +1,17 @@
+CC = g++
+FLAG = -fPIC
+INCLUDE = -I /usr/lib/jvm/java-6-sun-1.6.0.06/include -I /usr/lib/jvm/java-6-sun-1.6.0.06/include/linux
+SHARED = -shared
+
+libmRMRNative.so : 
+	${CC} ${FLAG} ${INCLUDE} ${SHARED} -o $@ javainterfacemrmr.cpp
+
+clean :
+	rm libmRMRNative.so
+	
+	
+
+
+	
+
+

@@ -1,0 +1,25 @@
+#created by Jie Zhou
+#last updated: by Hanchuan Peng, 080829 for Mac
+
+CC = g++
+#FLAG = -mno-cygwin -D __int64="long long"  #Cygwin gcc compiler needs to redefine __int64
+FLAG = -dynamiclib #-D __int64="long long"   #Cygwin gcc compiler needs to redefine __int64
+
+
+#INCLUDE = -I "C:\Program Files\Java\jdk1.6.0_01\include\" -I "C:\Program Files\Java\jdk1.6.0_01\include\win32"   #windows path for jni_md.h
+#INCLUDE = -I jdk1.6.0_01/include/ -I jdk1.6.0_01/include/win32   #windows path for jni_md.h
+
+#INCLUDE = -I 2   #mac 
+
+INCLUDE = -I /Developer/SDKs/MacOSX10.5.sdk/System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Headers/
+
+#SHARED = -shared -Wl,--add-stdcall-alias
+SHARED = -shared
+
+libmRMRNative.dylib : 
+	${CC} ${FLAG} ${INCLUDE} ${SHARED} -o $@ javainterfacemrmr.cpp
+
+clean :
+	rm libmRMRNative.dylib
+
+
