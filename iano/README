@@ -1,0 +1,13 @@
+by Hanchuan Peng, 2008-Oct-06
+
+Simple instructions to compile and run on Mac: Just run "batch_build_run.sh"
+
+
+by Jie Zhou,  2008-Oct-13
+
+To make IANO an IMAGEJ plugin.
+ *  Put IANO_.class  (compiled class of IANO_.java) under ImageJ/plugins/IANO/.
+ *  Note that ImageJ/ImageJ.cfg needs to be modified to add cp, library path, and jvm memory option.
+ 
+
+

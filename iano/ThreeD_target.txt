@@ -1,0 +1,21 @@
+a150 a273 a278 ato
+1  0  0  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a150_4-23-07_L7_Sum.lsm_1794069028_512.w.tif
+1  0  0  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a150_4-23-07_L8_Sum.lsm_1794069028_512.w.tif
+1  0  0  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a150_4-23-07_L10_Sum.lsm_1794069028_512.w.tif
+1  0  0  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a150_4-23-07_L11_Sum.lsm_1794069028_512.w.tif
+1  0  0  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a150_4-23-07_L12_Sum.lsm_1794069028_512.w.tif
+0  1  0  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a273_8-14-07_L8_B1_GR1_R1.lsm_1794069028_512.w.tif
+0  1  0  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a273_8-14-07_L9_B1_GR1_R1.lsm_1794069028_512.w.tif
+0  1  0  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a273_8-14-07_L10_B1_GR1_R1.lsm_1794069028_512.w.tif
+0  1  0	 0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a273_8-14-07_L11_B1_GR1_R1.lsm_1794069028_512.w.tif
+0  1  0  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a273_8-14-07_L13_B1_GR1_R1.lsm_1794069028_512.w.tif
+0  0  1  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a278_8-16-07_L1_Sum.lsm_1794069028_512.w.tif
+0  0  1  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a278_8-16-07_L2_Sum.lsm_1794069028_512.w.tif
+0  0  1  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a278_8-16-07_L3_Sum.lsm_1794069028_512.w.tif
+0  0  1  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a278_8-16-07_L4_Sum.lsm_1794069028_512.w.tif
+0  0  1  0  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a278_8-16-07_L5_Sum.lsm_1794069028_512.w.tif
+0  0  0  1  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_ato_8-30-07_L18_Sum.lsm_1794069028_512.w.tif
+0  0  0  1  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_ato_8-30-07_L19_Sum.lsm_1794069028_512.w.tif
+0  0  0  1  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_ato_8-30-07_L20_Sum.lsm_1794069028_512.w.tif
+0  0  0  1  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_ato_8-30-07_L21_Sum.lsm_1794069028_512.w.tif
+0  0  0  1  peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_ato_8-30-07_L22_Sum.lsm_1794069028_512.w.tif
