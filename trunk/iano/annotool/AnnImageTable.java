@@ -59,10 +59,11 @@ public class AnnImageTable {
 		//get the targets
 		try
 		{
-			LabelReader labelReader = new LabelReader(children.length);
+			annotations =  new java.util.ArrayList<String>();
+			LabelReader labelReader = new LabelReader(children.length, annotations);
 			targets = labelReader.getTargets(targetFile,children);
 			numOfAnno = labelReader.getNumOfAnnotations();
-			annotations = labelReader.getAnnotations();
+			//annotations = labelReader.getAnnotations();
 		}catch(java.io.FileNotFoundException e)
 		{
 		    e.printStackTrace();

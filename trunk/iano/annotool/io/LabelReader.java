@@ -25,9 +25,10 @@ public class LabelReader
 	int length;
 	java.util.ArrayList<String> annotations = null;
 
-	public LabelReader(int nsample)
+	public LabelReader(int nsample, java.util.ArrayList<String> annoLabels)
 	{
 		length = nsample;
+		annotations = annoLabels;
 	}
 
 	//read in a matrix of binary targets, one column per annotation
@@ -41,7 +42,7 @@ public class LabelReader
            int nanno = 0;
            int[][] targets;
            Scanner scanner = null;
-           annotations = null;
+           //annotations = null;
            
            try
 		   {
@@ -52,14 +53,16 @@ public class LabelReader
                throw e; //System.exit(1);
 	       }
            //scan the first line to get # of annotations.
-	       annotations = new java.util.ArrayList<String>();
+	       if (annotations == null) 
+	         annotations = new java.util.ArrayList<String>();
 	       if(scanner.hasNextLine())
            {
 			   String line = scanner.nextLine();
 			   Scanner lineScanner = new Scanner(line);
                while(lineScanner.hasNext())
                {
-                  annotations.add(lineScanner.next());
+                  if (annotations != null) 
+                	  annotations.add(lineScanner.next());
                   nanno++;
                }
                lineScanner.close();
