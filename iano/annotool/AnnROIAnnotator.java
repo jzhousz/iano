@@ -48,8 +48,9 @@ public class AnnROIAnnotator extends Annotator {
 		DataInput trainingProblem = new DataInput(dir, ext, channel);
 		DataInputDynamic testingProblem = new DataInputDynamic(testdir, testext, channel); 
 		
-		readTargets(trainingProblem); //set inherited trainingTargets. 
-		float[][] trainingfeatures = getExtractedFeatures(trainingProblem); //data,length, width, height);
+		int[] resArr = new int[2];
+		int[][] trainingTargets = readTargets(trainingProblem, resArr, null);  
+		float[][] trainingfeatures = extractGivenAMethod(featureExtractor, "", trainingProblem); //data,length, width, height);
 		int numoffeatures = getNumberofFeatures();
 	    int incomingDim = trainingfeatures[0].length;
 
@@ -78,19 +79,19 @@ public class AnnROIAnnotator extends Annotator {
 		{
 			FeatureSelector selector = (new mRMRFeatureSelector(trainingfeatures, trainingTargets[0], trainingfeatures.length, incomingDim, numoffeatures, featureSelector, discrete, th));
 			trainingfeatures = selector.selectFeatures(); //override the original features
-			annotateImage(trainingfeatures, testingProblem, classifier, selector.getIndices());	
+			annotateImage(trainingfeatures, trainingTargets, testingProblem, classifier, selector.getIndices());	
 		}
 		else
-			annotateImage(trainingfeatures, testingProblem, classifier, null);
+			annotateImage(trainingfeatures, trainingTargets, testingProblem, classifier, null);
 	}
 
-	void annotateImage(float[][] trainingfeatures, DataInputDynamic testingProblem, Classifier classifier, int[] indices)
+	void annotateImage(float[][] trainingfeatures, int[][] trainingTargets, DataInputDynamic testingProblem, Classifier classifier, int[] indices)
 	{
 		java.util.ArrayList<byte[]> data  = testingProblem.getData();
 		for(int i = 0; i<testingProblem.getLength(); i++)
 		{
 			//System.out.println("Now annotating image "+i);	
-			annotateAnImage(trainingfeatures, testingProblem.getImagePlus(i), data.get(i), classifier, indices);
+			annotateAnImage(trainingfeatures, trainingTargets, testingProblem.getImagePlus(i), data.get(i), classifier, indices);
 		}
 	}
 	
@@ -101,7 +102,7 @@ public class AnnROIAnnotator extends Annotator {
 	 *  Classifier classification method
 	 *  int[]      indices for feature selection if used, null if no feature selection  
 	 */
-	void annotateAnImage(float[][] trainingfeatures, ImagePlus imp, byte[] data, Classifier classifier, int[] indices)
+	void annotateAnImage(float[][] trainingfeatures, int[][] trainingTargets, ImagePlus imp, byte[] data, Classifier classifier, int[] indices)
 	{
 		//divide the image into an array of small subtesting images
 		ImageProcessor ip = imp.getProcessor();

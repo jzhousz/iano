@@ -15,7 +15,7 @@ public class AnnVisualPanel extends JPanel {
 	int maxTestingSample;
 	int[] targets;
 	Annotation[] results;
-	java.util.ArrayList labels;
+	java.util.ArrayList<Integer> labels;
 	
 	public AnnVisualPanel(JTabbedPane tabs, int ind)
 	{
@@ -105,7 +105,7 @@ public class AnnVisualPanel extends JPanel {
 	private int[][] infoForClasses()
 	{
 		//get the  target labels
-        labels = new java.util.ArrayList();
+        labels = new java.util.ArrayList<Integer>();
         for(int j=0; j < targets.length; j++) 
         	if (!labels.contains(targets[j]))
         		labels.add(targets[j]);

@@ -51,10 +51,10 @@ public class AnnotatorGUI extends JFrame {
 	
 	public AnnotatorGUI(String arg0) {
 		super(arg0);
-		getContentPane().setBackground(java.awt.Color.white); 
+		//getContentPane().setBackground(java.awt.Color.white); 
 		buildCombinedParaPanel();
 		
-		screen.setBackground(java.awt.Color.white);
+		//screen.setBackground(java.awt.Color.white);
 		screen.addTab("Control Panel",null ,controlPanel);
 		screen.addTab("Parameter Tuning", null, paraPanel, "Parameter Tuning");
 		
@@ -145,7 +145,7 @@ public class AnnotatorGUI extends JFrame {
 		pPanel.add(levelField);
 		pPanel.setBorder(new CompoundBorder(new TitledBorder(null,"wavelet", 
 				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5))); 
-		pPanel.setBackground(Color.white);
+		//pPanel.setBackground(Color.white);
 		exPanel.setLayout(new java.awt.FlowLayout(FlowLayout.LEFT));
 		exPanel.add(pPanel);
 	}
@@ -158,7 +158,7 @@ public class AnnotatorGUI extends JFrame {
 		pPanel.add(numFeatureField);
 		pPanel.setBorder(new CompoundBorder(new TitledBorder(null,"mRMR", 
 				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5))); 
-		pPanel.setBackground(Color.white);
+		//pPanel.setBackground(Color.white);
 		slPanel.setLayout(new java.awt.FlowLayout(FlowLayout.LEFT));
 		slPanel.add(pPanel);
 	}
@@ -226,7 +226,7 @@ public class AnnotatorGUI extends JFrame {
  	    });
 		pPanel.add(svmParaField);
 		pPanel.add(infoB);
-		pPanel.setBackground(Color.white);
+		//pPanel.setBackground(Color.white);
 
 		//JScrollPane helpPanel = new JScrollPane(new JTextArea(svmHelp));
 		//helpPanel.setBorder(new CompoundBorder(new TitledBorder(null,"SVM Help", 
@@ -253,8 +253,8 @@ public class AnnotatorGUI extends JFrame {
 		p2Panel.add(roiIncField);
 		//pPanel.setBorder(new CompoundBorder(new TitledBorder(null,"??", 
 			//	TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5))); 
-		pPanel.setBackground(Color.white);
-		p2Panel.setBackground(Color.white);
+		//pPanel.setBackground(Color.white);
+		//p2Panel.setBackground(Color.white);
 		roiPanel.add(pPanel);
 		roiPanel.add(p2Panel);
 	}
@@ -266,12 +266,12 @@ public class AnnotatorGUI extends JFrame {
 		buildClassifierPanel();
 		buildROIPanel();
 
-		//set to a clean background
-		controlPanel.setBackground(java.awt.Color.white);
-		exPanel.setBackground(java.awt.Color.white);
-		slPanel.setBackground(java.awt.Color.white);
-		classifierPanel.setBackground(java.awt.Color.white);
-		roiPanel.setBackground(java.awt.Color.white);
+		//set to a clean background. removed 12302010
+		//controlPanel.setBackground(java.awt.Color.white);
+		//exPanel.setBackground(java.awt.Color.white);
+		//slPanel.setBackground(java.awt.Color.white);
+		//classifierPanel.setBackground(java.awt.Color.white);
+		//roiPanel.setBackground(java.awt.Color.white);
 
 		paraPanel = new JPanel(); //createVerticalPanel(false);  
 		paraPanel.setLayout(new GridLayout(4,1, 5, 5));

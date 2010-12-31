@@ -12,82 +12,118 @@ import ij.process.*;
 
 
 /********************************************************************************************
+    
+      Image Annotation Tool          Jie Zhou   
 
-  Image Annotation Tool
+  This class is the entry point of the annotation algorithms. 
+  It can be called from GUI or start from command line.
+  Command line Usage:
+  
+  java -Djava.library.path="../mRMRFeatureselector" annotool.Annotator
+    
+  Properties can be set to change the default parameters such as image directory and extensions. 
 
-  Jie Zhou  2008 - 2010
-
-  Usage:java -Djava.library.path="../mRMRFeatureselector" annotool.Annotator
-
-  Todo:
-    -- read from a property file: System.getProperty("imagedir")
-    -- provide ranked output of the annotation result (Classifier has reliable probability estimation?)
-    -- Principal component feature extraction should be done combined for TT. Otherwise it may be an approximation since coordinates may be slightly difference unless the testing images are enough and meaningful?
-    -- ROI should save model after training to save time.
+  A List of Todos And Thoughts (Dec. 29 2010):
+    -- ! algorithm parameters will be passed in separately as a String (instead of property)
+	-- maxClass is used by class SVMClassifier, should pass in as a parameter to SVM!
+	-- Validator.classify() can remove numofeatures from argument list.
+    -- read from a property file such as "./.annotool_properties".
+    -- an option to provide probability output of some classifiers
+    -- provide ranked output of the annotation result for entire image (based on the probability output).
+    -- Principal component feature extraction: transform matrix based on training images needs to be saved and then applied to testing images.  
+    -- ROI can save model after training to save time.
     -- Check out LibLinear for fast training.
-
+    -- The option of "all" channels was done in Bala-Sift module. To be incorporated.
+	-- rethink GUI: swt, using Eclipse professional style: 
+	   Left Panel: Project Explore and Image Explore, when clicked, show in the middle? 
+	   Center Panel: multiple tabs for result visualization; project detail; image detail.
+	   Manual mode (current);  Auto mode (comparison, by Aleksey Levy)
+	   save project (a better GUI with algorithm setups), 
+	   open project. Then have project explorer at the left (with all feature details).
+    
  ************************************************************************************************************/
 
 public class Annotator implements Runnable
 {
-	//These properties will be saved in "./.annotool_properties" for user modification
-	//They can also be changed at command line, by simply adding the property name/value pair:
-	//    java -Dimgext=.png  classname
-
-	//default system properties
+	/*
+	 *  a list of default application properties 
+	 */
+	
+	//directory for training or cross-validation images
 	public final static String DEFAULT_DIR = "k150/"; //"stage4_6/" for embryos
+	//image extension for training or cross-validation images
 	public final static String DEFAULT_EXT = ".jpg";  //".png"; 
+	//target file name for training or cross-validation images
 	public final static String DEFAULT_TARGET = "k150_4c_target.txt";  //"target4_6_1.txt";
+	//directory for testing images
 	public final static String DEFAULT_TESTDIR = "k150/"; //"stage4_6/" for embryos
+	//image extension for testing images
 	public final static String DEFAULT_TESTEXT = ".jpg";  //".png"; 
+	//target file name for testing images
 	public final static String DEFAULT_TESTTARGET = "k150_4c_target.txt";  //"target4_6_1.txt";
-	public final static String DEFAULT_EXTRACTOR = "HAAR"; //"None"
-	public final static String DEFAULT_SELECTOR = "mRMR-MIQ";  //"None" //change from "MRMR" on 081007, PHC
-	public final static String DEFAULT_CLASSIFIER = "SVM";  //"SVM", "LDA".
-
-	//default algo properties
-	public final static String  DEFAULT_FEATURENUM = "8";
-	public final static String  DEFAULT_MRMRTYPE = "mRMR-MIQ"; //081007: revised from "MIQ"
-	public final static String  DEFAULT_CHANNEL = "g";
-	public final static String  DEFAULT_DEBUG = "false";  //controls feature img display
-	public final static String  DEFAULT_FILE = "false";  //file output
-	public final static String  DEFAULT_DISCRETE = "true"; //mRMR needs this to be true
-	public final static String  DEFAULT_THRESHOLD = "0";
-	public final static String  DEFAULT_SHUFFLE = "false";
-	public final static String  DEFAULT_SVM = "-t 0"; //"-t 2 -c 100 -b 1";
-	public final static String  DEFAULT_WAVLEVEL = "1";
-	public final static String  DEFAULT_FOLD = "LOO"; 
-	public final static String  DEFAULT_OUTPUT = "TT"; 
+	//feature extractor 
+	public final static String DEFAULT_EXTRACTOR = "HAAR"; 
+	//feature selector 
+	public final static String DEFAULT_SELECTOR = "None"; // "MRMR" on 081007, PHC
+	//feature classifier 
+	public final static String DEFAULT_CLASSIFIER = "SVM";  
+	//mode of the annotator. 
+	public final static String  DEFAULT_OUTPUT = "TT";
+	//Choice of modes: TT: Training/Testing; CV: cross-validation; ROI: Region-Of-Interest
 	public final static String[] OUTPUT_CHOICES = {"TT", "CV", "ROI"}; 
-
-	//properties values read from environment
+	//number of folders for cross-validation. Can be Leave-One-Out (LOO).
+	public final static String  DEFAULT_FOLD = "LOO"; 
+	//image channel used by the algorithm. Such as r, g, b. (all to be added)
+	public final static String  DEFAULT_CHANNEL = "g";
+	//a flag that controls disply of such debugging info such as feature image
+	public final static String  DEFAULT_DEBUG = "false";  
+	//a flag that controls the  output of results to a file
+	public final static String  DEFAULT_FILE = "false";  //file output
+	//a flag that controls if cross-validation will shuffle the images
+	public final static String  DEFAULT_SHUFFLE = "false";  //for cross validation
+	
+	//algorithm parameters (for mRMR feature selector, SVM classifier, wavelet feature extractor). 
+	//Will be bundled as a String and pass into method arguments of individual algorithms. 
+	public final static String  DEFAULT_FEATURENUM = "8";  //for feature selector
+	public final static String  DEFAULT_MRMRTYPE = "mRMR-MIQ"; //for mRMR
+	public final static String  DEFAULT_DISCRETE = "true";  //for mRMR
+	public final static String  DEFAULT_THRESHOLD = "0"; //for mRMR
+	public final static String  DEFAULT_SVM = "-t 0"; // for SVM
+	public final static String  DEFAULT_WAVLEVEL = "1";  //for wavelet extractor
+	
+	/*
+	 * The above properties can be changed at command line using name/value pair:
+	 *    java -Dimgext=.png  classname
+	 */
 	public static String dir = System.getProperty("imgdir", DEFAULT_DIR);
 	public static String ext = System.getProperty("imgext", DEFAULT_EXT);
 	public static String targetFile = System.getProperty("target", DEFAULT_TARGET);
-
 	public static String testdir = System.getProperty("testimgdir", DEFAULT_TESTDIR);
 	public static String testext = System.getProperty("testimgext", DEFAULT_TESTEXT); 
 	public static String testtargetFile =  System.getProperty("testtarget", DEFAULT_TESTTARGET);
-
 	public static String featureExtractor = System.getProperty("extractor", DEFAULT_EXTRACTOR); 
 	public static String featureSelector = System.getProperty("selector", DEFAULT_SELECTOR); 
 	public static String classifierChoice = System.getProperty("classifier", DEFAULT_CLASSIFIER); 
-
-	public static String featureNum = System.getProperty("numoffeature", DEFAULT_FEATURENUM);
+	public static String fold = System.getProperty("fold",DEFAULT_FOLD);
+	public static String output = System.getProperty("output", DEFAULT_OUTPUT);
+	public static String shuffleFlag = System.getProperty("shuffleflag",DEFAULT_SHUFFLE);
 	public static String channel = System.getProperty("channel", DEFAULT_CHANNEL);
 	public static String debugFlag =  System.getProperty("debug", DEFAULT_DEBUG);
 	public static String fileFlag = System.getProperty("fileflag", DEFAULT_FILE);
+	
+	public static String featureNum = System.getProperty("numoffeature", DEFAULT_FEATURENUM);
 	public static String discreteFlag = System.getProperty("discreteflag",DEFAULT_DISCRETE);
 	public static String threshold = System.getProperty("threshold",DEFAULT_THRESHOLD);
-	public static String shuffleFlag = System.getProperty("shuffleflag",DEFAULT_SHUFFLE);
 	public static String svmpara = System.getProperty("svmpara",DEFAULT_SVM);
 	public static String waveletLevel = System.getProperty("waveletlevel",DEFAULT_WAVLEVEL);
-	public static String fold = System.getProperty("fold",DEFAULT_FOLD);
-	public static String output = System.getProperty("output", DEFAULT_OUTPUT);
 
-	//default max num of classes among all columns in the target file. Overwritten later.
-	public static int maxClass = 10; 
-	java.util.ArrayList<String> annotationLabels = null;
+	//Other variables 
+	//default max num of classes among all columns in the target file. Overwritten when reading target file.
+	public static int maxClass = 10; //used by class SVMClassifier, should pass in as a parameter to SVM!
+	java.util.ArrayList<String> annotationLabels = null; //set after reading targets, used by GUI
+	protected java.io.Writer outputfile = null;  //will get file name from user;
+
+	//Needed by GUI-based tool.
 	protected Thread thread; //the running thread for background work.
 	protected boolean isRunningFlag;
 	protected javax.swing.JProgressBar bar = null;  
@@ -96,13 +132,13 @@ public class Annotator implements Runnable
 	protected AnnControlPanel container = null;  
 	protected AnnOutputPanel outputPanel = null; 
 	protected AnnotatorGUI gui = null; 
-	protected java.io.Writer outputfile = null;  //will get file name from user;
-	protected int[][] trainingTargets, testingTargets; //filled by readxxxTargets();
 
+	//default constructor for command line
 	public Annotator()
 	{}
 
-	public Annotator(AnnotatorGUI gui)//javax.swing.JProgressBar bar, javax.swing.JButton goButton, AnnControlPanel container, AnnOutputPanel outputPanel)
+	//constructor used by GUI.
+	public Annotator(AnnotatorGUI gui)
 	{
 		this.gui = gui;
 		this.bar = gui.getControlPanel().getBar();
@@ -112,7 +148,7 @@ public class Annotator implements Runnable
 		this.outputPanel = gui.getControlPanel().getOutputPanel();
 	}
 
-	//This method can be easily replaced by an imagej plugin entrance method.
+	//This method can be easily replaced by an ImageJ plugin entrance method.
 	public static void main(String[] argv)
 	{   
 		if(argv.length >= 1) 
@@ -123,6 +159,7 @@ public class Annotator implements Runnable
 		(new Annotator()).annotate();
 	}
 
+	//called by GUI to start the thread of annotation
 	public boolean startAnnotation()
 	{
 		if (thread == null)
@@ -137,11 +174,11 @@ public class Annotator implements Runnable
 		return true;
 	}
 
+	//called by GUI, trying to stop the thread of annotation.
 	public boolean stopAnnotation()
 	{
 		if (thread != null)
 		{
-			//thread.interrupt();
 			isRunningFlag = false;
 			setGUIOutput("Annotator is trying to stop itself. May take a while.");
 			System.out.println("Annotator is trying to stop itself. May take a while.");
@@ -152,26 +189,25 @@ public class Annotator implements Runnable
 			System.err.println("No thread to stop.");
 			return false;
 		}
-		
 	}
 
-	//a desperate stop
+	//A desperate stop. Currently not called by GUI since the stop() method is deprecated.
 	public void stopAnnotationRightNow()
 	{
 		thread.stop();
-		
 	}
-	
+
+	//the working thread
 	public void run()
 	{
 		annotate();
-		
 		//reset cursor etc after done
 		resetGUI();
-		
 	}
 
-	//This function calls one of several modes
+	/**
+	 *   This method is the main entrance. It starts one mode.
+	 **/
 	public void annotate()
 	{
 		if(!setProgress(10)) return;
@@ -189,125 +225,91 @@ public class Annotator implements Runnable
 		}
 	}
 
+	/**
+	 *  Do the annotation in Training/Testing mode.
+	 */
 	public void TTAnnotate()
 	{
-		//read images
+		//read images and wrapped into DataInput instances. 
 		DataInput trainingProblem = new DataInput(dir, ext, channel);
 		DataInput testingProblem = new DataInput(testdir, testext, channel);
 
 		//read targets
 		if(!setProgress(20)) return;
-		int numOfAnno = readTrainTestTargets(trainingProblem, testingProblem);
+		int[] resArr = new int[2]; //place holder for misc results
+		java.util.ArrayList<String> annoLabels = new java.util.ArrayList<String>(); 
+		int[][] trainingTargets = readTargets(trainingProblem, resArr, annoLabels);
+		//get statistics from training set 
+		int numOfAnno = resArr[0];
+		maxClass = resArr[1];
+		annotationLabels = annoLabels;
+		//testing set targets
+		int[][] testingTargets = readTargets(testingProblem, resArr, null);
 
-		//feature extraction. For 3D, may be it will be combined with getxxData() for memory issue
+		//feature extraction. 
 		if(!setProgress(30)) return;
 		setGUIOutput("Extracing features ... ");
-		float[][] trainingFeatures = null, testingFeatures = null;
-
-		//03242010? For PCA, should training/testing to transformed together instead of differently?
-		if (featureExtractor.equals("Principal Components"))
-		{
-			//getTTExtractedFeatures(trainingProblem, testingProblem, trainingFeatures, testingFeatures);
-		}
-		else
-		{
-		   trainingFeatures = getExtractedFeatures(trainingProblem); 
-		   testingFeatures = getExtractedFeatures(testingProblem);
-		}
-
+		//need to call extraction twice to get the features back.
+		float[][] trainingFeatures = extractGivenAMethod(featureExtractor,"",trainingProblem);
+		float[][] testingFeatures = extractGivenAMethod(featureExtractor,"",testingProblem);
+		//clear data memory
 		trainingProblem.setDataNull();
 		testingProblem.setDataNull();
 
-		//get number of features
-		if(!setProgress(40)) return;
-		int numoffeatures = getNumberofFeatures();
-
+		//apply feature selector and classifier
 		if(!setProgress(50)) return;
-		trainingTestingOutput(trainingProblem, testingProblem, trainingFeatures, testingFeatures, trainingTargets, testingTargets, numoffeatures, numOfAnno);
-	} //end of TTAnnotate
+		trainingTestingOutput(trainingFeatures, testingFeatures, trainingTargets, testingTargets, numOfAnno);
+	} 
 
 	/* 
-	 * FE, FS, Classify in TT mode
+	 *  Apply Feature Selection and Classification in TT mode.
+	 *  Called by TTAnnotate().
 	 */
-	private void trainingTestingOutput(DataInput trainingProblem, DataInput testingProblem, float[][] trainingfeatures, float[][] testingfeatures, int[][] trainingtargets, int[][] testingtargets, int numoffeatures, int numOfAnno)
+	private void trainingTestingOutput(float[][] trainingfeatures, float[][] testingfeatures, int[][] trainingtargets, int[][] testingtargets, int numOfAnno)
 	{
-		//dimension of extracted features before selection
-		int incomingDim = trainingfeatures[0].length;
-		int trainingLength = trainingProblem.getLength();
-		int testingLength = testingProblem.getLength();
+		int trainingLength = trainingfeatures.length;
+		int testingLength = testingfeatures.length;
+		int numoffeatures;
 
-		if (featureSelector.equalsIgnoreCase("None"))
-			//use the original feature without selection -- overwrite numoffeatures value
-			numoffeatures = incomingDim;
-
-		float   th = Float.parseFloat(threshold);
-		boolean discrete = Boolean.parseBoolean(discreteFlag);
-
+		//initialize structure to store annotation results
 		Annotation[][] annotations = new Annotation[numOfAnno][testingLength];
 		for(int i=0; i < numOfAnno; i++)
 			for (int j = 0; j<testingLength; j++)
 				annotations[i][j] = new Annotation();
 
-		//pass the training and testing data to Validator
-		//get rate and prediction results for testing data
-		for (int i = 0; i < numOfAnno; i++)
+		//loop for each annotation target (one image may have multiple labels)
+		for (int i = 0; i < numOfAnno; i++) 
 		{
-			float rate = 0;
-			float[][] selectedTrainingFeatures = trainingfeatures;
-			float[][] selectedTestingFeatures = testingfeatures;
-			if (featureSelector.equalsIgnoreCase("mRMR-MIQ") || featureSelector.equalsIgnoreCase("mRMR-MID"))
-			{
-				//get a rough prediction, if needed by dicretization
-				/*annotool.classify.Classifier wrapper= new annotool.classify.SVMClassifier(numoffeatures, "-t 0");
-				int[] predictions = new int[testingfeatures.length];
-				double[] prob = new double[testingfeatures.length];
-				wrapper.classify(trainingfeatures, trainingtargets[i], testingfeatures, predictions, trainingfeatures.length,  testingfeatures.length, prob);
-				wrapper = null;*/
-	            /*
-				float[][] continuous = new float[trainingfeatures.length][incomingDim];
-				for(int m=0; m< trainingfeatures.length; m++)
-				  for(int n=0; n< trainingfeatures.length; n++)
-					  continuous[m][n] = trainingfeatures[m][n];
-				*/
-				setGUIOutput("Selecting features ... ");
-				if (discrete)
-				{
-					annotool.Util.discretizeCombinedUnsupervised(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets[i], testingtargets[i]);
-				}
-				
-				FeatureSelector selector = (new mRMRFeatureSelector(selectedTrainingFeatures, trainingtargets[i], trainingLength, incomingDim, numoffeatures, featureSelector, false, th));
-			    selectedTrainingFeatures = selector.selectFeatures();
-			    int[] indices = selector.getIndices();
-			    selector = (new mRMRFeatureSelector(selectedTestingFeatures, testingtargets[i], testingLength, incomingDim, numoffeatures, featureSelector, false, th));//081007
-			    selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
-			    
-			}
-			else if (featureSelector.equalsIgnoreCase("Information Gain"))
-			{   //Mar 2010 
-				setGUIOutput("Selecting features .... ");
-				FeatureSelector selector = new WeKaFeatureSelectors(trainingfeatures, trainingtargets[i], numoffeatures, null, 0.2);
-				selectedTrainingFeatures = selector.selectFeatures();
-				//IMPORTANT: dimension have changed by feature selector
-				numoffeatures = selectedTrainingFeatures[0].length;
-				//get testing features using indices from training features?
-			    int[] indices = selector.getIndices();
-				selector = new WeKaFeatureSelectors(testingfeatures, null, numoffeatures, null, 0.2);//081007
-			    selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
+			if (featureSelector.equalsIgnoreCase("None"))
+				//use the original feature without selection -- overwrite numoffeatures value
+				numoffeatures = trainingfeatures[0].length;
+			else
+			{	
+			   setGUIOutput("Selecting features ... ");
+			   //Supervised feature selectors need corresponding target data
+			   ComboFeatures combo = selectGivenAMethod(featureSelector, "", trainingfeatures, testingfeatures, trainingtargets[i],testingtargets[i]);
+			   //selected features overrides the passed in original features
+			   trainingfeatures = combo.getTrainingFeatures();
+			   testingfeatures = combo.getTestingFeatures();
+			   numoffeatures = trainingfeatures[0].length;
 			}
 
+			//pass the training and testing data to Validator
+			//get rate and prediction results for testing data
+			float rate = 0;
 			setGUIOutput("Classifying/Annotating ... ");
 			if (!classifierChoice.startsWith("Compare All"))
 			{
-			 rate = classifyGivenAMethod(classifierChoice,trainingLength, testingLength, numoffeatures, selectedTrainingFeatures,selectedTestingFeatures, trainingtargets[i], testingtargets[i], annotations[i]);
+			 rate = classifyGivenAMethod(classifierChoice,trainingLength, testingLength, numoffeatures, trainingfeatures,testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
 			 setGUIOutput("Recog Rate for "+ annotationLabels.get(i) + ": " + rate);
 			 if(!setProgress(50+(i+1)*50/numOfAnno)) return;
 			 if (gui!=null)
 					gui.addResultPanel(annotationLabels.get(i), rate, testingtargets[i], annotations[i]);
-				//put the prediction results back to GUI
+ 			 //put the prediction results back to GUI
 			 if(container != null)
 					container.getTablePanel().updateTestingTable(annotations);
 			}
-			else //compare all
+			else //compare all classifiers
 			{
 				if(numOfAnno != 1)
 				{
@@ -320,25 +322,20 @@ public class Annotator implements Runnable
 				{
 					if(!AnnControlPanel.classifierSimpleStrs[c].startsWith("Compare")) //avoid the comparing option itself in the selection
 					{	
-					 rates[c] = classifyGivenAMethod(AnnControlPanel.classifierSimpleStrs[c],trainingLength, testingLength, numoffeatures, selectedTrainingFeatures,selectedTestingFeatures, trainingtargets[i], testingtargets[i], annotations[i]);
+					 rates[c] = classifyGivenAMethod(AnnControlPanel.classifierSimpleStrs[c],trainingLength, testingLength, numoffeatures, trainingfeatures,testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
 				     setGUIOutput(AnnControlPanel.classifiers[c]+": Recog Rate for "+ annotationLabels.get(i) + ": " + rates[c]);
 					 if(!setProgress(50+(c+1)*50/AnnControlPanel.classifiers.length)) return;
 					}
 				}
 				if (gui!=null)
-						gui.addCompareResultPanel(AnnControlPanel.classifiers, rates, AnnControlPanel.classifiers.length -1);
+					gui.addCompareResultPanel(AnnControlPanel.classifiers, rates, AnnControlPanel.classifiers.length -1);
 			}
-		}//end of loop for annotation tables.
-		
+		}//end of loop for annotation targets
 	}
 
-	//put into a seperate class
-	public void ROIAnnotate()
-	{
-		new AnnROIAnnotator();
-	}
-
-	
+	/**
+	 *  Do the annotation in Cross Validation mode.
+	 */
 	public void CVAnnotate()
 	{
 		//------ read image data from the directory ------------//
@@ -346,36 +343,38 @@ public class Annotator implements Runnable
 
 		//-----  read targets matrix (for multiple annotations, one per column) --------//
 		if(!setProgress(20)) return;
-		int numOfAnno = readTargets(problem);
+		int[] resArr = new int[2]; //place holder for misc results 
+		java.util.ArrayList<String> annoLabels = new java.util.ArrayList<String>(); 
+		int[][] targets = readTargets(problem, resArr, annoLabels);
+		int numOfAnno = resArr[0];
+		maxClass = resArr[1];
+		annotationLabels = annoLabels;
 
 		//----- feature extraction -------//
 		if(!setProgress(30)) return;
 		setGUIOutput("Extracing features ... ");
-		float[][] features = getExtractedFeatures(problem); //data,length, width, height);
-
-		//raw data is not used after this point, set to null, otherwise will be collected after the method exits  
+		float[][] features = extractGivenAMethod(featureExtractor, "", problem); 
+		//raw data is not used after this point, set to null.  
 		problem.setDataNull();
-
-		//----- feature selection and annotation for each target column ---------//
-		if(!setProgress(40)) return;
-		int numoffeatures =getNumberofFeatures();
 
 		//-----  output the annotation/classification results
 		if(!setProgress(50)) return;
-		cvOutput(features, trainingTargets, problem, numoffeatures, numOfAnno);
+		cvOutput(features, targets, numOfAnno);
 	}//end of CV annotate
 
 
 	/*
-	 * Output the recognition rate of each task (per column)
-	 * This method can use k-fold CV.
+	 * Apply Feature Selection and Classification in CV mode.
+	 * This method uses k-fold CV.
+	 * Output the recognition rate of each task (per column) to a file.
+	 * Called by CVAnnotate().
 	 */
-	private void cvOutput(float[][] features, int[][] targets, DataInput problem, int numoffeatures, int numOfAnno)
+	private void cvOutput(float[][] features, int[][] targets, int numOfAnno)
 	{
-		//dimension of extracted features before selection
 		int incomingDim = features[0].length;
-		int length = problem.getLength();
-
+		int length = features.length;
+		int numoffeatures = incomingDim; //original dimension before selection
+		
 		if(fileFlag.equals("true"))
 			try{
 				outputfile = new java.io.BufferedWriter(new java.io.FileWriter("output"));;
@@ -386,10 +385,49 @@ public class Annotator implements Runnable
 				System.out.println("Output File Cann't Be Generated.");
 			}
 
-			if (featureSelector.equalsIgnoreCase("None"))
-				//use the original feature without selection -- overwrite numoffeatures value
-				numoffeatures = incomingDim;
+		// parameters that are same for all target labels	
+		boolean shuffle = Boolean.parseBoolean(shuffleFlag);
+		// fold number K
+		int K = 0;
+		try
+		{
+			if (fold.equals("LOO"))
+				K = length;
+			else K = Integer.parseInt(fold);
+		}catch(NumberFormatException e)
+		{
+			System.out.println("Number of fold is not a valid int. Set to " + length +".");
+			K = length;
+		}
+		if (K <= 0 || K > length)
+		{
+			System.out.println("Number of fold is not a valid int. Set to " + length +".");
+			K = length;
+		}
 
+		//allocate space for the results.
+		Annotation[][] results = new Annotation[numOfAnno][length];
+		for(int i=0; i < numOfAnno; i++)
+			for (int j = 0; j<length; j++)
+				results[i][j] = new Annotation();
+
+		//loop for each annotation target
+		for (int i =  0; i < numOfAnno; i++)
+		{
+			float recograte = 0;
+			int start = 50+i*50/numOfAnno;
+			int region = 50/numOfAnno;
+
+			//If selector is None, use default numoffeatures. Else, call the selector.
+			if (!featureSelector.equalsIgnoreCase("None"))
+			{   
+				setGUIOutput("Selecting features ... ");
+				//override the original features and num of features
+				features =	selectGivenAMethod(featureSelector, "", features, targets[i]);
+				numoffeatures = features[0].length;
+			}
+
+			setGUIOutput("Classifying/Annotating ... ");
 			Classifier classifier = null;
 			if (classifierChoice.equalsIgnoreCase("SVM"))
 				classifier = new SVMClassifier(numoffeatures, svmpara);
@@ -397,99 +435,442 @@ public class Annotator implements Runnable
 				classifier = new LDAClassifier(numoffeatures);
 			else if (classifierChoice.startsWith("W_"))
 				classifier = new WekaClassifiers(numoffeatures, classifierChoice);
-
-			boolean discrete = Boolean.parseBoolean(discreteFlag);
-			float   th = Float.parseFloat(threshold);
-			boolean shuffle = Boolean.parseBoolean(shuffleFlag);
-
-			int K = 0;
-			try
-			{
-				if (fold.equals("LOO"))
-					K = length;
-				else K = Integer.parseInt(fold);
-			}catch(NumberFormatException e)
-			{
-				System.out.println("Number of fold is not a valid int. Set to " + length +".");
-			}
-			if (K <= 0 || K > length)
-			{
-				System.out.println("Number of fold is not a valid int. Set to " + length +".");
-			}
-
-			//allocate space for the results.
-			Annotation[][] results = new Annotation[numOfAnno][length];
-			for(int i=0; i < numOfAnno; i++)
-				for (int j = 0; j<length; j++)
-					results[i][j] = new Annotation();
-
-			for (int i =  0; i < numOfAnno; i++)
-			{
-				float recograte = 0;
-				int start = 50+i*50/numOfAnno;
-				int region = 50/numOfAnno;
-
-				//put in a method later float[][] getSelectedFeatures(features, targets, ..)
-				//combine with ttoutput() for more selector types.
-				if (featureSelector.equalsIgnoreCase("mRMR-MIQ") || featureSelector.equalsIgnoreCase("mRMR-MID"))
-				{
-					setGUIOutput("Selecting features ... ");
-					//System.out.println(targets[i]);
-					FeatureSelector selector = (new mRMRFeatureSelector(features, targets[i], length, incomingDim, numoffeatures, featureSelector, discrete, th));//081007
-					float[][] selectedFeatures = selector.selectFeatures();
-					if(debugFlag.equals("true"))
-					{
-						for(int j=0; j<length; j++)
-							for(int k=0; k<numoffeatures; k++)
-								System.out.println(selectedFeatures[j][k]);
-					}
-					setGUIOutput("Classifying/Annotating ... ");
-					recograte = (new Validator(bar, start, region)).KFold(K, length, numoffeatures, selectedFeatures, targets[i],  classifier, shuffle, results[i]);
-				}
-				else if (featureSelector.equalsIgnoreCase("Information Gain"))
-				{   //Mar 2010 
-					setGUIOutput("Selecting features .... ");
-					FeatureSelector selector = new WeKaFeatureSelectors(features, targets[i], numoffeatures, null, 0.2);
-					float[][] selectedFeatures = selector.selectFeatures();
-					//IMPORTANT: dimension have changed by feature selector
-					numoffeatures = selectedFeatures[0].length;
-					setGUIOutput("Classifying/Annotating ... ");
-					recograte = (new Validator(bar, start, region)).KFold(K, length, numoffeatures, selectedFeatures, targets[i],  classifier, shuffle, results[i]);
-				}
-				else //no feature selection
-				{
-					setGUIOutput("Classifying/Annotating ... ");
-					recograte = (new Validator(bar, start ,region)).KFold(K, length, numoffeatures, features, targets[i],  classifier, shuffle, results[i]);
-				}
-				//output
-				System.out.println("rate for annotation target "+ i + ": " + recograte);
-				setGUIOutput("Recog Rate for "+ annotationLabels.get(i) + ": " + recograte);
-				if (gui!=null)
-				  gui.addResultPanel(annotationLabels.get(i), recograte, targets[i], results[i]);
-				if(outputfile != null && fileFlag.equals("true"))
-					try{
-						outputfile.write("Recognition Rate for annotation target "+ i + ": " + recograte);
-						outputfile.flush();
-					}catch(java.io.IOException e)
-					{ 
-						System.out.println("Writing to output file failed.");
-					}
-			} //end of loop for annotation targets
-			
+			recograte = (new Validator(bar, start ,region)).KFold(K, length, numoffeatures, features, targets[i],  classifier, shuffle, results[i]);
+					
+			//output results to GUI and file
+			System.out.println("rate for annotation target "+ i + ": " + recograte);
+			setGUIOutput("Recog Rate for "+ annotationLabels.get(i) + ": " + recograte);
+			if (gui!=null)
+			    gui.addResultPanel(annotationLabels.get(i), recograte, targets[i], results[i]);
 			if(outputfile != null && fileFlag.equals("true"))
 				try{
-					outputfile.close();
-				}catch(Exception e) {}
+					outputfile.write("Recognition Rate for annotation target "+ i + ": " + recograte);
+					outputfile.flush();
+				}catch(java.io.IOException e)
+				{ 
+					System.out.println("Writing to output file failed.");
+				}
+		} //end of loop for annotation targets
+			
+		if(outputfile != null && fileFlag.equals("true"))
+			try{
+				outputfile.close();
+			}catch(Exception e) {}
 
-				//put the prediction results back to GUI
-				if(container != null)
-					container.getTablePanel().updateCVTable(results);
+		//put the prediction results back to GUI
+		if(container != null)
+			container.getTablePanel().updateCVTable(results);
+	}
+
+	/**
+	 * A separate class handles ROI annotation mode
+	 */
+	public void ROIAnnotate()
+	{
+		new AnnROIAnnotator();
+	}
+
+	
+    /*
+     *  The following public/protected methods can be called by entrance methods in this class,
+     *  or other modules that mix and match different algorithms (for auto comparison).
+     *  
+     */
+
+	
+	/* 
+	 * return the target matrix
+	 * resArr: should have memory allocated in caller (2 int). 
+	 *     resArry[0]: number of annotations (targets); resArry[1]: max class in all columns of targets
+	 * Other: set the annotationLabels via argument (if input is null, it won't be set).
+	 */
+	protected int[][] readTargets(DataInput problem, int[] resArr, java.util.ArrayList<String> annotationLabels)
+	{
+		int numOfAnno = 0;
+		int maxClassAllTargets = 0;
+		int[][] targets = null;
+		try
+		{
+			int length = problem.getLength();
+			LabelReader labelReader = new LabelReader(length, annotationLabels);
+
+			targets = labelReader.getTargets(targetFile, problem.getChildren());
+			maxClassAllTargets = labelReader.getNumOfClasses();
+			//annotationLabels = labelReader.getAnnotations();
+			numOfAnno = labelReader.getNumOfAnnotations();
+
+			if(debugFlag.equals("true"))
+			{
+				for(int i=0; i<numOfAnno; i++)
+				  for(int j=0; j<length; j++)
+				    System.out.print(targets[i][j]+ " ");
+			}
+		}catch(Exception e)
+		{   e.printStackTrace();
+		}
+		
+		resArr[0] = numOfAnno;
+		resArr[1] = maxClassAllTargets;
+		return targets;
+		
+	}
+	
+
+    /*
+     *  A classifier that takes a particular classification algorithm and returns
+     *   recognition rate. 
+     *    
+     */
+	protected float classifyGivenAMethod(String chosenClassifier, int trainingLength, int testingLength, int numoffeatures, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations)
+	{
+		Classifier classifier = null;
+		if (chosenClassifier.equalsIgnoreCase("SVM"))
+				classifier = new SVMClassifier(numoffeatures, svmpara);
+		else if (chosenClassifier.equalsIgnoreCase("LDA"))
+				classifier = new LDAClassifier(numoffeatures);
+		else if (chosenClassifier.startsWith("W_"))
+				classifier = new WekaClassifiers(numoffeatures, chosenClassifier);
+		else
+		{	setGUIOutput(chosenClassifier + "is not a supported classifer.");
+			return 0;
+		}
+		float rate = (new Validator()).classify(trainingLength, testingLength, numoffeatures, selectedTrainingFeatures,selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
+		System.out.println("recognition rate:" + rate);
+		return rate;
+	}
+	
+	/* 
+	 * Feature extractor that takes 1 data set.
+	 * Useful for methods such as wavelet.
+	 */
+	protected float[][] extractGivenAMethod(String extractor, String parameter, DataInput problem)
+	{
+		float[][] features = null;
+		int stackSize = problem.getStackSize();
+
+		if (extractor.equals("HAAR"))
+		{
+			if(stackSize == 1)
+				features = (new HaarFeatureExtractor(problem, getWavletLevel())).getFeatures();
+			else
+				System.out.println("invalid stack size for 2D images: " + stackSize);
+		}
+		else if (extractor.equals("PARTIAL3D"))
+		{
+			if (stackSize > 1)//3D image stack
+				features = (new StackSimpleHaarFeatureExtractor(problem, getWavletLevel())).calcFeatures();	
+			else
+				System.out.println("invalid stack size for 3D images: " + stackSize);	
+		}
+		else if (extractor.equals("LIGHT3D"))
+		{
+			if (stackSize > 1)//3D image stack
+				features = (new StackThreeDirectionHaarFeatureExtractor(problem, getWavletLevel())).calcFeatures();	
+			else
+				System.out.println("invalid stack size for 3D images: " + stackSize);	
+		}
+		else if (extractor.equals("Principal Components"))
+		{  //TO BE DONE, 
+			System.err.println("PCA is to be added");
+	        return null;
+		}
+		else //if (featureExtractor.equals("NONE")) //use raw image or middle stack for 3D
+		{
+			int length = problem.getLength(); 
+			int height = problem.getHeight();
+			int width = problem.getWidth();
+			byte[][] data = problem.getData(stackSize/2+1);
+			features = new float[length][width*height];
+			for(int i = 0; i < length; i++)
+				for (int j=0; j < width*height; j++)
+					features[i][j] = (float) (data[i][j]&0xff);
+		}
+
+		return features;
+	}
+	
+	/*
+	 * overloaded version of the extractor that takes 2 data sets
+	 * useful for methods such as PCA when feature extraction cannot be done separately.
+	 * 
+	 */
+	protected void extractGivenAMethod(String extractor, String parameter, DataInput trainingproblem, DataInput testingproblem)
+	{
+		//check which method it is;
+		if (extractor.equals("Principal Components"))
+		{
+			System.out.println("PCA is to be added");
+			//handle PCA differently since it has unique data-driven transform matrix.
+		    //get transform matrix based on training images, then applied to testing images.  
+			//unsupervised, combined feature transform
+			//1. transform training data
+			//2. get the transforming coefficients from training
+			//3. apply to testing
+			//pass back. Using ComboFeatures singleton
+			;
+		}else 
+		{
+			System.out.println("No need to call this version of extractGivenAMethod");
+		}
 	}
 
 	/*
-	 *Output the annotation detailed results for each image, 
-	 *different from classification output, this method always uses LOO
-	 *This method is not used and will be combined into cvOutput() 09/2008
+	 * Feature selector that takes 1 set. Used in cv mode 
+	 * return:
+	 */
+	protected float[][] selectGivenAMethod(String chosenSelector, String parameter, float[][] selectedFeatures, int[] targets)
+	{
+		int incomingDim = selectedFeatures[0].length;
+		int length = selectedFeatures.length;
+		int numoffeatures;
+		int[] indices = null;
+
+		if (chosenSelector.equalsIgnoreCase("None"))
+			return null;
+		else //will be passed in through parameter String argument later
+			numoffeatures = getNumberofFeatures();
+
+		if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || featureSelector.equalsIgnoreCase("mRMR-MID"))
+		{
+			//parsing mRMR parameters. Will be moved into algorithm class.
+			float   th = Float.parseFloat(threshold);
+			boolean discrete = Boolean.parseBoolean(discreteFlag);
+			//String mRMRPara = "-f " + numoffeatures + " -t " + threshold + " -d "+ discreteFlag;
+
+			//discrete, if set, is done on the set inside the method.
+			FeatureSelector selector = (new mRMRFeatureSelector(selectedFeatures, targets, length, incomingDim, numoffeatures, featureSelector, discrete, th));
+		    selectedFeatures = selector.selectFeatures();
+		    indices = selector.getIndices();
+		}
+		else if (chosenSelector.equalsIgnoreCase("Information Gain"))
+		{   
+			FeatureSelector selector = new WeKaFeatureSelectors(selectedFeatures, targets, numoffeatures, null, 0.2);
+			selectedFeatures = selector.selectFeatures();
+		    indices = selector.getIndices();
+		}
+
+		return selectedFeatures;	
+	}
+	
+	/*
+	 *  Feature selector that takes 2 sets (training and testing)
+	 *  Return: two feature sets wrapped in ComboFeatures
+	 *  
+	 */
+	protected ComboFeatures selectGivenAMethod(String chosenSelector, String parameter, float[][] trainingFeatures, float[][] testingFeatures, int[] trainTargets, int[] testTargets)
+	{
+		//dimension of extracted features before selection
+		int incomingDim = trainingFeatures[0].length;
+		int trainingLength = trainingFeatures.length;
+		int testingLength = testingFeatures.length;
+		int numoffeatures;
+		
+		//the selector may still be None if called by outsider.
+		if (chosenSelector.equalsIgnoreCase("None"))
+			//use the original feature without selection 
+			numoffeatures = incomingDim;
+		else //will be passed in through parameter String argument later
+			numoffeatures = getNumberofFeatures();
+
+		if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || featureSelector.equalsIgnoreCase("mRMR-MID"))
+		{
+			//parsing algorithm parameters. Will be moved into algorithm class.
+			float   th = Float.parseFloat(threshold);
+			boolean discrete = Boolean.parseBoolean(discreteFlag);
+			//String mRMRPara = "-f " + numoffeatures + " -t " + threshold + " -d "+ discreteFlag;
+
+			if (discrete)
+				//discretize data in a combined way, 
+				annotool.Util.discretizeCombinedUnsupervised(trainingFeatures, testingFeatures, trainTargets, testTargets);
+
+			FeatureSelector selector = (new mRMRFeatureSelector(trainingFeatures, trainTargets, trainingLength, incomingDim, numoffeatures, featureSelector, false, th));
+		    float[][] selectedTrainingFeatures = selector.selectFeatures();
+		    int[] indices = selector.getIndices();
+		    selector = (new mRMRFeatureSelector(testingFeatures, testTargets, testingLength, incomingDim, numoffeatures, featureSelector, false, th));
+		    float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
+		    ComboFeatures.getInstance().setTrainingFeatures(selectedTrainingFeatures);
+		    ComboFeatures.getInstance().setTestingFeatures(selectedTestingFeatures);
+		}
+		else if (chosenSelector.equalsIgnoreCase("Information Gain"))
+		{
+			//Do selection on the training set
+            FeatureSelector selector = new WeKaFeatureSelectors(trainingFeatures, trainTargets, numoffeatures, null, 0.2);
+            float[][] selectedTrainingFeatures = selector.selectFeatures();
+			//apply to testing. IMPORTANT: dimension has changed by feature selector
+            int[] indices = selector.getIndices();
+            numoffeatures = indices.length;
+			selector = new WeKaFeatureSelectors(testingFeatures, null, numoffeatures, null, 0.2);//081007
+		    float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
+		    ComboFeatures.getInstance().setTrainingFeatures(selectedTrainingFeatures);
+		    ComboFeatures.getInstance().setTestingFeatures(selectedTestingFeatures);
+		}
+		
+		return ComboFeatures.getInstance();
+	}
+
+	
+    // temporary methods for parsing algorithm parameters.	
+
+	//parse a parameter for feature selector. To be removed later.
+	protected int getNumberofFeatures()
+	{
+		int numoffeatures;
+
+		try
+		{
+			numoffeatures = Integer.parseInt(featureNum);
+		}catch(NumberFormatException e)
+		{
+			System.out.println("Number of features is not a valid int. Set to " + DEFAULT_FEATURENUM +".");
+			numoffeatures = Integer.parseInt(DEFAULT_FEATURENUM);
+		}
+		return numoffeatures;
+	}
+
+	//parameter for wavelet extractor. To be removed later.
+	protected int getWavletLevel()
+	{
+		int level;
+		try
+		{
+			level = Integer.parseInt(waveletLevel);
+		}catch(NumberFormatException e)
+		{
+			System.out.println("Number of wavelet levels is not a valid int. Set to " + DEFAULT_WAVLEVEL +".");
+			level = Integer.parseInt(DEFAULT_WAVLEVEL);
+		}
+		return level;
+	}
+
+
+	
+	/*************************************************************************
+	 *   Other supporting methods for GUI and debugging						 *	
+	 *************************************************************************/
+	
+	
+    /*
+     *  Draw the extract images. The method is for debugging and visualization.
+     */
+	private void drawFeatures(float[][] features, int width, int height, int length)
+	{
+		for(int i = 0; i < length; i++)
+		{
+			byte[] pixels =  new byte[width*height];
+			//find out min/max of features
+			float min=0,max=0;
+			for(int j=0; j < width*height; j++)
+				if (min > features[i][j])
+					min = features[i][j];
+				else if (max < features[i][j])
+					max = features[i][j];
+
+			//set value
+			for(int j=0; j < width*height; j++)
+				//resize to 0-255
+				pixels[j] = (byte) ((features[i][j] - min)/(max-min) * 255);
+
+			//set up image
+			ImagePlus testimg = NewImage.createByteImage("feature image"+ i,  width, height, 1, NewImage.FILL_BLACK);
+			ImageProcessor test_ip = testimg.getProcessor();
+			test_ip.setPixels(pixels);
+			testimg.show();
+			testimg.updateAndDraw();
+		}
+		//debug
+		if(debugFlag.equals("true"))
+		{
+    	   System.out.println("feature:");
+           for(int i = 0; i < length; i++)
+     	     for (int j = 0; j< width*height; j++)
+     	       System.out.print(features[i][j]+" ");
+		}
+	}
+
+	/*
+	 * The method has 2 purposes: 
+	 * 1. update the value of the progress bar in GUI.
+	 * 2. check if there is a need to stop the working thread.
+	 * It is called periodically by the working thread.
+	 */
+	private boolean setProgress(final int currentProgress)
+	{
+		if (thread == null)
+		{
+			System.out.println("thread is null");
+			return false;
+		}
+		//if	(thread.isInterrupted())
+		if(!isRunningFlag && (currentProgress > 0))
+		{
+			System.out.println("Interrupted at progress "+currentProgress);
+			if (bar!=null) 
+		        SwingUtilities.invokeLater(new Runnable() {
+		            public void run() {
+		            	bar.setValue(0);
+		            }
+		            });
+			setGUIOutput("Annotation process cancelled by user.");
+			return false;
+		}
+		
+		if (bar!=null) 
+	        SwingUtilities.invokeLater(new Runnable() {
+	            public void run() {
+	            	bar.setValue(currentProgress);
+	            }
+	            });
+		return true;
+	}
+
+	//set the information in the output panel of the GUI.
+	private void setGUIOutput(String output)
+	{
+		if(outputPanel != null)
+			outputPanel.setOutput(output);
+	}
+	
+	//reset the control related buttons on GUI.
+	private void resetGUI()
+	{
+		if (bar != null)
+		{
+			goButton.setEnabled(true);
+			cancelButton.setEnabled(false);
+
+			container.setCursor(null); //turn off the wait cursor
+			setProgress(0);
+		}
+	}
+	
+	// print the usage info for command line.
+	private static void printUsage()
+	{
+		System.out.println("Usage: java [jvmparameters] [properties] annotool.Annotator");
+		System.out.println("Example: java -Xms500M -Xmx -Dimgdir=k150/ annotool.Annotator");
+		System.out.println("You will need to set CLASSPATH to include imageJ and libSVM jar files.");
+		System.out.println("You may also need to set java.library.path to include the native mRMR library.");
+
+		System.out.println("\nDefault parameters: ");
+		System.out.println("\timgdir:"+DEFAULT_DIR);
+		System.out.println("\timgext:"+DEFAULT_EXT);
+		System.out.println("\ttarget:" + DEFAULT_TARGET);
+		System.out.println("\textractor:"+ DEFAULT_EXTRACTOR); 
+		System.out.println("\tselector:"+ DEFAULT_SELECTOR); 
+
+		System.out.println("\tchannel:"+DEFAULT_CHANNEL + "(for 3 channel color images)");
+		System.out.println("\tnumoffeature:" + DEFAULT_FEATURENUM + "(for feature selector)");
+		System.out.println("\tsvmpara:"+DEFAULT_SVM);
+		System.out.println("\twaveletlevel:"+DEFAULT_WAVLEVEL);
+		System.out.println("\tfold:"+DEFAULT_FOLD);
+	}
+
+	/*
+	 *  
+	 * Output detailed annotation results for each image, with probability ranking.
+	 * Different from classification output, this method always uses LOO (can apply to testing images too?)
+	 * Revisit later when classifiers can output probabilities.
+	 * 
 	 */
 	/*
 	private void annotationOutput(String[] children, float[][] features, int[][] targets, int length, int width, int height, int numoffeatures, int numOfAnno)
@@ -538,296 +919,6 @@ public class Annotator implements Runnable
 		}
 	}*/
 
-
-	private void drawFeatures(float[][] features, int width, int height, int length)
-	{
-
-		//for(int i = 0; i < length; i++)
-		for(int i = 0; i < 1; i++)
-		{
-			byte[] pixels =  new byte[width*height];
-			//find out min/max of features
-			float min=0,max=0;
-			for(int j=0; j < width*height; j++)
-				if (min > features[i][j])
-					min = features[i][j];
-				else if (max < features[i][j])
-					max = features[i][j];
-
-			//set value
-			for(int j=0; j < width*height; j++)
-				//resize to 0-255
-				pixels[j] = (byte) ((features[i][j] - min)/(max-min) * 255);
-
-			//set up image
-			ImagePlus testimg = NewImage.createByteImage("feature image"+ i,  width, height, 1, NewImage.FILL_BLACK);
-			ImageProcessor test_ip = testimg.getProcessor();
-			test_ip.setPixels(pixels);
-			testimg.show();
-			testimg.updateAndDraw();
-		}
-		//debug
-		/*
-   		   if(debugFlag.equals("true"))
-		   {
-    		  System.out.println("feature:");
-              for(int i = 0; i < length; i++)
-     	        for (int j = 0; j< width*height; j++)
-     	          System.out.print(features[i][j]+" ");
-	       }*/
-	}
-
-	private static void printUsage()
-	{
-		System.out.println("Usage: java [jvmparameters] [properties] annotool.Annotator");
-		System.out.println("Example: java -Xms500M -Xmx -Dimgdir=k150/ annotool.Annotator");
-		System.out.println("You will need to set CLASSPATH to include imageJ and libSVM jar files.");
-		System.out.println("You may also need to set java.library.path to include the native mRMR library.");
-
-		System.out.println("\nDefault parameters: ");
-		System.out.println("\timgdir:"+DEFAULT_DIR);
-		System.out.println("\timgext:"+DEFAULT_EXT);
-		System.out.println("\ttarget:" + DEFAULT_TARGET);
-		System.out.println("\textractor:"+ DEFAULT_EXTRACTOR); 
-		System.out.println("\tselector:"+ DEFAULT_SELECTOR); 
-
-		System.out.println("\tchannel:"+DEFAULT_CHANNEL + "(for 3 channel color images)");
-		System.out.println("\tnumoffeature:" + DEFAULT_FEATURENUM + "(for feature selector)");
-		System.out.println("\tsvmpara:"+DEFAULT_SVM);
-		System.out.println("\twaveletlevel:"+DEFAULT_WAVLEVEL);
-		System.out.println("\tfold:"+DEFAULT_FOLD);
-	}
-
-	private boolean setProgress(final int currentProgress)
-	{
-		if (thread == null)
-		{
-			System.out.println("thread is null");
-			return false;
-		}
-		//if	(thread.isInterrupted())
-		if(!isRunningFlag && (currentProgress > 0))
-		{
-			System.out.println("Interrupted at progress "+currentProgress);
-			if (bar!=null) 
-		        SwingUtilities.invokeLater(new Runnable() {
-		            public void run() {
-		            	bar.setValue(0);
-		            }
-		            });
-			setGUIOutput("Annotation process cancelled by user.");
-			return false;
-		}
-		
-		if (bar!=null) 
-	        SwingUtilities.invokeLater(new Runnable() {
-	            public void run() {
-	            	bar.setValue(currentProgress);
-	            }
-	            });
-		return true;
-	}
-
-	private void setGUIOutput(String output)
-	{
-		if(outputPanel != null)
-			outputPanel.setOutput(output);
-	}
-	private void resetGUI()
-	{
-		if (bar != null)
-		{
-			goButton.setEnabled(true);
-			cancelButton.setEnabled(false);
-
-			container.setCursor(null); //turn off the wait cursor
-			setProgress(0);
-		}
-	}
-
-	/*
-	 * return: number of annotations. Also pass back targets via parameters
-	 */
-	private int readTrainTestTargets(DataInput trainingProblem, DataInput testingProblem)
-	{
-		int numOfAnnotations = 0;
-		try
-		{
-			//training
-			int trainingLength = trainingProblem.getLength();
-			LabelReader labelReader = new LabelReader(trainingLength);
-			trainingTargets = labelReader.getTargets(targetFile, trainingProblem.getChildren());
-			maxClass = labelReader.getNumOfClasses();
-			annotationLabels = labelReader.getAnnotations();
-			//testing	
-			int testingLength = testingProblem.getLength();
-			labelReader = new LabelReader(testingLength);
-			testingTargets = labelReader.getTargets(testtargetFile, testingProblem.getChildren());
-
-			numOfAnnotations = labelReader.getNumOfAnnotations();
-		}catch(Exception e)
-		{ e.printStackTrace();
-		}
-
-		return numOfAnnotations;
-	}
-
-	/* 
-	 * for CV, only return 1 target matrix, and the number of annotations
-	 * 
-	 */
-	protected int readTargets(DataInput problem)
-	{
-		int numOfAnno = 0;
-		try
-		{
-			int length = problem.getLength();
-			LabelReader labelReader = new LabelReader(length);
-			trainingTargets = labelReader.getTargets(targetFile, problem.getChildren());
-			maxClass = labelReader.getNumOfClasses();
-			annotationLabels = labelReader.getAnnotations();
-			numOfAnno = labelReader.getNumOfAnnotations();
-
-			//if(debugFlag.equals("true"))
-			//{
-			//	for(int i=0; i<numOfAnno; i++)
-			//	for(int j=0; j<length; j++)
-			//	System.out.print(trainingtargets[i][j]+ " ");
-			//}
-		}catch(Exception e)
-		{   e.printStackTrace();
-		}
-
-		return numOfAnno;
-	}
-
-	//needed for PCA.
-	protected void getTTExtractedFeatures(DataInput trainingProblem, DataInput testingProblem, float[][] trainingFeatures, float[][] testingFeatures)
-	{
-	    //unsupervised, combined feature transform
-		//alternatively, getting the transforming coefficients from training
-		//1. combine training/testing data
-		//2. extract (transform)
-		//3. separate training and testing
-		//4. How to pass back????
-		
-		
-	
-				
-	}
-	
-	
-	protected float[][] getExtractedFeatures(DataInput problem)
-	{
-		float[][] features = null;
-		int stackSize = problem.getStackSize();
-
-		if (featureExtractor.equals("HAAR"))
-		{
-			if(stackSize == 1)
-				features = (new HaarFeatureExtractor(problem, getWavletLevel())).getFeatures();
-			else
-				System.out.println("invalid stack size for 2D images: " + stackSize);
-		}
-		else if (featureExtractor.equals("PARTIAL3D"))
-		{
-			if (stackSize > 1)//3D image stack
-				features = (new StackSimpleHaarFeatureExtractor(problem, getWavletLevel())).calcFeatures();	
-			else
-				System.out.println("invalid stack size for 3D images: " + stackSize);	
-		}
-		else if (featureExtractor.equals("LIGHT3D"))
-		{
-			if (stackSize > 1)//3D image stack
-				features = (new StackThreeDirectionHaarFeatureExtractor(problem, getWavletLevel())).calcFeatures();	
-			else
-				System.out.println("invalid stack size for 3D images: " + stackSize);	
-		}
-		/* else if (featureExtractor.equals("FULL3D")) TBA
-		{
-			if (stackSize > 1)//3D image stack
-			  features = (new StackFullHaarFeatureExtractor(problem, getWavletLevel())).calcFeatures();	
-			else
-  			  System.out.println("invalid stack size for 3D images: " + stackSize);	
-		}*/
-		else //if (featureExtractor.equals("NONE")) //, use raw image or middle stack for 3D
-		{
-			int length = problem.getLength(); 
-			int height = problem.getHeight();
-			int width = problem.getWidth();
-			byte[][] data = problem.getData(stackSize/2+1);
-			features = new float[length][width*height];
-			for(int i = 0; i < length; i++)
-				for (int j=0; j < width*height; j++)
-				{
-					features[i][j] = (float) (data[i][j]&0xff);
-					//System.out.println("features"+i+" "+j+":"+features[i][j]);
-				}
-		}
-		//debug: draw the feature image
-		if(debugFlag.equals("true"))
-		{
-			int length = problem.getLength(); 
-			int height = problem.getHeight();
-			int width = problem.getWidth();
-			drawFeatures(features, width, height, length);
-		}
-
-		return features;
-	}
-
-
-	protected int getNumberofFeatures()
-	{
-		int numoffeatures;
-
-		try
-		{
-			numoffeatures = Integer.parseInt(featureNum);
-		}catch(NumberFormatException e)
-		{
-			System.out.println("Number of features is not a valid int. Set to " + DEFAULT_FEATURENUM +".");
-			numoffeatures = Integer.parseInt(DEFAULT_FEATURENUM);
-		}
-		return numoffeatures;
-	}
-
-	protected int getWavletLevel()
-	{
-		int level;
-		try
-		{
-			level = Integer.parseInt(waveletLevel);
-		}catch(NumberFormatException e)
-		{
-			System.out.println("Number of wavelet levels is not a valid int. Set to " + DEFAULT_WAVLEVEL +".");
-			level = Integer.parseInt(DEFAULT_WAVLEVEL);
-		}
-		return level;
-	}
-
-
-	float classifyGivenAMethod(String chosenClassifier, int trainingLength, int testingLength, int numoffeatures, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations)
-	{
-		Classifier classifier = null;
-		if (chosenClassifier.equalsIgnoreCase("SVM"))
-				classifier = new SVMClassifier(numoffeatures, svmpara);
-		else if (chosenClassifier.equalsIgnoreCase("LDA"))
-				classifier = new LDAClassifier(numoffeatures);
-		else if (chosenClassifier.startsWith("W_"))
-				classifier = new WekaClassifiers(numoffeatures, chosenClassifier);
-		else
-		{	setGUIOutput(chosenClassifier + "is not a supported classifer.");
-			return 0;
-		}
-		float rate = (new Validator()).classify(trainingLength, testingLength, numoffeatures, selectedTrainingFeatures,selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
-		System.out.println("recognition rate:" + rate);
-		return rate;
-		
-	}
-
-	
-	
 }
 
 
