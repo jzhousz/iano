@@ -38,9 +38,10 @@ public class WekaClassifiers implements Classifier {
 
 	//@Override 
 	public void classify(float[][] trainingpatterns, int[] trainingtargets,
-			float[][] testingpatterns, int[] predictions, int traininglen,
-			int testinglen, double[] prob) 
+			float[][] testingpatterns, int[] predictions,  double[] prob) 
 	{
+		int traininglen = trainingpatterns.length;
+		int testinglen =testingpatterns.length;
 	    createModel(trainingpatterns, trainingtargets);
 	    
 	    try

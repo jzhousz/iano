@@ -159,8 +159,10 @@ public class SVMClassifier implements Classifier
    }//end of init parameters
 
    //This is an interface method to LibSVM package.
-   public void classify(float[][] trainingpatterns, int[] trainingtargets, float[][] testingpatterns, int[] predictions, int traininglength, int testinglength, double[] probesti)
+   public void classify(float[][] trainingpatterns, int[] trainingtargets, float[][] testingpatterns, int[] predictions, double[] probesti)
    {
+	   int traininglength = trainingpatterns.length;
+	   int testinglength = testingpatterns.length;
      	svm_problem prob = new svm_problem();
 		prob.l = traininglength;
 		prob.y = new double[prob.l];

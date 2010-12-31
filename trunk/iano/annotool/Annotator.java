@@ -26,7 +26,11 @@ import ij.process.*;
   A List of Todos And Thoughts (Dec. 29 2010):
     -- ! algorithm parameters will be passed in separately as a String (instead of property)
 	-- maxClass is used by class SVMClassifier, should pass in as a parameter to SVM!
-	-- Validator.classify() can remove numofeatures from argument list.
+	-- ! Save project (model) (provide a better GUI with algorithm details),
+	     Save results. 
+	     Open project. (project explorer at the left has details of projects).
+	-- Load examples with suggested models
+
     -- read from a property file such as "./.annotool_properties".
     -- an option to provide probability output of some classifiers
     -- provide ranked output of the annotation result for entire image (based on the probability output).
@@ -38,8 +42,9 @@ import ij.process.*;
 	   Left Panel: Project Explore and Image Explore, when clicked, show in the middle? 
 	   Center Panel: multiple tabs for result visualization; project detail; image detail.
 	   Manual mode (current);  Auto mode (comparison, by Aleksey Levy)
-	   save project (a better GUI with algorithm setups), 
-	   open project. Then have project explorer at the left (with all feature details).
+	   Save project (model) (provide a better GUI with algorithm setup details), 
+	   Open project. (project explorer at the left has details of projects).
+	-- Load examples with suggested models
     
  ************************************************************************************************************/
 
@@ -300,7 +305,7 @@ public class Annotator implements Runnable
 			setGUIOutput("Classifying/Annotating ... ");
 			if (!classifierChoice.startsWith("Compare All"))
 			{
-			 rate = classifyGivenAMethod(classifierChoice,trainingLength, testingLength, numoffeatures, trainingfeatures,testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
+			 rate = classifyGivenAMethod(classifierChoice, "", trainingfeatures,testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
 			 setGUIOutput("Recog Rate for "+ annotationLabels.get(i) + ": " + rate);
 			 if(!setProgress(50+(i+1)*50/numOfAnno)) return;
 			 if (gui!=null)
@@ -322,7 +327,7 @@ public class Annotator implements Runnable
 				{
 					if(!AnnControlPanel.classifierSimpleStrs[c].startsWith("Compare")) //avoid the comparing option itself in the selection
 					{	
-					 rates[c] = classifyGivenAMethod(AnnControlPanel.classifierSimpleStrs[c],trainingLength, testingLength, numoffeatures, trainingfeatures,testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
+					 rates[c] = classifyGivenAMethod(AnnControlPanel.classifierSimpleStrs[c], "", trainingfeatures,testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
 				     setGUIOutput(AnnControlPanel.classifiers[c]+": Recog Rate for "+ annotationLabels.get(i) + ": " + rates[c]);
 					 if(!setProgress(50+(c+1)*50/AnnControlPanel.classifiers.length)) return;
 					}
@@ -435,7 +440,7 @@ public class Annotator implements Runnable
 				classifier = new LDAClassifier(numoffeatures);
 			else if (classifierChoice.startsWith("W_"))
 				classifier = new WekaClassifiers(numoffeatures, classifierChoice);
-			recograte = (new Validator(bar, start ,region)).KFold(K, length, numoffeatures, features, targets[i],  classifier, shuffle, results[i]);
+			recograte = (new Validator(bar, start ,region)).KFold(K, features, targets[i],  classifier, shuffle, results[i]);
 					
 			//output results to GUI and file
 			System.out.println("rate for annotation target "+ i + ": " + recograte);
@@ -521,8 +526,9 @@ public class Annotator implements Runnable
      *   recognition rate. 
      *    
      */
-	protected float classifyGivenAMethod(String chosenClassifier, int trainingLength, int testingLength, int numoffeatures, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations)
+	protected float classifyGivenAMethod(String chosenClassifier, String parameter, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations)
 	{
+		int numoffeatures = selectedTrainingFeatures[0].length;
 		Classifier classifier = null;
 		if (chosenClassifier.equalsIgnoreCase("SVM"))
 				classifier = new SVMClassifier(numoffeatures, svmpara);
@@ -534,7 +540,7 @@ public class Annotator implements Runnable
 		{	setGUIOutput(chosenClassifier + "is not a supported classifer.");
 			return 0;
 		}
-		float rate = (new Validator()).classify(trainingLength, testingLength, numoffeatures, selectedTrainingFeatures,selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
+		float rate = (new Validator()).classify(selectedTrainingFeatures,selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
 		System.out.println("recognition rate:" + rate);
 		return rate;
 	}
@@ -594,10 +600,10 @@ public class Annotator implements Runnable
 	 * useful for methods such as PCA when feature extraction cannot be done separately.
 	 * 
 	 */
-	protected void extractGivenAMethod(String extractor, String parameter, DataInput trainingproblem, DataInput testingproblem)
+	protected void extractGivenAMethod(String chosenExtractor, String parameter, DataInput trainingproblem, DataInput testingproblem)
 	{
 		//check which method it is;
-		if (extractor.equals("Principal Components"))
+		if (chosenExtractor.equals("Principal Components"))
 		{
 			System.out.println("PCA is to be added");
 			//handle PCA differently since it has unique data-driven transform matrix.
@@ -618,12 +624,11 @@ public class Annotator implements Runnable
 	 * Feature selector that takes 1 set. Used in cv mode 
 	 * return:
 	 */
-	protected float[][] selectGivenAMethod(String chosenSelector, String parameter, float[][] selectedFeatures, int[] targets)
+	protected float[][] selectGivenAMethod(String chosenSelector, String parameter, float[][] features, int[] targets)
 	{
-		int incomingDim = selectedFeatures[0].length;
-		int length = selectedFeatures.length;
+		int incomingDim = features[0].length;
+		int length = features.length;
 		int numoffeatures;
-		int[] indices = null;
 
 		if (chosenSelector.equalsIgnoreCase("None"))
 			return null;
@@ -638,18 +643,16 @@ public class Annotator implements Runnable
 			//String mRMRPara = "-f " + numoffeatures + " -t " + threshold + " -d "+ discreteFlag;
 
 			//discrete, if set, is done on the set inside the method.
-			FeatureSelector selector = (new mRMRFeatureSelector(selectedFeatures, targets, length, incomingDim, numoffeatures, featureSelector, discrete, th));
-		    selectedFeatures = selector.selectFeatures();
-		    indices = selector.getIndices();
+			FeatureSelector selector = (new mRMRFeatureSelector(features, targets, length, incomingDim, numoffeatures, featureSelector, discrete, th));
+		    features = selector.selectFeatures();
 		}
 		else if (chosenSelector.equalsIgnoreCase("Information Gain"))
 		{   
-			FeatureSelector selector = new WeKaFeatureSelectors(selectedFeatures, targets, numoffeatures, null, 0.2);
-			selectedFeatures = selector.selectFeatures();
-		    indices = selector.getIndices();
+			FeatureSelector selector = new WeKaFeatureSelectors(features, targets, numoffeatures, null, 0.2);
+			features = selector.selectFeatures();
 		}
 
-		return selectedFeatures;	
+		return features;	
 	}
 	
 	/*
@@ -694,11 +697,11 @@ public class Annotator implements Runnable
 		else if (chosenSelector.equalsIgnoreCase("Information Gain"))
 		{
 			//Do selection on the training set
-            FeatureSelector selector = new WeKaFeatureSelectors(trainingFeatures, trainTargets, numoffeatures, null, 0.2);
-            float[][] selectedTrainingFeatures = selector.selectFeatures();
+			FeatureSelector selector = new WeKaFeatureSelectors(trainingFeatures, trainTargets, numoffeatures, null, 0.2);
+			float[][] selectedTrainingFeatures = selector.selectFeatures();
 			//apply to testing. IMPORTANT: dimension has changed by feature selector
-            int[] indices = selector.getIndices();
-            numoffeatures = indices.length;
+			int[] indices = selector.getIndices();
+			numoffeatures = indices.length;
 			selector = new WeKaFeatureSelectors(testingFeatures, null, numoffeatures, null, 0.2);//081007
 		    float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
 		    ComboFeatures.getInstance().setTrainingFeatures(selectedTrainingFeatures);

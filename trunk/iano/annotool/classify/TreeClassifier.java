@@ -24,9 +24,10 @@ public class TreeClassifier implements Classifier {
 	
 	//@Override follow the main() in weka example
 	public void classify(float[][] trainingpatterns, int[] trainingtargets,
-			float[][] testingpatterns, int[] predictions, int traininglen,
-			int testinglen, double[] prob) 
+			float[][] testingpatterns, int[] predictions,  double[] prob) 
 	{
+		int traininglen = trainingpatterns.length;
+		int testinglen = testingpatterns.length;
 	    createModel(trainingpatterns, trainingtargets);
 	    
 	    try

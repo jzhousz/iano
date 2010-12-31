@@ -232,7 +232,7 @@ public class Util {
 		int[] predictions = new int[testingFeatures.length];
 		double[] prob = new double[testingFeatures.length];
 
-		wrapper.classify(trainingFeatures, trainingtargets, testingFeatures, predictions, trainingFeatures.length,  testingFeatures.length, prob);
+		wrapper.classify(trainingFeatures, trainingtargets, testingFeatures, predictions, prob);
 		
 		//look for index!!
 		int[] targetList = getTargetList(trainingtargets);
