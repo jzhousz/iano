@@ -27,8 +27,11 @@ public class Validator
 	  this.startPos = start;
 	  this.totalRange = total;
    }
-   public float  KFold(int K, int length, int dimension, float[][] data, int[] targets, Classifier classifier, boolean shuffle, Annotation[] results)
+   public float  KFold(int K, float[][] data, int[] targets, Classifier classifier, boolean shuffle, Annotation[] results)
    {
+	  int length = data.length;
+	  int dimension = data[0].length;
+	  
 	  if (shuffle)
 	    shuffle(length, dimension, data, targets);
 
@@ -98,7 +101,7 @@ public class Validator
 	      }
 
 	     //send to the classifier
-         classifier.classify(trainingPatterns, trainingTargets, testingPatterns, predictions, traininglength, testinglength, prob);
+         classifier.classify(trainingPatterns, trainingTargets, testingPatterns, predictions, prob);
 
          //compare the output prediction with the real targets on the testing set
          for(int i=0; i<testinglength; i++)
@@ -123,12 +126,14 @@ public class Validator
    @return The annotation results (with probility estimation) for each sample based on Leave One Output
 
    **************/
-   public void LOO(int length, int dimension, float[][] data, int[] targets, Classifier classifier, Annotation annos[], boolean shuffle)
+   public void LOO(float[][] data, int[] targets, Classifier classifier, Annotation annos[], boolean shuffle)
    {
 	   //No need to shuffle in LOO 12/23/08
 	   //if (shuffle)
 	   //   shuffle(length, dimension, data, targets);
 
+	   int length = data.length;
+	   int dimension = data[0].length;
 	   int testinglength = 1;
 	   int traininglength = length - testinglength;
 
@@ -169,7 +174,7 @@ public class Validator
 		    trainingTargets[i-1] = targets[i];
 	      }
 	     //send to the classifier
-         classifier.classify(trainingPatterns, trainingTargets, testingPatterns, prediction, traininglength, testinglength, prob);
+         classifier.classify(trainingPatterns, trainingTargets, testingPatterns, prediction,  prob);
          //System.out.println("prediciton[0]:" + prediction[0]);
          annos[k].anno = prediction[0];
          annos[k].prob = prob[0];
@@ -184,7 +189,7 @@ public class Validator
 	  int[]	 predictions = new int[testingLength];
 	  double[]	 prob = new double[testingLength];
 
-	  classifier.classify(trainingPatterns, trainingTargets, testingPatterns, predictions, trainingPatterns.length, testingLength, prob);
+	  classifier.classify(trainingPatterns, trainingTargets, testingPatterns, predictions,  prob);
 	  return predictions;
   }  
   
@@ -194,12 +199,13 @@ public class Validator
     * Function: send to classify
     * Ouput: prediction results, recognition rate
     */
-   public float classify(int trainingLength, int testingLength, int numoffeatures, float[][] trainingPatterns, float[][] testingPatterns,int[] trainingTargets, int[] testingTargets, Classifier classifier, Annotation[] annotations)
+   public float classify(float[][] trainingPatterns, float[][] testingPatterns,int[] trainingTargets, int[] testingTargets, Classifier classifier, Annotation[] annotations)
    {
+	   int testingLength = testingPatterns.length;
 	   int[]	 predictions = new int[testingLength];
 	   double[]	 prob = new double[testingLength];
 			
-       classifier.classify(trainingPatterns, trainingTargets, testingPatterns, predictions, trainingLength, testingLength, prob);
+       classifier.classify(trainingPatterns, trainingTargets, testingPatterns, predictions,  prob);
 
        //calculate the recognition rate
        int correct = 0;

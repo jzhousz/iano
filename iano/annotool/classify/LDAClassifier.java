@@ -51,7 +51,7 @@ public class LDAClassifier implements Classifier {
 		double[] probest = new double[5];
 
 		LDAClassifier classifier = new LDAClassifier(2, priors);
-		classifier.classify(training,  trainingtargets, testing, predictions, 10, 5, probest);
+		classifier.classify(training,  trainingtargets, testing, predictions, probest);
 
 		for(int i = 0; i < predictions.length; i++)
 			System.out.println(predictions[i]); //11121
@@ -70,10 +70,12 @@ public class LDAClassifier implements Classifier {
 	}
 
 
-	public void classify(float[][] trainingPatterns, int[] trainingtargets, float[][] testingPatterns, int[] predictions, int traininglength, int testinglength, double[] probesti)
+	public void classify(float[][] trainingPatterns, int[] trainingtargets, float[][] testingPatterns, int[] predictions, double[] probesti)
 	{
 		//make sure that the targets are in the range of 0 ... ngroups -1
 		//also set the ngroups
+		int traininglength = trainingPatterns.length; 
+		int testinglength = testingPatterns.length;
 		int[] convertedTargets = convertTargets(trainingtargets);
 		for(int i =0; i < convertedTargets.length; i++)
 			System.out.println(convertedTargets[i]);
