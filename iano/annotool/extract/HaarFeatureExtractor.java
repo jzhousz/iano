@@ -12,16 +12,29 @@ public class HaarFeatureExtractor implements FeatureExtractor
 {
    protected float[][] features = null;
    protected byte[][] data;
-   int totallevel;
+   int totallevel = 1;
    int totalwidth;
    int totalheight;
    int length;
    boolean singleImage = false; //handle many images by default
    protected byte[] singleData;
+   public final static String LEVEL_KEY = "Wavelet Level";
    
    
+   public HaarFeatureExtractor(annotool.io.DataInput problem, java.util.HashMap<String, String> parameters)
+   {
+	   data = problem.getData();
+	   length = problem.getLength();
+	   totalwidth = problem.getWidth();
+	   totalheight = problem.getHeight();
+	   //parse the parameters to set the wavelet level
+	   if (parameters != null && parameters.containsKey(LEVEL_KEY))
+	     totallevel = Integer.parseInt(parameters.get(LEVEL_KEY));
+	   
+   }
+
    //get the first stack
-   public HaarFeatureExtractor(annotool.io.DataInput problem, int level)
+/*   public HaarFeatureExtractor(annotool.io.DataInput problem, int level)
    {
 	   data = problem.getData();
 	   length = problem.getLength();
@@ -29,7 +42,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
 	   totalheight = problem.getHeight();
 	   totallevel = level;
    }
-   
+  */ 
    public HaarFeatureExtractor(annotool.io.DataInput problem, int level, int stackindex)
    {
 	   data = problem.getData(stackindex);
