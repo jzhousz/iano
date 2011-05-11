@@ -48,9 +48,18 @@ public class SVMClassifier implements Classifier
 {
     int dimension;
     svm_parameter param = new svm_parameter();
-
+    public final static String KEY_PARA = "General Parameter";
+    
    //initialize # of samples and # of dimension
-   public SVMClassifier(int dimension, String parameters)
+   public SVMClassifier(java.util.HashMap<String,String> parameters)
+   {
+	  if(parameters != null && parameters.containsKey(KEY_PARA))
+          initSVMParameters(parameters.get(KEY_PARA));
+ 	  else
+ 		initSVMParameters(annotool.Annotator.DEFAULT_SVM);
+   }
+
+    public SVMClassifier(int dimension, String parameters)
    {
 	 this.dimension = dimension;
      initSVMParameters(parameters);
@@ -161,12 +170,15 @@ public class SVMClassifier implements Classifier
    //This is an interface method to LibSVM package.
    public void classify(float[][] trainingpatterns, int[] trainingtargets, float[][] testingpatterns, int[] predictions, double[] probesti)
    {
-	   int traininglength = trainingpatterns.length;
-	   int testinglength = testingpatterns.length;
-     	svm_problem prob = new svm_problem();
+	    int traininglength = trainingpatterns.length;
+	    int testinglength = testingpatterns.length;
+	    dimension = trainingpatterns[0].length;
+        svm_problem prob = new svm_problem();
 		prob.l = traininglength;
 		prob.y = new double[prob.l];
-		int maxClassNum = annotool.Annotator.maxClass;
+
+		int maxClassNum = getMaxNumOfClass(trainingtargets);// annotool.Annotator.maxClass;
+		
 		System.out.println("maxClassNum:"+ maxClassNum);
 		double[] prob_estimates = new double[maxClassNum];
 
@@ -243,4 +255,14 @@ public class SVMClassifier implements Classifier
 	}
 
 
+    private int getMaxNumOfClass(int[] targets)
+    {
+	   java.util.HashSet<Integer> targetset = new java.util.HashSet<Integer>();
+	   for (int i=0; i < targets.length; i++)
+			if(!targetset.contains(new Integer(targets[i])))
+				targetset.add(new Integer(targets[i]));
+	   
+	   return targetset.size();
+	   
+    }
 }

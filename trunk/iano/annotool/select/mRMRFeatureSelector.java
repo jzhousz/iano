@@ -1,5 +1,7 @@
 package annotool.select;
 
+import java.util.HashMap;
+
 /*
   parameters for mRMR:
 
@@ -35,11 +37,44 @@ public class mRMRFeatureSelector implements FeatureSelector
 	int[] targets;
 	int length = 0;
 	int dimension = 0;
-	int numberofFeatures = 10;
+	int numberofFeatures = 10; //default
 	int[] indices = null;
-	
 	String method = annotool.Annotator.DEFAULT_MRMRTYPE; //Default is "mRMR-MIQ".
+	
+	//keys for parameter HashMap
+	public final static String KEY_NUM = "Number of Features";
+    public final static String KEY_DISCRETE = "Discrete Flag";
+    public final static String KEY_DIS_TH = "Discretize Threshold";
+    
+	//taking in the parameters in a standardized way.
+	public mRMRFeatureSelector(float[][] features, int[] targets, String methodname, java.util.HashMap<String, String> parameters)
+	{
+		int threshold = 0;
+		boolean discreteflag = false;
+		
+		//get the parameters and set the instance variables.
+		this.features = features;
+		this.targets = targets;
+		this.length = features.length;
+		this.dimension = features[0].length;
+		this.method = methodname;
 
+		
+		if (parameters.containsKey(KEY_NUM))
+			this.numberofFeatures = Integer.parseInt((String)parameters.get(KEY_NUM));
+		if (parameters.containsKey(KEY_DISCRETE))
+			discreteflag = (Integer.parseInt((String)parameters.get(KEY_DISCRETE)) == 0) ? true : false ;
+		if (parameters.containsKey(KEY_DIS_TH))
+			threshold = Integer.parseInt((String)parameters.get(KEY_DIS_TH));
+		//if (parameters.containsKey(KEY_METHOD))
+		//	this.method = (String)parameters.get(KEY_METHOD);
+		
+		if(discreteflag)
+			    //discretizeV2(features, length, dimension);
+				discretize(features, length, dimension);
+	}
+
+	
 	public mRMRFeatureSelector(float[][] features, int[] targets, int length, int dimension, int numberofFeatures, String method, boolean discreteflag, float threshold)
 	{
 
@@ -110,35 +145,11 @@ public class mRMRFeatureSelector implements FeatureSelector
  			       OneDfeatures[i*(dimension+1)+j] = features[i][j-1];
 			}
 
-		//debug:
-		/*
-		System.out.println("data table in Java:");
-		for(int i = 0; i < length; i++)
-		{
-			for(int j = 1; j < 1 + 1; j++)
-		           System.out.print(OneDfeatures[i*(dimension+1)+j] + " ");
-	        System.out.println();
-		}*/
-		/*
-	 float[] OneDfeatures = {1,    0,     1,     1,     1,     1, 	
-			 				1,     1,     0,     1,     1,     0, 
-			 				0,     1,     1,     1,     1,     0,
-			 				1,     1,     0,     0,     0,     0,  
-			 				1,     0,     0,     1,     1,     0,	
-			 				0,     1,     1,     1,     0,     1};
-	   dimension = 5; 
-	   length = 6;
-	   numberofFeatures = 5;*/
-
 		//targets not used in C code since targets are passed in as first column
 		if (method.equalsIgnoreCase("mRMR-MIQ"))
 			return mRMRNative.miq(OneDfeatures, targets, numberofFeatures, length, dimension+1);
 		else if (method.equalsIgnoreCase("mRMR-MID"))
 			return mRMRNative.mid(OneDfeatures, targets, numberofFeatures, length, dimension+1);
-		//	   else
-		//	   {
-		//         throw new Exception("Unknown feature selector method.");
-		//       }
 
 		//by PHC, 081007
 		else
@@ -194,35 +205,6 @@ public class mRMRFeatureSelector implements FeatureSelector
 			   features[i][j] = tmpf;
 			}
 		 }
-		/*
-        float sum = 0, mean = 0;
-        for (int j=0; j< dimension; j++)
-        {
-  		  sum =0;
-          for (int i =0; i<length; i++)
-			   sum += features[i][j];
-	      mean = sum/length;
-          for (int i =0; i<length; i++)
-          {
-            //features[i][j] -= mean;	 
-			
-            if(features[i][j] > mean)
-			     features[i][j] = 1;
-			   else if(features[i][j] < mean)
-			     features[i][j] = -1;
-			   else
-			       features[i][j] = 0;
-	       
-	     }
-	   }*/
-		/*
-		   for(i=0; i<length; i++)
-		   {
-		     for(j=0; j< 1; j++)
-		      System.out.print(features[i][j]+"\t");
-		     System.out.println();
-	       }*/
-	       
 	}
 
 	
@@ -295,6 +277,8 @@ public class mRMRFeatureSelector implements FeatureSelector
 
     public int[] getIndices()
     {
+    	if (indices == null)
+    		selectFeatures();
     	return indices;
     }
     

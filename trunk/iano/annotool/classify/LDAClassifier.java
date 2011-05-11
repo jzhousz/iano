@@ -58,6 +58,11 @@ public class LDAClassifier implements Classifier {
 
 	}
 
+	public LDAClassifier(java.util.HashMap<String, String> parameters)
+	{
+		//no parameter needed.
+	}
+
 	public LDAClassifier(int dimension)
 	{
 		this.dimension = dimension;
@@ -76,6 +81,7 @@ public class LDAClassifier implements Classifier {
 		//also set the ngroups
 		int traininglength = trainingPatterns.length; 
 		int testinglength = testingPatterns.length;
+		dimension = trainingPatterns[0].length;
 		int[] convertedTargets = convertTargets(trainingtargets);
 		for(int i =0; i < convertedTargets.length; i++)
 			System.out.println(convertedTargets[i]);
