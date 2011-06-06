@@ -284,9 +284,10 @@ public class Annotator implements Runnable
         //parameter hashmap for 2 mRMR selectors
         HashMap<String, String> para = new HashMap<String, String>();
         if (featureSelector.contains("mRMR")) {
+        	int discretef = (discreteFlag.equalsIgnoreCase("true"))? 1:0; //parameter property file use 1/0 for boolean
             para = new HashMap<String, String>();
             para.put(annotool.select.mRMRFeatureSelector.KEY_NUM, String.valueOf(getNumberofFeatures()));
-            para.put(annotool.select.mRMRFeatureSelector.KEY_DISCRETE, discreteFlag);
+            para.put(annotool.select.mRMRFeatureSelector.KEY_DISCRETE, String.valueOf(discretef));
             para.put(annotool.select.mRMRFeatureSelector.KEY_DIS_TH, threshold);
         }
 
@@ -592,7 +593,9 @@ public class Annotator implements Runnable
 
         if (extractor.equals("2D Hu Moments")) {
             if (stackSize == 1) {
-                features = (new ImageMoments(problem)).calcFeatures();
+            	System.err.println("Will call ImageMoments class");
+            	System.exit(1);
+                //features = (new ImageMoments(problem)).calcFeatures();
             }
             else {
                 System.out.println("invalid stack size for 2D images: " + stackSize);
@@ -742,6 +745,9 @@ public class Annotator implements Runnable
         float[][] selectedTrainingFeatures = null;
         int[] indices = null;
         if (chosenSelector.equalsIgnoreCase("Fisher")) {
+        	System.err.println("will call FishersCriterion class for feature selection");
+        	System.exit(1);
+        	/*
             FeatureSelector selector = (new FishersCriterion(trainingFeatures, trainTargets, parameters));
             try {
                 selectedTrainingFeatures = selector.selectFeatures();
@@ -754,6 +760,7 @@ public class Annotator implements Runnable
             float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
             ComboFeatures.getInstance().setTrainingFeatures(selectedTrainingFeatures);
             ComboFeatures.getInstance().setTestingFeatures(selectedTestingFeatures);
+            */
         }
         if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || chosenSelector.equalsIgnoreCase("mRMR-MID")) {
             //parsing algorithm parameters. Will be moved into algorithm class.
