@@ -26,9 +26,7 @@ Properties can be set to change the default parameters such as image directory a
 May 2nd, 2011:  CV modes are not calling the ..Given...() methods. To be checked later.
 
 A List of Todos And Thoughts (May 2011):
---!!!! algorithm parameters will be passed in separately as a Hashmap of String (instead of property)
-
-//-- maxClass is used by class SVMClassifier, not passed in
+-- algorithm parameters will be passed in separately as a Hashmap of String (instead of property)
 -- ! Save project (model) (provide a better GUI with algorithm details),
 Save results. 
 Open project. (project explorer at the left has details of projects).
