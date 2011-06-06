@@ -63,7 +63,7 @@ public class mRMRFeatureSelector implements FeatureSelector
 		if (parameters.containsKey(KEY_NUM))
 			this.numberofFeatures = Integer.parseInt((String)parameters.get(KEY_NUM));
 		if (parameters.containsKey(KEY_DISCRETE))
-			discreteflag = (Integer.parseInt((String)parameters.get(KEY_DISCRETE)) == 0) ? true : false ;
+			discreteflag = (Integer.parseInt((String)parameters.get(KEY_DISCRETE)) == 1) ? true : false ;
 		if (parameters.containsKey(KEY_DIS_TH))
 			threshold = Integer.parseInt((String)parameters.get(KEY_DIS_TH));
 		//if (parameters.containsKey(KEY_METHOD))
