@@ -1,6 +1,7 @@
 package annotool;
 
 import javax.swing.*;
+import javax.swing.UIManager.LookAndFeelInfo;
 
 import java.awt.BorderLayout;
 import java.awt.event.*;
@@ -220,7 +221,7 @@ public class AnnMenuBar implements ActionListener {
 		bhelp.addActionListener(this);
 		babout.addActionListener(this);
 		bexit.addActionListener(this);
-
+		
 		frame.add(toolBar, BorderLayout.NORTH);
 	}
 
@@ -256,6 +257,8 @@ public class AnnMenuBar implements ActionListener {
 			setLF("Metal");
 		else if(command.equals("System LF"))
 			setLF("System");
+		else if(command.equals("Nimbus LF"))
+			setLF("Nimbus");
 		else if(command.equals("Help Contents") || source == bhelp)
 			displayHelp();
 		else if(command.equals("About IANO (Image Annotation Tool)") || source == babout)
@@ -265,30 +268,41 @@ public class AnnMenuBar implements ActionListener {
 	private void setLF(String lnfName)
 	{
 		//can support other LF (such as motif) if I want 
-		String lookAndFeel;
+		String lookAndFeel = null;
 		try{
 
 			if (lnfName.equals("Metal")) {
 				lookAndFeel = UIManager.getCrossPlatformLookAndFeelClassName();
 				// lookAndFeel = "javax.swing.plaf.metal.MetalLookAndFeel";
 			}
-			else {
+			else if (lnfName.equals("System")) {
 				lookAndFeel = UIManager.getSystemLookAndFeelClassName();
+			}
+			else if (lnfName.equals("Nimbus")) {
+		       	  	for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+		   		        if ("Nimbus".equals(info.getName())) {
+		   		            lookAndFeel = info.getClassName();
+		   		            break;
+		   		        }    
+		       	  	}
 			}
 			UIManager.setLookAndFeel(lookAndFeel);
 			SwingUtilities.updateComponentTreeUI(frame);
 			frame.pack();
 		}catch (UnsupportedLookAndFeelException e) {
-			// handle exception
+			e.printStackTrace();
 		}
 		catch (ClassNotFoundException e) {
 			// handle exception
+			e.printStackTrace();
 		}
 		catch (InstantiationException e) {
 			// handle exception
+			e.printStackTrace();
 		}
 		catch (IllegalAccessException e) {
 			// handle exception
+			e.printStackTrace();
 		}
 
 	}
@@ -339,11 +353,16 @@ public class AnnMenuBar implements ActionListener {
 		metalLFItem.setMnemonic('M');
 		JMenuItem systemLFItem = new JMenuItem("System LF");
 		systemLFItem.setMnemonic('S');
+		JMenuItem nimbusLFItem = new JMenuItem("Nimbus LF");
+		nimbusLFItem.setMnemonic('N');
 		buildMenu.add(metalLFItem);
 		buildMenu.add(systemLFItem);
+		buildMenu.add(nimbusLFItem);
 
 		metalLFItem.addActionListener(this);
 		systemLFItem.addActionListener(this);
+		nimbusLFItem.addActionListener(this);
+		
 		return buildMenu;
 	}
 
