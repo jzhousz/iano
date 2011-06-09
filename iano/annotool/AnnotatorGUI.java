@@ -64,8 +64,8 @@ public class AnnotatorGUI extends JFrame {
 		this.buildMenuAndToolBar();
 		
 		pnlLanding = new AnnLandingPanel(this);
-		this.add(pnlLanding);
-		//this.add(screen);
+		//this.add(pnlLanding);
+		this.add(screen);
 
 		this.pack(); //pack first, otherwise, calculation will be off.
 		Dimension dim =
