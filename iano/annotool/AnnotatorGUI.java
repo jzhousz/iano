@@ -17,6 +17,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.SoftBevelBorder;
 import javax.swing.border.TitledBorder;
 
+import annotool.gui.AnnLandingPanel;
 import annotool.io.LabelReader;
 
 /**
@@ -36,6 +37,8 @@ public class AnnotatorGUI extends JFrame {
 	JTabbedPane screen = new JTabbedPane();
 	AnnControlPanel controlPanel = new AnnControlPanel(this);
 	int tabNumber = 2; //initial number of tabs
+	
+	AnnLandingPanel pnlLanding;
 
 	//parameter fields
 	JPanel paraPanel = null;
@@ -59,7 +62,10 @@ public class AnnotatorGUI extends JFrame {
 		screen.addTab("Parameter Tuning", null, paraPanel, "Parameter Tuning");
 		
 		this.buildMenuAndToolBar();
-		this.add(screen);
+		
+		pnlLanding = new AnnLandingPanel(this);
+		this.add(pnlLanding);
+		//this.add(screen);
 
 		this.pack(); //pack first, otherwise, calculation will be off.
 		Dimension dim =
