@@ -27,8 +27,7 @@ May 2nd, 2011:  CV modes are not calling the ..Given...() methods. To be checked
 
 A List of Todos And Thoughts (May 2011):
 -- algorithm parameters will be passed in separately as a Hashmap of String (instead of property)
--- ! Save project (model) (provide a better GUI with algorithm details),
-Save results. 
+-- ! Save project (model) (provide a better GUI with algorithm details),Save results. 
 Open project. (project explorer at the left has details of projects).
 -- Load examples with suggested models
 
