@@ -558,22 +558,8 @@ public class Annotator implements Runnable
         int numoffeatures = selectedTrainingFeatures[0].length;
         Classifier classifier = null;
         if (chosenClassifier.equalsIgnoreCase("SVM")) {
-            //classifier = new SVMClassifier(parameters);
-            
-            //test model saving/loading
-            SVMClassifier c = new SVMClassifier(parameters);
-            c.trainingOnly(selectedTrainingFeatures, trainingtargets);
-            String model = c.getModel("modelfile_SVM");
-            System.out.println("after saving model");
-           
-            try{
-            int[] predictions = c.classifyUsingModel(model, selectedTestingFeatures);
-            System.out.println("after classify");
-            
-            for(int i=0; i<predictions.length; i++)
-             System.out.println(predictions[i]);
-            }catch(Exception e)
-            { e.printStackTrace();}
+            classifier = new SVMClassifier(parameters);
+          
             
         }
         else if (chosenClassifier.equalsIgnoreCase("LDA")) {
