@@ -235,13 +235,13 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 			Annotator.targetFile =  targetField.getText().trim();
 			//display images, plus enable the go button if successful
 			boolean displayOK = pnlImage.getTablePanel().displayOneImageTable(Annotator.dir, Annotator.targetFile, Annotator.ext);
-			/*controlPanel.thingsEnabled(displayOK);
+			//controlPanel.thingsEnabled(displayOK);
 			if (displayOK) //if display is true
 			{
-				controlPanel.threeDEnabled(is3D());
-				controlPanel.channelEnabled(isColor());
+				pnlImage.setIs3D(is3D());
+				pnlImage.channelEnabled(isColor());
 			}
-			controlPanel.foldEnabled(displayOK);*/
+			//controlPanel.foldEnabled(displayOK);
 
 			//write some information about the opened image in the outputpanel ...
 			pnlImage.getOutputPanel().setOutput("Images loaded from "+dirField.getText().trim()+ ".");
@@ -276,11 +276,11 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 			   displayOK = pnlImage.getTablePanel().displayTwoImageTables(Annotator.dir, Annotator.targetFile, Annotator.ext, Annotator.testdir, Annotator.testext);
 			
 			//controlPanel.thingsEnabled(displayOK);
-			//if (displayOK) //if display is true
-			//{
-				//controlPanel.threeDEnabled(is3D());
-				//controlPanel.channelEnabled(isColor());
-			//}
+			if (displayOK) //if display is true
+			{
+				pnlImage.setIs3D(is3D());
+				pnlImage.channelEnabled(isColor());
+			}
 			//controlPanel.foldEnabled(false);//TT doesn't need fold
 
 			//write some information about the opened image in the outputpanel ...
