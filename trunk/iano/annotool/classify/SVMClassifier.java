@@ -47,8 +47,10 @@ validation accuracy/mean squared error on them.
 public class SVMClassifier implements Classifier
 {
     int dimension;
+    int maxClassNum = 0;
     svm_parameter param = new svm_parameter();
     public final static String KEY_PARA = "General Parameter";
+    svm_model trainedModel = null;
     
    //initialize # of samples and # of dimension
    public SVMClassifier(java.util.HashMap<String,String> parameters)
@@ -168,6 +170,7 @@ public class SVMClassifier implements Classifier
    }//end of init parameters
 
    //This is an interface method to LibSVM package.
+   //It handles training and testing in one method.
    public void classify(float[][] trainingpatterns, int[] trainingtargets, float[][] testingpatterns, int[] predictions, double[] probesti)
    {
 	    int traininglength = trainingpatterns.length;
@@ -177,8 +180,7 @@ public class SVMClassifier implements Classifier
 		prob.l = traininglength;
 		prob.y = new double[prob.l];
 
-		int maxClassNum = getMaxNumOfClass(trainingtargets);// annotool.Annotator.maxClass;
-		
+		maxClassNum = getMaxNumOfClass(trainingtargets);// annotool.Annotator.maxClass;
 		System.out.println("maxClassNum:"+ maxClassNum);
 		double[] prob_estimates = new double[maxClassNum];
 
@@ -207,6 +209,8 @@ public class SVMClassifier implements Classifier
 
 			// build model
 			svm_model model = svm.svm_train(prob, param);
+			//set the instance variable for saving
+			trainedModel = model;
 
 			//classify
 			for(int i=0; i< testinglength; i++)
@@ -218,9 +222,8 @@ public class SVMClassifier implements Classifier
 			      testx[j].index = j+1;
 			      testx[j].value = (double) testingpatterns[i][j];
 			    }
-			    //typecase to int for category labels.
+			    //typecast to int for category labels.
 			    //predictions[i] =  (int) svm.svm_predict(model, testx);
-
 			    predictions[i] =  (int) svm.svm_predict_probability(model,testx,prob_estimates);
 			    //System.out.println("prediction: "+ predictions[i]);
 			    
@@ -265,4 +268,158 @@ public class SVMClassifier implements Classifier
 	   return targetset.size();
 	   
     }
+    
+    /** 6/14/2011 add 5 methods to save model/load model and classify based on model
+    * Code examples using model saving/loading:
+    *  SVMClassifier c = new SVMClassifier(parameters);
+    *  c.trainingOnly(selectedTrainingFeatures, trainingtargets);
+    *  //save to file
+    *  String model = c.getModel("modelfile_SVM");
+    *  //load and use
+    *  try{
+    *   int[] predictions = c.classifyUsingModel(model, selectedTestingFeatures);
+    *   }catch(Exception e)
+    *  { e.printStackTrace();}
+    */
+    
+    //training only and return the model
+    public svm_model trainingOnly(float[][] trainingpatterns, int[] trainingtargets)
+    {
+	    int traininglength = trainingpatterns.length;
+	    dimension = trainingpatterns[0].length;
+        svm_problem prob = new svm_problem();
+		prob.l = traininglength;
+		prob.y = new double[prob.l];
+
+        if(param.svm_type == svm_parameter.EPSILON_SVR ||
+			param.svm_type == svm_parameter.NU_SVR)
+		{
+			System.out.println("svm type is set to regression. It should be classification.");
+			return null;
+	    }
+	    else
+	    {
+			if(param.gamma == 0) param.gamma = 0.5;
+			prob.x = new svm_node[prob.l][dimension];
+
+			//set up the data (x: svm_nodes; y: targets)
+			for(int i=0;i<prob.l;i++)
+			{
+				for (int j =0; j<dimension; j++)
+				{
+				  prob.x[i][j] = new svm_node();
+				  prob.x[i][j].index = j+1;   //what is this for? dimension index?
+				  prob.x[i][j].value = (double) trainingpatterns[i][j];
+			    }
+				prob.y[i] = trainingtargets[i];
+			}
+
+			// build model and save the instance variable
+			trainedModel = svm.svm_train(prob, param);
+	    }
+        
+        return trainedModel;
+    }
+    
+    /**
+     * Returns the model. The return value may be the content of the model or just
+     *   a file name where the actual model is depending on the actual classifier.
+     * In the case of LibSVM, it returns the filename (which was passed in) and the saving to the file is done inside. 
+     * This method is pairs up with a setter.
+     */
+    public String getModel(String model_file_name)
+    {
+    	if(trainedModel == null)
+    	{
+    		System.err.println("Model is not trained. It cann't be saved.");
+    		return null;
+    	}
+    	
+    	try
+    	{
+    	 System.out.println("saving model to "+ model_file_name);	
+    	 svm.svm_save_model(model_file_name,trainedModel);
+    	}catch(java.io.IOException e)
+    	{
+    		System.err.println("Problem in saving the trained model of SVM");
+    	}
+    	
+    	return model_file_name;
+    }
+    
+    //set the instance model variable based on input 
+    public void setModel(String model)
+    {
+    	try
+    	{
+    	   trainedModel = svm.svm_load_model(model);
+    	}catch(java.io.IOException e)
+    	{
+    	   System.err.println("Problem in loading the trained model of SVM");
+    	}
+    }
+    
+    
+    /** Classify one testing pattern, based on the model parameter or the instance variable (if the parameter is null)
+      If input model is not null, use it. Otherwise, use the instance variable, 
+      which may be set by setModel() or a previous call of the method. So this method can be called
+      in a loop to classify multiple testing patterns (see the overloaded method for example).
+     * 
+     * @param model
+     * @param testingPattern
+     * @return prediction (int)
+     * @throws Exception
+     */
+    public int classifyUsingModel(String model, float[] testingPattern) throws Exception
+    {
+       	if (model != null) setModel(model);
+    	else  if(trainedModel == null)
+    	{  //when parameter is null && there is no instance variable that contains a valid model
+    		System.err.println("Err: must pass in a model.");
+    		throw new Exception("Err: must pass in a model.");
+    	}   	
+    	
+       	//maxClassNum is needed by prob estimation, yet it is only available from training samples. So if it is not set, assume a large number.
+		double[] prob_estimates;
+		if (maxClassNum == 0) //not known
+		  prob_estimates = new double[100];
+		else 
+		  prob_estimates = new double[maxClassNum];
+
+	    int dimension = testingPattern.length;
+	    svm_node[] testx = new svm_node[dimension];
+	    for(int j=0; j<dimension; j++)
+	    {
+	      testx[j] = new svm_node();
+	      testx[j].index = j+1;
+	      testx[j].value = (double) testingPattern[j];
+	    }
+	    int prediction =  (int) svm.svm_predict_probability(trainedModel,testx,prob_estimates);
+        System.out.println(prediction+" ");
+       	return prediction;
+       	
+       	
+    }
+    
+    /** The method classify many testing patterns given a model. 
+        it calls the version that work with one testing pattern.
+     */     
+    public int[] classifyUsingModel(String model, float[][] testingPatterns) throws Exception
+    {
+    	if (model != null) setModel(model);
+    	else  if(trainedModel == null)
+    	{  //there is no instance variable that contains a valid model
+    		System.err.println("Err: Must pass in a model");
+    		return null;
+    	}
+    	
+    	//allocate predictions
+    	int[] predictions = new int[testingPatterns.length];
+     	for(int i = 0; i < testingPatterns.length; i++)
+    	  predictions[i] = classifyUsingModel(null, testingPatterns[i]);
+    	
+    	return predictions;
+    			
+    }
+       
 }
