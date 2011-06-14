@@ -231,13 +231,13 @@ public class Annotator implements Runnable
         }
         int[] resArr = new int[2]; //place holder for misc results
         java.util.ArrayList<String> annoLabels = new java.util.ArrayList<String>();
-        int[][] trainingTargets = readTargets(trainingProblem, resArr, annoLabels, targetFile);
+        int[][] trainingTargets = readTargets(trainingProblem, targetFile, resArr, annoLabels);
         //get statistics from training set
         int numOfAnno = resArr[0];
         annotationLabels = annoLabels;
 
         //testing set targets
-        int[][] testingTargets = readTargets(testingProblem, resArr, null, testtargetFile);
+        int[][] testingTargets = readTargets(testingProblem, testtargetFile, resArr, null);
 
         //feature extraction.
         if (!setProgress(30)) {
@@ -370,7 +370,7 @@ public class Annotator implements Runnable
         }
         int[] resArr = new int[2]; //place holder for misc results
         java.util.ArrayList<String> annoLabels = new java.util.ArrayList<String>();
-        int[][] targets = readTargets(problem, resArr, annoLabels, targetFile);
+        int[][] targets = readTargets(problem, targetFile, resArr, annoLabels);
         int numOfAnno = resArr[0];
         annotationLabels = annoLabels;
 
@@ -518,7 +518,7 @@ public class Annotator implements Runnable
      *     resArry[0]: number of annotations (targets); resArry[1]: max class in all columns of targets
      * Other: set the annotationLabels via argument (if input is null, it won't be set).
      */
-    protected int[][] readTargets(DataInput problem, int[] resArr, java.util.ArrayList<String> annotationLabels, String filename) {
+    protected int[][] readTargets(DataInput problem, String filename, int[] resArr, java.util.ArrayList<String> annotationLabels) {
         int numOfAnno = 0;
         int maxClassAllTargets = 0;
         int[][] targets = null;
@@ -603,6 +603,7 @@ public class Annotator implements Runnable
         }
         if (extractor.equals("HAAR")) {
             if (stackSize == 1) {
+            	 //Class.forName(extractor, )
                 features = (new HaarFeatureExtractor(problem, parameters)).getFeatures();
             }
             else {
