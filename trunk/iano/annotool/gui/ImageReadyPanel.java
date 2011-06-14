@@ -7,14 +7,18 @@ import javax.swing.border.TitledBorder;
 
 import java.awt.event.*;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.awt.Toolkit;
+
 import annotool.AnnOutputPanel;
 import annotool.AnnTablePanel;
+import annotool.Annotator;
 
 public class ImageReadyPanel extends JPanel implements ActionListener
 {
-	private JPanel pnlRight,
+	private JPanel pnlRight, pnlRightCenter,
 				   pnlModelInfo, pnlChannel, pnlButton;
 	
 	JLabel lbModelInfo;
@@ -27,20 +31,28 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	private AnnTablePanel pnlTable;
 	AnnotatorGUI gui = null;
 	
+	String modelInfo = null;
+	
+	private boolean is3D = false;
+	
 	public ImageReadyPanel(AnnotatorGUI gui)
 	{
 		this.gui = gui;
 		//Information panel with label to display info
-		lbModelInfo = new JLabel("TT/CV");
+		if(Annotator.output.equals("TT"))
+			modelInfo = "Testing/Training";
+		else if(Annotator.output.equals("CV"))
+			modelInfo = "Cross Validation";
+		
+		lbModelInfo = new JLabel("<html><b>Mode: </b>" + modelInfo + "</html>");
 		
 		pnlModelInfo = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		pnlModelInfo.setBorder(new CompoundBorder(new TitledBorder(null, "Model Info", 
-				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5)));
-		pnlModelInfo.add(lbModelInfo);
+		pnlModelInfo.setBorder(new EmptyBorder(5,5,5,5));
+		pnlModelInfo.add(lbModelInfo);		
 		
 		//Channel selection panel
 		pnlChannel = new JPanel();
-		pnlChannel.setLayout(new GridLayout(0, 1));
+		pnlChannel.setLayout(new GridLayout(3, 1));
 		pnlChannel.setBorder(new CompoundBorder(new TitledBorder(null, "Channel", 
 				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5)));
 		
@@ -62,6 +74,10 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		pnlChannel.add(rbGreen);
 		pnlChannel.add(rbBlue);
 		
+		//Panel for center part of right panel
+		pnlRightCenter = new JPanel(new BorderLayout());
+		pnlRightCenter.add(pnlChannel, BorderLayout.NORTH);
+		
 		//Expert and Auto Comparison buttons
 		btnExpert = new JButton("Expert");
 		btnExpert.addActionListener(this);
@@ -70,15 +86,15 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		
 		//Panel for buttons
 		pnlButton = new JPanel();
-		pnlButton.setLayout(new BoxLayout(pnlButton, BoxLayout.X_AXIS));
+		pnlButton.setLayout(new GridLayout(1, 2));
 		pnlButton.add(btnExpert);
 		pnlButton.add(btnAutoComp);
 		
 		//Add components to right side bar
-		pnlRight = new JPanel(new GridLayout(3, 1));
-		pnlRight.add(pnlModelInfo);
-		pnlRight.add(pnlChannel);
-		pnlRight.add(pnlButton);
+		pnlRight = new JPanel(new BorderLayout());
+		pnlRight.add(pnlModelInfo, BorderLayout.NORTH);
+		pnlRight.add(pnlRightCenter, BorderLayout.CENTER);
+		pnlRight.add(pnlButton, BorderLayout.SOUTH);
 		
 		//Text area for status
 		pnlStatus = new AnnOutputPanel();
@@ -95,6 +111,19 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	}
 	public void actionPerformed(ActionEvent e)
 	{
+		if(e.getSource() == btnExpert)
+		{
+			ExpertFrame ef = new ExpertFrame("Expert Mode", is3D);			
+			ef.setVisible(true);
+			ef.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			
+			ef.pack();
+			Dimension dim =
+				Toolkit.getDefaultToolkit().getScreenSize();
+			int x = (int)(dim.getWidth() - getWidth())/2;
+			int y = (int)(dim.getHeight() - getHeight())/2;
+			ef.setLocation(x,y);
+		}
 	}
 	public AnnTablePanel getTablePanel()
 	{
@@ -104,8 +133,14 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	{
 		return pnlStatus;
 	}
-	public void setModelInfo(String value)
+	public void channelEnabled(boolean flag)
 	{
-		lbModelInfo.setText(value);
+		rbRed.setEnabled(flag);
+		rbGreen.setEnabled(flag);
+		rbBlue.setEnabled(flag);
+	}
+	public void setIs3D(boolean flag)
+	{
+		this.is3D = flag;
 	}
 }

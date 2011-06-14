@@ -165,7 +165,7 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		modeGroup.add(rbCV);
 		
 		//Check box
-		cbLoo = new JCheckBox("LOO");
+		cbLoo = new JCheckBox("LOO (Leave One Out)");
 		cbLoo.addItemListener(this);
 		
 		//Spinner to select fold
@@ -296,12 +296,6 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 	}
 	public void displayImageReadyPanel()
 	{
-		//Set the model info field in the ImageReadyPanel
-		if(rbTT.isSelected())
-			pnlImages.setModelInfo("Testing/Training Mode");
-		else
-			pnlImages.setModelInfo("Cross Validation Mode");
-		
 		CardLayout cl = (CardLayout)(this.getLayout());
 		cl.show(this, IMAGEREADY);
 	}

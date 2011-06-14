@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Algorithms>
+	<Algorithm type="2DExtractor">
+		<Name>Wavelet</Name>
+		<Desc>2D discrete wavelet decomposition</Desc>
+		<Parameter type="Integer">
+			<Name>level</Name>
+			<Low>1</Low>
+			<High>10</High>
+			<Default>2</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>Principal Components</Name>
+		<Parameter type="Boolean">
+			<Name>Reduction</Name>
+			<Default>0</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="Selector">
+		<Name>mRMR-MIQ</Name>
+		<Parameter type="Integer">
+			<Name>feature selected</Name>
+			<Default>10</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="Classifier">
+		<Name>Support Vector Machine</Name>
+		<Parameter type="String">
+			<Name>Choices</Name>
+			<Default>-c 0</Default>
+		</Parameter>
+	</Algorithm>
+</Algorithms>
