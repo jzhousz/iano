@@ -49,7 +49,7 @@ public class AnnROIAnnotator extends Annotator {
 		DataInputDynamic testingProblem = new DataInputDynamic(testdir, testext, channel); 
 		
 		int[] resArr = new int[2];
-		int[][] trainingTargets = readTargets(trainingProblem, resArr, null, targetFile);  
+		int[][] trainingTargets = readTargets(trainingProblem, targetFile, resArr, null);  
 		float[][] trainingfeatures = extractGivenAMethod(featureExtractor, null, trainingProblem); //data,length, width, height);
 		int numoffeatures = getNumberofFeatures();
 	    int incomingDim = trainingfeatures[0].length;
