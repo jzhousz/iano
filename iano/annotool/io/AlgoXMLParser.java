@@ -21,11 +21,13 @@ public class AlgoXMLParser
 	public AlgoXMLParser()
 	{
 		extractors2D = new ArrayList<Algorithm>();
+		extractors2D.add(new Algorithm("None", "2DExtractor"));
 		extractors3D = new ArrayList<Algorithm>();
+		extractors3D.add(new Algorithm("None", "3DExtractor"));
 		selectors = new ArrayList<Algorithm>();
 		selectors.add(new Algorithm("None", "Selector"));
 		classifiers = new ArrayList<Algorithm>();
-		classifiers.add(new Algorithm("Compare All", "Classifier"));
+		//classifiers.add(new Algorithm("Compare All", "Classifier"));
 	}
 	public void runParser()
 	{
@@ -98,12 +100,11 @@ public class AlgoXMLParser
 		al.setDescription(desc);
 		
 		//Get the parameter for this algorithm
-		Parameter param = getParameter(el);
-		al.setParam(param);
+		addParameter(el, al);
 		
 		return al;
 	}
-	private Parameter getParameter(Element el)
+	private void addParameter(Element el, Algorithm al)
 	{
 		Parameter param = null;
 		String name = null,
@@ -117,20 +118,23 @@ public class AlgoXMLParser
 		{
 			for(int i = 0 ; i < nl.getLength();i++) 
 			{
-				//This method can be changed if there are multiple parameters for one algorithm
 				Element paramEl = (Element)nl.item(i);
 				name = getTextValue(paramEl, "Name");
 				type = paramEl.getAttribute("type");
 				min = getTextValue(paramEl, "Low");
 				max = getTextValue(paramEl, "High");
 				def = getTextValue(paramEl, "Default");
+				
+				//Create the parameter object
 				param = new Parameter(name, type);
 				param.setParamMax(max);
 				param.setParamMin(min);
 				param.setParamDefault(def);
+				
+				//Add parameter to list in algorithm
+				al.addParam(param);
 			}
 		}
-		return param;
 	}
 	public ArrayList<Algorithm> get2DExtractors()
 	{

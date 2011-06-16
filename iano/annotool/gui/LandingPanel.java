@@ -199,17 +199,30 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		btnLoadImages.addActionListener(this);		
 		
 		//Add components to container panel
-		pnlModeSelect = new JPanel();		
-		pnlModeSelect.setLayout(new GridLayout(3, 2));
+		pnlModeSelect = new JPanel();
+		pnlModeSelect.setLayout(new BorderLayout());
 		pnlModeSelect.setBorder(new EmptyBorder(20, 20, 20, 20) );
-		pnlModeSelect.add(pnlModeBox);
-		pnlModeSelect.add(pnlFoldBox);
+		
+		JPanel pnlSelectBoxes = new JPanel(new GridLayout(1, 2));
+		
+		pnlSelectBoxes.add(pnlModeBox);
+		pnlSelectBoxes.add(pnlFoldBox);
 		
 		pnlBtnContainer = new JPanel();
 		pnlBtnContainer.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		pnlBtnContainer.add(btnLoadImages);
-		pnlModeSelect.add(new JLabel(""));
-		pnlModeSelect.add(pnlBtnContainer);
+		//pnlModeSelect.add(new JLabel(""));
+		
+		//Header Panel
+		JPanel pnlHeader = new JPanel();
+		pnlHeader.setBorder(new EmptyBorder(20, 20, 20, 20));
+		//pnlHeader.add(new JLabel("Model Selection > Select Mode"));
+		pnlHeader.setBackground(java.awt.Color.LIGHT_GRAY);
+		pnlHeader.setPreferredSize(new java.awt.Dimension(500, 140));
+		
+		pnlModeSelect.add(pnlHeader, BorderLayout.NORTH);
+		pnlModeSelect.add(pnlSelectBoxes, BorderLayout.CENTER);
+		pnlModeSelect.add(pnlBtnContainer, BorderLayout.SOUTH);
 		
 		this.add(pnlModeSelect, MODESELECT);
 		
@@ -255,6 +268,13 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 			}
 			else
 			{
+				//Set choices
+				if(cbLoo.isSelected())
+					Annotator.fold = "LOO";
+				else
+				{
+					Annotator.fold = spFold.getValue().toString();
+				}
 				//Load one image set for cross validation
 				Annotator.output = Annotator.OUTPUT_CHOICES[1];
 				AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[1]);

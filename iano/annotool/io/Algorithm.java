@@ -1,5 +1,7 @@
 package annotool.io;
 
+import java.util.ArrayList;
+
 public class Algorithm 
 {
 	//Data members
@@ -7,12 +9,14 @@ public class Algorithm
 	private String type;
 	private String description = null;
 	
-	private Parameter param = null;
+	private ArrayList<Parameter> paramList = null;
 	
 	//Constructor
 	public Algorithm(String name, String type) {
 		this.name = name;
 		this.type = type;
+		
+		paramList = new ArrayList<Parameter>();
 	}
 	
 	//Access Methods
@@ -35,13 +39,14 @@ public class Algorithm
 		this.description = description;
 	}
 
-	public Parameter getParam() {
-		return param;
+	public ArrayList<Parameter> getParam() {
+		return paramList;
 	}
-
-	public void setParam(Parameter param) {
-		this.param = param;
+	public void addParam(Parameter param)
+	{
+		paramList.add(param);
 	}
+	
 	//Override toString method to use appropriate data for display (say in Combo box)
 	public String toString() {
 		return this.name;
