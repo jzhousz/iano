@@ -1,5 +1,7 @@
 package annotool.classify;
 
+import java.util.HashMap;
+
 import javax.swing.SwingUtilities;
 
 import annotool.Annotation;
@@ -175,29 +177,104 @@ public class Validator
 	      }
 	     //send to the classifier
          classifier.classify(trainingPatterns, trainingTargets, testingPatterns, prediction,  prob);
-         //System.out.println("prediciton[0]:" + prediction[0]);
          annos[k].anno = prediction[0];
          annos[k].prob = prob[0];
 	   }
 
    }
 
-  //overloadded version: no testing targets 
-  public int[] classify(float[][] trainingPatterns, float[][] testingPatterns, int[] trainingTargets, Classifier classifier)
-  {
-	  int testingLength = testingPatterns.length;
-	  int[]	 predictions = new int[testingLength];
-	  double[]	 prob = new double[testingLength];
-
-	  classifier.classify(trainingPatterns, trainingTargets, testingPatterns, predictions,  prob);
-	  return predictions;
-  }  
+ 
   
+  //overloaded version:  pass in String of the classifier name and parameter hashmap.
+  //It will just split the data, and call the xxxGivenMethod in Annotator class.
+  public float  KFoldGivenAClassifier(int K, float[][] data, int[] targets, String chosenClassifier, HashMap<String,String> para, boolean shuffle, Annotation[] results)
+  {
+	  int length = data.length;
+	  int dimension = data[0].length;
+	  
+	  if (shuffle)
+	    shuffle(length, dimension, data, targets);
+ 
+	  float[][] testingPatterns;
+      float[][] trainingPatterns;
+      int[] trainingTargets;
+      int[] testingTargets;
+      int[] predictions;
+      double[] prob;
+      int testinglength, traininglength; //may vary for the last fold 
+      int foldsize = length/K; //size per fold except the last one;
+
+      if (K > length)
+	  {
+		  System.out.println("K-fold validation must have a K that is smaller than the total number of observations");
+		  return 0;
+      }
+
+      int correct = 0;
+      for (int k = 0; k < K; k++)
+      {
+    	 //if GUI, update 5 times 
+    	 if (bar != null)
+    		 if (k%(K/5) == 0)
+    			    setProgress(totalRange/5*k/(K/5));
+		 if (k == K-1)  //the last fold may have more testing samples than other folds.
+			    testinglength = length/K + length %  K;
+		 else
+			    testinglength = length/K;
+
+		  traininglength = length - testinglength;
+		  System.out.println("foldsize:" + foldsize + "testing length:"+ testinglength+"training length:" + traininglength + "dimension:" + dimension);
+	      testingPatterns = new float[testinglength][dimension];
+	      trainingPatterns = new float[traininglength][dimension];
+	      trainingTargets = new int[traininglength];
+	      testingTargets = new int[testinglength];
+	
+		  //setup testing patterns
+		  for(int i=0; i<testinglength; i++)
+			  for(int j=0; j < dimension; j++)
+			  {
+			    testingPatterns[i][j] = data[k*foldsize+i][j];
+			    testingTargets[i] = targets[k*foldsize+i];
+		      }
+
+	      //setup training patterns before the testing samples
+		  for(int i=0; i< k*foldsize; i++)
+			 for(int j=0; j < dimension; j++)
+			  {
+			    trainingPatterns[i][j] = data[i][j];
+			    trainingTargets[i] = targets[i];
+		      }
+		  //the training samples after the testing samples
+	      for(int i= k*foldsize + testinglength; i< length; i++)
+			 for(int j=0; j < dimension; j++)
+			 {
+			    trainingPatterns[i-testinglength][j] = data[i][j];
+			    trainingTargets[i-testinglength] = targets[i];
+		     }
+
+    	 (new annotool.Annotator()).classifyGivenAMethod(chosenClassifier, para, trainingPatterns, testingPatterns, trainingTargets, testingTargets, results);
+    	 
+    	  //compare the output prediction with the real targets on the testing set
+         for(int i=0; i<testinglength; i++)
+         {
+			System.out.println("predicted category:" + results[i].anno);
+			System.out.println("actual category:" + testingTargets[i]);
+	        if(results[i].anno == testingTargets[i])
+	           correct ++;
+	     }
+      }
+
+      //output the overall results of all folds
+      System.out.println("overall recognition rate: " + (float)correct/length);
+      return (float) correct/length;
+	  
+  }
    
    /*
     * Input: training and testing data and targets
     * Function: send to classify
     * Ouput: prediction results, recognition rate
+    * It is called by classifyGivenAMethod() in Annotator
     */
    public float classify(float[][] trainingPatterns, float[][] testingPatterns,int[] trainingTargets, int[] testingTargets, Classifier classifier, Annotation[] annotations)
    {
@@ -221,9 +298,18 @@ public class Validator
       //output the overall results
     System.out.println("overall recognition rate: " + (float)correct/testingLength);
     return (float) correct/testingLength;
-       
    }
    
+   //overloaded version: no testing targets 
+   public int[] classify(float[][] trainingPatterns, float[][] testingPatterns, int[] trainingTargets, Classifier classifier)
+   {
+ 	  int testingLength = testingPatterns.length;
+ 	  int[]	 predictions = new int[testingLength];
+ 	  double[]	 prob = new double[testingLength];
+
+ 	  classifier.classify(trainingPatterns, trainingTargets, testingPatterns, predictions,  prob);
+ 	  return predictions;
+   }  
    
    //shuffle the data
    private void shuffle(int length, int dimension, float[][] data, int[] targets)
