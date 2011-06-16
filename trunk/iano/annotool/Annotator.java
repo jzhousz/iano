@@ -518,7 +518,7 @@ public class Annotator implements Runnable
      *     resArry[0]: number of annotations (targets); resArry[1]: max class in all columns of targets
      * Other: set the annotationLabels via argument (if input is null, it won't be set).
      */
-    protected int[][] readTargets(DataInput problem, String filename, int[] resArr, java.util.ArrayList<String> annotationLabels) {
+    public int[][] readTargets(DataInput problem, String filename, int[] resArr, java.util.ArrayList<String> annotationLabels) {
         int numOfAnno = 0;
         int maxClassAllTargets = 0;
         int[][] targets = null;
@@ -554,7 +554,7 @@ public class Annotator implements Runnable
      *   recognition rate. 
      *    
      */
-    protected float classifyGivenAMethod(String chosenClassifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) {
+    public float classifyGivenAMethod(String chosenClassifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) {
         int numoffeatures = selectedTrainingFeatures[0].length;
         Classifier classifier = null;
         if (chosenClassifier.equalsIgnoreCase("SVM")) {
@@ -572,10 +572,9 @@ public class Annotator implements Runnable
             setGUIOutput(chosenClassifier + "is not a supported classifer.");
             return 0;
         }
-        //float rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
+        float rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
         //System.out.println("recognition rate:" + rate);
-        //return rate;
-        return 0;
+        return rate;
     }
 
     /*
@@ -587,7 +586,7 @@ public class Annotator implements Runnable
      * TBD: The "extractor" may be a classname to allow dynamic loading of algorithm classes.
      *
      */
-    protected float[][] extractGivenAMethod(String extractor, java.util.HashMap<String, String> parameters, DataInput problem) {
+    public float[][] extractGivenAMethod(String extractor, java.util.HashMap<String, String> parameters, DataInput problem) {
         float[][] features = null;
         int stackSize = problem.getStackSize();
 
@@ -680,7 +679,7 @@ public class Annotator implements Runnable
      * Feature selector that takes 1 set. Used in cv mode
      * To be checked later.
      */
-    protected float[][] selectGivenAMethod(String chosenSelector, String parameter, float[][] features, int[] targets) {
+    public float[][] selectGivenAMethod(String chosenSelector, String parameter, float[][] features, int[] targets) {
         int incomingDim = features[0].length;
         int length = features.length;
         int numoffeatures;
@@ -725,7 +724,7 @@ public class Annotator implements Runnable
      *  Return: two feature sets wrapped in ComboFeatures
      *  This method takes a HashMap for possible parameters.
      */
-    protected ComboFeatures selectGivenAMethod(String chosenSelector, java.util.HashMap<String, String> parameters, float[][] trainingFeatures, float[][] testingFeatures, int[] trainTargets, int[] testTargets) {
+    public ComboFeatures selectGivenAMethod(String chosenSelector, java.util.HashMap<String, String> parameters, float[][] trainingFeatures, float[][] testingFeatures, int[] trainTargets, int[] testTargets) {
         //dimension of extracted features before selection
         int incomingDim = trainingFeatures[0].length;
         int trainingLength = trainingFeatures.length;
@@ -963,6 +962,14 @@ public class Annotator implements Runnable
         System.out.println("\twaveletlevel:" + DEFAULT_WAVLEVEL);
         System.out.println("\tfold:" + DEFAULT_FOLD);
     }
+
+	public java.util.ArrayList<String> getAnnotationLabels() {
+		return annotationLabels;
+	}
+
+	public void setAnnotationLabels(java.util.ArrayList<String> annotationLabels) {
+		this.annotationLabels = annotationLabels;
+	}
 
     /*
      *

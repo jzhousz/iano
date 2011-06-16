@@ -26,6 +26,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	JButton btnExpert, btnAutoComp;
 	
 	String[] channels = {  "red (channel 1)", "green (channel 2)", "blue (channel 3)" };
+	String[] channelInputs = {  "r", "g", "b" };//actual input to algorithm
 	
 	private AnnOutputPanel pnlStatus;
 	private AnnTablePanel pnlTable;
@@ -113,7 +114,14 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	{
 		if(e.getSource() == btnExpert)
 		{
-			ExpertFrame ef = new ExpertFrame("Expert Mode", is3D);			
+			if(rbRed.isSelected())
+				Annotator.channel = channelInputs[0];
+			else if(rbGreen.isSelected())
+				Annotator.channel = channelInputs[1];
+			else if(rbBlue.isSelected())
+				Annotator.channel = channelInputs[2];
+			
+			ExpertFrame ef = new ExpertFrame("Expert Mode", is3D, Annotator.channel);			
 			ef.setVisible(true);
 			ef.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			
