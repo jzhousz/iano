@@ -568,12 +568,6 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             AnnVisualPanel pnlVisual = new AnnVisualPanel(tabPane, tabNumber++);
             tabPane.addTab(anno.getAnnotationLabels().get(i), null, pnlVisual, "Result Visualization");
             pnlVisual.showResult(rate, testingTargets[i], annotations[i]);
-            
-            //Display confusion matrix
-            //TODO
-            ConfusionPanel pnlConfusion = new ConfusionPanel(tabPane, tabNumber++);
-            tabPane.addTab("Confusion Matrix - " + anno.getAnnotationLabels().get(i), pnlConfusion);
-            
                 
             pnlOutput.setOutput("Recog Rate for " + anno.getAnnotationLabels().get(i) + ": " + rate);
             if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
@@ -587,7 +581,13 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
                 /*if (gui != null) {
                     gui.addCompareResultPanel(AnnControlPanel.classifiers, rates, AnnControlPanel.classifiers.length - 1);
                 }*/
-            }//end of loop for annotation targets
+        }//end of loop for annotation targets
+        
+        //Display confusion matrix
+        //TODO
+        ConfusionPanel pnlConfusion = new ConfusionPanel(tabPane, tabNumber++);
+        tabPane.addTab("Confusion Matrix", pnlConfusion);
+        pnlConfusion.showMatrix(testingTargets, annotations);
 	}
 	
 	//Cross validation
