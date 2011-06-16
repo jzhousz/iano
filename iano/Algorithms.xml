@@ -24,11 +24,44 @@
 			<Default>10</Default>
 		</Parameter>
 	</Algorithm>
+	<Algorithm type="Selector">
+		<Name>mRMR-MID</Name>
+		<Parameter type="Integer">
+			<Name>feature selected</Name>
+			<Default>10</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>HAAR</Name>
+		<Parameter type="Integer">
+			<Name>Wavelet Level</Name>
+			<Default>2</Default>
+		</Parameter>
+	</Algorithm>
 	<Algorithm type="Classifier">
-		<Name>Support Vector Machine</Name>
+		<Name>SVM</Name>
+		<Desc>Support Vector Machine</Desc>
 		<Parameter type="String">
-			<Name>Choices</Name>
-			<Default>-c 0</Default>
+			<Name>General Parameter</Name>
+			<Default>-s 0</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="Classifier">
+		<Name>Tree</Name>
+	</Algorithm>
+	<Algorithm type="Classifier">
+		<Name>Naive Bayes</Name>
+	</Algorithm>
+	<Algorithm type="Classifier">
+		<Name>Random Forest</Name>
+	</Algorithm>
+	<Algorithm type="Classifier">
+		<Name>Nearest Neighbor</Name>
+		<Parameter type="Integer">
+			<Name>K</Name>
+			<Low>1</Low>
+			<High>10</High>
+			<Default>3</Default>
 		</Parameter>
 	</Algorithm>
 </Algorithms>
