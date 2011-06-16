@@ -50,7 +50,7 @@ public class mRMRFeatureSelector implements FeatureSelector
 	public mRMRFeatureSelector(float[][] features, int[] targets, String methodname, java.util.HashMap<String, String> parameters)
 	{
 		int threshold = 0;
-		boolean discreteflag = false;
+		boolean discreteflag = true; //default is to discretize
 		
 		//get the parameters and set the instance variables.
 		this.features = features;

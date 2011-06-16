@@ -378,7 +378,7 @@ public class Annotator implements Runnable
         if (!setProgress(30)) {
             return;
         }
-        setGUIOutput("Extracing features ... ");
+        setGUIOutput("Extracting features ... ");
         float[][] features = extractGivenAMethod(featureExtractor, null, problem);
         //raw data is not used after this point, set to null.
         problem.setDataNull();
@@ -453,12 +453,12 @@ public class Annotator implements Runnable
             if (!featureSelector.equalsIgnoreCase("None")) {
                 setGUIOutput("Selecting features ... ");
                 //override the original features and num of features
-                features = selectGivenAMethod(featureSelector, "", features, targets[i]);
+                features = selectGivenAMethod(featureSelector, null, features, targets[i]);
                 numoffeatures = features[0].length;
             }
 
             setGUIOutput("Classifying/Annotating ... ");
-            Classifier classifier = null;
+            /*Classifier classifier = null;
             if (classifierChoice.equalsIgnoreCase("SVM")) {
                 classifier = new SVMClassifier(numoffeatures, svmpara);
             }
@@ -469,7 +469,9 @@ public class Annotator implements Runnable
                 classifier = new WekaClassifiers(numoffeatures, classifierChoice);
             }
             recograte = (new Validator(bar, start, region)).KFold(K, features, targets[i], classifier, shuffle, results[i]);
-
+            */
+            recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, null, shuffle, results[i]);
+            
             //output results to GUI and file
             System.out.println("rate for annotation target " + i + ": " + recograte);
             setGUIOutput("Recog Rate for " + annotationLabels.get(i) + ": " + recograte);
@@ -653,9 +655,10 @@ public class Annotator implements Runnable
     }
 
     /*
-     * overloaded version of the extractor that takes 2 data sets
-     * useful for methods such as PCA when feature extraction cannot be done separately.
-     * TBD.
+     * Overloaded version of the extractor that takes 2 data sets
+     * It may be useful for methods such as PCA when feature extraction cannot be done separately.
+     * It may also take an object (e.g. transform matrix / model) and a problem.
+     * Tb Be Done later.
      */
     protected void extractGivenAMethod(String chosenExtractor, String parameter, DataInput trainingproblem, DataInput testingproblem) {
         //check which method it is;
@@ -668,7 +671,6 @@ public class Annotator implements Runnable
             //2. get the transforming coefficients from training
             //3. apply to testing
             //pass back. Using ComboFeatures singleton
-            ;
         }
         else {
             System.out.println("No need to call this version of extractGivenAMethod");
@@ -676,47 +678,35 @@ public class Annotator implements Runnable
     }
 
     /*
-     * Feature selector that takes 1 set. Used in cv mode
-     * To be checked later.
+     * Feature selector that takes 1 set. Used in cross validation mode.
+     *
      */
-    public float[][] selectGivenAMethod(String chosenSelector, String parameter, float[][] features, int[] targets) {
-        int incomingDim = features[0].length;
-        int length = features.length;
-        int numoffeatures;
+    public float[][] selectGivenAMethod(String chosenSelector, HashMap<String,String> parameters, float[][] features, int[] targets) {
+  
+        if (chosenSelector.equalsIgnoreCase("None")) 
+            return features;
 
-        if (chosenSelector.equalsIgnoreCase("None")) {
-            return null;
-        }
-        else //will be passed in through parameter String argument later
+        if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || chosenSelector.equalsIgnoreCase("mRMR-MID")) 
         {
-            numoffeatures = getNumberofFeatures();
-        }
-
-        if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || chosenSelector.equalsIgnoreCase("mRMR-MID")) {
-            //parsing mRMR parameters. Will be moved into algorithm class.
-            float th = Float.parseFloat(threshold);
-            boolean discrete = Boolean.parseBoolean(discreteFlag);
-            //String mRMRPara = "-f " + numoffeatures + " -t " + threshold + " -d "+ discreteFlag;
-            //discrete, if set, is done on the set inside the method.
-            FeatureSelector selector = (new mRMRFeatureSelector(features, targets, length, incomingDim, numoffeatures, featureSelector, discrete, th));
+            FeatureSelector selector = (new mRMRFeatureSelector(features, targets, chosenSelector, parameters));	
             try {
                 features = selector.selectFeatures();
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.err.println(e.getMessage());
             }
         }
         else if (chosenSelector.equalsIgnoreCase("Information Gain")) {
+            int numoffeatures = getNumberofFeatures(); // will be passed in as parameter to selector later
             FeatureSelector selector = new WeKaFeatureSelectors(features, targets, numoffeatures, null, 0.2);
             try {
                 features = selector.selectFeatures();
-            }
-            catch (Exception e) {
+            }  catch (Exception e) {
                 System.err.println(e.getMessage());
             }
         }
 
         return features;
+        
     }
 
     /*
@@ -727,21 +717,13 @@ public class Annotator implements Runnable
     public ComboFeatures selectGivenAMethod(String chosenSelector, java.util.HashMap<String, String> parameters, float[][] trainingFeatures, float[][] testingFeatures, int[] trainTargets, int[] testTargets) {
         //dimension of extracted features before selection
         int incomingDim = trainingFeatures[0].length;
-        int trainingLength = trainingFeatures.length;
-        int testingLength = testingFeatures.length;
-        int numoffeatures;
-        //the selector may still be None if called by outsider.
+        int numoffeatures;  //will be removed after all algorithms take HashMap
         if (chosenSelector.equalsIgnoreCase("None")) //use the original feature without selection
-        {
             numoffeatures = incomingDim;
-        }
-        else //will be passed in through parameter String argument later
-        {
+        else //is also passed in through parameter argument if applicable to the algorithm 
             numoffeatures = getNumberofFeatures();
-        }
-
-        //if incrementally reading the images,
-        //the flow will be different (cann't get features in one shot .... 5/3/2011)
+ 
+        //if incrementally reading the images, the flow will be different (cann't get features in one shot .. 5/3/2011)
         float[][] selectedTrainingFeatures = null;
         int[] indices = null;
         if (chosenSelector.equalsIgnoreCase("Fisher")) {
@@ -766,18 +748,12 @@ public class Annotator implements Runnable
             //parsing algorithm parameters. Will be moved into algorithm class.
             boolean discrete = Boolean.parseBoolean(parameters.get("DISCRETE_FLAG"));
             if (discrete) //discretize data in a combined way,
-            {
+            	//Need a special flag that is common for all algorithms if other algorithms need to do this too.
                 annotool.Util.discretizeCombinedUnsupervised(trainingFeatures, testingFeatures, trainTargets, testTargets);
-            }
-
+ 
             FeatureSelector selector = (new mRMRFeatureSelector(trainingFeatures, trainTargets, chosenSelector, parameters));
             try {
                 selectedTrainingFeatures = selector.selectFeatures();
-            }
-            catch (Exception e) {
-                System.err.println(e.getMessage());
-            }
-            try {
                 indices = selector.getIndices();
             }
             catch (Exception e) {
@@ -793,12 +769,7 @@ public class Annotator implements Runnable
             FeatureSelector selector = new WeKaFeatureSelectors(trainingFeatures, trainTargets, numoffeatures, null, 0.2);
             try {
                 selectedTrainingFeatures = selector.selectFeatures();
-            }
-            catch (Exception e) {
-                System.err.println(e.getMessage());
-            }
-            //apply to testing. IMPORTANT: dimension has changed by feature selector
-            try {
+                 //apply to testing. IMPORTANT: dimension has changed by feature selector
                 indices = selector.getIndices();
             }
             catch (Exception e) {
@@ -809,6 +780,10 @@ public class Annotator implements Runnable
             float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
             ComboFeatures.getInstance().setTrainingFeatures(selectedTrainingFeatures);
             ComboFeatures.getInstance().setTestingFeatures(selectedTestingFeatures);
+        }else if (chosenSelector.equalsIgnoreCase("None")) 
+        {
+            ComboFeatures.getInstance().setTrainingFeatures(trainingFeatures);
+            ComboFeatures.getInstance().setTestingFeatures(testingFeatures);
         }
 
         return ComboFeatures.getInstance();
