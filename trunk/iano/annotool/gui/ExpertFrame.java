@@ -667,7 +667,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             return;
         }
         pnlOutput.setOutput("Extracing features ... ");
-        float[][] features = anno.extractGivenAMethod(featureExtractor, null, problem);
+        float[][] features = anno.extractGivenAMethod(featureExtractor, exParams, problem);
         //raw data is not used after this point, set to null.
         problem.setDataNull();
 
@@ -737,24 +737,13 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             if (!featureSelector.equalsIgnoreCase("None")) {
                 pnlOutput.setOutput("Selecting features ... ");
                 //override the original features and num of features
-                features = anno.selectGivenAMethod(featureSelector, "", features, targets[i]);
+                features = anno.selectGivenAMethod(featureSelector, selParams, features, targets[i]);
                 numoffeatures = features[0].length;
             }
 
             pnlOutput.setOutput("Classifying/Annotating ... ");
-            //TODO: This part should be more flexible
-            Classifier classifierObj = null;
-            if (classifierChoice.equalsIgnoreCase("SVM")) {
-            	classifierObj = new SVMClassifier(numoffeatures, classParams.get("General Parameter"));
-            }
-            else if (classifierChoice.equalsIgnoreCase("LDA")) {
-            	classifierObj = new LDAClassifier(numoffeatures);
-            }
-            else if (classifierChoice.startsWith("W_")) {
-            	classifierObj = new WekaClassifiers(numoffeatures, classifierChoice);
-            }
-            recograte = (new Validator(bar, start, region)).KFold(K, features, targets[i], classifierObj, shuffle, results[i]);
-
+            recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, null, shuffle, results[i]);
+            
             //output results to GUI and file
             System.out.println("rate for annotation target " + i + ": " + recograte);
             pnlOutput.setOutput("Recog Rate for " + anno.getAnnotationLabels().get(i) + ": " + recograte);
