@@ -264,6 +264,7 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 			{
 				//Load separate training and testing image sets
 				Annotator.output = Annotator.OUTPUT_CHOICES[0];
+				pnlImages.setModeInfo();
 				AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[0]);
 			}
 			else
@@ -277,6 +278,7 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 				}
 				//Load one image set for cross validation
 				Annotator.output = Annotator.OUTPUT_CHOICES[1];
+				pnlImages.setModeInfo();
 				AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[1]);
 			}
 		}

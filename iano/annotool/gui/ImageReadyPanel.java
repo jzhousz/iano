@@ -38,14 +38,9 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	
 	public ImageReadyPanel(AnnotatorGUI gui)
 	{
-		this.gui = gui;
-		//Information panel with label to display info
-		if(Annotator.output.equals("TT"))
-			modelInfo = "Testing/Training";
-		else if(Annotator.output.equals("CV"))
-			modelInfo = "Cross Validation";
+		this.gui = gui;		
 		
-		lbModelInfo = new JLabel("<html><b>Mode: </b>" + modelInfo + "</html>");
+		lbModelInfo = new JLabel();
 		
 		pnlModelInfo = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		pnlModelInfo.setBorder(new EmptyBorder(5,5,5,5));
@@ -150,5 +145,14 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	public void setIs3D(boolean flag)
 	{
 		this.is3D = flag;
+	}
+	public void setModeInfo()
+	{
+		//Information panel with label to display info		
+		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[0]))
+			modelInfo = "Testing/Training";
+		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[1]))
+			modelInfo = "Cross Validation. " + "Fold: " + Annotator.fold;
+		lbModelInfo.setText("<html><b>Mode: </b>" + modelInfo + "</html>");
 	}
 }
