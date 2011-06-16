@@ -742,7 +742,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             }
 
             pnlOutput.setOutput("Classifying/Annotating ... ");
-            recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, null, shuffle, results[i]);
+            recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, classParams, shuffle, results[i]);
             
             //output results to GUI and file
             System.out.println("rate for annotation target " + i + ": " + recograte);
