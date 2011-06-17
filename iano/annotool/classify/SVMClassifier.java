@@ -286,6 +286,7 @@ public class SVMClassifier implements Classifier
     *  Interface methods to be added to annotool.classify.Classifier:  
     *    --  Use object serialization for uniform interface. It may be just a String.
     *    --  Assumption: The returned model object needs to be serializable.  
+    *  public Object trainingOnly(float[][] trainingpatterns, int[] trainingtargets);
     *  public Object getModel();  //get and/or save
     *  public void setModel(Object); //load
     *  public int classifyUsingModel(Object model, float[] testingPattern) throws Exception
@@ -306,8 +307,8 @@ public class SVMClassifier implements Classifier
     *     
     */
     
-    //training only and return the model
-    public svm_model trainingOnly(float[][] trainingpatterns, int[] trainingtargets)
+    //training only and sets the internal model
+    public void trainingOnly(float[][] trainingpatterns, int[] trainingtargets)
     {
 	    int traininglength = trainingpatterns.length;
 	    dimension = trainingpatterns[0].length;
@@ -319,7 +320,6 @@ public class SVMClassifier implements Classifier
 			param.svm_type == svm_parameter.NU_SVR)
 		{
 			System.out.println("svm type is set to regression. It should be classification.");
-			return null;
 	    }
 	    else
 	    {
@@ -342,14 +342,14 @@ public class SVMClassifier implements Classifier
 			trainedModel = svm.svm_train(prob, param);
 	    }
         
-        return trainedModel;
     }
     
     /**
-     * Returns the model. The return value may be the content of the model or just
-     *   a file name where the actual model is depending on the actual classifier.
-     * In the case of LibSVM, it returns the filename (which was passed in) and the saving to the file is done inside. 
-     * This method is pairs up with a setter.
+     * Returns the model, for persistence if needed. 
+     * The return value may be the content of the internal model OR just
+     *   a filename where the actual model is saved, depending on the actual classifier.
+     * In the case of LibSVM, it returns the filename and the saving to the file is done inside. 
+     * This method pairs up with a setter.
      */
     public Object getModel(String model_file_name)
     {
@@ -402,16 +402,22 @@ public class SVMClassifier implements Classifier
       which may be set by setModel() or a previous call of the method. So this method can be called
       in a loop to classify multiple testing patterns (see the overloaded method for example).
      * 
-     * @param model
+     * @param model: null (if internal model is set), String (persisted), or svm_model (internal)
      * @param testingPattern
      * @return prediction (int)
      * @throws Exception
      */
     public int classifyUsingModel(Object model, float[] testingPattern) throws Exception
     {
-       	if (model != null) setModel(model);
+       	if (model != null) //model may be null, but only when the internal model is already set.
+       	{
+       		if (model instanceof String) //load from persisted trained model
+       		   setModel(model);
+       		else if (model instanceof svm_model) //pass in an internal model
+       			trainedModel = (svm_model) model;
+       		}
     	else  if(trainedModel == null)
-    	{  //when parameter is null && there is no instance variable that contains a valid model
+    	{  //when model is null && there is no instance variable that contains a valid model
     		System.err.println("Err: must pass in a model.");
     		throw new Exception("Err: must pass in a model.");
     	}   	
@@ -444,12 +450,20 @@ public class SVMClassifier implements Classifier
      */     
     public int[] classifyUsingModel(Object model, float[][] testingPatterns) throws Exception
     {
-    	if (model != null) setModel(model);
+        //check the type of model
+    	if (model != null) //model may be null, but only when the internal model is already set.
+       	{
+       		if (model instanceof String) //load from persisted trained model
+       		   setModel(model);
+       		else if (model instanceof svm_model) //pass in an internal model
+       			trainedModel = (svm_model) model;
+       		}
     	else  if(trainedModel == null)
-    	{  //there is no instance variable that contains a valid model
-    		System.err.println("Err: Must pass in a model");
-    		return null;
-    	}
+    	{  //when model is null && there is no instance variable that contains a valid model
+    		System.err.println("Err: must pass in a model.");
+    		throw new Exception("Err: must pass in a model.");
+    	}   	
+
     	
     	//allocate predictions
     	int[] predictions = new int[testingPatterns.length];
