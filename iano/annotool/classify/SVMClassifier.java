@@ -271,22 +271,12 @@ public class SVMClassifier implements Classifier
     }
     
     /** 6/14/2011 add 5 methods to save model/load model and classify based on model
-    * Code examples using model saving/loading:
-    *  //SVMClassifier c = new SVMClassifier(parameters);
-    *  //c.trainingOnly(selectedTrainingFeatures, trainingtargets);
-    *  ////save to file
-    *  //String model = (String) c.getModel("modelfile_SVM");
-    *  ////load and use
-    *  //try{
-    *  // int[] predictions = c.classifyUsingModel(model, selectedTestingFeatures);
-    *  // }catch(Exception e)
-    *  //{ e.printStackTrace();}
     *  
     *  Rewrite: 6/17/2011
     *  Interface methods to be added to annotool.classify.Classifier:  
     *    --  Use object serialization for uniform interface. It may be just a String.
     *    --  Assumption: The returned model object needs to be serializable.  
-    *  public Object trainingOnly(float[][] trainingpatterns, int[] trainingtargets);
+    *  public void trainingOnly(float[][] trainingpatterns, int[] trainingtargets);
     *  public Object getModel();  //get and/or save
     *  public void setModel(Object); //load
     *  public int classifyUsingModel(Object model, float[] testingPattern) throws Exception
