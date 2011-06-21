@@ -17,6 +17,10 @@ import annotool.classify.SVMClassifier;
 import annotool.classify.Validator;
 import annotool.classify.WekaClassifiers;
 import annotool.io.AlgoXMLParser;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -179,7 +183,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 	            isRunning = true;
 	            thread.start();
 	        }
-	    }
+	    }		
 	}
 	public void itemStateChanged(ItemEvent e)
 	{
@@ -430,6 +434,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 			ttRun();
 		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[1]))
 			cvRun();
+		thread = null;
 	}
 	
 	//Training/Testing
@@ -568,6 +573,16 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             AnnVisualPanel pnlVisual = new AnnVisualPanel(tabPane, tabNumber++);
             tabPane.addTab(anno.getAnnotationLabels().get(i), null, pnlVisual, "Result Visualization");
             pnlVisual.showResult(rate, testingTargets[i], annotations[i]);
+            
+            //Display graphical result
+            /*VisualizationPanel pnlChart = new VisualizationPanel(tabPane, tabNumber++);
+            tabPane.addTab(anno.getAnnotationLabels().get(i), pnlChart);
+            pnlChart.showResult(rate, testingTargets[i], annotations[i]);*/
+            
+            //Display result
+            ResultPanel pnlResult = new ResultPanel(tabPane, tabNumber++);
+            tabPane.addTab("Result - " + anno.getAnnotationLabels().get(i), pnlResult);
+            pnlResult.showResult(rate, testingTargets[i], annotations[i]);
                 
             pnlOutput.setOutput("Recog Rate for " + anno.getAnnotationLabels().get(i) + ": " + rate);
             if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
@@ -581,13 +596,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
                 /*if (gui != null) {
                     gui.addCompareResultPanel(AnnControlPanel.classifiers, rates, AnnControlPanel.classifiers.length - 1);
                 }*/
-        }//end of loop for annotation targets
+        }//end of loop for annotation targets        
         
-        //Display confusion matrix
-        //TODO
-        ConfusionPanel pnlConfusion = new ConfusionPanel(tabPane, tabNumber++);
-        tabPane.addTab("Confusion Matrix", pnlConfusion);
-        pnlConfusion.showMatrix(testingTargets, annotations);
 	}
 	
 	//Cross validation
@@ -751,6 +761,12 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             AnnVisualPanel pnlVisual = new AnnVisualPanel(tabPane, tabNumber++);
             tabPane.addTab(anno.getAnnotationLabels().get(i), null, pnlVisual, "Result Visualization");
             pnlVisual.showResult(recograte, targets[i], results[i]);
+            
+            //Display result
+            ResultPanel pnlResult = new ResultPanel(tabPane, tabNumber++);
+            tabPane.addTab("Result - " + anno.getAnnotationLabels().get(i), pnlResult);
+            pnlResult.showResult(recograte, targets[i], results[i]);
+            
             /*if (outputfile != null && fileFlag.equals("true")) {
                 try {
                     outputfile.write("Recognition Rate for annotation target " + i + ": " + recograte);

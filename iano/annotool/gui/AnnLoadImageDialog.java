@@ -35,8 +35,8 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 	JComboBox testextBox = new JComboBox(extensions);
 	JButton testtargetFile = new JButton("Browse ...");
 
-	JButton loadImageB = new JButton("Load Images");
-	JButton combinedLoadImageB = new JButton("Load Images");
+	JButton loadImageB = new JButton("Load");
+	JButton combinedLoadImageB = new JButton("Load");
 	JButton cancelB = new JButton("Cancel");
 	
 	LandingPanel pnlLanding = null;
