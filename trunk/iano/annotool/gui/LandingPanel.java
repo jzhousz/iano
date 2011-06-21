@@ -32,7 +32,7 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 				   lbSpinner;
 	
 	private JRadioButton rbTT, rbCV; //Test-Train and Cross-Validation
-	private JCheckBox cbLoo;
+	private JCheckBox cbLoo, cbShuffle;
 	private JSpinner spFold;
 	
 	//Path of image icons for the buttons on main screen
@@ -44,6 +44,9 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 	final static String MAIN = "First Panel";
 	final static String MODESELECT = "Mode Select Panel";
 	final static String IMAGEREADY = "Image Ready Panel";
+	
+	//Larger font for titles
+	Font titleFont = new Font("Dialog", 1, 14);
 	
 	//Main GUI
 	AnnotatorGUI gui = null;
@@ -106,10 +109,9 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		lbAnnotateSmall = new JLabel("Image classification and labelling using a trained model.");
 		
 		//Set a larger font for the title labels
-		Font f = new Font("Dialog", 1, 14);
-		lbMS.setFont(f);
-		lbTrain.setFont(f);
-		lbAnnotate.setFont(f);
+		lbMS.setFont(titleFont);
+		lbTrain.setFont(titleFont);
+		lbAnnotate.setFont(titleFont);
 		
 		//Panels for layout
 		pnlRow1 = new JPanel();
@@ -167,12 +169,14 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		//Check box
 		cbLoo = new JCheckBox("LOO (Leave One Out)");
 		cbLoo.addItemListener(this);
+		cbShuffle = new JCheckBox("Shuffle");
 		
 		//Spinner to select fold
 		spFold = new JSpinner(new SpinnerNumberModel(5, 2, 10, 1));
 		
 		//Label
 		lbSpinner = new JLabel("Fold (2 to 10)");
+		
 		
 		//Add radio buttons to mode panel
 		pnlModeBox = new JPanel();
@@ -185,15 +189,17 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		
 		//Add components to fold panel
 		pnlFoldBox = new JPanel();
-		pnlFoldBox.setLayout(new GridLayout(2, 1));
-		pnlFoldBox.setBorder(new CompoundBorder(new TitledBorder(null, "Fold", 
-				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5)));
-		pnlFoldBox.add(cbLoo);
+		pnlFoldBox.setLayout(new GridLayout(3, 1));
+		pnlFoldBox.setBorder(new CompoundBorder(new TitledBorder(null, "CV Parameters", 
+				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5)));		
+		
 		pnlSpinner = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		pnlSpinner.add(lbSpinner);
 		pnlSpinner.add(spFold);		
-		pnlFoldBox.add(pnlSpinner);
 		
+		pnlFoldBox.add(cbLoo);
+		pnlFoldBox.add(pnlSpinner);
+		pnlSpinner.add(cbShuffle);
 		//Button
 		btnLoadImages = new JButton("Load Images");
 		btnLoadImages.addActionListener(this);		
@@ -214,11 +220,23 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		//pnlModeSelect.add(new JLabel(""));
 		
 		//Header Panel
-		JPanel pnlHeader = new JPanel();
-		pnlHeader.setBorder(new EmptyBorder(20, 20, 20, 20));
+		JPanel pnlHeader = new JPanel(new BorderLayout());
+		pnlHeader.setBorder(new CompoundBorder(new TitledBorder(null, "", 
+				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5)));
 		//pnlHeader.add(new JLabel("Model Selection > Select Mode"));
-		pnlHeader.setBackground(java.awt.Color.LIGHT_GRAY);
-		pnlHeader.setPreferredSize(new java.awt.Dimension(500, 140));
+		//pnlHeader.setBackground(java.awt.Color.LIGHT_GRAY);
+		//pnlHeader.setPreferredSize(new java.awt.Dimension(500, 140));
+		
+		JLabel lbHeadTitle = new JLabel("Mode Selection");
+		lbHeadTitle.setFont(titleFont);
+		
+		JPanel pnlHeaderDesc = new JPanel(new GridLayout(3, 1));
+		pnlHeaderDesc.add(lbHeadTitle);
+		pnlHeaderDesc.add(new JLabel("Testing/Training: Load different image sets for testing and training"));
+		pnlHeaderDesc.add(new JLabel("Cross Validation: Load single image set for both testing and training"));
+		
+		pnlHeader.add(new JLabel(iconMS), BorderLayout.WEST);
+		pnlHeader.add(pnlHeaderDesc, BorderLayout.CENTER);
 		
 		pnlModeSelect.add(pnlHeader, BorderLayout.NORTH);
 		pnlModeSelect.add(pnlSelectBoxes, BorderLayout.CENTER);
@@ -275,6 +293,7 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 				else
 				{
 					Annotator.fold = spFold.getValue().toString();
+					Annotator.shuffleFlag = (cbShuffle.isSelected()) ? "true" : "false";
 				}
 				//Load one image set for cross validation
 				Annotator.output = Annotator.OUTPUT_CHOICES[1];
@@ -292,6 +311,7 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		{
 			spFold.setEnabled(!cbLoo.isSelected());
 			lbSpinner.setEnabled(!cbLoo.isSelected());
+			cbShuffle.setEnabled(!cbLoo.isSelected());
 		}
 		else if(e.getSource() == rbCV)
 			foldEnabled(true);
@@ -309,11 +329,13 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		{
 			spFold.setEnabled(!cbLoo.isSelected());
 			lbSpinner.setEnabled(!cbLoo.isSelected());
+			cbShuffle.setEnabled(!cbLoo.isSelected());
 		}		
 		else
 		{
 			spFold.setEnabled(flag);
 			lbSpinner.setEnabled(flag);
+			cbShuffle.setEnabled(flag);
 		}
 	}
 	public void displayImageReadyPanel()
