@@ -44,7 +44,7 @@ validation accuracy/mean squared error on them.
 
 **/
 
-public class SVMClassifier implements Classifier
+public class SVMClassifier implements SavableClassifier
 {
     int dimension;
     int maxClassNum = 0;
