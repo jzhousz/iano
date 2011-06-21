@@ -150,7 +150,14 @@ public class AnnROIAnnotator extends Annotator {
 		
 		//apply the training model, cast an ArrayList of one D array to a two D array.
 		//would be more space efficient if Validator separates train() and test() so only one array is needed.
-		int[] predictions = (new Validator()).classify(trainingfeatures, testingROIPatterns, trainingTargets[0], classifier);
+		int[] predictions = null;
+		try {
+		  predictions = (new Validator()).classify(trainingfeatures, testingROIPatterns, trainingTargets[0], classifier);
+		}catch(Exception e)
+		{
+			System.err.println(e.getMessage());
+		}
+		
 		
 		markResultsOnImage(imp, predictions);
 	}
