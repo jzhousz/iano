@@ -313,19 +313,25 @@ public class Annotator implements Runnable
                 if (classifierChoice.equalsIgnoreCase("SVM")) {
                     para.put(annotool.classify.SVMClassifier.KEY_PARA, svmpara);
                 }
-
-                rate = classifyGivenAMethod(classifierChoice, para, trainingfeatures, testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
-                setGUIOutput("Recog Rate for " + annotationLabels.get(i) + ": " + rate);
-                if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
+                try
+                {
+                  rate = classifyGivenAMethod(classifierChoice, para, trainingfeatures, testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
+                  setGUIOutput("Recog Rate for " + annotationLabels.get(i) + ": " + rate);
+                  if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
                     return;
-                }
-                if (gui != null) {
+                  }
+                  if (gui != null) {
                     gui.addResultPanel(annotationLabels.get(i), rate, testingtargets[i], annotations[i]);
-                }
-                //put the prediction results back to GUI
-                if (container != null) {
+                  }
+                  //put the prediction results back to GUI
+                  if (container != null) {
                     container.getTablePanel().updateTestingTable(annotations);
+                  }
+                }catch(Exception e)
+                {
+                	 setGUIOutput(e.getMessage());
                 }
+ 
             }
             else //compare all classifiers
             {
@@ -342,11 +348,14 @@ public class Annotator implements Runnable
                         if (AnnControlPanel.classifierSimpleStrs[c].equalsIgnoreCase("SVM")) {
                             para.put(annotool.classify.SVMClassifier.KEY_PARA, svmpara);
                         }
-
-                        rates[c] = classifyGivenAMethod(AnnControlPanel.classifierSimpleStrs[c], para, trainingfeatures, testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
-                        setGUIOutput(AnnControlPanel.classifiers[c] + ": Recog Rate for " + annotationLabels.get(i) + ": " + rates[c]);
-                        if (!setProgress(50 + (c + 1) * 50 / AnnControlPanel.classifiers.length)) {
+                        try{
+                          rates[c] = classifyGivenAMethod(AnnControlPanel.classifierSimpleStrs[c], para, trainingfeatures, testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
+                          setGUIOutput(AnnControlPanel.classifiers[c] + ": Recog Rate for " + annotationLabels.get(i) + ": " + rates[c]);
+                          if (!setProgress(50 + (c + 1) * 50 / AnnControlPanel.classifiers.length)) {
                             return;
+                          }
+                        }catch(Exception e)
+                        { setGUIOutput(e.getMessage());
                         }
                     }
                 }
@@ -458,7 +467,10 @@ public class Annotator implements Runnable
             }
 
             setGUIOutput("Classifying/Annotating ... ");
-            /*Classifier classifier = null;
+            
+            try{
+            	/*
+            Classifier classifier = null;
             if (classifierChoice.equalsIgnoreCase("SVM")) {
                 classifier = new SVMClassifier(numoffeatures, svmpara);
             }
@@ -470,8 +482,17 @@ public class Annotator implements Runnable
             }
             recograte = (new Validator(bar, start, region)).KFold(K, features, targets[i], classifier, shuffle, results[i]);
             */
+            //HashMap<String, String> para = new HashMap<String, String>();
+            //para.put("General Parameter", "-t 0");
             recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, null, shuffle, results[i]);
+            for(int m=0; m<results[i].length; m++)
+            	System.out.println(m+":"+results[i][m].anno);
             
+            }catch(Exception e)
+            {
+            	setGUIOutput(e.getMessage());
+            	e.printStackTrace();
+            }
             //output results to GUI and file
             System.out.println("rate for annotation target " + i + ": " + recograte);
             setGUIOutput("Recog Rate for " + annotationLabels.get(i) + ": " + recograte);
@@ -556,7 +577,7 @@ public class Annotator implements Runnable
      *   recognition rate. 
      *    
      */
-    public float classifyGivenAMethod(String chosenClassifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) {
+    public float classifyGivenAMethod(String chosenClassifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) throws Exception {
         int numoffeatures = selectedTrainingFeatures[0].length;
         Classifier classifier = null;
         if (chosenClassifier.equalsIgnoreCase("SVM")) {
