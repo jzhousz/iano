@@ -566,8 +566,15 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             //setGUIOutput("Classifying/Annotating ... ");
             pnlOutput.setOutput("Classifying/Annotating...");
 
-            rate = anno.classifyGivenAMethod(classifierChoice, classParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
-                
+            try
+            {
+            	rate = anno.classifyGivenAMethod(classifierChoice, classParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
+            }
+            catch(Exception ex)
+            {
+            	ex.printStackTrace();
+            }
+            		
             System.out.println(rate);
                 
             AnnVisualPanel pnlVisual = new AnnVisualPanel(tabPane, tabNumber++);
@@ -752,7 +759,15 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             }
 
             pnlOutput.setOutput("Classifying/Annotating ... ");
-            recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, classParams, shuffle, results[i]);
+            try
+            {
+            	recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, classParams, shuffle, results[i]);
+            }
+            catch(Exception ex)
+            {
+            	pnlOutput.setOutput("Exception! " + ex.getMessage());
+            	ex.printStackTrace();
+            }
             
             //output results to GUI and file
             System.out.println("rate for annotation target " + i + ": " + recograte);
