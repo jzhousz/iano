@@ -232,7 +232,10 @@ public class Util {
 		int[] predictions = new int[testingFeatures.length];
 		double[] prob = new double[testingFeatures.length];
 
+		try  {
 		wrapper.classify(trainingFeatures, trainingtargets, testingFeatures, predictions, prob);
+		}catch(Exception e)
+		{ System.err.println("Problem in discretizing:"+e.getMessage());}
 		
 		//look for index!!
 		int[] targetList = getTargetList(trainingtargets);
