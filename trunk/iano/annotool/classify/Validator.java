@@ -29,7 +29,7 @@ public class Validator
 	  this.startPos = start;
 	  this.totalRange = total;
    }
-   public float  KFold(int K, float[][] data, int[] targets, Classifier classifier, boolean shuffle, Annotation[] results)
+   public float  KFold(int K, float[][] data, int[] targets, Classifier classifier, boolean shuffle, Annotation[] results) throws Exception
    {
 	  int length = data.length;
 	  int dimension = data[0].length;
@@ -128,7 +128,7 @@ public class Validator
    @return The annotation results (with probility estimation) for each sample based on Leave One Output
 
    **************/
-   public void LOO(float[][] data, int[] targets, Classifier classifier, Annotation annos[], boolean shuffle)
+   public void LOO(float[][] data, int[] targets, Classifier classifier, Annotation annos[], boolean shuffle) throws Exception
    {
 	   //No need to shuffle in LOO 12/23/08
 	   //if (shuffle)
@@ -187,7 +187,7 @@ public class Validator
   
   //overloaded version:  pass in String of the classifier name and parameter hashmap.
   //It will just split the data, and call the xxxGivenMethod in Annotator class.
-  public float  KFoldGivenAClassifier(int K, float[][] data, int[] targets, String chosenClassifier, HashMap<String,String> para, boolean shuffle, Annotation[] results)
+  public float  KFoldGivenAClassifier(int K, float[][] data, int[] targets, String chosenClassifier, HashMap<String,String> para, boolean shuffle, Annotation[] results) throws Exception
   {
 	  int length = data.length;
 	  int dimension = data[0].length;
@@ -199,7 +199,7 @@ public class Validator
       float[][] trainingPatterns;
       int[] trainingTargets;
       int[] testingTargets;
-      int[] predictions;
+      Annotation[] annotedPredictions;
       double[] prob;
       int testinglength, traininglength; //may vary for the last fold 
       int foldsize = length/K; //size per fold except the last one;
@@ -228,6 +228,10 @@ public class Validator
 	      trainingPatterns = new float[traininglength][dimension];
 	      trainingTargets = new int[traininglength];
 	      testingTargets = new int[testinglength];
+	      annotedPredictions = new Annotation[testinglength];
+	      for(int m = 0; m < testinglength; m++)
+	    	  annotedPredictions[m] = new Annotation();
+			 
 	
 		  //setup testing patterns
 		  for(int i=0; i<testinglength; i++)
@@ -252,14 +256,15 @@ public class Validator
 			    trainingTargets[i-testinglength] = targets[i];
 		     }
 
-    	 (new annotool.Annotator()).classifyGivenAMethod(chosenClassifier, para, trainingPatterns, testingPatterns, trainingTargets, testingTargets, results);
+    	 (new annotool.Annotator()).classifyGivenAMethod(chosenClassifier, para, trainingPatterns, testingPatterns, trainingTargets, testingTargets, annotedPredictions);
     	 
     	  //compare the output prediction with the real targets on the testing set
          for(int i=0; i<testinglength; i++)
          {
-			System.out.println("predicted category:" + results[i].anno);
+			System.out.println("predicted category:" + annotedPredictions[i].anno);
 			System.out.println("actual category:" + testingTargets[i]);
-	        if(results[i].anno == testingTargets[i])
+			results[k*foldsize+i].anno = annotedPredictions[i].anno;
+	        if(annotedPredictions[i].anno == testingTargets[i])
 	           correct ++;
 	     }
       }
@@ -276,7 +281,7 @@ public class Validator
     * Ouput: prediction results, recognition rate
     * It is called by classifyGivenAMethod() in Annotator
     */
-   public float classify(float[][] trainingPatterns, float[][] testingPatterns,int[] trainingTargets, int[] testingTargets, Classifier classifier, Annotation[] annotations)
+   public float classify(float[][] trainingPatterns, float[][] testingPatterns,int[] trainingTargets, int[] testingTargets, Classifier classifier, Annotation[] annotations) throws Exception
    {
 	   int testingLength = testingPatterns.length;
 	   int[]	 predictions = new int[testingLength];
@@ -301,7 +306,7 @@ public class Validator
    }
    
    //overloaded version: no testing targets 
-   public int[] classify(float[][] trainingPatterns, float[][] testingPatterns, int[] trainingTargets, Classifier classifier)
+   public int[] classify(float[][] trainingPatterns, float[][] testingPatterns, int[] trainingTargets, Classifier classifier) throws Exception
    {
  	  int testingLength = testingPatterns.length;
  	  int[]	 predictions = new int[testingLength];
