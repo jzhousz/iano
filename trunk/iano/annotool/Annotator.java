@@ -654,7 +654,7 @@ public class Annotator implements Runnable
             System.err.println("PCA is to be added");
             return null;
         }
-        else if (extractor.equals("NONE")) //use raw image or middle stack for 3D
+        else if (extractor.equalsIgnoreCase("NONE")) //use raw image or middle stack for 3D
         {
             int length = problem.getLength();
             int height = problem.getHeight();
