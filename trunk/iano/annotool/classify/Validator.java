@@ -11,7 +11,7 @@ import annotool.Annotation;
 public class Validator
 {
    /****************
-     K fold CV, with K <= length. When K == length, it is leave one out validation.
+     K fold CV with Classifier object, with K <= length. When K == length, it is leave one out (LOO) validation.
      Shuffling is needed before calling this method if the samples are ordered sequentially based on categories.
 
      @return overall recognition rate
@@ -123,70 +123,23 @@ public class Validator
    }
 
 
-   /**************
-
-   @return The annotation results (with probility estimation) for each sample based on Leave One Output
-
-   **************/
-   public void LOO(float[][] data, int[] targets, Classifier classifier, Annotation annos[], boolean shuffle) throws Exception
-   {
-	   //No need to shuffle in LOO 12/23/08
-	   //if (shuffle)
-	   //   shuffle(length, dimension, data, targets);
-
-	   int length = data.length;
-	   int dimension = data[0].length;
-	   int testinglength = 1;
-	   int traininglength = length - testinglength;
-
-	   float[][] testingPatterns = new float[testinglength][dimension];
-	   float[][] trainingPatterns = new float[traininglength][dimension];
-	   int[] trainingTargets = new int[traininglength];
-	   //int testingTargets;
-	   int[] prediction = new int[1];
-	   double[] prob = new double[1];
-
-
-	   for (int k = 0; k < length; k++)
-	   {
-		   	 //if GUI, update 5 times 
-	    	 if (bar != null)
-	    		 if (k%(length/5) == 0)
-	    			 bar.setValue(startPos + (totalRange/5)*(k/(length/5)));
-	 
-		//setup testing patterns
-		for(int i=0; i < testinglength; i++)
- 	      for(int j=0; j < dimension; j++)
-		  {
-		    testingPatterns[i][j] = data[k+i][j];
-		    //testingTargets = targets[k]; //not needed since not calculating recog rate
-	      }
-        //setup trainingpatterns
-		for(int i=0; i< k; i++)
-		  for(int j=0; j < dimension; j++)
-		  {
-		    trainingPatterns[i][j] = data[i][j];
-		    trainingTargets[i] = targets[i];
-	      }
-		//the training samples after the testing samples
-        for(int i=(k+1); i< length; i++)
-		  for(int j=0; j < dimension; j++)
-		  {
-		    trainingPatterns[i-1][j] = data[i][j];
-		    trainingTargets[i-1] = targets[i];
-	      }
-	     //send to the classifier
-         classifier.classify(trainingPatterns, trainingTargets, testingPatterns, prediction,  prob);
-         annos[k].anno = prediction[0];
-         annos[k].prob = prob[0];
-	   }
-
-   }
-
  
-  
-  //overloaded version:  pass in String of the classifier name and parameter hashmap.
-  //It will just split the data, and call the xxxGivenMethod in Annotator class.
+   /*****************************
+   * K fold CV, with K <= length. When K == length, it is leave one out (LOO) validation.
+   
+   * Pass in String as the classifier name, and parameter as Hashmap.
+   * It will split the data, and call the xxxGivenMethod in the Annotator class.
+   * 
+   * @param K
+   * @param data
+   * @param targets
+   * @param chosenClassifier
+   * @param para
+   * @param shuffle
+   * @param results
+   * @return overall recognition rate
+   * @throws Exception
+   ********************************/
   public float  KFoldGivenAClassifier(int K, float[][] data, int[] targets, String chosenClassifier, HashMap<String,String> para, boolean shuffle, Annotation[] results) throws Exception
   {
 	  int length = data.length;
@@ -223,7 +176,7 @@ public class Validator
 			    testinglength = length/K;
 
 		  traininglength = length - testinglength;
-		  System.out.println("foldsize:" + foldsize + "testing length:"+ testinglength+"training length:" + traininglength + "dimension:" + dimension);
+		  System.out.println("foldsize:" + foldsize + " testing length:"+ testinglength+" training length:" + traininglength + " dimension:" + dimension);
 	      testingPatterns = new float[testinglength][dimension];
 	      trainingPatterns = new float[traininglength][dimension];
 	      trainingTargets = new int[traininglength];
@@ -232,7 +185,6 @@ public class Validator
 	      for(int m = 0; m < testinglength; m++)
 	    	  annotedPredictions[m] = new Annotation();
 			 
-	
 		  //setup testing patterns
 		  for(int i=0; i<testinglength; i++)
 			  for(int j=0; j < dimension; j++)
@@ -275,12 +227,12 @@ public class Validator
 	  
   }
    
-   /*
+   /**********************************************************************
     * Input: training and testing data and targets
     * Function: send to classify
     * Ouput: prediction results, recognition rate
     * It is called by classifyGivenAMethod() in Annotator
-    */
+    *********************************************************************/
    public float classify(float[][] trainingPatterns, float[][] testingPatterns,int[] trainingTargets, int[] testingTargets, Classifier classifier, Annotation[] annotations) throws Exception
    {
 	   int testingLength = testingPatterns.length;
@@ -354,5 +306,68 @@ public class Validator
 	            }
 	            });
 	}
+	
+	   /******************************************************************************
+	   @return The annotation results (with probability estimation) for each sample 
+	     based on Leave One Output.
+	   
+	   Not linked to GUI on June 2011. 
+	   *******************************************************************************/
+	   public void LOO(float[][] data, int[] targets, Classifier classifier, Annotation annos[], boolean shuffle) throws Exception
+	   {
+		   //No need to shuffle in LOO 12/23/08
+		   //if (shuffle)
+		   //   shuffle(length, dimension, data, targets);
+
+		   int length = data.length;
+		   int dimension = data[0].length;
+		   int testinglength = 1;
+		   int traininglength = length - testinglength;
+
+		   float[][] testingPatterns = new float[testinglength][dimension];
+		   float[][] trainingPatterns = new float[traininglength][dimension];
+		   int[] trainingTargets = new int[traininglength];
+		   //int testingTargets;
+		   int[] prediction = new int[1];
+		   double[] prob = new double[1];
+
+
+		   for (int k = 0; k < length; k++)
+		   {
+			   	 //if GUI, update 5 times 
+		    	 if (bar != null)
+		    		 if (k%(length/5) == 0)
+		    			 bar.setValue(startPos + (totalRange/5)*(k/(length/5)));
+		 
+			//setup testing patterns
+			for(int i=0; i < testinglength; i++)
+	 	      for(int j=0; j < dimension; j++)
+			  {
+			    testingPatterns[i][j] = data[k+i][j];
+			    //testingTargets = targets[k]; //not needed since not calculating recog rate
+		      }
+	        //setup trainingpatterns
+			for(int i=0; i< k; i++)
+			  for(int j=0; j < dimension; j++)
+			  {
+			    trainingPatterns[i][j] = data[i][j];
+			    trainingTargets[i] = targets[i];
+		      }
+			//the training samples after the testing samples
+	        for(int i=(k+1); i< length; i++)
+			  for(int j=0; j < dimension; j++)
+			  {
+			    trainingPatterns[i-1][j] = data[i][j];
+			    trainingTargets[i-1] = targets[i];
+		      }
+		     //send to the classifier
+	         classifier.classify(trainingPatterns, trainingTargets, testingPatterns, prediction,  prob);
+	         annos[k].anno = prediction[0];
+	         annos[k].prob = prob[0];
+		   }
+
+	   }
+
+
 
 }
