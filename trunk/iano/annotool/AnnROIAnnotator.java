@@ -72,7 +72,7 @@ public class AnnROIAnnotator extends Annotator {
 		if (classifierChoice.equalsIgnoreCase("SVM"))
 				classifier = new SVMClassifier(numoffeatures, svmpara);
 		else if (classifierChoice.equalsIgnoreCase("LDA"))
-				classifier = new LDAClassifier(numoffeatures);
+				classifier = new LDAClassifier();
 	
 		//feature selection on training images
 		if (featureSelector.equalsIgnoreCase("mRMR-MIQ") || featureSelector.equalsIgnoreCase("mRMR-MID"))

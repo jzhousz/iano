@@ -1,5 +1,9 @@
 package annotool.classify;
 
+import java.io.Serializable;
+
+import libsvm.svm_model;
+
 import Jama.*;
 
 //  Linear Discriminant Classifier based on Multivariate Normal Distribution.
@@ -7,13 +11,13 @@ import Jama.*;
 // TODO 11/11/08:  
 //       1. normalize posterior probability
 //       2. check the pooled covariance matrix to be positive definite
-//       3. throw exception for badly formed matrix
-public class LDAClassifier implements Classifier {
 
-	int dimension = 0;
+public class LDAClassifier implements SavableClassifier {
+
 	int ngroups = 0;
 	float[] priors = null;
 	java.util.HashMap targetmap = null;
+	LDATrainedModel trainedModel = null;
 
 	/**
 	 * a simple testing case
@@ -43,6 +47,7 @@ public class LDAClassifier implements Classifier {
 		for(int i =5 ; i < 10; i++)
 			trainingtargets[i] = 2;
 
+		
 		float[] priors = new float[2];
 		priors[0] = 0.3f;
 		priors[1] = 0.7f;
@@ -50,38 +55,98 @@ public class LDAClassifier implements Classifier {
 		int[] predictions  = new int[5];
 		double[] probest = new double[5];
 
-		LDAClassifier classifier = new LDAClassifier(2, priors);
-		classifier.classify(training,  trainingtargets, testing, predictions, probest);
+		//LDAClassifier classifier = new LDAClassifier(priors);
+		//try {
+		//classifier.classify(training,  trainingtargets, testing, predictions, probest);
+		//}catch(Exception e)
+		//{ e.printStackTrace();}
 
+		
+		java.util.HashMap<String, String> parameters = new java.util.HashMap<String, String>();
+		parameters.put("0", "0.3");
+		parameters.put("1", "0.7");
+		SavableClassifier classifier = new LDAClassifier(parameters);
+		Object model = classifier.trainingOnly(training, trainingtargets);
+		
+		//int[] predictions = null;
+		try{
+		   predictions = classifier.classifyUsingModel(model, testing);
+		}catch(Exception e)
+		{ e.printStackTrace();}
+		
+		
+		/*
+		
+		java.util.HashMap<String, String> parameters = new java.util.HashMap<String, String>();
+		parameters.put("0", "0.3");
+		parameters.put("1", "0.7");
+		SavableClassifier classifier = new LDAClassifier(parameters);
+		classifier.trainingOnly(training, trainingtargets);
+
+         ----  saving chain/model ---
+		... prompt for chainfile name .. write some comments with useful info ...
+		... save featre extractor/selector ...
+
+        
+		Object model = classifier.getModel();
+		
+	    //come up with a name by expanding the chainfile name
+		//new object output steam using the name
+		//serialize the model
+		//write the filename to the chainfile ..
+		     
+        --- loading/applying chain/model ----		      
+		... parse ... read extractor, selector, classifier name and their ...parameters ...
+		... new objectinputsteam using the classifier model name
+		... get the object
+		... pass to the classifier
+		
+		
+		int[] predictions = null;
+		try{
+		   predictions = classifier.classifyUsingModel(model, testing);
+		}catch(Exception e)
+		{ e.printStackTrace();}
+		*/
+		
 		for(int i = 0; i < predictions.length; i++)
 			System.out.println(predictions[i]); //11121
-
+		
 	}
 
 	public LDAClassifier(java.util.HashMap<String, String> parameters)
 	{
-		//no parameter needed.
+		//set prior if provided
+		if (parameters != null)
+		{
+			float[] priors = new float[parameters.size()];
+			for(int i=0; i< parameters.size(); i++)
+			{
+				float prior = Float.parseFloat(parameters.get(String.valueOf(i)));
+				priors[i] = prior;
+			}
+			this.priors = priors;
+		}
+		
 	}
 
-	public LDAClassifier(int dimension)
+	public LDAClassifier()
 	{
-		this.dimension = dimension;
 	}
 
-	public LDAClassifier(int dimension, float[] priors)
+	public LDAClassifier(float[] priors)
 	{
-		this.dimension = dimension;
 		this.priors = priors;
 	}
 
 
-	public void classify(float[][] trainingPatterns, int[] trainingtargets, float[][] testingPatterns, int[] predictions, double[] probesti)
+	public void classify(float[][] trainingPatterns, int[] trainingtargets, float[][] testingPatterns, int[] predictions, double[] probesti) throws Exception
 	{
 		//make sure that the targets are in the range of 0 ... ngroups -1
 		//also set the ngroups
 		int traininglength = trainingPatterns.length; 
 		int testinglength = testingPatterns.length;
-		dimension = trainingPatterns[0].length;
+		int dimension = trainingPatterns[0].length;
 		int[] convertedTargets = convertTargets(trainingtargets);
 		for(int i =0; i < convertedTargets.length; i++)
 			System.out.println(convertedTargets[i]);
@@ -90,12 +155,10 @@ public class LDAClassifier implements Classifier {
 			setUniformPriors();
 		
 		//get a matrix from centralized training patterns 
-		float[][] means = new float[ngroups][dimension]; //need for testing
+		float[][] means = new float[ngroups][dimension]; //will be needed in testing
 		double[][] normalizedTraining = normalizeTraining(trainingPatterns, convertedTargets, means);
 		Matrix trainingM = new Matrix(normalizedTraining);
-
-		//System.out.println("Training M:");
-		//trainingM.print(10, 7);
+		
 		QRDecomposition decom = new QRDecomposition(trainingM);
 		Matrix R = decom.getR();
 		//System.out.println("R:");
@@ -110,8 +173,6 @@ public class LDAClassifier implements Classifier {
 		//s is a vector containing the singular values
 		//s = svd(R)
 		double[] s = svd.getSingularValues();
-		//for(int i =0; i<s.length; i++)
-		//	System.out.println(s[i]);
 
 		//error checking to see if the pooled covariance matrix of trainingM is positive definite
 		//TODO
@@ -122,7 +183,7 @@ public class LDAClassifier implements Classifier {
 			logDetSigma += Math.log(s[i]);
 		logDetSigma = 2*logDetSigma;
 
-		//Now testing!
+		//Now testing! Need R (and logDetSigma), means, ngroups
 		//Multivariate Normal (MVN) relative log posterior density
 		double[][] posterior = new double[testinglength][ngroups];
 		for (int k = 0; k < ngroups; k++)
@@ -139,7 +200,7 @@ public class LDAClassifier implements Classifier {
 			}catch(Exception e)
 			{
 				javax.swing.JOptionPane.showMessageDialog(null,"Matrix is singular. Results are not reliable. Please try another classifier.");
-				return;
+				throw e;
 			}
 			//D(:,k)=log(prior(k)) - .5*(sum(A.*A, 2) + logDetSigma);
 			A.arrayTimesEquals(A);
@@ -162,7 +223,7 @@ public class LDAClassifier implements Classifier {
 			System.out.println();
 		}
 
-		//fill predictions and prosesti
+		//fill predictions and probability estimation
 		for(int i = 0; i < testinglength; i++)
 		{
 			double max = posterior[i][0]; 
@@ -187,6 +248,7 @@ public class LDAClassifier implements Classifier {
 	private double[][] normalizeTraining(float[][] trainingPatterns, int[] trainingtargets, float[][]  means)
 	{   
 		//Jama only works with double, so convert to double
+		int dimension = trainingPatterns[0].length;
 		double[][] convertedPatterns = new double[trainingPatterns.length][dimension];
 
 		//init the mean 
@@ -212,7 +274,7 @@ public class LDAClassifier implements Classifier {
 			for (int j = 0 ; j< dimension; j++)
 			{
 				means[i][j] /= (float)groupcount[i];
-				//System.out.print(means[i][j] + "\t");
+				System.out.print(means[i][j] + "\t");
 			}
 			System.out.println();
 		}
@@ -227,7 +289,8 @@ public class LDAClassifier implements Classifier {
 
 	private double[][] normalizeTesting(float[][] testingPatterns, float[]  means)
 	{
-		//Jama only works with doouble, so convert to double
+		//Jama only works with double, so convert to double
+		int dimension = testingPatterns[0].length;
 		double[][] convertedPatterns = new double[testingPatterns.length][dimension];
 
 		for (int i = 0 ; i< testingPatterns.length; i++)
@@ -268,6 +331,7 @@ public class LDAClassifier implements Classifier {
 		}	 
 		
 		ngroups = orig2new.size();
+		System.out.println("Number of groups:"+ngroups);
 		return convertedTargets;
 	}
 
@@ -282,5 +346,181 @@ public class LDAClassifier implements Classifier {
 			for(int i = 0; i < ngroups; i++)
 		  	   priors[i] = (float) 1.0/ngroups;
 		}
-	}	
+	}
+	
+	//interface methods
+    public Object trainingOnly(float[][] trainingPatterns, int[] trainingtargets)
+    { 
+		int traininglength = trainingPatterns.length; 
+		int dimension = trainingPatterns[0].length;
+		int[] convertedTargets = convertTargets(trainingtargets);
+		for(int i =0; i < convertedTargets.length; i++)
+			System.out.println(convertedTargets[i]);
+		
+		if(priors == null && ngroups != 0)
+			setUniformPriors();
+		
+		//get a matrix from centralized training patterns 
+		float[][] means = new float[ngroups][dimension]; //will be needed in testing
+		double[][] normalizedTraining = normalizeTraining(trainingPatterns, convertedTargets, means);
+		Matrix trainingM = new Matrix(normalizedTraining);
+
+		QRDecomposition decom = new QRDecomposition(trainingM);
+		Matrix R = decom.getR();
+		//System.out.println("R:");
+		//R.print(10, 7);
+
+		//R = R/sqrt(n-ngroups)
+		double cons = Math.sqrt(traininglength - ngroups);
+		Matrix B = new Matrix(R.getRowDimension(), R.getColumnDimension(),  cons);
+		R.arrayRightDivideEquals(B);
+
+		System.out.println(ngroups);
+		SingularValueDecomposition svd = new SingularValueDecomposition(R);
+		//s is a vector containing the singular values
+		//s = svd(R)
+		double[] s = svd.getSingularValues();
+		//error checking to see if the pooled covariance matrix of trainingM is positive definite
+		//TODO
+
+		//logDetSigma = 2*sum(log(s))
+		double logDetSigma = 0;
+		for(int i = 0; i<s.length; i++)
+			logDetSigma += Math.log(s[i]);
+		logDetSigma = 2*logDetSigma;
+
+		trainedModel = new LDATrainedModel(R,logDetSigma, means, priors, targetmap);
+		
+		return trainedModel;
+    }
+    
+    public Object getModel()  //get and/or save
+    { 
+    	return trainedModel; 
+    }
+    
+    public void setModel(Object model) //load
+    { 
+        trainedModel = (LDATrainedModel) model;    	
+    }
+    
+    //call the overloaded version
+    public int classifyUsingModel(Object model, float[] testingPattern) throws Exception
+    { 
+     	float[][] testingPatterns = new float[1][testingPattern.length];
+     	testingPatterns[0] = testingPattern;
+     	int[] results = classifyUsingModel(model, testingPatterns);
+     	return results[0];
+    
+    }
+    
+    public int[] classifyUsingModel(Object model, float[][] testingPatterns) throws Exception
+    { 
+      	if (model != null) //model may be null, but only when the internal model is already set.
+       		if (model instanceof LDATrainedModel) //pass in an internal model
+       			trainedModel = (LDATrainedModel) model;
+    	else  if(trainedModel == null)
+    	{  //when model is null && there is no instance variable that contains a valid model
+    		System.err.println("Err: must pass in a model.");
+    		throw new Exception("Err: must pass in a model.");
+    	}   	
+  
+       	Matrix R = trainedModel.getTrainedR();
+       	double logDetSigma = trainedModel.getLogDetSigma();
+       	float[][] means = trainedModel.getMeans();
+       	float[] priors =trainedModel.getPriors();
+       	java.util.HashMap targetMap =trainedModel.getTargetMap();
+       	int ngroups = means.length;
+       	int testinglength = testingPatterns.length;
+       	
+		double[][] posterior = new double[testinglength][ngroups];
+		int[] predictions = new int[testinglength];
+		
+		for (int k = 0; k < ngroups; k++)
+		{
+			//normalize testing sample
+			double[][] normalizedTesting = normalizeTesting(testingPatterns, means[k]);
+			Matrix testingM = new Matrix(normalizedTesting);
+			//A = (sample - repmat(gmea...)) /R; 
+			//A/B roughly the same as A*inv(B)
+			Matrix A;
+			try{
+			A = testingM.times(R.inverse()); //may throw exception for singular R
+			}catch(Exception e)
+			{
+				System.err.println("Matrix is singular. Results are not reliable. Please try another classifier.");
+				javax.swing.JOptionPane.showMessageDialog(null,"Matrix is singular. Results are not reliable. Please try another classifier.");
+				throw e;
+			}
+			//D(:,k)=log(prior(k)) - .5*(sum(A.*A, 2) + logDetSigma);
+			A.arrayTimesEquals(A);
+			double[] sum = new double[A.getRowDimension()];
+			for(int i =0; i<sum.length; i++)
+			{
+				for(int j =0; j< A.getColumnDimension(); j++)
+					sum[i] += A.get(i,j);
+				sum[i] += logDetSigma;
+				sum[i] *= 0.5;
+				//get the posterior density
+				posterior[i][k] = Math.log(priors[k]) - sum[i];
+			}
+		}  
+
+		for(int i = 0; i < testinglength; i++)
+		{
+			for(int k = 0; k < ngroups; k++)
+				System.out.print(posterior[i][k] + "\t");
+			System.out.println();
+		}
+
+		//fill predictions 
+		for(int i = 0; i < testinglength; i++)
+		{
+			double max = posterior[i][0]; 
+			int target = 0;
+			for(int k = 1; k < ngroups; k++)
+				if (posterior[i][k] > max)
+				{
+					target = k;
+					max = posterior[i][k];
+				}
+			//probesti[i] = max;  // probability estimation can be useful (overload?).
+			predictions[i] =  ((Integer) targetMap.get(target)).intValue();	
+		}
+      	
+    	return predictions;
+    
+    }
+
+    //inner class to save the trained model
+    class LDATrainedModel implements Serializable
+    {
+        Matrix  trainedR;
+        double logDetSigma; 
+        float[][] means;
+        float[] priors;
+        java.util.HashMap targetMap;
+        
+        LDATrainedModel(Matrix r, double logDetSigma, float[][] means, float[] priors, java.util.HashMap targetMap)
+        {
+        	setLDATrainedModel(r, logDetSigma, means, priors, targetMap);
+        }
+        
+        void setLDATrainedModel(Matrix r, double logDetSigma, float[][] means, float[] priors, java.util.HashMap targetMap)
+        {
+        	trainedR = r;
+        	this.logDetSigma = logDetSigma;
+        	this.means = means;
+        	this.priors = priors;
+        	this.targetMap = targetMap;
+        }
+        
+        Matrix getTrainedR() { return trainedR; }
+        double getLogDetSigma() {return logDetSigma;} 
+        float[][] getMeans() { return means; }
+        float[] getPriors() { return priors; }
+        java.util.HashMap getTargetMap()  { return targetMap; } 
+    }
+    
+	
 }

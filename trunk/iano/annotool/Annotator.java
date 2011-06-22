@@ -410,7 +410,8 @@ public class Annotator implements Runnable
         int incomingDim = features[0].length;
         int length = features.length;
         int numoffeatures = incomingDim; //original dimension before selection
-
+        float[] recogrates = null;
+        
         if (fileFlag.equals("true")) {
             try {
                 outputfile = new java.io.BufferedWriter(new java.io.FileWriter("output"));
@@ -454,7 +455,6 @@ public class Annotator implements Runnable
 
         //loop for each annotation target
         for (int i = 0; i < numOfAnno; i++) {
-            float recograte = 0;
             int start = 50 + i * 50 / numOfAnno;
             int region = 50 / numOfAnno;
 
@@ -469,22 +469,7 @@ public class Annotator implements Runnable
             setGUIOutput("Classifying/Annotating ... ");
             
             try{
-            	/*
-            Classifier classifier = null;
-            if (classifierChoice.equalsIgnoreCase("SVM")) {
-                classifier = new SVMClassifier(numoffeatures, svmpara);
-            }
-            else if (classifierChoice.equalsIgnoreCase("LDA")) {
-                classifier = new LDAClassifier(numoffeatures);
-            }
-            else if (classifierChoice.startsWith("W_")) {
-                classifier = new WekaClassifiers(numoffeatures, classifierChoice);
-            }
-            recograte = (new Validator(bar, start, region)).KFold(K, features, targets[i], classifier, shuffle, results[i]);
-            */
-            //HashMap<String, String> para = new HashMap<String, String>();
-            //para.put("General Parameter", "-t 0");
-            recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, null, shuffle, results[i]);
+              recogrates = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, null, shuffle, results[i]);
             for(int m=0; m<results[i].length; m++)
             	System.out.println(m+":"+results[i][m].anno);
             
@@ -494,14 +479,14 @@ public class Annotator implements Runnable
             	e.printStackTrace();
             }
             //output results to GUI and file
-            System.out.println("rate for annotation target " + i + ": " + recograte);
-            setGUIOutput("Recog Rate for " + annotationLabels.get(i) + ": " + recograte);
+            System.out.println("rate for annotation target " + i + ": " + recogrates[K]);
+            setGUIOutput("Recog Rate for " + annotationLabels.get(i) + ": " + recogrates[K]);
             if (gui != null) {
-                gui.addResultPanel(annotationLabels.get(i), recograte, targets[i], results[i]);
+                gui.addResultPanel(annotationLabels.get(i), recogrates[K], targets[i], results[i]);
             }
             if (outputfile != null && fileFlag.equals("true")) {
                 try {
-                    outputfile.write("Recognition Rate for annotation target " + i + ": " + recograte);
+                    outputfile.write("Recognition Rate for annotation target " + i + ": " + recogrates[K]);
                     outputfile.flush();
                 }
                 catch (java.io.IOException e) {
@@ -582,8 +567,6 @@ public class Annotator implements Runnable
         Classifier classifier = null;
         if (chosenClassifier.equalsIgnoreCase("SVM")) {
             classifier = new SVMClassifier(parameters);
-          
-            
         }
         else if (chosenClassifier.equalsIgnoreCase("LDA")) {
             classifier = new LDAClassifier(parameters);
