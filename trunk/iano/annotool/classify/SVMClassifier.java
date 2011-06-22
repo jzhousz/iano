@@ -337,66 +337,56 @@ public class SVMClassifier implements SavableClassifier
     }
     
     /**
-     * Returns the model, for persistence if needed. 
-     * The return value may be the content of the internal model OR just
-     *   a filename where the actual model is saved, depending on the actual classifier.
-     * In the case of LibSVM, it returns the filename and the saving to the file is done inside. 
-     * This method pairs up with a setter.
+     * Save the model to a file for persistence 
+     * This method pairs up with a loader.
      */
-    /*
-    public Object getModel(String model_file_name)
+    public void saveModel(Object trainedModel, String model_file_name) throws java.io.IOException
     {
-    	if(trainedModel == null)
-    	{
-    		System.err.println("SVM Model is not yet trained. It cann't be saved.");
-    		return null;
-    	}
-    	
     	try
     	{
     	 System.out.println("Saving SVM model to "+ model_file_name);	
-    	 svm.svm_save_model(model_file_name,trainedModel);
+    	 svm.svm_save_model(model_file_name,(svm_model) trainedModel);
     	}catch(java.io.IOException e)
     	{
     		System.err.println("Problem in saving the trained model of SVM");
+    		throw new java.io.Exception("Problem in saving the trained model of SVM");
     	}
-    	
-    	return model_file_name;
-    }*/
+    }
 
-    //use default model file to save the model.
+    // load the model from model file 
+    public Object loadModel(String model_file_name) throws java.io.IOException
+    {
+	  try
+	  {
+   	    System.out.println("Loading SVM model from "+ model_file_name);	
+		trainedModel = svm.svm_load_model(model_file_name);
+	   }catch(java.io.IOException e)
+	  {
+	   System.err.println("Problem in loading the trained model of SVM");
+	   throw new java.io.IOException("Problem in loading the trained model of SVM");
+	  }
+	  return  trainedModel;
+    }
+
+    //return internal model
     public Object getModel()
     {
     	return trainedModel;
     }
     
     //set the instance model variable based on input 
-    public void setModel(Object savedModel)
+    public void setModel(Object savedModel) throws Exception
     {
-    	if(savedModel instanceof String)
-    	{	
-    	   String model = (String) savedModel;
-    	  try
-    	  {
-       	    System.out.println("Loading SVM model from "+ model);	
-    		trainedModel = svm.svm_load_model(model);
-    	   }catch(java.io.IOException e)
-    	  {
-    	   System.err.println("Problem in loading the trained model of SVM");
-    	  }
-    	}
-    	else if(savedModel instanceof svm_model)
+    	if(savedModel instanceof svm_model)
     		trainedModel = (svm_model)savedModel;
     	else
-    		System.err.print("Not a valid model type");
+    	{
+    		System.err.print("Not a valid model type for svm");
+    		throw new Exception("Not a valid model type for svm");
+    	}
     	
     }
     
-    //use default model file to load the model 
-    //public void setModel()
-    //{
-    //	setModel(DEFAULT_MODEL_FILE);
-    //}
     
     /** Classify one testing pattern, based on the model parameter or the instance variable (if the parameter is null)
       If input model is not null, use it. Otherwise, use the instance variable, 
@@ -413,9 +403,9 @@ public class SVMClassifier implements SavableClassifier
        	if (model != null) //model may be null, but only when the internal model is already set.
        	{
        		if (model instanceof String) //load from persisted trained model
-       		   setModel(model);
+       		   loadModel((String)model);
        		else if (model instanceof svm_model) //pass in an internal model
-       			trainedModel = (svm_model) model;
+       		   setModel((svm_model) model);
        		}
     	else  if(trainedModel == null)
     	{  //when model is null && there is no instance variable that contains a valid model
@@ -455,9 +445,9 @@ public class SVMClassifier implements SavableClassifier
     	if (model != null) //model may be null, but only when the internal model is already set.
        	{
        		if (model instanceof String) //load from persisted trained model
-       		   setModel(model);
+       		   loadModel((String) model);
        		else if (model instanceof svm_model) //pass in an internal model
-       			trainedModel = (svm_model) model;
+       			setModel((svm_model) model);
        		}
     	else  if(trainedModel == null)
     	{  //when model is null && there is no instance variable that contains a valid model
