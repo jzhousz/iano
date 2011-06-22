@@ -140,7 +140,7 @@ public class Validator
    * @return overall recognition rate
    * @throws Exception
    ********************************/
-  public float  KFoldGivenAClassifier(int K, float[][] data, int[] targets, String chosenClassifier, HashMap<String,String> para, boolean shuffle, Annotation[] results) throws Exception
+  public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] targets, String chosenClassifier, HashMap<String,String> para, boolean shuffle, Annotation[] results) throws Exception
   {
 	  int length = data.length;
 	  int dimension = data[0].length;
@@ -160,10 +160,11 @@ public class Validator
       if (K > length)
 	  {
 		  System.out.println("K-fold validation must have a K that is smaller than the total number of observations");
-		  return 0;
+		  throw new Exception("K-fold validation must have a K that is smaller than the total number of observations");
       }
 
       int correct = 0;
+      float[] foldresults = new float[K+1];
       for (int k = 0; k < K; k++)
       {
     	 //if GUI, update 5 times 
@@ -211,19 +212,26 @@ public class Validator
     	 (new annotool.Annotator()).classifyGivenAMethod(chosenClassifier, para, trainingPatterns, testingPatterns, trainingTargets, testingTargets, annotedPredictions);
     	 
     	  //compare the output prediction with the real targets on the testing set
+    	 int currentFoldCorrect = 0;
          for(int i=0; i<testinglength; i++)
          {
 			System.out.println("predicted category:" + annotedPredictions[i].anno);
 			System.out.println("actual category:" + testingTargets[i]);
 			results[k*foldsize+i].anno = annotedPredictions[i].anno;
 	        if(annotedPredictions[i].anno == testingTargets[i])
+	        {
 	           correct ++;
+	           currentFoldCorrect ++;
+	        }
+	        foldresults[k] = currentFoldCorrect/testinglength;
 	     }
       }
 
       //output the overall results of all folds
       System.out.println("overall recognition rate: " + (float)correct/length);
-      return (float) correct/length;
+      foldresults[K] = (float) correct/length;
+      return foldresults;
+      //return (float) correct/length;
 	  
   }
    

@@ -8,10 +8,11 @@ package annotool.classify;
 public interface SavableClassifier extends Classifier {
 	
 	//it trains and sets an internal model, called before getModel();   
-	void trainingOnly(float[][] trainingpatterns, int[] trainingtargets);
+	Object trainingOnly(float[][] trainingpatterns, int[] trainingtargets);
 	   
 	//matching pair that returns and sets the model
-	Object getModel();  //get and/or save the trained model
+	//get (and save) the trained model. Filename is needed only if the method also saves the model. Otherwise it can be null.
+	Object getModel(); 
 	void setModel(java.lang.Object model); //load or get the trained model
    
 	//two methods that classify one or multiple testing patterns.

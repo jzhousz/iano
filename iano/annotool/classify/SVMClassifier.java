@@ -277,13 +277,13 @@ public class SVMClassifier implements SavableClassifier
     *    --  Use object serialization for uniform interface. It may be just a String.
     *    --  Assumption: The returned model object needs to be serializable.  
     *  public void trainingOnly(float[][] trainingpatterns, int[] trainingtargets);
-    *  public Object getModel();  //get and/or save
+    *  public Object getModel(String);  //get and/or save
     *  public void setModel(Object); //load
     *  public int classifyUsingModel(Object model, float[] testingPattern) throws Exception
     *  public int[] classifyUsingModel(Object model, float[][] testingPatterns) throws Exception
     *  
     *  Example code using uniform interface:
-    *   SVMClassifier c = new SVMClassifier(parameters);
+    *   SavableClassifier c = new SVMClassifier(parameters);
     *   c.trainingOnly(selectedTrainingFeatures, trainingtargets);
     *   //save to file
     *   Object model =  c.getModel();
@@ -298,7 +298,7 @@ public class SVMClassifier implements SavableClassifier
     */
     
     //training only and sets the internal model
-    public void trainingOnly(float[][] trainingpatterns, int[] trainingtargets)
+    public Object trainingOnly(float[][] trainingpatterns, int[] trainingtargets)
     {
 	    int traininglength = trainingpatterns.length;
 	    dimension = trainingpatterns[0].length;
@@ -310,6 +310,7 @@ public class SVMClassifier implements SavableClassifier
 			param.svm_type == svm_parameter.NU_SVR)
 		{
 			System.out.println("svm type is set to regression. It should be classification.");
+			return null;
 	    }
 	    else
 	    {
@@ -330,6 +331,7 @@ public class SVMClassifier implements SavableClassifier
 
 			// build model and save the instance variable
 			trainedModel = svm.svm_train(prob, param);
+			return trainedModel;
 	    }
         
     }
@@ -341,6 +343,7 @@ public class SVMClassifier implements SavableClassifier
      * In the case of LibSVM, it returns the filename and the saving to the file is done inside. 
      * This method pairs up with a setter.
      */
+    /*
     public Object getModel(String model_file_name)
     {
     	if(trainedModel == null)
@@ -359,33 +362,41 @@ public class SVMClassifier implements SavableClassifier
     	}
     	
     	return model_file_name;
-    }
+    }*/
 
     //use default model file to save the model.
     public Object getModel()
     {
-    	return getModel(DEFAULT_MODEL_FILE);
+    	return trainedModel;
     }
     
     //set the instance model variable based on input 
     public void setModel(Object savedModel)
     {
-    	String model = (String) savedModel;
-    	try
-    	{
+    	if(savedModel instanceof String)
+    	{	
+    	   String model = (String) savedModel;
+    	  try
+    	  {
        	    System.out.println("Loading SVM model from "+ model);	
     		trainedModel = svm.svm_load_model(model);
-    	}catch(java.io.IOException e)
-    	{
+    	   }catch(java.io.IOException e)
+    	  {
     	   System.err.println("Problem in loading the trained model of SVM");
+    	  }
     	}
+    	else if(savedModel instanceof svm_model)
+    		trainedModel = (svm_model)savedModel;
+    	else
+    		System.err.print("Not a valid model type");
+    	
     }
     
     //use default model file to load the model 
-    public void setModel()
-    {
-    	setModel(DEFAULT_MODEL_FILE);
-    }
+    //public void setModel()
+    //{
+    //	setModel(DEFAULT_MODEL_FILE);
+    //}
     
     /** Classify one testing pattern, based on the model parameter or the instance variable (if the parameter is null)
       If input model is not null, use it. Otherwise, use the instance variable, 
