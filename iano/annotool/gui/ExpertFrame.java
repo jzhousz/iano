@@ -530,7 +530,9 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             if (!featureSelector.equalsIgnoreCase("None")) {
                 pnlOutput.setOutput("Selecting features ... ");
                 //override the original features and num of features
-                features = anno.selectGivenAMethod(featureSelector, selParams, features, targets[i]);
+                ComboFeatures combo = anno.selectGivenAMethod(featureSelector, selParams, features, targets[i]);
+                features = combo.getTrainingFeatures();
+                
                 numoffeatures = features[0].length;
             }
 
