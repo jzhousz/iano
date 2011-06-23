@@ -19,6 +19,6 @@ public interface SavableClassifier extends Classifier {
 	int[] classifyUsingModel(Object model, float[][] testingPatterns) throws Exception;
 	
 	//two methods that load and save model to file
-    public void saveModel(Object trainedModel, String model_file_name) throws java.io.IOException;
-    public Object loadModel(String model_file_name) throws java.io.IOException;
+    void saveModel(Object trainedModel, String model_file_name) throws java.io.IOException;
+    Object loadModel(String model_file_name) throws java.io.IOException;
 }
