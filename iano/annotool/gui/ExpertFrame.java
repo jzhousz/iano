@@ -5,9 +5,16 @@ import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.plaf.basic.BasicButtonUI;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.event.*;
 
@@ -26,6 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import annotool.io.Algorithm;
+import annotool.io.ChainSaver;
 import annotool.io.DataInput;
 import annotool.io.Parameter;
 import annotool.AnnControlPanel;
@@ -35,8 +43,7 @@ import annotool.ComboFeatures;
 import annotool.AnnVisualPanel;
 import annotool.AnnOutputPanel;
 
-public class ExpertFrame extends JFrame implements ActionListener, ItemListener, Runnable
-{
+public class ExpertFrame extends JFrame implements ActionListener, ItemListener, Runnable {
 	private JTabbedPane tabPane;
 	private JPanel pnlMain,
 				   pnlAlgo,
@@ -45,7 +52,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 				   pnlExtDesc, pnlSelDesc, pnlClassDesc,
 				   pnlExtParam, pnlSelParam, pnlClassParam,
 				   pnlButton;
-	private JButton btnRun;
+	private JButton btnRun, btnSaveModel;
 	
 	private JLabel lbExtractor, lbSelector, lbClassifier;
 	private JComboBox cbExtractor, cbSelector, cbClassifier;
@@ -54,10 +61,27 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 	
 	int tabNumber = 1; //Initial number of tabs
 	
+	//Algorithms and parameters
+	Algorithm extractor = null;			
+	Algorithm selector = null;			
+	Algorithm classifier = null;	
+	
 	//To keep track of dynamically added components
 	HashMap<String, JComponent> exParamControls = null;			//For extractor parameters
 	HashMap<String, JComponent> selParamControls = null;		//For selector parameters
 	HashMap<String, JComponent> classParamControls = null;		//For classifier parameters
+	
+	//Actual parameters and values to use in algorithms
+	HashMap<String, String> exParams = null;
+    HashMap<String, String> selParams = null;
+    HashMap<String, String> classParams = null;
+    
+    //Algorithm names
+    String featureExtractor = null;
+    String featureSelector = null;
+    String classifierChoice = null;
+    
+    Annotator anno = null;
 	
 	AnnOutputPanel pnlOutput = null;
 	JProgressBar bar = null;
@@ -65,14 +89,18 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 	private Thread thread = null;
 	private boolean isRunning;
 	
-	public ExpertFrame(String arg0, boolean is3D, String channel)
-	{
+	JFileChooser fileChooser;
+	ChainSaver saver = new ChainSaver();
+	
+	public ExpertFrame(String arg0, boolean is3D, String channel) {
 		super(arg0);
 		this.channel = channel;
 		
+		fileChooser = new JFileChooser();
+		
 		pnlMain = new JPanel();
 		pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
-		pnlMain.setPreferredSize(new java.awt.Dimension(540, 750));
+		pnlMain.setPreferredSize(new java.awt.Dimension(540, 650));
 		pnlMain.setBorder(new EmptyBorder(10, 10, 10, 10));
 		pnlMain.setAlignmentY(TOP_ALIGNMENT);
 		pnlMain.setAlignmentX(LEFT_ALIGNMENT);
@@ -153,9 +181,13 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		//Button part
 		btnRun = new JButton("Run");
 		btnRun.addActionListener(this);
+		btnSaveModel = new JButton("Save Model", new ImageIcon("images/save.png"));
+		btnSaveModel.setEnabled(false);
+		btnSaveModel.addActionListener(this);
 		
 		pnlButton = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		pnlButton.add(btnRun);
+		pnlButton.add(btnSaveModel);
 		
 		pnlOutput = new AnnOutputPanel();
 		bar = new JProgressBar(0, 100);
@@ -170,281 +202,130 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		//Build parameter panels for default selection
 		buildExParameterPanel();
 		buildSelParameterPanel();
-		buildClassParameterPanel();
-		
+		buildClassParameterPanel();		
 	}
-	public void actionPerformed(ActionEvent e)
-	{
-		if(e.getSource() == btnRun)
-		{			
-			if (thread == null) 
-			{
+	public void actionPerformed(ActionEvent e) {
+		if(e.getSource() == btnRun) {			
+			if (thread == null)  {
 	            thread = new Thread(this);
 	            isRunning = true;
 	            thread.start();
 	        }
-	    }		
+	    }
+		else if (e.getSource() == btnSaveModel) {
+			if(thread == null) {
+		        int returnVal = fileChooser.showSaveDialog(this);
+	
+		        if (returnVal == JFileChooser.APPROVE_OPTION) {
+		            File file = fileChooser.getSelectedFile();
+		            
+		            saver.write(file);
+		            pnlOutput.setOutput("Save complete. Dump file: " + file.getPath());
+		        }
+			}
+			else
+				pnlOutput.setOutput("Cannot save model during processing.");
+	   }
 	}
-	public void itemStateChanged(ItemEvent e)
-	{
-		if(e.getSource() == cbExtractor && e.getStateChange() == 1)
-		{		
+	public void itemStateChanged(ItemEvent e) {
+		if(e.getSource() == cbExtractor && e.getStateChange() == 1) {		
 			buildExParameterPanel();
 		}
-		if(e.getSource() == cbSelector && e.getStateChange() == 1)
-		{		
+		if(e.getSource() == cbSelector && e.getStateChange() == 1) {		
 			buildSelParameterPanel();
 		}
-		if(e.getSource() == cbClassifier && e.getStateChange() == 1)
-		{		
+		if(e.getSource() == cbClassifier && e.getStateChange() == 1) {		
 			buildClassParameterPanel();
 		}
 	}
-	private void buildExParameterPanel()
-	{
-		if(pnlExtParam == null)
-		{
-			pnlExtParam = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			pnlExtParam.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			pnlExt.add(pnlExtParam, BorderLayout.SOUTH);
-		}
-		if(pnlExtDesc == null)
-		{
-			pnlExtDesc = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			pnlExtDesc.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			pnlExt.add(pnlExtDesc, BorderLayout.CENTER);
-		}
-		//Remove previous components (if any) from parameter and description panels
-		//TODO: dispose components inside the panel first		
-		pnlExtDesc.removeAll();
-		pnlExtParam.removeAll();
+	
+	public void run() {
+		//Disable run and save buttons
+		btnRun.setEnabled(false);
+		btnSaveModel.setEnabled(false);
 		
-		//Get the currently selected extractor
-		Algorithm al = (Algorithm)cbExtractor.getSelectedItem();
+		//Get algorithm and parameters from GUI
+		extractor = (Algorithm)cbExtractor.getSelectedItem();			
+		selector = (Algorithm)cbSelector.getSelectedItem();			
+		classifier = (Algorithm)cbClassifier.getSelectedItem();
 		
-		//Get parameters for the algorithm
-		ArrayList<Parameter> paramList = al.getParam();
+		//HashMap of parameter and corresponding values
+		exParams = new HashMap<String, String>();
+        selParams = new HashMap<String, String>();
+        classParams = new HashMap<String, String>();
+        
+        //Build parameters from the controls
+        //TODO: Validate input data
+        String value = null;
+        //Parameters for extractor
+        for(Parameter param : extractor.getParam()) {
+        	JComponent control = exParamControls.get(param.getParamName());
+        	if(control instanceof JTextField)
+        		value = ((JTextField) control).getText().trim();
+        	else if(control instanceof JCheckBox)
+        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
+        	else if(control instanceof JSpinner)
+        		value = ((JSpinner)control).getValue().toString();
+        	exParams.put(param.getParamName(), value);
+        }
+        value = null;
+        //Parameters for selector
+        for(Parameter param : selector.getParam()) {
+        	JComponent control = selParamControls.get(param.getParamName());
+        	if(control instanceof JTextField)
+        		value = ((JTextField) control).getText().trim();
+        	else if(control instanceof JCheckBox)
+        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
+        	else if(control instanceof JSpinner)
+        		value = ((JSpinner)control).getValue().toString();
+        	selParams.put(param.getParamName(), value);
+        }
+        value = null;
+        //Parameters for classifier
+        for(Parameter param : classifier.getParam()) {
+        	JComponent control = classParamControls.get(param.getParamName());
+        	if(control instanceof JTextField)
+        		value = ((JTextField) control).getText().trim();
+        	else if(control instanceof JCheckBox)
+        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
+        	else if(control instanceof JSpinner)
+        		value = ((JSpinner)control).getValue().toString();
+        	classParams.put(param.getParamName(), value);
+        }
+        
+        //Names of the algorithms
+        featureExtractor = extractor.getName();
+        featureSelector = selector.getName();
+        classifierChoice = classifier.getName();
 		
-		exParamControls = new HashMap<String, JComponent>();
+		anno = new Annotator();
 		
-		JLabel lbDesc = new JLabel(al.getDescription());
-		pnlExtDesc.add(lbDesc);
+		//Set values to save to chain file later
+		saver.setExtractorName(featureExtractor);
+		saver.setSelectorName(featureSelector);
+		saver.setClassifierName(classifierChoice);
+		saver.setExParams(exParams);
+		saver.setSelParams(selParams);		
 		
-		for(Parameter param : paramList)
-		{			
-			if(param.getParamType().equals("Boolean"))
-			{
-				JCheckBox cb = new JCheckBox(param.getParamName());
-				pnlExtParam.add(cb);
-				
-				//Put component in hashmap to access the value later
-				exParamControls.put(param.getParamName(), cb);
-			}
-			else if(param.getParamType().equals("Integer"))
-			{
-				JLabel lb = new JLabel(param.getParamName());
-				
-				SpinnerNumberModel snm = new SpinnerNumberModel();
-				if(param.getParamMax() != null)
-					snm.setMaximum(Integer.parseInt(param.getParamMax()));
-				if(param.getParamMin() != null)
-					snm.setMinimum(Integer.parseInt(param.getParamMin()));
-				if(param.getParamDefault() != null)
-					snm.setValue(Integer.parseInt(param.getParamDefault()));
-				JSpinner sp = new JSpinner(snm);
-				
-				pnlExtParam.add(lb);
-				pnlExtParam.add(sp);
-				
-				//Put component in hashmap to access the value later
-				exParamControls.put(param.getParamName(), sp);
-			}
-			else if(param.getParamType().equals("String") || param.getParamType().equals("Real"))
-			{
-				JLabel lb = new JLabel(param.getParamName());
-				JTextField tf = new JTextField(param.getParamDefault());
-				tf.setPreferredSize(new java.awt.Dimension(50, 30));
-				
-				pnlExtParam.add(lb);
-				pnlExtParam.add(tf);
-				
-				//Put component in hashmap to access the value later
-				exParamControls.put(param.getParamName(), tf);
-			}
-		}
-		pnlExtParam.repaint();
-		pnlExtDesc.repaint();
-		this.pack();
-	}
-	private void buildSelParameterPanel()
-	{
-		if(pnlSelParam == null)
-		{
-			pnlSelParam = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			pnlSelParam.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			pnlSel.add(pnlSelParam, BorderLayout.SOUTH);
-		}
-		if(pnlSelDesc == null)
-		{
-			pnlSelDesc = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			pnlSelDesc.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			pnlSel.add(pnlSelParam, BorderLayout.CENTER);
-		}
-		//Remove previous components (if any) from parameter and description panels
-		//TODO: dispose components inside the panel first		
-		pnlSelDesc.removeAll();
-		pnlSelParam.removeAll();
-		
-		//Get the currently selected extractor
-		Algorithm al = (Algorithm)cbSelector.getSelectedItem();
-		
-		//Get parameters for the algorithm
-		ArrayList<Parameter> paramList = al.getParam();
-		
-		selParamControls = new HashMap<String, JComponent>();
-		
-		JLabel lbDesc = new JLabel(al.getDescription());
-		pnlSelDesc.add(lbDesc);
-		
-		for(Parameter param : paramList)
-		{			
-			if(param.getParamType().equals("Boolean"))
-			{
-				JCheckBox cb = new JCheckBox(param.getParamName());
-				pnlSelParam.add(cb);
-				
-				//Put component in hashmap to access the value later
-				selParamControls.put(param.getParamName(), cb);
-			}
-			else if(param.getParamType().equals("Integer"))
-			{
-				JLabel lb = new JLabel(param.getParamName());
-				
-				SpinnerNumberModel snm = new SpinnerNumberModel();
-				if(param.getParamMax() != null)
-					snm.setMaximum(Integer.parseInt(param.getParamMax()));
-				if(param.getParamMin() != null)
-					snm.setMinimum(Integer.parseInt(param.getParamMin()));
-				if(param.getParamDefault() != null)
-					snm.setValue(Integer.parseInt(param.getParamDefault()));
-				JSpinner sp = new JSpinner(snm);
-				
-				pnlSelParam.add(lb);
-				pnlSelParam.add(sp);
-				
-				//Put component in hashmap to access the value later
-				selParamControls.put(param.getParamName(), sp);
-			}
-			else if(param.getParamType().equals("String") || param.getParamType().equals("Real"))
-			{
-				JLabel lb = new JLabel(param.getParamName());
-				JTextField tf = new JTextField(param.getParamDefault());
-				tf.setPreferredSize(new java.awt.Dimension(50, 30));
-				
-				pnlSelParam.add(lb);
-				pnlSelParam.add(tf);
-				
-				//Put component in hashmap to access the value later
-				selParamControls.put(param.getParamName(), tf);
-			}
-		}
-		pnlSelParam.repaint();
-		pnlSelDesc.repaint();
-		this.pack();
-	}
-	private void buildClassParameterPanel()
-	{
-		if(pnlClassParam == null)
-		{
-			pnlClassParam = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			pnlClassParam.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			pnlClass.add(pnlClassParam, BorderLayout.SOUTH);
-		}
-		if(pnlClassDesc == null)
-		{
-			pnlClassDesc = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			pnlClassDesc.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			pnlClass.add(pnlClassDesc, BorderLayout.CENTER);
-		}
-		//Remove previous components (if any) from parameter and description panels
-		//TODO: dispose components inside the panel first		
-		pnlClassDesc.removeAll();
-		pnlClassParam.removeAll();
-		
-		//Get the currently selected extractor
-		Algorithm al = (Algorithm)cbClassifier.getSelectedItem();
-		
-		//Get parameters for the algorithm
-		ArrayList<Parameter> paramList = al.getParam();
-		
-		classParamControls = new HashMap<String, JComponent>();
-		
-		JLabel lbDesc = new JLabel(al.getDescription());
-		pnlClassDesc.add(lbDesc);
-		
-		for(Parameter param : paramList)
-		{			
-			if(param.getParamType().equals("Boolean"))
-			{
-				JCheckBox cb = new JCheckBox(param.getParamName());
-				pnlClassParam.add(cb);
-				
-				//Put component in hashmap to access the value later
-				classParamControls.put(param.getParamName(), cb);
-			}
-			else if(param.getParamType().equals("Integer"))
-			{
-				JLabel lb = new JLabel(param.getParamName());
-				
-				SpinnerNumberModel snm = new SpinnerNumberModel();
-				if(param.getParamMax() != null)
-					snm.setMaximum(Integer.parseInt(param.getParamMax()));
-				if(param.getParamMin() != null)
-					snm.setMinimum(Integer.parseInt(param.getParamMin()));
-				if(param.getParamDefault() != null)
-					snm.setValue(Integer.parseInt(param.getParamDefault()));
-				JSpinner sp = new JSpinner(snm);
-				
-				pnlClassParam.add(lb);
-				pnlClassParam.add(sp);
-				
-				//Put component in hashmap to access the value later
-				classParamControls.put(param.getParamName(), sp);
-			}
-			else if(param.getParamType().equals("String") || param.getParamType().equals("Real"))
-			{
-				JLabel lb = new JLabel(param.getParamName());
-				JTextField tf = new JTextField(param.getParamDefault());
-				tf.setPreferredSize(new java.awt.Dimension(50, 30));
-				
-				pnlClassParam.add(lb);
-				pnlClassParam.add(tf);
-				
-				//Put component in hashmap to access the value later
-				classParamControls.put(param.getParamName(), tf);
-			}
-		}
-		pnlClassDesc.repaint();
-		pnlClassParam.repaint();
-		this.pack();
-	}
-	public void run()
-	{
-		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[0]))
+		//Initiate appropriate process
+		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[0])) {				//Training/Testing mode
+			saver.setMode("Training/Testing");
 			ttRun();
-		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[1]))
-			cvRun();
+		}
+		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[1])) {			//Cross validation mode
+			saver.setMode("Cross Validation");
+			cvRun();			
+		}
+		
 		thread = null;
+		
+		//Re-enable the buttons
+		btnRun.setEnabled(true);
+		btnSaveModel.setEnabled(true);
 	}
 	
 	//Training/Testing
-	private void ttRun()
-	{
-		Algorithm extractor = (Algorithm)cbExtractor.getSelectedItem();			
-		Algorithm selector = (Algorithm)cbSelector.getSelectedItem();			
-		Algorithm classifier = (Algorithm)cbClassifier.getSelectedItem();
-		
-		Annotator anno = new Annotator();
+	private void ttRun() {		
 		//read images and wrapped into DataInput instances.
         DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);
         DataInput testingProblem = new DataInput(Annotator.testdir, Annotator.testext, channel);	        
@@ -460,73 +341,25 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         int[][] testingTargets = anno.readTargets(testingProblem, Annotator.testtargetFile, resArr, null);
 
         //feature extraction.
-        if (!setProgress(30)) 
-        {
+        if (!setProgress(30))  {
             return;
         }
         
         pnlOutput.setOutput("Extracting features...");
         
-        HashMap<String, String> exParams = new HashMap<String, String>();
-        HashMap<String, String> selParams = new HashMap<String, String>();
-        HashMap<String, String> classParams = new HashMap<String, String>();
-        
-        String featureExtractor = extractor.getName();
-        String featureSelector = selector.getName();
-        String classifierChoice = classifier.getName();
-        
-        //Build parameters from the controls
-        //TODO: Validate input data
-        String value = null;
-        //Parameters for extractor
-        for(Parameter param : extractor.getParam())
-        {
-        	JComponent control = exParamControls.get(param.getParamName());
-        	if(control instanceof JTextField)
-        		value = ((JTextField) control).getText().trim();
-        	else if(control instanceof JCheckBox)
-        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
-        	else if(control instanceof JSpinner)
-        		value = ((JSpinner)control).getValue().toString();
-        	exParams.put(param.getParamName(), value);
-        }
-        value = null;
-        //Parameters for selector
-        for(Parameter param : selector.getParam())
-        {
-        	JComponent control = selParamControls.get(param.getParamName());
-        	if(control instanceof JTextField)
-        		value = ((JTextField) control).getText().trim();
-        	else if(control instanceof JCheckBox)
-        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
-        	else if(control instanceof JSpinner)
-        		value = ((JSpinner)control).getValue().toString();
-        	selParams.put(param.getParamName(), value);
-        }
-        value = null;
-        //Parameters for classifier
-        for(Parameter param : classifier.getParam())
-        {
-        	JComponent control = classParamControls.get(param.getParamName());
-        	if(control instanceof JTextField)
-        		value = ((JTextField) control).getText().trim();
-        	else if(control instanceof JCheckBox)
-        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
-        	else if(control instanceof JSpinner)
-        		value = ((JSpinner)control).getValue().toString();
-        	classParams.put(param.getParamName(), value);
-        }
-        
-        
         float[][] trainingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, trainingProblem);
         float[][] testingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, testingProblem);
+        
+        //Keep features to be dumped into chain file
+        saver.setImageSize(trainingProblem.getWidth() + " x " + trainingProblem.getHeight());
+        //saver.setExtractedFeatures(trainingFeatures);
+        
         //clear data memory
         trainingProblem.setDataNull();
         testingProblem.setDataNull();
 
         //apply feature selector and classifier
-        if (!setProgress(50)) 
-        {
+        if (!setProgress(50)) {
             return;
         }
         //trainingTestingOutput(trainingFeatures, testingFeatures, trainingTargets, testingTargets, numOfAnno);
@@ -545,9 +378,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         
         //loop for each annotation target (one image may have multiple labels)
         for (int i = 0; i < numOfAnno; i++) {
-            if (featureSelector.equalsIgnoreCase("None")) //use the original feature without selection -- overwrite numoffeatures value
-            {
-                numoffeatures = trainingFeatures[0].length;
+            if (featureSelector.equalsIgnoreCase("None")) { //use the original feature without selection -- overwrite numoffeatures value
+            	numoffeatures = trainingFeatures[0].length;
             }
             else 
             {
@@ -566,30 +398,26 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             //setGUIOutput("Classifying/Annotating ... ");
             pnlOutput.setOutput("Classifying/Annotating...");
 
-            try
-            {
+            try {
             	rate = anno.classifyGivenAMethod(classifierChoice, classParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
             }
-            catch(Exception ex)
-            {
+            catch(Exception ex) {
             	ex.printStackTrace();
             }
             		
             System.out.println(rate);
                 
-            AnnVisualPanel pnlVisual = new AnnVisualPanel(tabPane, tabNumber++);
-            tabPane.addTab(anno.getAnnotationLabels().get(i), null, pnlVisual, "Result Visualization");
-            pnlVisual.showResult(rate, testingTargets[i], annotations[i]);
-            
-            //Display graphical result
-            /*VisualizationPanel pnlChart = new VisualizationPanel(tabPane, tabNumber++);
-            tabPane.addTab(anno.getAnnotationLabels().get(i), pnlChart);
-            pnlChart.showResult(rate, testingTargets[i], annotations[i]);*/
+            //Add the label and result for saving to chain file later
+            saver.addResult(anno.getAnnotationLabels().get(i), rate);
             
             //Display result
-            ResultPanel pnlResult = new ResultPanel(tabPane, tabNumber++);
+            ResultPanel pnlResult = new ResultPanel(tabPane);
             tabPane.addTab("Result - " + anno.getAnnotationLabels().get(i), pnlResult);
-            pnlResult.showResult(rate, testingTargets[i], annotations[i]);
+            pnlResult.showResult(rate, testingTargets[i], annotations[i]); 
+            
+            //Add panel with title label and close button to the tab
+            tabPane.setTabComponentAt(tabPane.getTabCount() - 1, 
+                    new ButtonTabComponent("Result - " + anno.getAnnotationLabels().get(i), tabPane));
                 
             pnlOutput.setOutput("Recog Rate for " + anno.getAnnotationLabels().get(i) + ": " + rate);
             if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
@@ -608,64 +436,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 	}
 	
 	//Cross validation
-	private void cvRun()
-	{
-		Algorithm extractor = (Algorithm)cbExtractor.getSelectedItem();			
-		Algorithm selector = (Algorithm)cbSelector.getSelectedItem();			
-		Algorithm classifier = (Algorithm)cbClassifier.getSelectedItem();
-		
-		HashMap<String, String> exParams = new HashMap<String, String>();
-        HashMap<String, String> selParams = new HashMap<String, String>();
-        HashMap<String, String> classParams = new HashMap<String, String>();
-        
-        String featureExtractor = extractor.getName();
-        String featureSelector = selector.getName();
-        String classifierChoice = classifier.getName();
-        
-        //Build parameters from the controls
-        //TODO: Validate input data
-        String value = null;
-        //Parameters for extractor
-        for(Parameter param : extractor.getParam())
-        {
-        	JComponent control = exParamControls.get(param.getParamName());
-        	if(control instanceof JTextField)
-        		value = ((JTextField) control).getText().trim();
-        	else if(control instanceof JCheckBox)
-        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
-        	else if(control instanceof JSpinner)
-        		value = ((JSpinner)control).getValue().toString();
-        	exParams.put(param.getParamName(), value);
-        }
-        value = null;
-        //Parameters for selector
-        for(Parameter param : selector.getParam())
-        {
-        	JComponent control = selParamControls.get(param.getParamName());
-        	if(control instanceof JTextField)
-        		value = ((JTextField) control).getText().trim();
-        	else if(control instanceof JCheckBox)
-        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
-        	else if(control instanceof JSpinner)
-        		value = ((JSpinner)control).getValue().toString();
-        	selParams.put(param.getParamName(), value);
-        }
-        value = null;
-        //Parameters for classifier
-        for(Parameter param : classifier.getParam())
-        {
-        	JComponent control = classParamControls.get(param.getParamName());
-        	if(control instanceof JTextField)
-        		value = ((JTextField) control).getText().trim();
-        	else if(control instanceof JCheckBox)
-        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
-        	else if(control instanceof JSpinner)
-        		value = ((JSpinner)control).getValue().toString();
-        	classParams.put(param.getParamName(), value);
-        }
-		
-		Annotator anno = new Annotator();
-		
+	private void cvRun() {
 		//------ read image data from the directory ------------//
         DataInput problem = new DataInput(Annotator.dir, Annotator.ext, channel);
 
@@ -685,6 +456,11 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         }
         pnlOutput.setOutput("Extracing features ... ");
         float[][] features = anno.extractGivenAMethod(featureExtractor, exParams, problem);
+        
+        //Keep features to be dumped into chain file
+        saver.setImageSize(problem.getWidth() + " x " + problem.getHeight());
+        //saver.setExtractedFeatures(features);
+        
         //raw data is not used after this point, set to null.
         problem.setDataNull();
 
@@ -746,7 +522,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         
         //loop for each annotation target
         for (int i = 0; i < numOfAnno; i++) {
-            float recograte = 0;
+            float recograte[] = null;
             int start = 50 + i * 50 / numOfAnno;
             int region = 50 / numOfAnno;
 
@@ -759,28 +535,30 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             }
 
             pnlOutput.setOutput("Classifying/Annotating ... ");
-            try
-            {
+            try {
             	recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, classParams, shuffle, results[i]);
             }
-            catch(Exception ex)
-            {
+            catch(Exception ex) {
             	pnlOutput.setOutput("Exception! " + ex.getMessage());
             	ex.printStackTrace();
             }
             
             //output results to GUI and file
-            System.out.println("rate for annotation target " + i + ": " + recograte);
-            pnlOutput.setOutput("Recog Rate for " + anno.getAnnotationLabels().get(i) + ": " + recograte);
+            System.out.println("rate for annotation target " + i + ": " + recograte[K]);
+            pnlOutput.setOutput("Recog Rate for " + anno.getAnnotationLabels().get(i) + ": " + recograte[K]);
             
-            AnnVisualPanel pnlVisual = new AnnVisualPanel(tabPane, tabNumber++);
-            tabPane.addTab(anno.getAnnotationLabels().get(i), null, pnlVisual, "Result Visualization");
-            pnlVisual.showResult(recograte, targets[i], results[i]);
+            //Add the label and result for saving to chain file later
+            saver.addResult(anno.getAnnotationLabels().get(i), recograte[K]);
             
             //Display result
-            ResultPanel pnlResult = new ResultPanel(tabPane, tabNumber++);
+            ResultPanel pnlResult = new ResultPanel(tabPane);
             tabPane.addTab("Result - " + anno.getAnnotationLabels().get(i), pnlResult);
-            pnlResult.showResult(recograte, targets[i], results[i]);
+            pnlResult.showResult(recograte[K], targets[i], results[i]);
+            pnlResult.showKFoldChart(recograte);
+            
+            //Add panel with title label and close button to the tab
+            tabPane.setTabComponentAt(tabPane.getTabCount() - 1, 
+                    new ButtonTabComponent("Result - " + anno.getAnnotationLabels().get(i), tabPane));
             
             /*if (outputfile != null && fileFlag.equals("true")) {
                 try {
@@ -822,8 +600,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         if (!isRunning && (currentProgress > 0)) {
             System.out.println("Interrupted at progress " + currentProgress);
             if (bar != null) {
-                SwingUtilities.invokeLater(new Runnable()
-                {
+                SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         bar.setValue(0);
                     }
@@ -834,8 +611,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         }
 
         if (bar != null) {
-            SwingUtilities.invokeLater(new Runnable()
-            {
+            SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     bar.setValue(currentProgress);
                 }
@@ -843,10 +619,227 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         }
         return true;
     }
+    /*
+     * Builds the panel for feature extraction parameters 
+     */
+    private void buildExParameterPanel() {
+		if(pnlExtParam == null) {
+			pnlExtParam = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			pnlExtParam.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+			pnlExt.add(pnlExtParam, BorderLayout.SOUTH);
+		}
+		if(pnlExtDesc == null) {
+			pnlExtDesc = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			pnlExtDesc.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+			pnlExt.add(pnlExtDesc, BorderLayout.CENTER);
+		}
+		//Remove previous components (if any) from parameter and description panels
+		//TODO: dispose components inside the panel first		
+		pnlExtDesc.removeAll();
+		pnlExtParam.removeAll();
+		
+		//Get the currently selected extractor
+		Algorithm al = (Algorithm)cbExtractor.getSelectedItem();
+		
+		//Get parameters for the algorithm
+		ArrayList<Parameter> paramList = al.getParam();
+		
+		exParamControls = new HashMap<String, JComponent>();
+		
+		JLabel lbDesc = new JLabel(al.getDescription());
+		pnlExtDesc.add(lbDesc);
+		
+		for(Parameter param : paramList) {			
+			if(param.getParamType().equals("Boolean")) {
+				JCheckBox cb = new JCheckBox(param.getParamName());
+				pnlExtParam.add(cb);
+				
+				//Put component in hashmap to access the value later
+				exParamControls.put(param.getParamName(), cb);
+			}
+			else if(param.getParamType().equals("Integer")) {
+				JLabel lb = new JLabel(param.getParamName());
+				
+				SpinnerNumberModel snm = new SpinnerNumberModel();
+				if(param.getParamMax() != null)
+					snm.setMaximum(Integer.parseInt(param.getParamMax()));
+				if(param.getParamMin() != null)
+					snm.setMinimum(Integer.parseInt(param.getParamMin()));
+				if(param.getParamDefault() != null)
+					snm.setValue(Integer.parseInt(param.getParamDefault()));
+				JSpinner sp = new JSpinner(snm);
+				
+				pnlExtParam.add(lb);
+				pnlExtParam.add(sp);
+				
+				//Put component in hashmap to access the value later
+				exParamControls.put(param.getParamName(), sp);
+			}
+			else if(param.getParamType().equals("String") || param.getParamType().equals("Real")) {
+				JLabel lb = new JLabel(param.getParamName());
+				JTextField tf = new JTextField(param.getParamDefault());
+				tf.setPreferredSize(new java.awt.Dimension(50, 30));
+				
+				pnlExtParam.add(lb);
+				pnlExtParam.add(tf);
+				
+				//Put component in hashmap to access the value later
+				exParamControls.put(param.getParamName(), tf);
+			}
+		}
+		pnlExtParam.repaint();
+		pnlExtDesc.repaint();
+		this.pack();
+	}
+    /*
+     * Builds the panel for selection parameters 
+     */
+	private void buildSelParameterPanel()
+	{
+		if(pnlSelParam == null) {
+			pnlSelParam = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			pnlSelParam.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+			pnlSel.add(pnlSelParam, BorderLayout.SOUTH);
+		}
+		if(pnlSelDesc == null) {
+			pnlSelDesc = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			pnlSelDesc.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+			pnlSel.add(pnlSelParam, BorderLayout.CENTER);
+		}
+		//Remove previous components (if any) from parameter and description panels
+		//TODO: dispose components inside the panel first		
+		pnlSelDesc.removeAll();
+		pnlSelParam.removeAll();
+		
+		//Get the currently selected extractor
+		Algorithm al = (Algorithm)cbSelector.getSelectedItem();
+		
+		//Get parameters for the algorithm
+		ArrayList<Parameter> paramList = al.getParam();
+		
+		selParamControls = new HashMap<String, JComponent>();
+		
+		JLabel lbDesc = new JLabel(al.getDescription());
+		pnlSelDesc.add(lbDesc);
+		
+		for(Parameter param : paramList) {			
+			if(param.getParamType().equals("Boolean")) {
+				JCheckBox cb = new JCheckBox(param.getParamName());
+				pnlSelParam.add(cb);
+				
+				//Put component in hashmap to access the value later
+				selParamControls.put(param.getParamName(), cb);
+			}
+			else if(param.getParamType().equals("Integer")) {
+				JLabel lb = new JLabel(param.getParamName());
+				
+				SpinnerNumberModel snm = new SpinnerNumberModel();
+				if(param.getParamMax() != null)
+					snm.setMaximum(Integer.parseInt(param.getParamMax()));
+				if(param.getParamMin() != null)
+					snm.setMinimum(Integer.parseInt(param.getParamMin()));
+				if(param.getParamDefault() != null)
+					snm.setValue(Integer.parseInt(param.getParamDefault()));
+				JSpinner sp = new JSpinner(snm);
+				
+				pnlSelParam.add(lb);
+				pnlSelParam.add(sp);
+				
+				//Put component in hashmap to access the value later
+				selParamControls.put(param.getParamName(), sp);
+			}
+			else if(param.getParamType().equals("String") || param.getParamType().equals("Real")) {
+				JLabel lb = new JLabel(param.getParamName());
+				JTextField tf = new JTextField(param.getParamDefault());
+				tf.setPreferredSize(new java.awt.Dimension(50, 30));
+				
+				pnlSelParam.add(lb);
+				pnlSelParam.add(tf);
+				
+				//Put component in hashmap to access the value later
+				selParamControls.put(param.getParamName(), tf);
+			}
+		}
+		pnlSelParam.repaint();
+		pnlSelDesc.repaint();
+		this.pack();
+	}
+	/*
+     * Builds the panel for classification parameters 
+     */
+	private void buildClassParameterPanel()
+	{
+		if(pnlClassParam == null) {
+			pnlClassParam = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			pnlClassParam.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+			pnlClass.add(pnlClassParam, BorderLayout.SOUTH);
+		}
+		if(pnlClassDesc == null) {
+			pnlClassDesc = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			pnlClassDesc.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+			pnlClass.add(pnlClassDesc, BorderLayout.CENTER);
+		}
+		//Remove previous components (if any) from parameter and description panels
+		//TODO: dispose components inside the panel first		
+		pnlClassDesc.removeAll();
+		pnlClassParam.removeAll();
+		
+		//Get the currently selected extractor
+		Algorithm al = (Algorithm)cbClassifier.getSelectedItem();
+		
+		//Get parameters for the algorithm
+		ArrayList<Parameter> paramList = al.getParam();
+		
+		classParamControls = new HashMap<String, JComponent>();
+		
+		JLabel lbDesc = new JLabel(al.getDescription());
+		pnlClassDesc.add(lbDesc);
+		
+		for(Parameter param : paramList) {			
+			if(param.getParamType().equals("Boolean")) {
+				JCheckBox cb = new JCheckBox(param.getParamName());
+				pnlClassParam.add(cb);
+				
+				//Put component in hashmap to access the value later
+				classParamControls.put(param.getParamName(), cb);
+			}
+			else if(param.getParamType().equals("Integer")) {
+				JLabel lb = new JLabel(param.getParamName());
+				
+				SpinnerNumberModel snm = new SpinnerNumberModel();
+				if(param.getParamMax() != null)
+					snm.setMaximum(Integer.parseInt(param.getParamMax()));
+				if(param.getParamMin() != null)
+					snm.setMinimum(Integer.parseInt(param.getParamMin()));
+				if(param.getParamDefault() != null)
+					snm.setValue(Integer.parseInt(param.getParamDefault()));
+				JSpinner sp = new JSpinner(snm);
+				
+				pnlClassParam.add(lb);
+				pnlClassParam.add(sp);
+				
+				//Put component in hashmap to access the value later
+				classParamControls.put(param.getParamName(), sp);
+			}
+			else if(param.getParamType().equals("String") || param.getParamType().equals("Real")) {
+				JLabel lb = new JLabel(param.getParamName());
+				JTextField tf = new JTextField(param.getParamDefault());
+				tf.setPreferredSize(new java.awt.Dimension(50, 30));
+				
+				pnlClassParam.add(lb);
+				pnlClassParam.add(tf);
+				
+				//Put component in hashmap to access the value later
+				classParamControls.put(param.getParamName(), tf);
+			}
+		}
+		pnlClassDesc.repaint();
+		pnlClassParam.repaint();
+		this.pack();
+	}
 	
 	//Temporary main method for testing GUI
-	public static void main(String[] args) 
-	{
+	public static void main(String[] args) {
 		ExpertFrame ef = new ExpertFrame("Expert Mode", false, "g");
 		ef.pack();
 		ef.setVisible(true);

@@ -13,16 +13,12 @@ import annotool.Annotation;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import java.awt.event.*;
-import java.io.*;
-
-public class ResultPanel extends JPanel implements ActionListener
+public class ResultPanel extends JPanel
 {
 	//Data members
 	int tabIndex; //the index of this panel in the parent tabbed pane
@@ -48,17 +44,12 @@ public class ResultPanel extends JPanel implements ActionListener
 	JTable table = null;
 	JScrollPane scrollPane = null;	
 	JPanel pnlMatrix;
-	ChartPanel pnlChart;
+	ChartPanel pnlChart;	
 	
-	JButton btnSaveModel;
-	JFileChooser fileChooser;
-	
-	public ResultPanel(JTabbedPane parentPane, int tabIndex)
+	public ResultPanel(JTabbedPane parentPane)
 	{
 	   	this.parentPane = parentPane;
-	   	this.tabIndex = tabIndex;
-	   	
-	   	fileChooser = new JFileChooser();
+	   	this.tabIndex = parentPane.getTabCount();
 	   	
 	   	this.setLayout(new GridLayout(2, 1));
 	}
@@ -82,6 +73,7 @@ public class ResultPanel extends JPanel implements ActionListener
 		//Descriptions
 		buildDescription();		
 		
+		revalidate();
 		repaint();
 	}
 	
@@ -139,7 +131,10 @@ public class ResultPanel extends JPanel implements ActionListener
 		//pnlMatrix.add(lbVertical, BorderLayout.WEST);
 		pnlMatrix.add(lbTitle, BorderLayout.NORTH);
 		
-		this.add(pnlMatrix);		
+		this.add(pnlMatrix);	
+		
+		parentPane.setEnabledAt(tabIndex,true);
+	    parentPane.setSelectedIndex(tabIndex);
 	}
 	
 	/*
@@ -168,11 +163,6 @@ public class ResultPanel extends JPanel implements ActionListener
 		pnlDescription.add(lbRecogRate);
 		pnlDescription.add(lbBestRate);
 		pnlDescription.add(lbWorstRate);
-		
-		
-		btnSaveModel = new JButton("Save Model", new ImageIcon("images/save.png"));
-		btnSaveModel.addActionListener(this);
-		pnlDescription.add(btnSaveModel);
 		
 		//Add description panel to the container
 		pnlMatrix.add(pnlDescription, BorderLayout.SOUTH);
@@ -242,6 +232,28 @@ public class ResultPanel extends JPanel implements ActionListener
 		this.add(pnlChart);
 	}
 	
+	public void showKFoldChart(float[] results)
+	{	
+		// create the dataset...
+        final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+        //Iterate over the fold results
+        for(int i=0; i < results.length - 1; i++) {
+        			dataset.addValue(100 * results[i], "Fold", "Fold" +( i + 1));
+        }
+		
+		JFreeChart chart = ChartFactory.createBarChart3D("Fold Results", "Class", "Rate (%)", dataset, PlotOrientation.VERTICAL, false, false, false);
+		CategoryPlot plot = chart.getCategoryPlot();
+		CategoryItemRenderer r = plot.getRenderer(); 
+		r.setSeriesPaint(0, new Color(67, 40, 119)); 
+		//r.setSeriesPaint(1, new Color(223, 34, 39));
+		
+		ChartPanel pnlFoldChart = new ChartPanel(chart);
+		this.add(pnlFoldChart);
+		
+		revalidate();
+	}
+	
 	//calculate result statistics
 	private int[][] infoForClasses()
 	{
@@ -295,38 +307,11 @@ public class ResultPanel extends JPanel implements ActionListener
 	/*
 	 * Builds the arraylist of unique labels from the targets
 	 */
-	private void buildLabels()
-	{
-		for(int i=0; i < targets.length; i++)
-		{
+	private void buildLabels() {
+		for(int i=0; i < targets.length; i++) {
 			if(!labels.contains(targets[i]))
 				labels.add(targets[i]);
 		}
 		Collections.sort(labels);
-	}
-	public void actionPerformed(ActionEvent e)
-	{
-		if (e.getSource() == btnSaveModel) {
-	        int returnVal = fileChooser.showSaveDialog(ResultPanel.this);
-
-	        if (returnVal == JFileChooser.APPROVE_OPTION) {
-	            File file = fileChooser.getSelectedFile();
-	            String fileName = file.getName();
-	            
-	            FileWriter writer = null;
-	            try
-	            {
-	            	writer = new FileWriter(file);
-	            	writer.write("#" + System.getProperty("line.separator"));
-	            	writer.flush();
-	            	writer.close();
-	            }
-	            catch(IOException ex)
-	            {
-	            	System.out.println("Exception occured on file write.");
-	            	ex.printStackTrace();
-	            }
-	        }
-	   }
 	}
 }
