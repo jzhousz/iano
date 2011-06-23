@@ -170,14 +170,6 @@ public class Validator
       float[] foldresults = new float[K+1];
       for (int k = 0; k < K; k++)
       {
-    	  //if GUI, update 5 times unless K is small than 5
-    	 if (bar != null)
-    	 {
-    		 if (K < 5) //update K times
-    			    setProgress(startPos + k*totalRange/K);
-    	     else if (k%(K/5) == 0)
-    			    setProgress(startPos + totalRange/5*k/(K/5));
-    	 }	 
     		 
 		 if (k == K-1)  //the last fold may have more testing samples than other folds.
 			    testinglength = length/K + length %  K;
@@ -231,8 +223,18 @@ public class Validator
 	           correct ++;
 	           currentFoldCorrect ++;
 	        }
-	        foldresults[k] = currentFoldCorrect/testinglength;
 	     }
+         foldresults[k] = currentFoldCorrect/testinglength;
+
+      
+   	   //if GUI, update 5 times unless K is small than 5
+       if (bar != null)
+       {
+    		 if (K < 5) //update K times
+    			    setProgress(startPos + (k+1)*totalRange/K);
+    	     else if (k%(K/5) == 0)
+    			    setProgress(startPos + totalRange/5*k/(K/5));
+        }	 
       }
 
       //output the overall results of all folds
