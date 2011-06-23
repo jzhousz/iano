@@ -224,7 +224,7 @@ public class Validator
 	           currentFoldCorrect ++;
 	        }
 	     }
-         foldresults[k] = currentFoldCorrect/testinglength;
+         foldresults[k] = (float) currentFoldCorrect/testinglength;
 
       
    	   //if GUI, update 5 times unless K is small than 5
@@ -235,11 +235,12 @@ public class Validator
     	     else if (k%(K/5) == 0)
     			    setProgress(startPos + totalRange/5*k/(K/5));
         }	 
-      }
+      }//end of K
 
       //output the overall results of all folds
       System.out.println("overall recognition rate: " + (float)correct/length);
       foldresults[K] = (float) correct/length;
+      
       return foldresults;
       //return (float) correct/length;
 	  
