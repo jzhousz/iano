@@ -18,6 +18,7 @@ public class LDAClassifier implements SavableClassifier {
 	float[] priors = null;
 	java.util.HashMap targetmap = null;
 	LDATrainedModel trainedModel = null;
+	public final static String KEY_PRIORS = "Priors";
 
 	/**
 	 * a simple testing case
@@ -117,7 +118,7 @@ public class LDAClassifier implements SavableClassifier {
 	public LDAClassifier(java.util.HashMap<String, String> parameters)
 	{
 		//set prior if provided
-		if (parameters != null)
+		/*if (parameters != null)
 		{
 			float[] priors = new float[parameters.size()];
 			for(int i=0; i< parameters.size(); i++)
@@ -126,7 +127,10 @@ public class LDAClassifier implements SavableClassifier {
 				priors[i] = prior;
 			}
 			this.priors = priors;
-		}
+		}*/
+		if(parameters != null && parameters.containsKey(KEY_PRIORS))
+	          initPriors(parameters.get(KEY_PRIORS));
+		
 		
 	}
 
@@ -151,8 +155,14 @@ public class LDAClassifier implements SavableClassifier {
 		for(int i =0; i < convertedTargets.length; i++)
 			System.out.println(convertedTargets[i]);
 		
+		//check priors
 		if(priors == null && ngroups != 0)
 			setUniformPriors();
+		if(priors != null  && priors.length != ngroups)
+		{ 
+			System.out.println("Priors must be one per class. Set to uniform instead.");
+			setUniformPriors();
+		}
 		
 		//get a matrix from centralized training patterns 
 		float[][] means = new float[ngroups][dimension]; //will be needed in testing

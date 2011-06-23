@@ -5,13 +5,14 @@ package annotool;
 public class ComboFeatures {
 	float[][] trainingFeatures;
 	float[][] testingFeatures;
+	int[]  selectedIndices;
 
-	private static final ComboFeatures INSTANCE = new ComboFeatures();
+	//private static final ComboFeatures INSTANCE = new ComboFeatures();
 
-	//singleton constructor
-	public static ComboFeatures getInstance() {
-        return INSTANCE;
-    }
+	//singleton constructor -- Removed to allow multiple expert run.  Jun 2011.
+	//public static ComboFeatures getInstance() {
+    //    return INSTANCE;
+    //}
 	
 	//setters
 	public void setTrainingFeatures(float[][] fea)
@@ -20,10 +21,17 @@ public class ComboFeatures {
 	public void setTestingFeatures(float[][] fea)
 	{   testingFeatures = fea; }
 	
+	public void setIndices(int[] ind)
+	{   selectedIndices = ind; }
+	
 	//getters
 	public float[][] getTrainingFeatures()
 	{   return trainingFeatures;  }
 	
 	public float[][] getTestingFeatures()
 	{   return testingFeatures;   }
+	
+	public int[] getSelectedIndices()
+	{   return selectedIndices;   }
 }
+
