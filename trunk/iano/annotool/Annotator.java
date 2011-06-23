@@ -462,7 +462,8 @@ public class Annotator implements Runnable
             if (!featureSelector.equalsIgnoreCase("None")) {
                 setGUIOutput("Selecting features ... ");
                 //override the original features and num of features
-                features = selectGivenAMethod(featureSelector, null, features, targets[i]);
+                ComboFeatures res = selectGivenAMethod(featureSelector, null, features, targets[i]);
+                features = res.getTrainingFeatures();
                 numoffeatures = features[0].length;
             }
 
@@ -685,10 +686,15 @@ public class Annotator implements Runnable
      * Feature selector that takes 1 set. Used in cross validation mode.
      *
      */
-    public float[][] selectGivenAMethod(String chosenSelector, HashMap<String,String> parameters, float[][] features, int[] targets) {
+    public ComboFeatures selectGivenAMethod(String chosenSelector, HashMap<String,String> parameters, float[][] features, int[] targets) {
   
-        if (chosenSelector.equalsIgnoreCase("None")) 
-            return features;
+    	ComboFeatures result = new ComboFeatures();
+    	
+        if (chosenSelector.equalsIgnoreCase("None"))
+        {
+        	result.setTrainingFeatures(features);
+        	result.setIndices(null);
+        }
 
         if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || chosenSelector.equalsIgnoreCase("mRMR-MID")) 
         {
@@ -703,13 +709,15 @@ public class Annotator implements Runnable
             int numoffeatures = getNumberofFeatures(); // will be passed in as parameter to selector later
             FeatureSelector selector = new WeKaFeatureSelectors(features, targets, numoffeatures, null, 0.2);
             try {
-                features = selector.selectFeatures();
+            	result.setTrainingFeatures(selector.selectFeatures());
+            	result.setIndices(selector.getIndices());
+                
             }  catch (Exception e) {
                 System.err.println(e.getMessage());
             }
         }
 
-        return features;
+        return result;
         
     }
 
@@ -730,6 +738,8 @@ public class Annotator implements Runnable
         //if incrementally reading the images, the flow will be different (cann't get features in one shot .. 5/3/2011)
         float[][] selectedTrainingFeatures = null;
         int[] indices = null;
+        ComboFeatures result = new ComboFeatures();
+
         if (chosenSelector.equalsIgnoreCase("Fisher")) {
         	System.err.println("will call FishersCriterion class for feature selection");
         	System.exit(1);
@@ -765,8 +775,9 @@ public class Annotator implements Runnable
             }
             selector = (new mRMRFeatureSelector(testingFeatures, testTargets, chosenSelector, parameters));
             float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
-            ComboFeatures.getInstance().setTrainingFeatures(selectedTrainingFeatures);
-            ComboFeatures.getInstance().setTestingFeatures(selectedTestingFeatures);
+            result.setTrainingFeatures(selectedTrainingFeatures);
+            result.setTestingFeatures(selectedTestingFeatures);
+            result.setIndices(indices);
         }
         else if (chosenSelector.equalsIgnoreCase("Information Gain")) {
             //Do selection on the training set
@@ -782,15 +793,17 @@ public class Annotator implements Runnable
             numoffeatures = indices.length;
             selector = new WeKaFeatureSelectors(testingFeatures, null, numoffeatures, null, 0.2);//081007
             float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
-            ComboFeatures.getInstance().setTrainingFeatures(selectedTrainingFeatures);
-            ComboFeatures.getInstance().setTestingFeatures(selectedTestingFeatures);
+            result.setTrainingFeatures(selectedTrainingFeatures);
+            result.setTestingFeatures(selectedTestingFeatures);
+            result.setIndices(indices);
         }else if (chosenSelector.equalsIgnoreCase("None")) 
         {
-            ComboFeatures.getInstance().setTrainingFeatures(trainingFeatures);
-            ComboFeatures.getInstance().setTestingFeatures(testingFeatures);
+            result.setTrainingFeatures(trainingFeatures);
+            result.setTestingFeatures(testingFeatures);
+            result.setIndices(null);
         }
 
-        return ComboFeatures.getInstance();
+        return result;
 
     }
 
