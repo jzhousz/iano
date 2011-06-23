@@ -167,10 +167,15 @@ public class Validator
       float[] foldresults = new float[K+1];
       for (int k = 0; k < K; k++)
       {
-    	 //if GUI, update 5 times 
+    	  //if GUI, update 5 times unless K is small than 5
     	 if (bar != null)
-    		 if (k%(K/5) == 0)
+    	 {
+    		 if (K < 5) //update K times
+    			    setProgress(k*totalRange/K);
+    	     else if (k%(K/5) == 0)
     			    setProgress(totalRange/5*k/(K/5));
+    	 }	 
+    		 
 		 if (k == K-1)  //the last fold may have more testing samples than other folds.
 			    testinglength = length/K + length %  K;
 		 else
