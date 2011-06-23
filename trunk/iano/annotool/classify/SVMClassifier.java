@@ -349,7 +349,7 @@ public class SVMClassifier implements SavableClassifier
     	}catch(java.io.IOException e)
     	{
     		System.err.println("Problem in saving the trained model of SVM");
-    		throw new java.io.Exception("Problem in saving the trained model of SVM");
+    		throw new java.io.IOException("Problem in saving the trained model of SVM");
     	}
     }
 
