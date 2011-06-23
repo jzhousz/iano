@@ -57,9 +57,12 @@ public class Validator
       {
     	 //if GUI, update 5 times 
     	 if (bar != null)
-    		 if (k%(K/5) == 0)
-    			    setProgress(totalRange/5*k/(K/5));
-    		        
+    	 {
+    		 if (K < 5)
+    			   setProgress(startPos + k*totalRange/K);
+    		 else if (k%(K/5) == 0)
+    			    setProgress(startPos + totalRange/5*k/(K/5));
+    	 }		        
     	  
 		 if (k == K-1)  //the last fold may have more testing samples than other folds.
 		    testinglength = length/K + length %  K;
@@ -171,9 +174,9 @@ public class Validator
     	 if (bar != null)
     	 {
     		 if (K < 5) //update K times
-    			    setProgress(k*totalRange/K);
+    			    setProgress(startPos + k*totalRange/K);
     	     else if (k%(K/5) == 0)
-    			    setProgress(totalRange/5*k/(K/5));
+    			    setProgress(startPos + totalRange/5*k/(K/5));
     	 }	 
     		 
 		 if (k == K-1)  //the last fold may have more testing samples than other folds.
