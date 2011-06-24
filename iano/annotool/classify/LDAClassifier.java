@@ -87,7 +87,7 @@ public class LDAClassifier implements SavableClassifier {
             //somewhere else		
 			System.out.println("Loading...");
 			Object model = classifier.loadModel("testLDA_model");
- 	      predictions = classifier.classifyUsingModel(model, testing);
+ 	        predictions = classifier.classifyUsingModel(model, testing);
 		}catch(Exception e)
 		{ e.printStackTrace();}
 		
@@ -113,7 +113,7 @@ public class LDAClassifier implements SavableClassifier {
 	}
 
     //It takes training and testing data for classification. 
-	//Posterior probabilities are calculated.
+	//Posterior probabilities are calculated and filled.
 	public void classify(float[][] trainingPatterns, int[] trainingtargets, float[][] testingPatterns, int[] predictions, double[] probesti) throws Exception
 	{
 		LDATrainedModel trainedModel = (LDATrainedModel) trainingOnly(trainingPatterns, trainingtargets);
@@ -466,7 +466,7 @@ public class LDAClassifier implements SavableClassifier {
 
     //parse the string to set the priors instance variable
     //split using " " to get priors  e.g. "0.1 0.3 0.6" 
-    float[] parsePriors(String priorsS)
+    private float[] parsePriors(String priorsS)
     {
     	String[] res = priorsS.split(" ");
     	float[] priors = new float[res.length];
