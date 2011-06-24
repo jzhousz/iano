@@ -1,9 +1,5 @@
 package annotool.classify;
 
-import java.io.Serializable;
-
-import libsvm.svm_model;
-
 import Jama.*;
 
 //  Linear Discriminant Classifier based on Multivariate Normal Distribution.
@@ -16,7 +12,7 @@ public class LDAClassifier implements SavableClassifier {
 
 	int ngroups = 0;
 	float[] priors = null;
-	java.util.HashMap targetmap = null;
+	java.util.HashMap<Integer, Integer> targetmap = null;
 	LDATrainedModel trainedModel = null;
 	public final static String KEY_PRIORS = "Priors";
 
@@ -56,59 +52,44 @@ public class LDAClassifier implements SavableClassifier {
 		int[] predictions  = new int[5];
 		double[] probest = new double[5];
 
-		//LDAClassifier classifier = new LDAClassifier(priors);
-		//try {
-		//classifier.classify(training,  trainingtargets, testing, predictions, probest);
-		//}catch(Exception e)
-		//{ e.printStackTrace();}
-
-		
-		java.util.HashMap<String, String> parameters = new java.util.HashMap<String, String>();
-		parameters.put("0", "0.3");
-		parameters.put("1", "0.7");
-		SavableClassifier classifier = new LDAClassifier(parameters);
-		Object model = classifier.trainingOnly(training, trainingtargets);
-		
-		//int[] predictions = null;
-		try{
-		   predictions = classifier.classifyUsingModel(model, testing);
+		//There are three ways to use this classifier.
+        /*
+        //the one method version		
+		LDAClassifier classifier = new LDAClassifier(priors);
+		try {
+		classifier.classify(training,  trainingtargets, testing, predictions, probest);
 		}catch(Exception e)
 		{ e.printStackTrace();}
-		
+        */
 		
 		/*
-		
+		//the two methods (train/classify) version
 		java.util.HashMap<String, String> parameters = new java.util.HashMap<String, String>();
-		parameters.put("0", "0.3");
-		parameters.put("1", "0.7");
+		parameters.put("Priors", "0.3 0.7");
 		SavableClassifier classifier = new LDAClassifier(parameters);
-		classifier.trainingOnly(training, trainingtargets);
-
-         ----  saving chain/model ---
-		... prompt for chainfile name .. write some comments with useful info ...
-		... save featre extractor/selector ...
-
-        
-		Object model = classifier.getModel();
-		
-	    //come up with a name by expanding the chainfile name
-		//new object output steam using the name
-		//serialize the model
-		//write the filename to the chainfile ..
-		     
-        --- loading/applying chain/model ----		      
-		... parse ... read extractor, selector, classifier name and their ...parameters ...
-		... new objectinputsteam using the classifier model name
-		... get the object
-		... pass to the classifier
-		
-		
-		int[] predictions = null;
+		Object model = classifier.trainingOnly(training, trainingtargets);
 		try{
 		   predictions = classifier.classifyUsingModel(model, testing);
 		}catch(Exception e)
 		{ e.printStackTrace();}
 		*/
+		
+		
+		//the save model to file version
+		java.util.HashMap<String, String> parameters = new java.util.HashMap<String, String>();
+		parameters.put("Priors", "0.3 0.7");
+		SavableClassifier classifier = new LDAClassifier(parameters);
+		Object amodel = classifier.trainingOnly(training, trainingtargets);
+		try {
+			System.out.println("Saving...");
+			classifier.saveModel(amodel, "testLDA_model");
+		  
+            //somewhere else		
+			System.out.println("Loading...");
+			Object model = classifier.loadModel("testLDA_model");
+ 	      predictions = classifier.classifyUsingModel(model, testing);
+		}catch(Exception e)
+		{ e.printStackTrace();}
 		
 		for(int i = 0; i < predictions.length; i++)
 			System.out.println(predictions[i]); //11121
@@ -118,20 +99,8 @@ public class LDAClassifier implements SavableClassifier {
 	public LDAClassifier(java.util.HashMap<String, String> parameters)
 	{
 		//set prior if provided
-		/*if (parameters != null)
-		{
-			float[] priors = new float[parameters.size()];
-			for(int i=0; i< parameters.size(); i++)
-			{
-				float prior = Float.parseFloat(parameters.get(String.valueOf(i)));
-				priors[i] = prior;
-			}
-			this.priors = priors;
-		}*/
 		if(parameters != null && parameters.containsKey(KEY_PRIORS))
-	          initPriors(parameters.get(KEY_PRIORS));
-		
-		
+	          priors = parsePriors(parameters.get(KEY_PRIORS));
 	}
 
 	public LDAClassifier()
@@ -143,55 +112,15 @@ public class LDAClassifier implements SavableClassifier {
 		this.priors = priors;
 	}
 
-
+    //It takes training and testing data for classification. 
+	//Posterior probabilities are calculated.
 	public void classify(float[][] trainingPatterns, int[] trainingtargets, float[][] testingPatterns, int[] predictions, double[] probesti) throws Exception
 	{
-		//make sure that the targets are in the range of 0 ... ngroups -1
-		//also set the ngroups
-		int traininglength = trainingPatterns.length; 
+		LDATrainedModel trainedModel = (LDATrainedModel) trainingOnly(trainingPatterns, trainingtargets);
 		int testinglength = testingPatterns.length;
-		int dimension = trainingPatterns[0].length;
-		int[] convertedTargets = convertTargets(trainingtargets);
-		for(int i =0; i < convertedTargets.length; i++)
-			System.out.println(convertedTargets[i]);
-		
-		//check priors
-		if(priors == null && ngroups != 0)
-			setUniformPriors();
-		if(priors != null  && priors.length != ngroups)
-		{ 
-			System.out.println("Priors must be one per class. Set to uniform instead.");
-			setUniformPriors();
-		}
-		
-		//get a matrix from centralized training patterns 
-		float[][] means = new float[ngroups][dimension]; //will be needed in testing
-		double[][] normalizedTraining = normalizeTraining(trainingPatterns, convertedTargets, means);
-		Matrix trainingM = new Matrix(normalizedTraining);
-		
-		QRDecomposition decom = new QRDecomposition(trainingM);
-		Matrix R = decom.getR();
-		//System.out.println("R:");
-		//R.print(10, 7);
-
-		//R = R/sqrt(n-ngroups)
-		double cons = Math.sqrt(traininglength - ngroups);
-		Matrix B = new Matrix(R.getRowDimension(), R.getColumnDimension(),  cons);
-		R.arrayRightDivideEquals(B);
-
-		SingularValueDecomposition svd = new SingularValueDecomposition(R);
-		//s is a vector containing the singular values
-		//s = svd(R)
-		double[] s = svd.getSingularValues();
-
-		//error checking to see if the pooled covariance matrix of trainingM is positive definite
-		//TODO
-
-		//logDetSigma = 2*sum(log(s))
-		double logDetSigma = 0;
-		for(int i = 0; i<s.length; i++)
-			logDetSigma += Math.log(s[i]);
-		logDetSigma = 2*logDetSigma;
+	   	Matrix R = trainedModel.getTrainedR();
+       	double logDetSigma = trainedModel.getLogDetSigma();
+       	float[][] means = trainedModel.getMeans();
 
 		//Now testing! Need R (and logDetSigma), means, ngroups
 		//Multivariate Normal (MVN) relative log posterior density
@@ -247,14 +176,11 @@ public class LDAClassifier implements SavableClassifier {
 			probesti[i] = max;
 			predictions[i] =  ((Integer) targetmap.get(target)).intValue();	
 		}
-
-
 	}
 
-	//
+	// Do data transform to double, and calculate the means.
 	// means: a matrix of ngroups *dimension
-	// contains the mean of each group for each dimension
-	//
+	// It contains the means of each group for each dimension.
 	private double[][] normalizeTraining(float[][] trainingPatterns, int[] trainingtargets, float[][]  means)
 	{   
 		//Jama only works with double, so convert to double
@@ -311,20 +237,20 @@ public class LDAClassifier implements SavableClassifier {
 
 	}
 
-	//	make sure that the targets are in the range of 0 ... ngroups -1
-	//also build the targetMap for converting back
+	//Make sure that the targets are in the range of 0 ... ngroups -1
+	//Build the targetMap for converting back targets.
 	private int[] convertTargets(int[] targets)
 	{
 		int[] convertedTargets = new int[targets.length];
 		//targetmap is for converting back from new targets to original targets
 		//key: new target; value: original target
 		if (targetmap == null)
-			targetmap = new java.util.HashMap();
+			targetmap = new java.util.HashMap<Integer, Integer>();
 		else
 			targetmap.clear();
 
 		//map the original target to new target, just for converting forward
-		java.util.HashMap orig2new = new java.util.HashMap();
+		java.util.HashMap<Integer, Integer> orig2new = new java.util.HashMap<Integer, Integer>();
 
 		int targetIndex = -1;
 		for (int i=0; i < targets.length; i++)
@@ -358,7 +284,6 @@ public class LDAClassifier implements SavableClassifier {
 		}
 	}
 	
-	//interface methods
     public Object trainingOnly(float[][] trainingPatterns, int[] trainingtargets)
     { 
 		int traininglength = trainingPatterns.length; 
@@ -369,6 +294,11 @@ public class LDAClassifier implements SavableClassifier {
 		
 		if(priors == null && ngroups != 0)
 			setUniformPriors();
+		if(priors != null  && priors.length != ngroups)
+		{ 
+			System.out.println("Priors must be one per class. Set to uniform instead.");
+			setUniformPriors();
+		}
 		
 		//get a matrix from centralized training patterns 
 		float[][] means = new float[ngroups][dimension]; //will be needed in testing
@@ -404,7 +334,8 @@ public class LDAClassifier implements SavableClassifier {
 		return trainedModel;
     }
     
-    public Object getModel()  //get and/or save
+    //other interface methods
+    public Object getModel()  
     { 
     	return trainedModel; 
     }
@@ -439,7 +370,7 @@ public class LDAClassifier implements SavableClassifier {
        	double logDetSigma = trainedModel.getLogDetSigma();
        	float[][] means = trainedModel.getMeans();
        	float[] priors =trainedModel.getPriors();
-       	java.util.HashMap targetMap =trainedModel.getTargetMap();
+       	java.util.HashMap<Integer, Integer> targetMap =trainedModel.getTargetMap();
        	int ngroups = means.length;
        	int testinglength = testingPatterns.length;
        	
@@ -494,7 +425,7 @@ public class LDAClassifier implements SavableClassifier {
 					target = k;
 					max = posterior[i][k];
 				}
-			//probesti[i] = max;  // probability estimation can be useful (overload?).
+			//probesti[i] = max;  // probability estimation can be useful later.
 			predictions[i] =  ((Integer) targetMap.get(target)).intValue();	
 		}
       	
@@ -502,35 +433,57 @@ public class LDAClassifier implements SavableClassifier {
     
     }
 
-    //inner class to save the trained model
-    class LDATrainedModel implements Serializable
+    public void saveModel(Object trainedModel, String model_file_name) throws java.io.IOException
     {
-        Matrix  trainedR;
-        double logDetSigma; 
-        float[][] means;
-        float[] priors;
-        java.util.HashMap targetMap;
-        
-        LDATrainedModel(Matrix r, double logDetSigma, float[][] means, float[] priors, java.util.HashMap targetMap)
-        {
-        	setLDATrainedModel(r, logDetSigma, means, priors, targetMap);
-        }
-        
-        void setLDATrainedModel(Matrix r, double logDetSigma, float[][] means, float[] priors, java.util.HashMap targetMap)
-        {
-        	trainedR = r;
-        	this.logDetSigma = logDetSigma;
-        	this.means = means;
-        	this.priors = priors;
-        	this.targetMap = targetMap;
-        }
-        
-        Matrix getTrainedR() { return trainedR; }
-        double getLogDetSigma() {return logDetSigma;} 
-        float[][] getMeans() { return means; }
-        float[] getPriors() { return priors; }
-        java.util.HashMap getTargetMap()  { return targetMap; } 
+    	if (!(trainedModel instanceof LDATrainedModel))
+    	{ 
+    		System.err.println("The model is not valid");
+    	}
+    	else
+       	//persist to the file
+    	{
+    		java.io.ObjectOutputStream filestream = new java.io.ObjectOutputStream(new java.io.FileOutputStream(model_file_name));
+    		filestream.writeObject(trainedModel);
+    		filestream.close();
+    	}
     }
-    
+
+    public Object loadModel(String model_file_name) throws java.io.IOException
+    {  
+    	//read from the file and cast it to trainedModel;
+    	LDATrainedModel model = null;
+    	java.io.ObjectInputStream filestream = new java.io.ObjectInputStream(new java.io.FileInputStream(model_file_name));
+    	try
+    	{
+    	  model = (LDATrainedModel) filestream.readObject();
+    	}catch(ClassNotFoundException ce)
+    	{
+    		System.err.println("Class Not Found in Loading SVM model");
+    	}
+    	filestream.close();
+    	return model;
+    }
+
+    //parse the string to set the priors instance variable
+    //split using " " to get priors  e.g. "0.1 0.3 0.6" 
+    float[] parsePriors(String priorsS)
+    {
+    	String[] res = priorsS.split(" ");
+    	float[] priors = new float[res.length];
+
+    	float total = 0;
+    	for(int i=0; i<priors.length; i++)
+    	{
+    		priors[i] = Float.parseFloat(res[i]);
+    		total += priors[i];
+    	}
+      	//check if they add up right
+    	if (total > 1.0)
+    	{
+    		System.err.println("The sum of prior probability of all groups should be 1.0");
+    		return null;
+    	}
+    	return priors;
+    }
 	
 }

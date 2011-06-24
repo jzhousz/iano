@@ -55,14 +55,6 @@ public class Validator
       int correct = 0;
       for (int k = 0; k < K; k++)
       {
-    	 //if GUI, update 5 times 
-    	 if (bar != null)
-    	 {
-    		 if (K < 5)
-    			   setProgress(startPos + k*totalRange/K);
-    		 else if (k%(K/5) == 0)
-    			    setProgress(startPos + totalRange/5*k/(K/5));
-    	 }		        
     	  
 		 if (k == K-1)  //the last fold may have more testing samples than other folds.
 		    testinglength = length/K + length %  K;
@@ -117,10 +109,20 @@ public class Validator
 	        if(predictions[i] == testingTargets[i])
 	           correct ++;
 	     }
+         
+    	 //update GUI 5 times 
+    	 if (bar != null)
+    	 {
+    		 if (K < 5)
+    			   setProgress(startPos + k*totalRange/K);
+    		 else if (k%(K/5) == 0)
+    			    setProgress(startPos + totalRange/5*k/(K/5));
+    	 }		        
 
       }
 
-      //output the overal results
+      //output the overall result
+      setProgress(startPos + totalRange);
       System.out.println("overall recognition rate: " + (float)correct/length);
       return (float) correct/length;
    }
@@ -233,7 +235,7 @@ public class Validator
     		 if (K < 5) //update K times
     			    setProgress(startPos + (k+1)*totalRange/K);
     	     else if (k%(K/5) == 0)
-    			    setProgress(startPos + totalRange/5*k/(K/5));
+    			    setProgress(startPos + totalRange/5*(k+1)/(K/5));
         }	 
       }//end of K
 
@@ -241,9 +243,9 @@ public class Validator
       System.out.println("overall recognition rate: " + (float)correct/length);
       foldresults[K] = (float) correct/length;
       
+      setProgress(startPos + totalRange);
       return foldresults;
-      //return (float) correct/length;
-	  
+ 	  
   }
    
    /**********************************************************************
