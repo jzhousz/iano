@@ -37,6 +37,8 @@ public class AnnOutputPanel extends JPanel implements ActionListener {
 		else
 		  output.setText(arg);
 		
+		output.setCaretPosition(output.getText().length());
+		
         /*
          * set the last row visible, to be added.
 		int w = pane.getSize().width;

@@ -276,13 +276,19 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 			CardLayout cl = (CardLayout)(this.getLayout());
 			cl.show(this, MODESELECT);
 		}
+		else if(e.getSource() == btnTrain) 
+		{
+			Annotator.output = Annotator.OUTPUT_CHOICES[3];
+			pnlImages.setMode();
+			AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[3]);
+		}
 		else if(e.getSource() == btnLoadImages)
 		{
 			if(rbTT.isSelected())
 			{
 				//Load separate training and testing image sets
 				Annotator.output = Annotator.OUTPUT_CHOICES[0];
-				pnlImages.setModeInfo();
+				pnlImages.setMode();
 				AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[0]);
 			}
 			else
@@ -297,7 +303,7 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 				}
 				//Load one image set for cross validation
 				Annotator.output = Annotator.OUTPUT_CHOICES[1];
-				pnlImages.setModeInfo();
+				pnlImages.setMode();
 				AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[1]);
 			}
 		}

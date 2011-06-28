@@ -11,13 +11,14 @@ import java.awt.Toolkit;
 public class AnnotatorGUI extends JFrame
 {
 	LandingPanel pnlLanding;
+	AnnMenuBar menuBar;
 	
 	public AnnotatorGUI(String arg0)
 	{
 		super(arg0);
 		
 		//Build Menu and Toolbar
-		new AnnMenuBar(this);
+		menuBar = new AnnMenuBar(this);
 		
 		pnlLanding = new LandingPanel(this);
 		this.add(pnlLanding);
@@ -79,5 +80,9 @@ public class AnnotatorGUI extends JFrame
 		pnlLanding = new LandingPanel(this);
 		this.add(pnlLanding);
 		this.pack();
+	}
+	
+	public void setNewWizardEnabled(boolean isEnabled) {
+		menuBar.setNewWizardEnabled(isEnabled);
 	}
 }

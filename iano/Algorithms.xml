@@ -43,20 +43,24 @@
 		<Desc>Support Vector Machine</Desc>
 		<Parameter type="String">
 			<Name>General Parameter</Name>
-			<Default>-s 0</Default>
+			<Default>-t 0</Default>
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="Classifier">
-		<Name>Tree</Name>
+		<Name>LDA</Name>
+		<Desc>Linear Discriminant Analysis</Desc>
 	</Algorithm>
 	<Algorithm type="Classifier">
-		<Name>Naive Bayes</Name>
+		<Name>W_Tree</Name>
 	</Algorithm>
 	<Algorithm type="Classifier">
-		<Name>Random Forest</Name>
+		<Name>W_NaiveBayes</Name>
 	</Algorithm>
 	<Algorithm type="Classifier">
-		<Name>Nearest Neighbor</Name>
+		<Name>W_RandomForest</Name>
+	</Algorithm>
+	<Algorithm type="Classifier">
+		<Name>W_NearestNeighbor</Name>
 		<Parameter type="Integer">
 			<Name>K</Name>
 			<Low>1</Low>

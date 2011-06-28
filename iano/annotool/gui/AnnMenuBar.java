@@ -32,6 +32,8 @@ public class AnnMenuBar implements ActionListener {
 	ImageIcon  ttIcon= new ImageIcon(imageResTT);
 	ImageIcon cvIcon = new ImageIcon(imageResCV);
 	ImageIcon roiIcon = new ImageIcon(imageResROI);
+	
+	JMenuItem newWizardItem;
 
 	public AnnMenuBar(AnnotatorGUI frame)
 	{
@@ -45,7 +47,7 @@ public class AnnMenuBar implements ActionListener {
 		JMenu fileMenu = new JMenu("File");
 		fileMenu.setMnemonic('F');
 
-		JMenuItem newWizardItem = new JMenuItem(NEWWZ);
+		newWizardItem = new JMenuItem(NEWWZ);
 		newWizardItem.addActionListener(this);
 		
 		JMenuItem loadItem = new JMenuItem(LOADST, ttIcon);
@@ -433,6 +435,12 @@ public class AnnMenuBar implements ActionListener {
 
 		javax.swing.JOptionPane.showMessageDialog(null,helpString);
 
+	}
+	/*
+	 * Enables/disables the new wizard menu item
+	 */
+	public void setNewWizardEnabled(boolean isEnabled) {
+		newWizardItem.setEnabled(isEnabled);
 	}
 
 }
