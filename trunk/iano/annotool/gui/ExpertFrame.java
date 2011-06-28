@@ -428,22 +428,9 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             //setGUIOutput("Classifying/Annotating ... ");
             pnlOutput.setOutput("Classifying/Annotating...");
             
-            Classifier classifier = null;
-            if (classifierChoice.equalsIgnoreCase("SVM")) {
-                classifier = new SVMClassifier(classParams);
-            }
-            else if (classifierChoice.equalsIgnoreCase("LDA")) {
-                classifier = new LDAClassifier(classParams);
-            }
-            else if (classifierChoice.startsWith("W_")) {
-                classifier = new WekaClassifiers(numoffeatures, classifierChoice);
-            }
-            else {
-                pnlOutput.setOutput(classifierChoice + "is not a supported classifer.");
-            }
-            
+            Classifier classifier = anno.getClassifierGivenName(classifierChoice, classParams);
             try {
-            	rate = anno.classifyGivenAMethod(classifierChoice, classParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i], classifier);
+            	rate = anno.classifyGivenAMethod(classifier, classParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
             }
             catch(Exception ex) {
             	ex.printStackTrace();
