@@ -579,12 +579,12 @@ public class Annotator implements Runnable
      *   recognition rate. 
      *    
      */
-    /*public float classifyGivenAMethod(String chosenClassifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations, Classifier classifier) throws Exception {
-        int numoffeatures = selectedTrainingFeatures[0].length;
+    public float classifyGivenAMethod(Classifier classifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) throws Exception {
+        
         float rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
         //System.out.println("recognition rate:" + rate);
         return rate;
-    }*/
+    }
 
     public Classifier getClassifierGivenName(String chosenClassifier, HashMap<String, String> parameters)
     {
