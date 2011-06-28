@@ -61,6 +61,10 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 	    	testingTarget = false;
 			getContentPane().add(buildTrainTestFileLoadingPanel());
 	    }
+	    else if(modeflag == Annotator.OUTPUT_CHOICES[3]) //train only
+	    {
+	    	getContentPane().add(buildFileLoadingPanel());
+	    }
 
 		pack(); //pack() need to called first to make relative position right.
 		setLocationRelativeTo(frame);

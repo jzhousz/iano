@@ -36,6 +36,8 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	
 	private boolean is3D = false;
 	
+	private int openFrameCount = 0;
+	
 	public ImageReadyPanel(AnnotatorGUI gui)
 	{
 		this.gui = gui;		
@@ -116,9 +118,21 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			else if(rbBlue.isSelected())
 				Annotator.channel = channelInputs[2];
 			
-			ExpertFrame ef = new ExpertFrame("Expert Mode", is3D, Annotator.channel);			
+			final ExpertFrame ef = new ExpertFrame("Expert Mode", is3D, Annotator.channel);			
 			ef.setVisible(true);
-			ef.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			ef.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+			openFrameCount++;
+			gui.setNewWizardEnabled(false);	//Disable new wizard item
+			ef.addWindowListener(new WindowAdapter() {
+	            public void windowClosing(WindowEvent evt) {
+	            	ef.setVisible(false);
+	            	ef.getContentPane().removeAll();
+	            	ef.dispose();
+	            	openFrameCount--;
+	            	if(openFrameCount < 1)
+	            		gui.setNewWizardEnabled(true); //Enable new wizard when all pop up frames are closed
+	            }
+	        });
 			
 			ef.pack();
 			Dimension dim =
@@ -126,6 +140,39 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			int x = (int)(dim.getWidth() - getWidth())/2;
 			int y = (int)(dim.getHeight() - getHeight())/2;
 			ef.setLocation(x,y);
+		}
+		else if(e.getSource() == btnAutoComp)
+		{
+			if(rbRed.isSelected())
+				Annotator.channel = channelInputs[0];
+			else if(rbGreen.isSelected())
+				Annotator.channel = channelInputs[1];
+			else if(rbBlue.isSelected())
+				Annotator.channel = channelInputs[2];
+			
+			final AutoCompFrame frame = new AutoCompFrame("Auto Comparison Mode", is3D, Annotator.channel);			
+			frame.setVisible(true);
+			frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+			openFrameCount++;
+			gui.setNewWizardEnabled(false);	//Disable new wizard item
+			frame.addWindowListener(new WindowAdapter() {
+	            public void windowClosing(WindowEvent evt) {
+	            	frame.setVisible(false);
+	            	frame.getContentPane().removeAll();
+	            	frame.dispose();
+                    
+	            	openFrameCount--;
+	            	if(openFrameCount < 1)
+	            		gui.setNewWizardEnabled(true); //Enable new wizard when all pop up frames are closed
+	            }
+	        });
+			
+			frame.pack();
+			Dimension dim =
+				Toolkit.getDefaultToolkit().getScreenSize();
+			int x = (int)(dim.getWidth() - getWidth())/2;
+			int y = (int)(dim.getHeight() - getHeight())/2;
+			frame.setLocation(x,y);
 		}
 	}
 	public AnnTablePanel getTablePanel()
@@ -146,13 +193,22 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	{
 		this.is3D = flag;
 	}
-	public void setModeInfo()
+	public void setMode()
 	{
 		//Information panel with label to display info		
-		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[0]))
+		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[0])) {
 			modelInfo = "Testing/Training";
-		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[1]))
+			btnAutoComp.setEnabled(true);
+		}
+		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[1])) {
 			modelInfo = "Cross Validation. " + "Fold: " + Annotator.fold;
+			btnAutoComp.setEnabled(true);
+		}
+		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[3])) {
+			modelInfo = "Train Only";
+			btnAutoComp.setEnabled(false);
+		}
+		
 		lbModelInfo.setText("<html><b>Mode: </b>" + modelInfo + "</html>");
 	}
 }

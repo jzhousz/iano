@@ -10,11 +10,7 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.*;
 
-import annotool.classify.Classifier;
-import annotool.classify.LDAClassifier;
-import annotool.classify.SVMClassifier;
 import annotool.classify.Validator;
-import annotool.classify.WekaClassifiers;
 import annotool.io.AlgoXMLParser;
 
 import java.io.File;
@@ -30,7 +26,7 @@ import annotool.Annotator;
 import annotool.ComboFeatures;
 import annotool.AnnOutputPanel;
 
-public class ExpertFrame extends JFrame implements ActionListener, ItemListener, Runnable {
+public class AutoCompFrame extends JFrame implements ActionListener, ItemListener, Runnable {
 	private JTabbedPane tabPane;
 	private JPanel pnlMain,
 				   pnlAlgo,
@@ -79,7 +75,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 	JFileChooser fileChooser;
 	ChainModel[] chainModels = null;
 	
-	public ExpertFrame(String arg0, boolean is3D, String channel) {
+	public AutoCompFrame(String arg0, boolean is3D, String channel) {
 		super(arg0);
 		this.channel = channel;
 		
@@ -213,7 +209,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		        int returnVal = fileChooser.showSaveDialog(this);
 	
 		        if (returnVal == JFileChooser.APPROVE_OPTION) {
-		            File file = fileChooser.getSelectedFile();		            
+		            File file = fileChooser.getSelectedFile();
 		            
 		            //Iterate through the chain models and write a file for each label
 		            for(int i = 0; i < chainModels.length; i++)
@@ -227,27 +223,6 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		else if (e.getSource() == btnAnnotate) {
 			if(thread == null) {
 				//TODO: check if chain models exist and apply
-				//Temporary testing code below
-				int returnVal = fileChooser.showSaveDialog(this);
-				
-		        if (returnVal == JFileChooser.APPROVE_OPTION) {
-		            File file = fileChooser.getSelectedFile();
-					ChainModel ch = new ChainModel();
-		            try {
-		            	ch.read(file);
-		            }
-		            catch (Exception ex) {
-		            	System.out.println(ex.getMessage());
-		            }
-		            pnlOutput.setOutput("Feature Extractor: " + ch.getExtractorName());
-		            pnlOutput.setOutput("Params:");
-		            java.util.Iterator it = ch.getExParams().entrySet().iterator();
-		            while (it.hasNext()) {
-		                java.util.Map.Entry pairs = (java.util.Map.Entry)it.next();
-		                pnlOutput.setOutput(pairs.getKey() + " = " + pairs.getValue());
-		            }
-		            pnlOutput.setOutput("Feature Selector: " + ch.getSelectorName());
-		        }
 			}
 		}
 	}
@@ -427,23 +402,9 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             float rate = 0;
             //setGUIOutput("Classifying/Annotating ... ");
             pnlOutput.setOutput("Classifying/Annotating...");
-            
-            Classifier classifier = null;
-            if (classifierChoice.equalsIgnoreCase("SVM")) {
-                classifier = new SVMClassifier(classParams);
-            }
-            else if (classifierChoice.equalsIgnoreCase("LDA")) {
-                classifier = new LDAClassifier(classParams);
-            }
-            else if (classifierChoice.startsWith("W_")) {
-                classifier = new WekaClassifiers(numoffeatures, classifierChoice);
-            }
-            else {
-                pnlOutput.setOutput(classifierChoice + "is not a supported classifer.");
-            }
-            
+
             try {
-            	rate = anno.classifyGivenAMethod(classifierChoice, classParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i], classifier);
+            	rate = anno.classifyGivenAMethod(classifierChoice, classParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
             }
             catch(Exception ex) {
             	ex.printStackTrace();
@@ -461,8 +422,6 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
         	chainModels[i].setResult(rate);
-        	chainModels[i].setClassifierName(classifierChoice);
-        	chainModels[i].setClassifier(classifier);
             
             //Display result
             ResultPanel pnlResult = new ResultPanel(tabPane);

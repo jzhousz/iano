@@ -15,6 +15,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -44,7 +45,9 @@ public class ResultPanel extends JPanel
 	JTable table = null;
 	JScrollPane scrollPane = null;	
 	JPanel pnlMatrix;
-	ChartPanel pnlChart;	
+	ChartPanel pnlChart;
+	
+	DecimalFormat df = new DecimalFormat("0.00%");
 	
 	public ResultPanel(JTabbedPane parentPane)
 	{
@@ -150,13 +153,13 @@ public class ResultPanel extends JPanel
 		pnlDescription.setBackground(Color.LIGHT_GRAY);
 		
 		//Labels with description
-		JLabel lbRecogRate = new JLabel("Recognition Rate: " + recogRate * 100 + "%");
+		JLabel lbRecogRate = new JLabel("Recognition Rate: " + df.format(recogRate));
 		lbRecogRate.setFont(descFont);
 		
-		JLabel lbBestRate = new JLabel("Most successful ("+ bestLabels +") : " + bestRate * 100 + "%");
+		JLabel lbBestRate = new JLabel("Most successful ("+ bestLabels +") : " + df.format(bestRate));
 		lbBestRate.setFont(descFont);
 		
-		JLabel lbWorstRate = new JLabel("Least successful ("+ worstLabels +") : " + worstRate * 100 + "%");
+		JLabel lbWorstRate = new JLabel("Least successful ("+ worstLabels +") : " + df.format(worstRate));
 		lbWorstRate.setFont(descFont);
 		
 
@@ -239,7 +242,7 @@ public class ResultPanel extends JPanel
 
         //Iterate over the fold results
         for(int i=0; i < results.length - 1; i++) {
-        			dataset.addValue(100 * results[i], "Fold", "Fold" +( i + 1));
+        			dataset.addValue(results[i] * 100, "Fold", "Fold" +( i + 1));  //Rounding off the percentage value of rate to 2 decimal places
         }
 		
 		JFreeChart chart = ChartFactory.createBarChart3D("Fold Results", "Class", "Rate (%)", dataset, PlotOrientation.VERTICAL, false, false, false);

@@ -73,8 +73,8 @@ public class Annotator implements Runnable
     public final static String DEFAULT_CLASSIFIER = "SVM";
     //mode of the annotator.
     public final static String DEFAULT_OUTPUT = "TT";
-    //Choice of modes: TT: Training/Testing; CV: cross-validation; ROI: Region-Of-Interest
-    public final static String[] OUTPUT_CHOICES = {"TT", "CV", "ROI"};
+    //Choice of modes: TT: Training/Testing; CV: cross-validation; ROI: Region-Of-Interest; TO: Train Only
+    public final static String[] OUTPUT_CHOICES = {"TT", "CV", "ROI", "TO"};
     //number of folders for cross-validation. Can be Leave-One-Out (LOO).
     public final static String DEFAULT_FOLD = "LOO";
     //image channel used by the algorithm. Such as r, g, b. (all to be added)
@@ -579,6 +579,17 @@ public class Annotator implements Runnable
             setGUIOutput(chosenClassifier + "is not a supported classifer.");
             return 0;
         }
+        float rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
+        //System.out.println("recognition rate:" + rate);
+        return rate;
+    }
+    /*
+     *  A classifier that takes a particular classification algorithm and returns
+     *   recognition rate. 
+     *    
+     */
+    public float classifyGivenAMethod(String chosenClassifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations, Classifier classifier) throws Exception {
+        int numoffeatures = selectedTrainingFeatures[0].length;
         float rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
         //System.out.println("recognition rate:" + rate);
         return rate;

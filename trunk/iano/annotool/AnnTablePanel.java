@@ -42,7 +42,7 @@ public class AnnTablePanel extends JPanel  {
 			tableOne.setBorder(new CompoundBorder(new TitledBorder(null, "cross validation data set", 
 					TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5))); 
 			currentCVTable = cvTable;
-			frame.pack();
+			adjustFrame();
 			return true;
 		}
 		else return false;
