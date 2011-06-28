@@ -36,10 +36,25 @@ public class WekaClassifiers implements Classifier {
 			System.err.println("Not a classifier support by WekaClassifiers.");
 	}
 
+public WekaClassifiers(String classifierType) {
+	
+		if (classifierType.equalsIgnoreCase("W_Tree"))
+			m_Classifier = new J48();
+		else if (classifierType.equalsIgnoreCase("W_NaiveBayes"))
+			m_Classifier = new NaiveBayes();
+		else if (classifierType.equalsIgnoreCase("W_RandomForest"))
+			m_Classifier = new weka.classifiers.trees.RandomForest();
+		else if (classifierType.equalsIgnoreCase("W_NearestNeighbor"))
+			m_Classifier = new weka.classifiers.lazy.IBk();
+		else
+			System.err.println("Not a classifier support by WekaClassifiers.");
+	}
+
 	//@Override 
 	public void classify(float[][] trainingpatterns, int[] trainingtargets,
 			float[][] testingpatterns, int[] predictions,  double[] prob) 
 	{
+		this.dimension = trainingpatterns[0].length;
 		int traininglen = trainingpatterns.length;
 		int testinglen =testingpatterns.length;
 	    createModel(trainingpatterns, trainingtargets);

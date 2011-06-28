@@ -564,35 +564,45 @@ public class Annotator implements Runnable
      *    
      */
     public float classifyGivenAMethod(String chosenClassifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) throws Exception {
-        int numoffeatures = selectedTrainingFeatures[0].length;
-        Classifier classifier = null;
-        if (chosenClassifier.equalsIgnoreCase("SVM")) {
-            classifier = new SVMClassifier(parameters);
-        }
-        else if (chosenClassifier.equalsIgnoreCase("LDA")) {
-            classifier = new LDAClassifier(parameters);
-        }
-        else if (chosenClassifier.startsWith("W_")) {
-            classifier = new WekaClassifiers(numoffeatures, chosenClassifier);
-        }
-        else {
-            setGUIOutput(chosenClassifier + "is not a supported classifer.");
-            return 0;
-        }
-        float rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
+ 
+    	Classifier classifier = getClassifierGivenName(chosenClassifier, parameters);
+
+    	float rate = 0;
+    	if(classifier != null)
+    	    rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
         //System.out.println("recognition rate:" + rate);
         return rate;
+        
     }
     /*
      *  A classifier that takes a particular classification algorithm and returns
      *   recognition rate. 
      *    
      */
-    public float classifyGivenAMethod(String chosenClassifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations, Classifier classifier) throws Exception {
+    /*public float classifyGivenAMethod(String chosenClassifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations, Classifier classifier) throws Exception {
         int numoffeatures = selectedTrainingFeatures[0].length;
         float rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
         //System.out.println("recognition rate:" + rate);
         return rate;
+    }*/
+
+    public Classifier getClassifierGivenName(String chosenClassifier, HashMap<String, String> parameters)
+    {
+       Classifier classifier = null;
+       if (chosenClassifier.equalsIgnoreCase("SVM")) {
+        classifier = new SVMClassifier(parameters);
+       }
+       else if (chosenClassifier.equalsIgnoreCase("LDA")) {
+        classifier = new LDAClassifier(parameters);
+       }
+       else if (chosenClassifier.startsWith("W_")) {
+        classifier = new WekaClassifiers(chosenClassifier);
+       }
+       else {
+        setGUIOutput(chosenClassifier + "is not a supported classifer.");
+       }
+       return classifier;
+       
     }
 
     /*
