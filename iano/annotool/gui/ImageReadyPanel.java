@@ -118,16 +118,16 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			else if(rbBlue.isSelected())
 				Annotator.channel = channelInputs[2];
 			
-			final ExpertFrame ef = new ExpertFrame("Expert Mode", is3D, Annotator.channel);			
+			ExpertFrame ef = new ExpertFrame("Expert Mode", is3D, Annotator.channel);			
 			ef.setVisible(true);
-			ef.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+			ef.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			openFrameCount++;
 			gui.setNewWizardEnabled(false);	//Disable new wizard item
 			ef.addWindowListener(new WindowAdapter() {
 	            public void windowClosing(WindowEvent evt) {
-	            	ef.setVisible(false);
-	            	ef.getContentPane().removeAll();
-	            	ef.dispose();
+	            	//ef.setVisible(false);
+	            	//ef.getContentPane().removeAll();
+	            	//ef.dispose();
 	            	openFrameCount--;
 	            	if(openFrameCount < 1)
 	            		gui.setNewWizardEnabled(true); //Enable new wizard when all pop up frames are closed
@@ -150,16 +150,16 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			else if(rbBlue.isSelected())
 				Annotator.channel = channelInputs[2];
 			
-			final AutoCompFrame frame = new AutoCompFrame("Auto Comparison Mode", is3D, Annotator.channel);			
+			AutoCompFrame frame = new AutoCompFrame("Auto Comparison Mode", is3D, Annotator.channel);			
 			frame.setVisible(true);
-			frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			openFrameCount++;
 			gui.setNewWizardEnabled(false);	//Disable new wizard item
 			frame.addWindowListener(new WindowAdapter() {
 	            public void windowClosing(WindowEvent evt) {
-	            	frame.setVisible(false);
-	            	frame.getContentPane().removeAll();
-	            	frame.dispose();
+	            	//frame.setVisible(false);
+	            	//frame.getContentPane().removeAll();
+	            	//frame.dispose();
                     
 	            	openFrameCount--;
 	            	if(openFrameCount < 1)

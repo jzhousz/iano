@@ -7,6 +7,7 @@ public class Parameter
 	private String paramMin = null;
 	private String paramMax = null;
 	private String paramDefault = null;
+	private String[] paramDomain = null;
 	
 	//Constructor
 	public Parameter(String paramName, String paramType) {
@@ -53,6 +54,14 @@ public class Parameter
 
 	public void setParamDefault(String paramDefault) {
 		this.paramDefault = paramDefault;
+	}
+
+	public String[] getParamDomain() {
+		return paramDomain;
+	}
+
+	public void setParamDomain(String[] paramDomain) {
+		this.paramDomain = paramDomain;
 	}
 	
 	

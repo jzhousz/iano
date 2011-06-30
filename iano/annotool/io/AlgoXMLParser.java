@@ -111,7 +111,8 @@ public class AlgoXMLParser
 		       type = null,
 		       min = null,
 		       max = null,
-		       def = null;
+		       def = null,
+		       domain = null;
 	
 		NodeList nl = el.getElementsByTagName("Parameter");
 		if(nl != null && nl.getLength() > 0) 
@@ -124,12 +125,15 @@ public class AlgoXMLParser
 				min = getTextValue(paramEl, "Low");
 				max = getTextValue(paramEl, "High");
 				def = getTextValue(paramEl, "Default");
+				domain = getTextValue(paramEl, "Domain");
 				
 				//Create the parameter object
 				param = new Parameter(name, type);
 				param.setParamMax(max);
 				param.setParamMin(min);
 				param.setParamDefault(def);
+				if(domain != null)
+					param.setParamDomain(domain.split(","));
 				
 				//Add parameter to list in algorithm
 				al.addParam(param);

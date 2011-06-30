@@ -13,6 +13,7 @@ import java.awt.event.*;
 import annotool.classify.Classifier;
 import annotool.classify.LDAClassifier;
 import annotool.classify.SVMClassifier;
+import annotool.classify.SavableClassifier;
 import annotool.classify.Validator;
 import annotool.classify.WekaClassifiers;
 import annotool.io.AlgoXMLParser;
@@ -36,8 +37,6 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 				   pnlAlgo,
 				   pnlExt, pnlSel, pnlClass,
 				   pnlExtMain, pnlSelMain, pnlClassMain,
-				   pnlExtDesc, pnlSelDesc, pnlClassDesc,
-				   pnlExtParam, pnlSelParam, pnlClassParam,
 				   pnlButton;
 	private JButton btnRun, btnSaveModel, btnAnnotate;
 	
@@ -87,7 +86,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		
 		pnlMain = new JPanel();
 		pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
-		pnlMain.setPreferredSize(new java.awt.Dimension(540, 670));
+		pnlMain.setPreferredSize(new java.awt.Dimension(540, 680));
 		pnlMain.setBorder(new EmptyBorder(10, 10, 10, 10));
 		pnlMain.setAlignmentY(TOP_ALIGNMENT);
 		pnlMain.setAlignmentX(LEFT_ALIGNMENT);
@@ -132,6 +131,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		
 		//Extractor panel
 		pnlExt = new JPanel(new BorderLayout());
+		pnlExt.setPreferredSize(new java.awt.Dimension(350, 110)); //Supplying height so that the algorithm panels don't shrink when none selected
 		pnlExt.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 		
 		pnlExtMain = new JPanel(new GridLayout(1, 2));
@@ -171,18 +171,17 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		btnSaveModel = new JButton("Save Model", new ImageIcon("images/save.png"));
 		btnSaveModel.setEnabled(false);
 		btnSaveModel.addActionListener(this);
+		btnAnnotate = new JButton("Apply Model/Annotate");
+		btnAnnotate.setEnabled(false);
+		btnAnnotate.addActionListener(this);
 		
 		pnlButton = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		pnlButton.add(btnRun);
 		pnlButton.add(btnSaveModel);
+		pnlButton.add(btnAnnotate);		
 		
-		btnAnnotate = new JButton("Apply Model/Annotate");
 		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[3])) {	//If train only mode
-			btnRun.setText("Train");								//Set button text to "Train"
-			
-			btnAnnotate.addActionListener(this);
-			btnAnnotate.setEnabled(false);
-			pnlButton.add(btnAnnotate);
+			btnRun.setText("Train");
 		}
 		
 		pnlOutput = new AnnOutputPanel();
@@ -198,7 +197,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		//Build parameter panels for default selection
 		buildExParameterPanel();
 		buildSelParameterPanel();
-		buildClassParameterPanel();		
+		buildClassParameterPanel();
 	}
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == btnRun) {			
@@ -215,6 +214,10 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		        if (returnVal == JFileChooser.APPROVE_OPTION) {
 		            File file = fileChooser.getSelectedFile();		            
 		            
+		            
+		            //Reset progress bar
+		            bar.setValue(0);
+		            
 		            //Iterate through the chain models and write a file for each label
 		            for(int i = 0; i < chainModels.length; i++)
 		            	chainModels[i].write(file);
@@ -227,26 +230,37 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		else if (e.getSource() == btnAnnotate) {
 			if(thread == null) {
 				//TODO: check if chain models exist and apply
-				//Temporary testing code below
-				int returnVal = fileChooser.showSaveDialog(this);
+				boolean modelLoaded = false;
+				
+				int returnVal = fileChooser.showOpenDialog(this);
 				
 		        if (returnVal == JFileChooser.APPROVE_OPTION) {
 		            File file = fileChooser.getSelectedFile();
-					ChainModel ch = new ChainModel();
+					pnlOutput.setOutput("Loading model..");
+		            ChainModel ch = new ChainModel();
 		            try {
 		            	ch.read(file);
+		            	pnlOutput.setOutput("Model loaded successfully.");
+		            	modelLoaded = true;
 		            }
 		            catch (Exception ex) {
+		            	pnlOutput.setOutput("Model loading failure.");
 		            	System.out.println(ex.getMessage());
 		            }
+		            
+		            //Display model properties in output area
 		            pnlOutput.setOutput("Feature Extractor: " + ch.getExtractorName());
 		            pnlOutput.setOutput("Params:");
-		            java.util.Iterator it = ch.getExParams().entrySet().iterator();
-		            while (it.hasNext()) {
-		                java.util.Map.Entry pairs = (java.util.Map.Entry)it.next();
-		                pnlOutput.setOutput(pairs.getKey() + " = " + pairs.getValue());
-		            }
+		            HashMap<String, String> params = ch.getExParams();
+		            for (String parameter : params.keySet()) {
+		            	pnlOutput.setOutput(parameter + "=" +params.get(parameter));
+		        	}
 		            pnlOutput.setOutput("Feature Selector: " + ch.getSelectorName());
+		            for(int i=0; i < ch.getSelectedIndices().length; i++)
+		            	pnlOutput.setOutput(String.valueOf(ch.getSelectedIndices()[i]));
+		            pnlOutput.setOutput("Classifier: " + ch.getClassifierName());
+		            
+		            
 		        }
 			}
 		}
@@ -287,6 +301,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	JComponent control = exParamControls.get(param.getParamName());
         	if(control instanceof JTextField)
         		value = ((JTextField) control).getText().trim();
+        	else if(control instanceof JComboBox)
+        		value = ((JComboBox)control).getSelectedItem().toString();
         	else if(control instanceof JCheckBox)
         		value = ((JCheckBox)control).isSelected() ? "1" : "0";
         	else if(control instanceof JSpinner)
@@ -299,6 +315,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	JComponent control = selParamControls.get(param.getParamName());
         	if(control instanceof JTextField)
         		value = ((JTextField) control).getText().trim();
+        	else if(control instanceof JComboBox)
+        		value = ((JComboBox)control).getSelectedItem().toString();
         	else if(control instanceof JCheckBox)
         		value = ((JCheckBox)control).isSelected() ? "1" : "0";
         	else if(control instanceof JSpinner)
@@ -311,6 +329,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	JComponent control = classParamControls.get(param.getParamName());
         	if(control instanceof JTextField)
         		value = ((JTextField) control).getText().trim();
+        	else if(control instanceof JComboBox)
+        		value = ((JComboBox)control).getSelectedItem().toString();
         	else if(control instanceof JCheckBox)
         		value = ((JCheckBox)control).isSelected() ? "1" : "0";
         	else if(control instanceof JSpinner)
@@ -345,6 +365,89 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 	}
 	//Train Only
 	private void trainOnly() {
+		//read images and wrapped into DataInput instances.
+        DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);	        
+      
+        int[] resArr = new int[2]; //place holder for misc results
+        ArrayList<String> annoLabels = new ArrayList<String>();
+        int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels);
+        //get statistics from training set
+        int numOfAnno = resArr[0];
+        anno.setAnnotationLabels(annoLabels);
+
+        //feature extraction.
+        if (!setProgress(30))  {
+            return;
+        }
+        
+        pnlOutput.setOutput("Extracting features...");
+        
+        float[][] trainingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, trainingProblem);
+        
+        //Keep features to be dumped into chain file
+        int imgWidth = trainingProblem.getWidth();
+        int imgHeight = trainingProblem.getHeight();
+        
+        //clear data memory
+        trainingProblem.setDataNull();
+
+        //apply feature selector and classifier
+        if (!setProgress(50)) {
+            return;
+        }
+        
+        int numoffeatures;
+        
+        //Initialize ChainModel object for each label
+        chainModels = new ChainModel[numOfAnno];
+        
+        //loop for each annotation target (one image may have multiple labels)
+        for (int i = 0; i < numOfAnno; i++) {
+        	chainModels[i] = new ChainModel();
+        	
+            if (featureSelector.equalsIgnoreCase("None")) { //use the original feature without selection -- overwrite numoffeatures value
+            	numoffeatures = trainingFeatures[0].length;
+            }
+            else 
+            {
+                pnlOutput.setOutput("Selecting featurs...");
+            	//Supervised feature selectors need corresponding target data
+                ComboFeatures combo = anno.selectGivenAMethod(featureSelector, selParams, trainingFeatures, trainingTargets[i]);
+                //selected features overrides the passed in original features
+                trainingFeatures = combo.getTrainingFeatures();
+ 
+                
+                //For dump file
+                chainModels[i].setSelectedIndices(combo.getSelectedIndices());
+            }
+
+            pnlOutput.setOutput("Creating training model...");
+            
+            Classifier classifierObj = anno.getClassifierGivenName(classifierChoice, classParams);
+            
+            if(classifierObj instanceof SavableClassifier) {
+            	((SavableClassifier)classifierObj).trainingOnly(trainingFeatures, trainingTargets[i]);
+            	//TODO: If classifier does not guarantee that the trained model is set, then need to set it explicitly
+            }
+            
+            //Save information to dump in chain file
+        	chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
+        	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
+        	chainModels[i].setMode("Training Only");
+        	chainModels[i].setExtractorName(featureExtractor);
+        	chainModels[i].setExParams(exParams);
+        	chainModels[i].setSelectorName(featureSelector);
+        	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
+        	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
+        	chainModels[i].setClassifierName(classifierChoice);
+        	chainModels[i].setClassifier(classifierObj);
+        	chainModels[i].setClassParams(classParams);            
+            
+            if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
+                return;
+            }
+        }//end of loop for annotation targets
+        pnlOutput.setOutput("Training complete.");
 	}
 	
 	//Training/Testing
@@ -428,9 +531,9 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             //setGUIOutput("Classifying/Annotating ... ");
             pnlOutput.setOutput("Classifying/Annotating...");
             
-            Classifier classifier = anno.getClassifierGivenName(classifierChoice, classParams);
+            Classifier classifierObj = anno.getClassifierGivenName(classifierChoice, classParams);
             try {
-            	rate = anno.classifyGivenAMethod(classifier, classParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
+            	rate = anno.classifyGivenAMethod(classifierObj, classParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
             }
             catch(Exception ex) {
             	ex.printStackTrace();
@@ -439,17 +542,18 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             System.out.println(rate);
             
             //Save information to dump in chain file
-            chainModels[i].setImageSet(Annotator.dir);
+        	chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
         	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         	chainModels[i].setMode("Training/Testing");
         	chainModels[i].setExtractorName(featureExtractor);
         	chainModels[i].setExParams(exParams);
         	chainModels[i].setSelectorName(featureSelector);
-        	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());
+        	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
         	chainModels[i].setResult(rate);
         	chainModels[i].setClassifierName(classifierChoice);
-        	chainModels[i].setClassifier(classifier);
+        	chainModels[i].setClassifier(classifierObj);
+        	chainModels[i].setClassParams(classParams);
             
             //Display result
             ResultPanel pnlResult = new ResultPanel(tabPane);
@@ -586,8 +690,9 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             }
 
             pnlOutput.setOutput("Classifying/Annotating ... ");
+            Classifier classifierObj = anno.getClassifierGivenName(classifierChoice, classParams);
             try {
-            	recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, classParams, shuffle, results[i]);
+            	recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierObj, classParams, shuffle, results[i]);
             }
             catch(Exception ex) {
             	pnlOutput.setOutput("Exception! " + ex.getMessage());
@@ -599,15 +704,18 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             pnlOutput.setOutput("Recog Rate for " + anno.getAnnotationLabels().get(i) + ": " + recograte[K]);
             
             //Save information to dump in chain file
-        	chainModels[i].setImageSet(Annotator.dir);
+            chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
             chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         	chainModels[i].setMode("Cross Validation. Fold: " + Annotator.fold);
         	chainModels[i].setExtractorName(featureExtractor);
         	chainModels[i].setExParams(exParams);
         	chainModels[i].setSelectorName(featureSelector);
-        	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());
+        	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
         	chainModels[i].setResult(recograte[K]);
+        	chainModels[i].setClassifierName(classifierChoice);
+        	chainModels[i].setClassifier(classifierObj);
+        	chainModels[i].setClassParams(classParams);
             
             //Display result
             ResultPanel pnlResult = new ResultPanel(tabPane);
@@ -683,185 +791,94 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
      * Builds the panel for feature extraction parameters 
      */
     private void buildExParameterPanel() {
-		if(pnlExtParam == null) {
-			pnlExtParam = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			pnlExtParam.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			pnlExt.add(pnlExtParam, BorderLayout.SOUTH);
-		}
-		if(pnlExtDesc == null) {
-			pnlExtDesc = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			pnlExtDesc.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			pnlExt.add(pnlExtDesc, BorderLayout.CENTER);
-		}
-		//Remove previous components (if any) from parameter and description panels
-		//TODO: dispose components inside the panel first		
-		pnlExtDesc.removeAll();
-		pnlExtParam.removeAll();
-		
 		//Get the currently selected extractor
 		Algorithm al = (Algorithm)cbExtractor.getSelectedItem();
 		
-		//Get parameters for the algorithm
-		ArrayList<Parameter> paramList = al.getParam();
-		
 		exParamControls = new HashMap<String, JComponent>();
 		
-		JLabel lbDesc = new JLabel(al.getDescription());
-		pnlExtDesc.add(lbDesc);
+		BorderLayout layout = (BorderLayout)pnlExt.getLayout();
+		java.awt.Component centerComp = layout.getLayoutComponent(BorderLayout.CENTER);
+		if(centerComp != null)
+			pnlExt.remove(centerComp); //Remove center component from pnlSel
 		
-		for(Parameter param : paramList) {			
-			if(param.getParamType().equals("Boolean")) {
-				JCheckBox cb = new JCheckBox(param.getParamName());
-				pnlExtParam.add(cb);
-				
-				//Put component in hashmap to access the value later
-				exParamControls.put(param.getParamName(), cb);
-			}
-			else if(param.getParamType().equals("Integer")) {
-				JLabel lb = new JLabel(param.getParamName());
-				
-				SpinnerNumberModel snm = new SpinnerNumberModel();
-				if(param.getParamMax() != null)
-					snm.setMaximum(Integer.parseInt(param.getParamMax()));
-				if(param.getParamMin() != null)
-					snm.setMinimum(Integer.parseInt(param.getParamMin()));
-				if(param.getParamDefault() != null)
-					snm.setValue(Integer.parseInt(param.getParamDefault()));
-				JSpinner sp = new JSpinner(snm);
-				
-				pnlExtParam.add(lb);
-				pnlExtParam.add(sp);
-				
-				//Put component in hashmap to access the value later
-				exParamControls.put(param.getParamName(), sp);
-			}
-			else if(param.getParamType().equals("String") || param.getParamType().equals("Real")) {
-				JLabel lb = new JLabel(param.getParamName());
-				JTextField tf = new JTextField(param.getParamDefault());
-				tf.setPreferredSize(new java.awt.Dimension(50, 30));
-				
-				pnlExtParam.add(lb);
-				pnlExtParam.add(tf);
-				
-				//Put component in hashmap to access the value later
-				exParamControls.put(param.getParamName(), tf);
-			}
-		}
-		pnlExtParam.repaint();
-		pnlExtDesc.repaint();
+		pnlExt.add(buildDynamicPanel(al, exParamControls), BorderLayout.CENTER);
+		
+		pnlExt.revalidate();
 		this.pack();
 	}
-    /*
-     * Builds the panel for selection parameters 
+
+	/*
+     * Builds the panel for selector parameters 
      */
 	private void buildSelParameterPanel()
 	{
-		if(pnlSelParam == null) {
-			pnlSelParam = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			pnlSelParam.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			pnlSel.add(pnlSelParam, BorderLayout.SOUTH);
-		}
-		if(pnlSelDesc == null) {
-			pnlSelDesc = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			pnlSelDesc.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			pnlSel.add(pnlSelParam, BorderLayout.CENTER);
-		}
-		//Remove previous components (if any) from parameter and description panels
-		//TODO: dispose components inside the panel first		
-		pnlSelDesc.removeAll();
-		pnlSelParam.removeAll();
-		
 		//Get the currently selected extractor
 		Algorithm al = (Algorithm)cbSelector.getSelectedItem();
 		
-		//Get parameters for the algorithm
-		ArrayList<Parameter> paramList = al.getParam();
-		
 		selParamControls = new HashMap<String, JComponent>();
 		
-		JLabel lbDesc = new JLabel(al.getDescription());
-		pnlSelDesc.add(lbDesc);
+		BorderLayout layout = (BorderLayout)pnlSel.getLayout();
+		java.awt.Component centerComp = layout.getLayoutComponent(BorderLayout.CENTER);
+		if(centerComp != null)
+			pnlSel.remove(centerComp); //Remove center component from pnlSel
 		
-		for(Parameter param : paramList) {			
-			if(param.getParamType().equals("Boolean")) {
-				JCheckBox cb = new JCheckBox(param.getParamName());
-				pnlSelParam.add(cb);
-				
-				//Put component in hashmap to access the value later
-				selParamControls.put(param.getParamName(), cb);
-			}
-			else if(param.getParamType().equals("Integer")) {
-				JLabel lb = new JLabel(param.getParamName());
-				
-				SpinnerNumberModel snm = new SpinnerNumberModel();
-				if(param.getParamMax() != null)
-					snm.setMaximum(Integer.parseInt(param.getParamMax()));
-				if(param.getParamMin() != null)
-					snm.setMinimum(Integer.parseInt(param.getParamMin()));
-				if(param.getParamDefault() != null)
-					snm.setValue(Integer.parseInt(param.getParamDefault()));
-				JSpinner sp = new JSpinner(snm);
-				
-				pnlSelParam.add(lb);
-				pnlSelParam.add(sp);
-				
-				//Put component in hashmap to access the value later
-				selParamControls.put(param.getParamName(), sp);
-			}
-			else if(param.getParamType().equals("String") || param.getParamType().equals("Real")) {
-				JLabel lb = new JLabel(param.getParamName());
-				JTextField tf = new JTextField(param.getParamDefault());
-				tf.setPreferredSize(new java.awt.Dimension(50, 30));
-				
-				pnlSelParam.add(lb);
-				pnlSelParam.add(tf);
-				
-				//Put component in hashmap to access the value later
-				selParamControls.put(param.getParamName(), tf);
-			}
-		}
-		pnlSelParam.repaint();
-		pnlSelDesc.repaint();
+		pnlSel.add(buildDynamicPanel(al, selParamControls), BorderLayout.CENTER);
+		
+		pnlSel.revalidate();
 		this.pack();
 	}
+    
 	/*
      * Builds the panel for classification parameters 
      */
 	private void buildClassParameterPanel()
 	{
-		if(pnlClassParam == null) {
-			pnlClassParam = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			pnlClassParam.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			pnlClass.add(pnlClassParam, BorderLayout.SOUTH);
-		}
-		if(pnlClassDesc == null) {
-			pnlClassDesc = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			pnlClassDesc.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			pnlClass.add(pnlClassDesc, BorderLayout.CENTER);
-		}
-		//Remove previous components (if any) from parameter and description panels
-		//TODO: dispose components inside the panel first		
-		pnlClassDesc.removeAll();
-		pnlClassParam.removeAll();
-		
 		//Get the currently selected extractor
 		Algorithm al = (Algorithm)cbClassifier.getSelectedItem();
+		
+		classParamControls = new HashMap<String, JComponent>();
+		
+		BorderLayout layout = (BorderLayout)pnlClass.getLayout();
+		java.awt.Component centerComp = layout.getLayoutComponent(BorderLayout.CENTER);
+		if(centerComp != null)
+			pnlClass.remove(centerComp); //Remove center component from pnlSel
+		
+		pnlClass.add(buildDynamicPanel(al, classParamControls), BorderLayout.CENTER);
+		
+		pnlClass.revalidate();
+		this.pack();
+	}
+	
+	/*
+	 * Creates the panel with controls for algorithm parameters
+	 * 
+	 * Algorithm al : Selected algorithm from the combo box
+	 * HashMap paramControls : corresponding  hashmap to keep track of dynamically added components to retrieve values later
+	 * 
+	 */
+	private JPanel buildDynamicPanel(Algorithm al, HashMap<String, JComponent> paramControls) {
+		JPanel pnlContainer = new JPanel(new BorderLayout());
 		
 		//Get parameters for the algorithm
 		ArrayList<Parameter> paramList = al.getParam();
 		
-		classParamControls = new HashMap<String, JComponent>();
+		//Create dynamic components for parameters
+		JPanel pnlParams = new JPanel();
+		pnlParams.setLayout(new BoxLayout(pnlParams, BoxLayout.PAGE_AXIS));
 		
-		JLabel lbDesc = new JLabel(al.getDescription());
-		pnlClassDesc.add(lbDesc);
-		
-		for(Parameter param : paramList) {			
+		for(Parameter param : paramList) {
+			JPanel pnlItem = new JPanel(new FlowLayout(FlowLayout.LEADING));
+			
 			if(param.getParamType().equals("Boolean")) {
 				JCheckBox cb = new JCheckBox(param.getParamName());
-				pnlClassParam.add(cb);
+				
+				if(param.getParamDefault() != null)
+					cb.setSelected((param.getParamDefault().equals("1")) ? true: false);	//1 for true, everything else : false
+				
+				pnlItem.add(cb);			
 				
 				//Put component in hashmap to access the value later
-				classParamControls.put(param.getParamName(), cb);
+				paramControls.put(param.getParamName(), cb);
 			}
 			else if(param.getParamType().equals("Integer")) {
 				JLabel lb = new JLabel(param.getParamName());
@@ -875,27 +892,41 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 					snm.setValue(Integer.parseInt(param.getParamDefault()));
 				JSpinner sp = new JSpinner(snm);
 				
-				pnlClassParam.add(lb);
-				pnlClassParam.add(sp);
+				pnlItem.add(lb);
+				pnlItem.add(sp);
 				
 				//Put component in hashmap to access the value later
-				classParamControls.put(param.getParamName(), sp);
+				paramControls.put(param.getParamName(), sp);
 			}
-			else if(param.getParamType().equals("String") || param.getParamType().equals("Real")) {
+			else {// if(param.getParamType().equals("String") || param.getParamType().equals("Real")) {
 				JLabel lb = new JLabel(param.getParamName());
-				JTextField tf = new JTextField(param.getParamDefault());
-				tf.setPreferredSize(new java.awt.Dimension(50, 30));
+				JComponent component = null;
+				if(param.getParamDomain() == null) {
+					component = new JTextField(param.getParamDefault());
+					((JTextField)component).setText(param.getParamDefault());
+				}
+				else {
+					component = new JComboBox(param.getParamDomain());
+					((JComboBox)component).setSelectedItem(param.getParamDefault());
+				}
 				
-				pnlClassParam.add(lb);
-				pnlClassParam.add(tf);
+				//component.setPreferredSize(new java.awt.Dimension(120, 30));
+				pnlItem.add(lb);
+				pnlItem.add(component);
 				
 				//Put component in hashmap to access the value later
-				classParamControls.put(param.getParamName(), tf);
+				paramControls.put(param.getParamName(), component);
 			}
+			pnlParams.add(pnlItem);
 		}
-		pnlClassDesc.repaint();
-		pnlClassParam.repaint();
-		this.pack();
+		
+		pnlContainer.add(pnlParams, BorderLayout.CENTER);
+		
+		//Add parameter description
+		JLabel lbDesc = new JLabel(al.getDescription());
+		pnlContainer.add(lbDesc, BorderLayout.NORTH);
+		
+		return pnlContainer;
 	}
 	
 	//Temporary main method for testing GUI
