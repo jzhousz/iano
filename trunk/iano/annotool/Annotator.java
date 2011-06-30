@@ -717,7 +717,17 @@ public class Annotator implements Runnable
         	result.setIndices(null);
         }
 
-        if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || chosenSelector.equalsIgnoreCase("mRMR-MID")) 
+        if (chosenSelector.equalsIgnoreCase("Fisher")) {
+            FeatureSelector selector = (new FishersCriterion(features, targets, parameters));
+            try {
+            	result.setTrainingFeatures(selector.selectFeatures());
+                result.setIndices(selector.getIndices());
+            }
+            catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
+        }
+        else if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || chosenSelector.equalsIgnoreCase("mRMR-MID")) 
         {
             FeatureSelector selector = (new mRMRFeatureSelector(features, targets, chosenSelector, parameters));	
             try {
@@ -762,9 +772,9 @@ public class Annotator implements Runnable
         ComboFeatures result = new ComboFeatures();
 
         if (chosenSelector.equalsIgnoreCase("Fisher")) {
-        	System.err.println("will call FishersCriterion class for feature selection");
-        	System.exit(1);
-        	/*
+        	//System.err.println("will call FishersCriterion class for feature selection");
+        	//System.exit(1);
+        	
             FeatureSelector selector = (new FishersCriterion(trainingFeatures, trainTargets, parameters));
             try {
                 selectedTrainingFeatures = selector.selectFeatures();
@@ -775,11 +785,12 @@ public class Annotator implements Runnable
             }
             selector = (new FishersCriterion(testingFeatures, null, parameters));
             float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
-            ComboFeatures.getInstance().setTrainingFeatures(selectedTrainingFeatures);
-            ComboFeatures.getInstance().setTestingFeatures(selectedTestingFeatures);
-            */
+            result.setTrainingFeatures(selectedTrainingFeatures);
+            result.setTestingFeatures(selectedTestingFeatures);
+            result.setIndices(indices);
+            
         }
-        if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || chosenSelector.equalsIgnoreCase("mRMR-MID")) {
+        else if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || chosenSelector.equalsIgnoreCase("mRMR-MID")) {
             //parsing algorithm parameters. Will be moved into algorithm class.
             boolean discrete = Boolean.parseBoolean(parameters.get("DISCRETE_FLAG"));
             if (discrete) //discretize data in a combined way,

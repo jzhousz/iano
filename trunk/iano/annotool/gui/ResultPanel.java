@@ -1,6 +1,10 @@
 package annotool.gui;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -47,6 +51,11 @@ public class ResultPanel extends JPanel
 	JPanel pnlMatrix;
 	ChartPanel pnlChart;
 	
+	//Container panel for matrix and chart
+	JPanel pnlCM = new JPanel(new GridLayout(2, 1));
+	//Container panel for charts
+	JPanel pnlChartContainer = new JPanel(new GridLayout(1, 2));
+	
 	DecimalFormat df = new DecimalFormat("0.00%");
 	
 	public ResultPanel(JTabbedPane parentPane)
@@ -54,7 +63,7 @@ public class ResultPanel extends JPanel
 	   	this.parentPane = parentPane;
 	   	this.tabIndex = parentPane.getTabCount();
 	   	
-	   	this.setLayout(new GridLayout(2, 1));
+	   	this.setLayout(new BorderLayout());
 	}
 	public void showResult(float recogRate, int[] targets, Annotation[] annotations)
 	{		
@@ -67,14 +76,23 @@ public class ResultPanel extends JPanel
 		//Set the total number of classes
 		numClasses = labels.size();
 		
+		
+		
+		this.add(pnlCM, BorderLayout.CENTER);
+		
 		//Confusion matrix
 		showMatrix();
 		
 		//Chart
-		showChart();
+		showChart();		
+
+		pnlCM.add(pnlChartContainer);
+		
+		//pnlChartContainer.setBorder(new CompoundBorder(new TitledBorder(null, "Output Visualization", 
+				//TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(10, 10, 10, 10)));
 		
 		//Descriptions
-		buildDescription();		
+		buildDescription();						
 		
 		revalidate();
 		repaint();
@@ -128,13 +146,15 @@ public class ResultPanel extends JPanel
 		pnlTableContainer.add(lbVertical, BorderLayout.WEST);
 		
 		//Container for the matrix
-		pnlMatrix = new JPanel(new BorderLayout());	
+		pnlMatrix = new JPanel(new BorderLayout());
+		//pnlMatrix.setBorder(new CompoundBorder(new TitledBorder(null, "Confusion Matrix", 
+				//TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(10, 10, 10, 10)));
 		pnlMatrix.add(pnlTableContainer, BorderLayout.CENTER);
 		//pnlMatrix.add(lbHorizontal, BorderLayout.NORTH);
 		//pnlMatrix.add(lbVertical, BorderLayout.WEST);
 		pnlMatrix.add(lbTitle, BorderLayout.NORTH);
 		
-		this.add(pnlMatrix);	
+		pnlCM.add(pnlMatrix);	
 		
 		parentPane.setEnabledAt(tabIndex,true);
 	    parentPane.setSelectedIndex(tabIndex);
@@ -149,8 +169,9 @@ public class ResultPanel extends JPanel
 		
 		JPanel pnlDescription = new JPanel();
 		pnlDescription.setLayout(new BoxLayout(pnlDescription, BoxLayout.PAGE_AXIS));
-		pnlDescription.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-		pnlDescription.setBackground(Color.LIGHT_GRAY);
+		pnlDescription.setBorder(new CompoundBorder(new TitledBorder(null, "Output Statistics", 
+				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(10, 10, 10, 10)));
+		//pnlDescription.setBackground(Color.LIGHT_GRAY);
 		
 		//Labels with description
 		JLabel lbRecogRate = new JLabel("Recognition Rate: " + df.format(recogRate));
@@ -168,7 +189,7 @@ public class ResultPanel extends JPanel
 		pnlDescription.add(lbWorstRate);
 		
 		//Add description panel to the container
-		pnlMatrix.add(pnlDescription, BorderLayout.SOUTH);
+		this.add(pnlDescription, BorderLayout.NORTH);
 	}
 	/*
 	 * Creates the confusion matrix.
@@ -232,7 +253,8 @@ public class ResultPanel extends JPanel
 		r.setSeriesPaint(1, new Color(223, 34, 39));
 		
 		pnlChart = new ChartPanel(chart);
-		this.add(pnlChart);
+		pnlChart.setBorder(BorderFactory.createEtchedBorder());
+		pnlChartContainer.add(pnlChart);	
 	}
 	
 	public void showKFoldChart(float[] results)
@@ -252,7 +274,8 @@ public class ResultPanel extends JPanel
 		//r.setSeriesPaint(1, new Color(223, 34, 39));
 		
 		ChartPanel pnlFoldChart = new ChartPanel(chart);
-		this.add(pnlFoldChart);
+		pnlFoldChart.setBorder(BorderFactory.createEtchedBorder());
+		pnlChartContainer.add(pnlFoldChart);
 		
 		revalidate();
 	}

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import annotool.Annotator;
 import annotool.classify.Classifier;
 import annotool.classify.SavableClassifier;
 
@@ -25,6 +26,7 @@ public class ChainModel {
 	private int[] selectedIndices = null;
 	private String classifierName = null;
 	private Classifier classifier = null;
+	private HashMap<String, String> classParams = null;
 	
 	/*
 	 * Method to write to file
@@ -69,13 +71,21 @@ public class ChainModel {
         	}	
         	
         	//Write classifier
-        	writer.write("[Classifier]" + newLine);//TODO
-        	writer.write("Name:" + classifierName + newLine);
+        	writer.write("[CLASSIFIER]" + newLine);//TODO
+        	writer.write("Name=" + classifierName + newLine);
+        	//Write classifier parameters
+        	writer.write("[PARAMETER_START]" + newLine);
+        	for (String parameter : classParams.keySet()) {
+        		writer.write(parameter + "=" +classParams.get(parameter) + newLine);
+        	}
+        	writer.write("[PARAMETER_END]" + newLine);
+        	
+        	//Save trained model of the classifier
         	if(classifier != null) {
         		if(classifier instanceof SavableClassifier) {
 	        		String modelPath = getUniquePath(file.getParent(), file.getName() + "_model");            	
 	        		((SavableClassifier)classifier).saveModel(((SavableClassifier)classifier).getModel(), modelPath);
-	        		writer.write("Path:" + modelPath + newLine);
+	        		writer.write("Path=" + modelPath + newLine);
         		}
         	}
         	
@@ -181,11 +191,33 @@ public class ChainModel {
 				if(line.startsWith("Name=")) {
 					classifierName = line.replaceFirst("Name=", "");
 				}
+				else
+					throw new Exception("Invalid chain file.");
+				
+				//Read classifier parameters
+				line = scanner.nextLine();
+				if(line.equals("[PARAMETER_START]")) {
+					classParams = new HashMap<String, String>();
+					while(scanner.hasNextLine()) {
+						line = scanner.nextLine();
+						if(line.equals("[PARAMETER_END]"))
+							break;
+						String params[] = line.split("=");
+						if(params.length == 2)
+							exParams.put(params[0], params[1]);
+						else
+							throw new Exception("Invalid classifier parameter.");
+					}
+				}//End classifier parameters
+				
 				line = scanner.nextLine();
 				//Read classifier model path
 				if(line.startsWith("Path=")) {
 					String path = line.replaceFirst("Path=", "");
-					//TODO : load model from path
+					Classifier classifierObj = (new Annotator()).getClassifierGivenName(classifierName, classParams);
+					if(classifierObj instanceof SavableClassifier) {
+						((SavableClassifier)classifier).loadModel(path);
+					}
 				}
 			}
 		}
@@ -258,5 +290,11 @@ public class ChainModel {
 	}
 	public void setClassifier(Classifier classifier) {
 		this.classifier = classifier;
+	}
+	public HashMap<String, String> getClassParams() {
+		return classParams;
+	}
+	public void setClassParams(HashMap<String, String> classParams) {
+		this.classParams = classParams;
 	}
 }

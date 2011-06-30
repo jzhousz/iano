@@ -247,6 +247,111 @@ public class Validator
       return foldresults;
  	  
   }
+  /*
+   * Overloaded version of the above method - classfier name replaced with classifier object
+   */
+  public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] targets, Classifier chosenClassifier, HashMap<String,String> para, boolean shuffle, Annotation[] results) throws Exception
+  {
+	  int length = data.length;
+	  int dimension = data[0].length;
+	  
+	  if (shuffle)
+	    shuffle(length, dimension, data, targets);
+ 
+	  float[][] testingPatterns;
+      float[][] trainingPatterns;
+      int[] trainingTargets;
+      int[] testingTargets;
+      Annotation[] annotedPredictions;
+      double[] prob;
+      int testinglength, traininglength; //may vary for the last fold 
+      int foldsize = length/K; //size per fold except the last one;
+
+      if (K > length)
+	  {
+		  System.out.println("K-fold validation must have a K that is smaller than the total number of observations");
+		  throw new Exception("K-fold validation must have a K that is smaller than the total number of observations");
+      }
+
+      int correct = 0;
+      float[] foldresults = new float[K+1];
+      for (int k = 0; k < K; k++)
+      {
+    		 
+		 if (k == K-1)  //the last fold may have more testing samples than other folds.
+			    testinglength = length/K + length %  K;
+		 else
+			    testinglength = length/K;
+
+		  traininglength = length - testinglength;
+		  System.out.println("foldsize:" + foldsize + " testing length:"+ testinglength+" training length:" + traininglength + " dimension:" + dimension);
+	      testingPatterns = new float[testinglength][dimension];
+	      trainingPatterns = new float[traininglength][dimension];
+	      trainingTargets = new int[traininglength];
+	      testingTargets = new int[testinglength];
+	      annotedPredictions = new Annotation[testinglength];
+	      for(int m = 0; m < testinglength; m++)
+	    	  annotedPredictions[m] = new Annotation();
+			 
+		  //setup testing patterns
+		  for(int i=0; i<testinglength; i++)
+			  for(int j=0; j < dimension; j++)
+			  {
+			    testingPatterns[i][j] = data[k*foldsize+i][j];
+			    testingTargets[i] = targets[k*foldsize+i];
+		      }
+
+	      //setup training patterns before the testing samples
+		  for(int i=0; i< k*foldsize; i++)
+			 for(int j=0; j < dimension; j++)
+			  {
+			    trainingPatterns[i][j] = data[i][j];
+			    trainingTargets[i] = targets[i];
+		      }
+		  //the training samples after the testing samples
+	      for(int i= k*foldsize + testinglength; i< length; i++)
+			 for(int j=0; j < dimension; j++)
+			 {
+			    trainingPatterns[i-testinglength][j] = data[i][j];
+			    trainingTargets[i-testinglength] = targets[i];
+		     }
+
+    	 (new annotool.Annotator()).classifyGivenAMethod(chosenClassifier, para, trainingPatterns, testingPatterns, trainingTargets, testingTargets, annotedPredictions);
+    	 
+    	  //compare the output prediction with the real targets on the testing set
+    	 int currentFoldCorrect = 0;
+         for(int i=0; i<testinglength; i++)
+         {
+			System.out.println("predicted category:" + annotedPredictions[i].anno);
+			System.out.println("actual category:" + testingTargets[i]);
+			results[k*foldsize+i].anno = annotedPredictions[i].anno;
+	        if(annotedPredictions[i].anno == testingTargets[i])
+	        {
+	           correct ++;
+	           currentFoldCorrect ++;
+	        }
+	     }
+         foldresults[k] = (float) currentFoldCorrect/testinglength;
+
+      
+   	   //if GUI, update 5 times unless K is small than 5
+       if (bar != null)
+       {
+    		 if (K < 5) //update K times
+    			    setProgress(startPos + (k+1)*totalRange/K);
+    	     else if (k%(K/5) == 0)
+    			    setProgress(startPos + totalRange/5*(k+1)/(K/5));
+        }	 
+      }//end of K
+
+      //output the overall results of all folds
+      System.out.println("overall recognition rate: " + (float)correct/length);
+      foldresults[K] = (float) correct/length;
+      
+      setProgress(startPos + totalRange);
+      return foldresults;
+ 	  
+  }
    
    /**********************************************************************
     * Input: training and testing data and targets

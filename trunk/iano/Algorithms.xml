@@ -1,16 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Algorithms>
 	<Algorithm type="2DExtractor">
-		<Name>Wavelet</Name>
-		<Desc>2D discrete wavelet decomposition</Desc>
-		<Parameter type="Integer">
-			<Name>level</Name>
-			<Low>1</Low>
-			<High>10</High>
-			<Default>2</Default>
-		</Parameter>
-	</Algorithm>
-	<Algorithm type="2DExtractor">
 		<Name>Principal Components</Name>
 		<Parameter type="Boolean">
 			<Name>Reduction</Name>
@@ -20,19 +10,48 @@
 	<Algorithm type="Selector">
 		<Name>mRMR-MIQ</Name>
 		<Parameter type="Integer">
-			<Name>feature selected</Name>
-			<Default>10</Default>
+			<Name>Number of features</Name>
+			<Default>8</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>Discrete Flag</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Double">
+			<Name>Discretize Threshold</Name>
+			<Default>0</Default>
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="Selector">
 		<Name>mRMR-MID</Name>
 		<Parameter type="Integer">
-			<Name>feature selected</Name>
-			<Default>10</Default>
+			<Name>Number of features</Name>
+			<Default>8</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>Discrete Flag</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Double">
+			<Name>Discretize Threshold</Name>
+			<Default>0</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="Selector">
+		<Name>Fisher</Name>
+		<Parameter type="String">
+			<Name>MULTICLASS COMPARISON METHOD</Name>
+			<Domain>PAIRWISE,ONE VS OTHERS</Domain>
+			<Default>PAIRWISE</Default>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>NUMBER OF FEATURES</Name>
+			<Default>5</Default>
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="2DExtractor">
 		<Name>HAAR</Name>
+		<Desc>HAAR wavelet transform</Desc>
 		<Parameter type="Integer">
 			<Name>Wavelet Level</Name>
 			<Default>2</Default>

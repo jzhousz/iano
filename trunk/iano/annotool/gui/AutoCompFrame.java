@@ -28,7 +28,8 @@ import annotool.AnnOutputPanel;
 
 public class AutoCompFrame extends JFrame implements ActionListener, ItemListener, Runnable {
 	private JTabbedPane tabPane;
-	private JPanel pnlMain,
+	private JPanel pnlMainOuter,
+				   pnlMain, pnlChain,
 				   pnlAlgo,
 				   pnlExt, pnlSel, pnlClass,
 				   pnlExtMain, pnlSelMain, pnlClassMain,
@@ -88,8 +89,15 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 		pnlMain.setAlignmentY(TOP_ALIGNMENT);
 		pnlMain.setAlignmentX(LEFT_ALIGNMENT);
 		//this.add(pnlMain, BorderLayout.WEST);
+		
+		pnlChain = new JPanel();
+		
+		pnlMainOuter = new JPanel(new BorderLayout());
+		pnlMainOuter.add(pnlMain, BorderLayout.WEST);
+		pnlMainOuter.add(pnlChain, BorderLayout.CENTER);
+		
 		tabPane = new JTabbedPane();
-		tabPane.addTab("Algorithms", pnlMain);
+		tabPane.addTab("Algorithms", pnlMainOuter);
 		this.add(tabPane);
 		
 		//Algorithm selector part
@@ -297,324 +305,13 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
         featureExtractor = extractor.getName();
         featureSelector = selector.getName();
         classifierChoice = classifier.getName();
-		
-		anno = new Annotator();
-		
-		//Initiate appropriate process
-		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[0])) {				//TT Mode
-			ttRun();
-		}
-		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[1])) {			//Cross validation mode
-			cvRun();			
-		}
-		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[3])) {			//Training only
-			trainOnly();			
-		}
-		
+        
 		thread = null;
 		
 		//Re-enable the buttons
 		btnRun.setEnabled(true);
 		btnSaveModel.setEnabled(true);
 		btnAnnotate.setEnabled(true);
-	}
-	//Train Only
-	private void trainOnly() {
-	}
-	
-	//Training/Testing
-	private void ttRun() {		
-		//read images and wrapped into DataInput instances.
-        DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);
-        DataInput testingProblem = new DataInput(Annotator.testdir, Annotator.testext, channel);	        
-      
-        int[] resArr = new int[2]; //place holder for misc results
-        ArrayList<String> annoLabels = new ArrayList<String>();
-        int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels);
-        //get statistics from training set
-        int numOfAnno = resArr[0];
-        anno.setAnnotationLabels(annoLabels);	        
-
-        //testing set targets
-        int[][] testingTargets = anno.readTargets(testingProblem, Annotator.testtargetFile, resArr, null);
-
-        //feature extraction.
-        if (!setProgress(30))  {
-            return;
-        }
-        
-        pnlOutput.setOutput("Extracting features...");
-        
-        float[][] trainingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, trainingProblem);
-        float[][] testingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, testingProblem);
-        
-        //Keep features to be dumped into chain file
-        int imgWidth = trainingProblem.getWidth();
-        int imgHeight = trainingProblem.getHeight();
-        
-        //clear data memory
-        trainingProblem.setDataNull();
-        testingProblem.setDataNull();
-
-        //apply feature selector and classifier
-        if (!setProgress(50)) {
-            return;
-        }
-        //trainingTestingOutput(trainingFeatures, testingFeatures, trainingTargets, testingTargets, numOfAnno);
-        
-        int testingLength = testingFeatures.length;
-        int numoffeatures;
-
-        //initialize structure to store annotation results
-        Annotation[][] annotations = new Annotation[numOfAnno][testingLength];
-        for (int i = 0; i < numOfAnno; i++) {
-            for (int j = 0; j < testingLength; j++) {
-                annotations[i][j] = new Annotation();
-            }
-        }
-        
-        //Initialize ChainModel object for each label
-        chainModels = new ChainModel[numOfAnno];
-        
-        //loop for each annotation target (one image may have multiple labels)
-        for (int i = 0; i < numOfAnno; i++) {
-        	chainModels[i] = new ChainModel();
-        	
-            if (featureSelector.equalsIgnoreCase("None")) { //use the original feature without selection -- overwrite numoffeatures value
-            	numoffeatures = trainingFeatures[0].length;
-            }
-            else 
-            {
-                pnlOutput.setOutput("Selecting featurs...");
-            	//Supervised feature selectors need corresponding target data
-                ComboFeatures combo = anno.selectGivenAMethod(featureSelector, selParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i]);
-                //selected features overrides the passed in original features
-                trainingFeatures = combo.getTrainingFeatures();
-                testingFeatures = combo.getTestingFeatures();
-                numoffeatures = trainingFeatures[0].length;
-                
-                //For dump file
-                chainModels[i].setSelectedIndices(combo.getSelectedIndices());
-            }
-
-            //pass the training and testing data to Validator
-            //get rate and prediction results for testing data
-            float rate = 0;
-            //setGUIOutput("Classifying/Annotating ... ");
-            pnlOutput.setOutput("Classifying/Annotating...");
-
-            try {
-            	rate = anno.classifyGivenAMethod(classifierChoice, classParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
-            }
-            catch(Exception ex) {
-            	ex.printStackTrace();
-            }
-            		
-            System.out.println(rate);
-            
-            //Save information to dump in chain file
-            chainModels[i].setImageSet(Annotator.dir);
-        	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
-        	chainModels[i].setMode("Training/Testing");
-        	chainModels[i].setExtractorName(featureExtractor);
-        	chainModels[i].setExParams(exParams);
-        	chainModels[i].setSelectorName(featureSelector);
-        	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());
-        	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
-        	chainModels[i].setResult(rate);
-            
-            //Display result
-            ResultPanel pnlResult = new ResultPanel(tabPane);
-            tabPane.addTab("Result - " + anno.getAnnotationLabels().get(i), pnlResult);
-            pnlResult.showResult(rate, testingTargets[i], annotations[i]); 
-            
-            //Add panel with title label and close button to the tab
-            tabPane.setTabComponentAt(tabPane.getTabCount() - 1, 
-                    new ButtonTabComponent("Result - " + anno.getAnnotationLabels().get(i), tabPane));
-                
-            pnlOutput.setOutput("Recog Rate for " + anno.getAnnotationLabels().get(i) + ": " + rate);
-            if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
-                return;
-            }
-                //put the prediction results back to GUI
-                //if (container != null) {
-                    //container.getTablePanel().updateTestingTable(annotations);
-                //}
-            
-                /*if (gui != null) {
-                    gui.addCompareResultPanel(AnnControlPanel.classifiers, rates, AnnControlPanel.classifiers.length - 1);
-                }*/
-        }//end of loop for annotation targets        
-        
-	}
-	
-	//Cross validation
-	private void cvRun() {
-		//------ read image data from the directory ------------//
-        DataInput problem = new DataInput(Annotator.dir, Annotator.ext, channel);
-
-        //-----  read targets matrix (for multiple annotations, one per column) --------//
-        if (!setProgress(20)) {
-            return;
-        }
-        int[] resArr = new int[2]; //place holder for misc results
-        java.util.ArrayList<String> annoLabels = new java.util.ArrayList<String>();
-        int[][] targets = anno.readTargets(problem, Annotator.targetFile, resArr, annoLabels);
-        int numOfAnno = resArr[0];
-        anno.setAnnotationLabels(annoLabels);
-        
-        //----- feature extraction -------//
-        if (!setProgress(30)) {
-            return;
-        }
-        pnlOutput.setOutput("Extracing features ... ");
-        float[][] features = anno.extractGivenAMethod(featureExtractor, exParams, problem);
-        
-        //Keep features to be dumped into chain file
-        int imgWidth = problem.getWidth();
-        int imgHeight = problem.getHeight();
-        
-        //raw data is not used after this point, set to null.
-        problem.setDataNull();
-
-        //-----  output the annotation/classification results
-        if (!setProgress(50)) {
-            return;
-        }
-        
-        /*
-         * Apply Feature Selection and Classification in CV mode.
-         * This method uses k-fold CV.
-         * Output the recognition rate of each task (per column) to a file.
-         */
-        
-        int incomingDim = features[0].length;
-        int length = features.length;
-        int numoffeatures = incomingDim; //original dimension before selection
-
-        /*if (Annotator.fileFlag.equals("true")) {
-            try {
-                outputfile = new java.io.BufferedWriter(new java.io.FileWriter("output"));
-                ;
-                outputfile.write("Outputs:\n");
-                outputfile.flush();
-            }
-            catch (Exception e) {
-                System.out.println("Output File Cann't Be Generated.");
-            }
-        }*/
-        
-        // parameters that are same for all target labels
-        boolean shuffle = Boolean.parseBoolean(Annotator.shuffleFlag);
-        // fold number K
-        int K = 0;
-        try {
-            if (Annotator.fold.equals("LOO")) {
-                K = length;
-            }
-            else {
-                K = Integer.parseInt(Annotator.fold);
-            }
-        }
-        catch (NumberFormatException e) {
-            System.out.println("Number of fold is not a valid int. Set to " + length + ".");
-            K = length;
-        }
-        if (K <= 0 || K > length) {
-            System.out.println("Number of fold is not a valid int. Set to " + length + ".");
-            K = length;
-        }
-        
-        //allocate space for the results.
-        Annotation[][] results = new Annotation[numOfAnno][length];
-        for (int i = 0; i < numOfAnno; i++) {
-            for (int j = 0; j < length; j++) {
-                results[i][j] = new Annotation();
-            }
-        }
-        
-        chainModels = new ChainModel[numOfAnno];
-        
-        //loop for each annotation target
-        for (int i = 0; i < numOfAnno; i++) {
-        	
-        	chainModels[i] = new ChainModel();
-        	
-            float recograte[] = null;
-            int start = 50 + i * 50 / numOfAnno;
-            int region = 50 / numOfAnno;
-
-            //If selector is None, use default numoffeatures. Else, call the selector.
-            if (!featureSelector.equalsIgnoreCase("None")) {
-                pnlOutput.setOutput("Selecting features ... ");
-                //override the original features and num of features
-                ComboFeatures combo = anno.selectGivenAMethod(featureSelector, selParams, features, targets[i]);
-                features = combo.getTrainingFeatures();
-                
-                numoffeatures = features[0].length;
-                
-                //For chain dump
-                chainModels[i].setSelectedIndices(combo.getSelectedIndices());
-            }
-
-            pnlOutput.setOutput("Classifying/Annotating ... ");
-            try {
-            	recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, classParams, shuffle, results[i]);
-            }
-            catch(Exception ex) {
-            	pnlOutput.setOutput("Exception! " + ex.getMessage());
-            	ex.printStackTrace();
-            }
-            
-            //output results to GUI and file
-            System.out.println("rate for annotation target " + i + ": " + recograte[K]);
-            pnlOutput.setOutput("Recog Rate for " + anno.getAnnotationLabels().get(i) + ": " + recograte[K]);
-            
-            //Save information to dump in chain file
-        	chainModels[i].setImageSet(Annotator.dir);
-            chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
-        	chainModels[i].setMode("Cross Validation. Fold: " + Annotator.fold);
-        	chainModels[i].setExtractorName(featureExtractor);
-        	chainModels[i].setExParams(exParams);
-        	chainModels[i].setSelectorName(featureSelector);
-        	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());
-        	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
-        	chainModels[i].setResult(recograte[K]);
-            
-            //Display result
-            ResultPanel pnlResult = new ResultPanel(tabPane);
-            tabPane.addTab("Result - " + anno.getAnnotationLabels().get(i), pnlResult);
-            pnlResult.showResult(recograte[K], targets[i], results[i]);
-            if(!Annotator.fold.equals("LOO"))
-            	pnlResult.showKFoldChart(recograte);
-            
-            //Add panel with title label and close button to the tab
-            tabPane.setTabComponentAt(tabPane.getTabCount() - 1, 
-                    new ButtonTabComponent("Result - " + anno.getAnnotationLabels().get(i), tabPane));
-            
-            /*if (outputfile != null && fileFlag.equals("true")) {
-                try {
-                    outputfile.write("Recognition Rate for annotation target " + i + ": " + recograte);
-                    outputfile.flush();
-                }
-                catch (java.io.IOException e) {
-                    System.out.println("Writing to output file failed.");
-                }
-            }*/
-        } //end of loop for annotation targets
-
-        /*if (outputfile != null && fileFlag.equals("true")) {
-            try {
-                outputfile.close();
-            }
-            catch (Exception e) {
-            }
-        }
-
-        //put the prediction results back to GUI
-        if (container != null) {
-            container.getTablePanel().updateCVTable(results);
-        }*/
 	}
 	
 	/*
