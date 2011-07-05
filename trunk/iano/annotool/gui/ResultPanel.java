@@ -48,11 +48,11 @@ public class ResultPanel extends JPanel
 	JLabel lbHorizontal, lbVertical, lbTitle;
 	JTable table = null;
 	JScrollPane scrollPane = null;	
-	JPanel pnlMatrix;
+	JPanel pnlMatrix, pnlTableContainer;
 	ChartPanel pnlChart;
 	
 	//Container panel for matrix and chart
-	JPanel pnlCM = new JPanel(new GridLayout(2, 1));
+	JPanel pnlCM = new JPanel(new BorderLayout());
 	//Container panel for charts
 	JPanel pnlChartContainer = new JPanel(new GridLayout(1, 2));
 	
@@ -86,7 +86,7 @@ public class ResultPanel extends JPanel
 		//Chart
 		showChart();		
 
-		pnlCM.add(pnlChartContainer);
+		pnlCM.add(pnlChartContainer, BorderLayout.CENTER);
 		
 		//pnlChartContainer.setBorder(new CompoundBorder(new TitledBorder(null, "Output Visualization", 
 				//TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(10, 10, 10, 10)));
@@ -120,7 +120,7 @@ public class ResultPanel extends JPanel
 			};
 		table.getTableHeader().setReorderingAllowed(false);
 		scrollPane = new JScrollPane(table);
-		scrollPane.setBorder(BorderFactory.createEmptyBorder());
+		scrollPane.setBorder(BorderFactory.createEmptyBorder());		
 		
 		//Horizontal and vertical labels
 		lbHorizontal = new JLabel("Classified as");		
@@ -140,21 +140,19 @@ public class ResultPanel extends JPanel
 		lbTitle.setHorizontalAlignment(SwingConstants.CENTER);
 		lbTitle.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));		
 		
-		JPanel pnlTableContainer = new JPanel(new BorderLayout());
+		pnlTableContainer = new JPanel(new BorderLayout());
+		pnlTableContainer.setPreferredSize(new java.awt.Dimension(100, 120));
 		pnlTableContainer.add(scrollPane, BorderLayout.CENTER);
 		pnlTableContainer.add(lbHorizontal, BorderLayout.NORTH);
 		pnlTableContainer.add(lbVertical, BorderLayout.WEST);
 		
 		//Container for the matrix
 		pnlMatrix = new JPanel(new BorderLayout());
-		//pnlMatrix.setBorder(new CompoundBorder(new TitledBorder(null, "Confusion Matrix", 
-				//TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(10, 10, 10, 10)));
+		pnlMatrix.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		pnlMatrix.add(pnlTableContainer, BorderLayout.CENTER);
-		//pnlMatrix.add(lbHorizontal, BorderLayout.NORTH);
-		//pnlMatrix.add(lbVertical, BorderLayout.WEST);
 		pnlMatrix.add(lbTitle, BorderLayout.NORTH);
 		
-		pnlCM.add(pnlMatrix);	
+		pnlCM.add(pnlMatrix, BorderLayout.NORTH);	
 		
 		parentPane.setEnabledAt(tabIndex,true);
 	    parentPane.setSelectedIndex(tabIndex);

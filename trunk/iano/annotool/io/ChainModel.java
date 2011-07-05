@@ -16,6 +16,7 @@ import annotool.classify.SavableClassifier;
 public class ChainModel {
 	//Data members
 	private String imageSet = null;
+	private String testingSet = null; //Used if training/testing
 	private String imageSize = null;
 	private String mode = null;
 	private float result;
@@ -44,6 +45,9 @@ public class ChainModel {
         	BufferedWriter writer = new BufferedWriter(new FileWriter(file));
         	//Write comment section
         	writer.write("# Image Set: " + imageSet + newLine);
+        	if(this.testingSet != null) {
+        		writer.write("# Testing Set: " + testingSet + newLine);
+        	}
         	writer.write("# Image Size: " + imageSize + newLine);
         	writer.write("# Mode: " + mode + newLine);
         	writer.write("# Result: " + result * 100 + "%" + newLine);
@@ -228,6 +232,12 @@ public class ChainModel {
 	}
 	public void setImageSet(String imageSet) {
 		this.imageSet = imageSet;
+	}
+	public String getTestingSet() {
+		return testingSet;
+	}
+	public void setTestingSet(String testingSet) {
+		this.testingSet = testingSet;
 	}
 	public String getImageSize() {
 		return imageSize;

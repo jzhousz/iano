@@ -216,11 +216,14 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		            
 		            
 		            //Reset progress bar
-		            bar.setValue(0);
+		            //setSaveProgress(0);
 		            
 		            //Iterate through the chain models and write a file for each label
-		            for(int i = 0; i < chainModels.length; i++)
+		            for(int i = 0; i < chainModels.length; i++) {
 		            	chainModels[i].write(file);
+		            	
+		            	//setSaveProgress((i + 1)*100/chainModels.length);
+		            }
 		            pnlOutput.setOutput("Save complete. Dump file base path: " + file.getPath());
 		        }
 			}
@@ -307,6 +310,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         		value = ((JCheckBox)control).isSelected() ? "1" : "0";
         	else if(control instanceof JSpinner)
         		value = ((JSpinner)control).getValue().toString();
+        	else if(control instanceof JComboBox)
+        		value = ((JComboBox)control).getSelectedItem().toString();
         	exParams.put(param.getParamName(), value);
         }
         value = null;
@@ -321,6 +326,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         		value = ((JCheckBox)control).isSelected() ? "1" : "0";
         	else if(control instanceof JSpinner)
         		value = ((JSpinner)control).getValue().toString();
+        	else if(control instanceof JComboBox)
+        		value = ((JComboBox)control).getSelectedItem().toString();
         	selParams.put(param.getParamName(), value);
         }
         value = null;
@@ -335,6 +342,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         		value = ((JCheckBox)control).isSelected() ? "1" : "0";
         	else if(control instanceof JSpinner)
         		value = ((JSpinner)control).getValue().toString();
+        	else if(control instanceof JComboBox)
+        		value = ((JComboBox)control).getSelectedItem().toString();
         	classParams.put(param.getParamName(), value);
         }
         
@@ -543,6 +552,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             
             //Save information to dump in chain file
         	chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
+        	chainModels[i].setTestingSet(new File(Annotator.testdir).getAbsolutePath());
         	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         	chainModels[i].setMode("Training/Testing");
         	chainModels[i].setExtractorName(featureExtractor);
@@ -774,7 +784,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
                     }
                 });
             }
-            pnlOutput.setOutput("Annotation process cancelled by user.");
+            pnlOutput.setOutput("Process cancelled by user.");
             return false;
         }
 
@@ -786,6 +796,13 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             });
         }
         return true;
+    }
+    private void setSaveProgress(final int currentProgress) {
+    	SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                bar.setValue(currentProgress);
+            }
+        });
     }
     /*
      * Builds the panel for feature extraction parameters 
