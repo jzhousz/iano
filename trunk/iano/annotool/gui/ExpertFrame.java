@@ -86,7 +86,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		
 		pnlMain = new JPanel();
 		pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
-		pnlMain.setPreferredSize(new java.awt.Dimension(540, 680));
+		//pnlMain.setPreferredSize(new java.awt.Dimension(540, 680));
 		pnlMain.setBorder(new EmptyBorder(10, 10, 10, 10));
 		pnlMain.setAlignmentY(TOP_ALIGNMENT);
 		pnlMain.setAlignmentX(LEFT_ALIGNMENT);
@@ -96,8 +96,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		this.add(tabPane);
 		
 		//Algorithm selector part
-		pnlAlgo = new JPanel(new GridLayout(3, 1));
-		//pnlAlgo.setLayout(new BoxLayout(pnlAlgo, BoxLayout.Y_AXIS));
+		pnlAlgo = new JPanel();
+		pnlAlgo.setLayout(new BoxLayout(pnlAlgo, BoxLayout.PAGE_AXIS));
 		pnlAlgo.setBorder(new CompoundBorder(new TitledBorder(null, "Algorithms", 
 				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5)));
 		//pnlAlgo.setAlignmentY(TOP_ALIGNMENT);
@@ -131,7 +131,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		
 		//Extractor panel
 		pnlExt = new JPanel(new BorderLayout());
-		pnlExt.setPreferredSize(new java.awt.Dimension(350, 110)); //Supplying height so that the algorithm panels don't shrink when none selected
+		//pnlExt.setPreferredSize(new java.awt.Dimension(350, 110)); //Supplying height so that the algorithm panels don't shrink when none selected
 		pnlExt.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 		
 		pnlExtMain = new JPanel(new GridLayout(1, 2));
@@ -178,7 +178,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		pnlButton = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		pnlButton.add(btnRun);
 		pnlButton.add(btnSaveModel);
-		pnlButton.add(btnAnnotate);		
+		pnlButton.add(btnAnnotate);	
 		
 		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[3])) {	//If train only mode
 			btnRun.setText("Train");
@@ -209,22 +209,30 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 	    }
 		else if (e.getSource() == btnSaveModel) {
 			if(thread == null) {
+				//Show confirmation dialog
+				int choice = JOptionPane.showConfirmDialog(this,
+					    "Depending on the algorithm, saving a model can take a while to finish. Do you want to continue?",
+					    "Information",
+					    JOptionPane.OK_CANCEL_OPTION,
+					    JOptionPane.INFORMATION_MESSAGE);
+				
+				if(choice == JOptionPane.CANCEL_OPTION)
+					return;
+				
 		        int returnVal = fileChooser.showSaveDialog(this);
 	
 		        if (returnVal == JFileChooser.APPROVE_OPTION) {
-		            File file = fileChooser.getSelectedFile();		            
+		            pnlOutput.setOutput("Saving Model...");
+		        	File file = fileChooser.getSelectedFile();		            
 		            
 		            
 		            //Reset progress bar
-		            //setSaveProgress(0);
+		            bar.setValue(0);
 		            
-		            //Iterate through the chain models and write a file for each label
-		            for(int i = 0; i < chainModels.length; i++) {
-		            	chainModels[i].write(file);
-		            	
-		            	//setSaveProgress((i + 1)*100/chainModels.length);
-		            }
-		            pnlOutput.setOutput("Save complete. Dump file base path: " + file.getPath());
+		            JButton[] buttons = {btnRun, btnSaveModel, btnAnnotate}; 
+		            ModelSaver saver = new ModelSaver(bar, pnlOutput, buttons, chainModels, file);
+		            Thread t1 = new Thread(saver);
+		            t1.start();
 		        }
 			}
 			else
@@ -367,6 +375,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		
 		thread = null;
 		
+		this.pack();
 		//Re-enable the buttons
 		btnRun.setEnabled(true);
 		btnSaveModel.setEnabled(true);
@@ -419,7 +428,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             }
             else 
             {
-                pnlOutput.setOutput("Selecting featurs...");
+                pnlOutput.setOutput("Selecting features...");
             	//Supervised feature selectors need corresponding target data
                 ComboFeatures combo = anno.selectGivenAMethod(featureSelector, selParams, trainingFeatures, trainingTargets[i]);
                 //selected features overrides the passed in original features
@@ -522,7 +531,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             }
             else 
             {
-                pnlOutput.setOutput("Selecting featurs...");
+                pnlOutput.setOutput("Selecting features...");
             	//Supervised feature selectors need corresponding target data
                 ComboFeatures combo = anno.selectGivenAMethod(featureSelector, selParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i]);
                 //selected features overrides the passed in original features
@@ -797,13 +806,6 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         }
         return true;
     }
-    private void setSaveProgress(final int currentProgress) {
-    	SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                bar.setValue(currentProgress);
-            }
-        });
-    }
     /*
      * Builds the panel for feature extraction parameters 
      */
@@ -908,6 +910,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 				if(param.getParamDefault() != null)
 					snm.setValue(Integer.parseInt(param.getParamDefault()));
 				JSpinner sp = new JSpinner(snm);
+				sp.setPreferredSize(new java.awt.Dimension(80, 30));
 				
 				pnlItem.add(lb);
 				pnlItem.add(sp);

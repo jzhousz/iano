@@ -75,7 +75,7 @@ public class ChainModel {
         	}	
         	
         	//Write classifier
-        	writer.write("[CLASSIFIER]" + newLine);//TODO
+        	writer.write("[CLASSIFIER]" + newLine);
         	writer.write("Name=" + classifierName + newLine);
         	//Write classifier parameters
         	writer.write("[PARAMETER_START]" + newLine);

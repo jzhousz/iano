@@ -10,7 +10,6 @@ import java.awt.Toolkit;
 
 public class AnnotatorGUI extends JFrame
 {
-	LandingPanel pnlLanding;
 	AnnMenuBar menuBar;
 	
 	public AnnotatorGUI(String arg0)
@@ -32,6 +31,8 @@ public class AnnotatorGUI extends JFrame
 		setLocation(x,y);
 	}
 	
+	LandingPanel pnlLanding;
+
 	public static void main(String[] args) 
 	{		
 		//Show splash screen
