@@ -26,73 +26,61 @@ import annotool.Annotator;
 import annotool.ComboFeatures;
 import annotool.AnnOutputPanel;
 
-public class AutoCompFrame extends JFrame implements ActionListener, ItemListener, Runnable {
+public class AutoCompFrame extends JFrame implements ActionListener, ItemListener {
 	private JTabbedPane tabPane;
 	private JPanel pnlMainOuter,
 				   pnlMain,
 				   pnlAlgo,
 				   pnlExt, pnlSel, pnlClass,
 				   pnlExtMain, pnlSelMain, pnlClassMain,
-				   pnlExtBtn, pnlSelBtn, pnlClassBtn,
-				   pnlButton;
+				   pnlExtBtn, pnlSelBtn, pnlClassBtn;
 	
 	private ChainPanel pnlChain;
 	
-	private JButton btnRun, btnSaveModel, btnAnnotate,
-					btnAddEx, btnAddSel, btnAddClass;
+	private JButton btnAddEx, btnAddSel, btnAddClass;
 	
 	private JLabel lbExtractor, lbSelector, lbClassifier;
 	private JComboBox cbExtractor, cbSelector, cbClassifier;
 	
-	private String channel;
-	
 	int tabNumber = 1; //Initial number of tabs
-	
-	//Algorithms and parameters
-	Algorithm extractor = null;			
-	Algorithm selector = null;			
-	Algorithm classifier = null;	
 	
 	//To keep track of dynamically added components
 	HashMap<String, JComponent> exParamControls = null;			//For extractor parameters
 	HashMap<String, JComponent> selParamControls = null;		//For selector parameters
 	HashMap<String, JComponent> classParamControls = null;		//For classifier parameters
 	
-	//Actual parameters and values to use in algorithms
-	HashMap<String, String> exParams = null;
-    HashMap<String, String> selParams = null;
-    HashMap<String, String> classParams = null;
-    
-    //Algorithm names
-    String featureExtractor = null;
-    String featureSelector = null;
-    String classifierChoice = null;
-    
-    Annotator anno = null;
-	
 	AnnOutputPanel pnlOutput = null;
-	JProgressBar bar = null;
-	
-	private Thread thread = null;
-	private boolean isRunning;
-	
-	JFileChooser fileChooser;
-	ChainModel[] chainModels = null;
 	
 	public AutoCompFrame(String arg0, boolean is3D, String channel) {
 		super(arg0);
-		this.channel = channel;
-		fileChooser = new JFileChooser();
 		
 		pnlMain = new JPanel();
 		pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
-		pnlMain.setPreferredSize(new java.awt.Dimension(540, 670));
+		pnlMain.setPreferredSize(new java.awt.Dimension(540, 680));
 		pnlMain.setBorder(new EmptyBorder(10, 10, 10, 10));
 		pnlMain.setAlignmentY(TOP_ALIGNMENT);
 		pnlMain.setAlignmentX(LEFT_ALIGNMENT);
 		//this.add(pnlMain, BorderLayout.WEST);
 		
-		pnlChain = new ChainPanel();
+		//Buttons to add algorithms to chain
+		btnAddEx = new JButton("Add");
+		btnAddSel = new JButton("Add");
+		btnAddClass = new JButton("Add");
+		btnAddEx.addActionListener(this);
+		btnAddSel.addActionListener(this);
+		btnAddClass.addActionListener(this);
+		//Add buttons to panels
+		pnlExtBtn = new JPanel(new FlowLayout(FlowLayout.TRAILING));
+		pnlExtBtn.add(btnAddEx);
+		pnlSelBtn = new JPanel(new FlowLayout(FlowLayout.TRAILING));
+		pnlSelBtn.add(btnAddSel);
+		pnlClassBtn = new JPanel(new FlowLayout(FlowLayout.TRAILING));
+		pnlClassBtn.add(btnAddClass);
+				
+		pnlOutput = new AnnOutputPanel();
+		
+		//Right side panel for chains
+		pnlChain = new ChainPanel(this, channel, pnlOutput);
 		
 		pnlMainOuter = new JPanel(new BorderLayout());
 		pnlMainOuter.add(pnlMain, BorderLayout.WEST);
@@ -103,12 +91,10 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 		this.add(tabPane);
 		
 		//Algorithm selector part
-		pnlAlgo = new JPanel(new GridLayout(3, 1));
-		//pnlAlgo.setLayout(new BoxLayout(pnlAlgo, BoxLayout.Y_AXIS));
+		pnlAlgo = new JPanel();
+		pnlAlgo.setLayout(new BoxLayout(pnlAlgo, BoxLayout.PAGE_AXIS));
 		pnlAlgo.setBorder(new CompoundBorder(new TitledBorder(null, "Algorithms", 
 				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5)));
-		//pnlAlgo.setAlignmentY(TOP_ALIGNMENT);
-		//pnlAlgo.setAlignmentX(LEFT_ALIGNMENT);
 		
 		//Parse the xml document with list of algorithms (for extractors, selectors and classifiers)
 		AlgoXMLParser parser = new AlgoXMLParser();
@@ -135,21 +121,6 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 		cbExtractor.addItemListener(this);
 		cbSelector.addItemListener(this);
 		cbClassifier.addItemListener(this);
-		
-		//Buttons to add algorithms to chain
-		btnAddEx = new JButton("Add");
-		btnAddSel = new JButton("Add");
-		btnAddClass = new JButton("Add");
-		btnAddEx.addActionListener(this);
-		btnAddSel.addActionListener(this);
-		btnAddClass.addActionListener(this);
-		//Add buttons to panels
-		pnlExtBtn = new JPanel(new FlowLayout(FlowLayout.TRAILING));
-		pnlExtBtn.add(btnAddEx);
-		pnlSelBtn = new JPanel(new FlowLayout(FlowLayout.TRAILING));
-		pnlSelBtn.add(btnAddSel);
-		pnlClassBtn = new JPanel(new FlowLayout(FlowLayout.TRAILING));
-		pnlClassBtn.add(btnAddClass);
 		
 		//Extractor panel
 		pnlExt = new JPanel(new BorderLayout());
@@ -187,37 +158,11 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 		//Add to container
 		pnlAlgo.add(pnlExt);
 		pnlAlgo.add(pnlSel);
-		pnlAlgo.add(pnlClass);
+		pnlAlgo.add(pnlClass);		
 		
-		//Button part
-		btnRun = new JButton("Run");		
-		btnRun.addActionListener(this);
-		btnSaveModel = new JButton("Save Model", new ImageIcon("images/save.png"));
-		btnSaveModel.setEnabled(false);
-		btnSaveModel.addActionListener(this);
-		
-		pnlButton = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-		pnlButton.add(btnRun);
-		pnlButton.add(btnSaveModel);
-		
-		btnAnnotate = new JButton("Apply Model/Annotate");
-		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[3])) {	//If train only mode
-			btnRun.setText("Train");								//Set button text to "Train"
-			
-			btnAnnotate.addActionListener(this);
-			btnAnnotate.setEnabled(false);
-			pnlButton.add(btnAnnotate);
-		}
-		
-		pnlOutput = new AnnOutputPanel();
-		bar = new JProgressBar(0, 100);
-		bar.setValue(0);
-		bar.setStringPainted(true);
 		
 		pnlMain.add(pnlAlgo);
-		pnlMain.add(pnlButton);
 		pnlMain.add(pnlOutput);
-		pnlMain.add(bar);
 		
 		//Build parameter panels for default selection
 		buildExParameterPanel();
@@ -225,99 +170,49 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 		buildClassParameterPanel();		
 	}
 	public void actionPerformed(ActionEvent e) {
-		if(e.getSource() == btnRun) {			
-			if (thread == null)  {
-	            thread = new Thread(this);
-	            isRunning = true;
-	            thread.start();
-	        }
-	    }
-		else if (e.getSource() == btnSaveModel) {
-			if(thread == null) {
-		        int returnVal = fileChooser.showSaveDialog(this);
-	
-		        if (returnVal == JFileChooser.APPROVE_OPTION) {
-		            File file = fileChooser.getSelectedFile();
-		            
-		            //Iterate through the chain models and write a file for each label
-		            for(int i = 0; i < chainModels.length; i++)
-		            	chainModels[i].write(file);
-		            pnlOutput.setOutput("Save complete. Dump file base path: " + file.getPath());
-		        }
-			}
-			else
-				pnlOutput.setOutput("Cannot save model during processing.");
-		}
-		else if (e.getSource() == btnAnnotate) {
-			if(thread == null) {
-				//TODO: check if chain models exist and apply
-			}
-		}
-		
 		//Add buttons
 		if(e.getSource() == btnAddEx) {
-			extractor = (Algorithm)cbExtractor.getSelectedItem();
+			Algorithm extractor = (Algorithm)cbExtractor.getSelectedItem();
 			Extractor ex = new Extractor(extractor.getName());
-			
-			String value = null;
-	        //Parameters for extractor
-	        for(Parameter param : extractor.getParam()) {
-	        	JComponent control = exParamControls.get(param.getParamName());
-	        	if(control instanceof JTextField)
-	        		value = ((JTextField) control).getText().trim();
-	        	else if(control instanceof JCheckBox)
-	        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
-	        	else if(control instanceof JSpinner)
-	        		value = ((JSpinner)control).getValue().toString();
-	        	else if(control instanceof JComboBox)
-	        		value = ((JComboBox)control).getSelectedItem().toString();
-	        	ex.addParams(param.getParamName(), value);
-	        }
-	        
+			ex.setParams(getParameterList(extractor, "Extractor"));	        
 	        pnlChain.addExtractor(ex);
 		}
 		else if(e.getSource() == btnAddSel) {
-			selector = (Algorithm)cbSelector.getSelectedItem();
-			HashMap<String, String> params = new HashMap<String, String>();
-			
-			String value = null;
-	        //Parameters for selector
-	        for(Parameter param : selector.getParam()) {
-	        	JComponent control = selParamControls.get(param.getParamName());
-	        	if(control instanceof JTextField)
-	        		value = ((JTextField) control).getText().trim();
-	        	else if(control instanceof JCheckBox)
-	        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
-	        	else if(control instanceof JSpinner)
-	        		value = ((JSpinner)control).getValue().toString();
-	        	else if(control instanceof JComboBox)
-		        		value = ((JComboBox)control).getSelectedItem().toString();
-	        	params.put(param.getParamName(), value);
-	        }
-	        
-	        pnlChain.addSelector(selector.getName(), params);
+			Algorithm selector = (Algorithm)cbSelector.getSelectedItem();	        
+	        pnlChain.addSelector(selector.getName(), getParameterList(selector, "Selector"));
 		}
 		else if(e.getSource() == btnAddClass) {
-			classifier = (Algorithm)cbClassifier.getSelectedItem();
-			HashMap<String, String> params = new HashMap<String, String>();
-			
-			String value = null;
-	        //Parameters for classifier
-	        for(Parameter param : classifier.getParam()) {
-	        	JComponent control = classParamControls.get(param.getParamName());
-	        	if(control instanceof JTextField)
-	        		value = ((JTextField) control).getText().trim();
-	        	else if(control instanceof JCheckBox)
-	        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
-	        	else if(control instanceof JSpinner)
-	        		value = ((JSpinner)control).getValue().toString();
-	        	else if(control instanceof JComboBox)
-	        		value = ((JComboBox)control).getSelectedItem().toString();
-	        	params.put(param.getParamName(), value);
-	        }
-	        
-	        pnlChain.addClassifier(classifier.getName(), params);
+			Algorithm classifier = (Algorithm)cbClassifier.getSelectedItem();	        
+	        pnlChain.addClassifier(classifier.getName(), getParameterList(classifier, "Classifier"));
 		}
+	}
+	private HashMap<String, String> getParameterList(Algorithm al, String type) {
+		HashMap<String, String> params = new HashMap<String, String>();
+		
+		String value = null;
+        //Parameters for classifier
+        for(Parameter param : al.getParam()) {
+        	JComponent control = null;
+
+        	if(type.equals("Extractor"))
+        		control = exParamControls.get(param.getParamName());
+        	else if(type.equals("Selector"))
+        		control = selParamControls.get(param.getParamName());
+        	else if(type.equals("Classifier"))
+        		control = classParamControls.get(param.getParamName());
+        		
+        	if(control instanceof JTextField)
+        		value = ((JTextField) control).getText().trim();
+        	else if(control instanceof JCheckBox)
+        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
+        	else if(control instanceof JSpinner)
+        		value = ((JSpinner)control).getValue().toString();
+        	else if(control instanceof JComboBox)
+        		value = ((JComboBox)control).getSelectedItem().toString();
+        	params.put(param.getParamName(), value);
+        }
+        
+        return params;
 	}
 	public void itemStateChanged(ItemEvent e) {
 		if(e.getSource() == cbExtractor && e.getStateChange() == 1) {		
@@ -329,116 +224,8 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 		if(e.getSource() == cbClassifier && e.getStateChange() == 1) {		
 			buildClassParameterPanel();
 		}
-	}
+	}	
 	
-	public void run() {
-		//Disable run and save buttons
-		btnRun.setEnabled(false);
-		btnSaveModel.setEnabled(false);
-		btnAnnotate.setEnabled(false);
-		
-		//Get algorithm and parameters from GUI
-		extractor = (Algorithm)cbExtractor.getSelectedItem();			
-		selector = (Algorithm)cbSelector.getSelectedItem();			
-		classifier = (Algorithm)cbClassifier.getSelectedItem();
-		
-		//HashMap of parameter and corresponding values
-		exParams = new HashMap<String, String>();
-        selParams = new HashMap<String, String>();
-        classParams = new HashMap<String, String>();
-        
-        //Build parameters from the controls
-        //TODO: Validate input data
-        String value = null;
-        //Parameters for extractor
-        for(Parameter param : extractor.getParam()) {
-        	JComponent control = exParamControls.get(param.getParamName());
-        	if(control instanceof JTextField)
-        		value = ((JTextField) control).getText().trim();
-        	else if(control instanceof JCheckBox)
-        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
-        	else if(control instanceof JSpinner)
-        		value = ((JSpinner)control).getValue().toString();
-        	else if(control instanceof JComboBox)
-        		value = ((JComboBox)control).getSelectedItem().toString();
-        	exParams.put(param.getParamName(), value);
-        }
-        value = null;
-        //Parameters for selector
-        for(Parameter param : selector.getParam()) {
-        	JComponent control = selParamControls.get(param.getParamName());
-        	if(control instanceof JTextField)
-        		value = ((JTextField) control).getText().trim();
-        	else if(control instanceof JCheckBox)
-        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
-        	else if(control instanceof JSpinner)
-        		value = ((JSpinner)control).getValue().toString();
-        	else if(control instanceof JComboBox)
-        		value = ((JComboBox)control).getSelectedItem().toString();
-        	selParams.put(param.getParamName(), value);
-        }
-        value = null;
-        //Parameters for classifier
-        for(Parameter param : classifier.getParam()) {
-        	JComponent control = classParamControls.get(param.getParamName());
-        	if(control instanceof JTextField)
-        		value = ((JTextField) control).getText().trim();
-        	else if(control instanceof JCheckBox)
-        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
-        	else if(control instanceof JSpinner)
-        		value = ((JSpinner)control).getValue().toString();
-        	else if(control instanceof JComboBox)
-        		value = ((JComboBox)control).getSelectedItem().toString();
-        	classParams.put(param.getParamName(), value);
-        }
-        
-        //Names of the algorithms
-        featureExtractor = extractor.getName();
-        featureSelector = selector.getName();
-        classifierChoice = classifier.getName();
-        
-		thread = null;
-		
-		//Re-enable the buttons
-		btnRun.setEnabled(true);
-		btnSaveModel.setEnabled(true);
-		btnAnnotate.setEnabled(true);
-	}
-	
-	/*
-     * The method has 2 purposes:
-     * 1. update the value of the progress bar in GUI.
-     * 2. check if there is a need to stop the working thread.
-     * It is called periodically by the working thread.
-     */
-    private boolean setProgress(final int currentProgress) {
-        if (thread == null) {
-            System.out.println("thread is null");
-            return false;
-        }
-        //if	(thread.isInterrupted())
-        if (!isRunning && (currentProgress > 0)) {
-            System.out.println("Interrupted at progress " + currentProgress);
-            if (bar != null) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        bar.setValue(0);
-                    }
-                });
-            }
-            pnlOutput.setOutput("Annotation process cancelled by user.");
-            return false;
-        }
-
-        if (bar != null) {
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    bar.setValue(currentProgress);
-                }
-            });
-        }
-        return true;
-    }
     /*
      * Builds the panel for feature extraction parameters 
      */
@@ -543,6 +330,7 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 				if(param.getParamDefault() != null)
 					snm.setValue(Integer.parseInt(param.getParamDefault()));
 				JSpinner sp = new JSpinner(snm);
+				sp.setPreferredSize(new java.awt.Dimension(80, 30));
 				
 				pnlItem.add(lb);
 				pnlItem.add(sp);
@@ -579,6 +367,22 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 		pnlContainer.add(lbDesc, BorderLayout.NORTH);
 		
 		return pnlContainer;
+	}
+	public void setButtonsEnabled(boolean flag) {
+		btnAddEx.setEnabled(flag);
+		btnAddSel.setEnabled(flag);
+		btnAddClass.setEnabled(flag);
+	}
+	
+	public void addTab(String title, float[][] rates, ArrayList<String> labels) {
+		//Display result
+        ACResultPanel pnlResult = new ACResultPanel(tabPane);
+        tabPane.addTab(title, pnlResult);
+        pnlResult.showChart(rates, labels); 
+        
+        //Add panel with title label and close button to the tab
+        tabPane.setTabComponentAt(tabPane.getTabCount() - 1, 
+                new ButtonTabComponent(title, tabPane));
 	}
     //Temporary main method for testing GUI
 	public static void main(String[] args) {

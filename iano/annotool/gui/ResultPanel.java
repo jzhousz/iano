@@ -8,6 +8,7 @@ import javax.swing.border.TitledBorder;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.CategoryItemRenderer;
@@ -48,7 +49,7 @@ public class ResultPanel extends JPanel
 	JLabel lbHorizontal, lbVertical, lbTitle;
 	JTable table = null;
 	JScrollPane scrollPane = null;	
-	JPanel pnlMatrix, pnlTableContainer;
+	JPanel pnlMatrix, pnlTableContainer, pnlDescription;
 	ChartPanel pnlChart;
 	
 	//Container panel for matrix and chart
@@ -74,28 +75,29 @@ public class ResultPanel extends JPanel
 		this.buildLabels();
 		
 		//Set the total number of classes
-		numClasses = labels.size();
-		
-		
-		
-		this.add(pnlCM, BorderLayout.CENTER);
+		numClasses = labels.size();		
 		
 		//Confusion matrix
 		showMatrix();
 		
+		pnlChartContainer.setPreferredSize(new java.awt.Dimension(500, 300));
 		//Chart
-		showChart();		
-
+		showChart();
+		
 		pnlCM.add(pnlChartContainer, BorderLayout.CENTER);
 		
 		//pnlChartContainer.setBorder(new CompoundBorder(new TitledBorder(null, "Output Visualization", 
 				//TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(10, 10, 10, 10)));
 		
 		//Descriptions
-		buildDescription();						
+		buildDescription();					
 		
-		revalidate();
-		repaint();
+		this.add(pnlCM, BorderLayout.CENTER);
+		
+		parentPane.setEnabledAt(tabIndex,true);
+	    parentPane.setSelectedIndex(tabIndex);
+		//revalidate();
+		//repaint();
 	}
 	
 	/* 
@@ -120,7 +122,8 @@ public class ResultPanel extends JPanel
 			};
 		table.getTableHeader().setReorderingAllowed(false);
 		scrollPane = new JScrollPane(table);
-		scrollPane.setBorder(BorderFactory.createEmptyBorder());		
+		scrollPane.setBorder(BorderFactory.createEmptyBorder());
+		scrollPane.setPreferredSize(new java.awt.Dimension(500, 120));
 		
 		//Horizontal and vertical labels
 		lbHorizontal = new JLabel("Classified as");		
@@ -141,7 +144,7 @@ public class ResultPanel extends JPanel
 		lbTitle.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));		
 		
 		pnlTableContainer = new JPanel(new BorderLayout());
-		pnlTableContainer.setPreferredSize(new java.awt.Dimension(100, 120));
+		//pnlTableContainer.setPreferredSize(new java.awt.Dimension(500, 120));
 		pnlTableContainer.add(scrollPane, BorderLayout.CENTER);
 		pnlTableContainer.add(lbHorizontal, BorderLayout.NORTH);
 		pnlTableContainer.add(lbVertical, BorderLayout.WEST);
@@ -152,10 +155,7 @@ public class ResultPanel extends JPanel
 		pnlMatrix.add(pnlTableContainer, BorderLayout.CENTER);
 		pnlMatrix.add(lbTitle, BorderLayout.NORTH);
 		
-		pnlCM.add(pnlMatrix, BorderLayout.NORTH);	
-		
-		parentPane.setEnabledAt(tabIndex,true);
-	    parentPane.setSelectedIndex(tabIndex);
+		pnlCM.add(pnlMatrix, BorderLayout.NORTH);
 	}
 	
 	/*
@@ -165,11 +165,10 @@ public class ResultPanel extends JPanel
 	{
 		Font descFont = new Font("Tahoma", Font.BOLD, 14);
 		
-		JPanel pnlDescription = new JPanel();
+		pnlDescription = new JPanel();
 		pnlDescription.setLayout(new BoxLayout(pnlDescription, BoxLayout.PAGE_AXIS));
 		pnlDescription.setBorder(new CompoundBorder(new TitledBorder(null, "Output Statistics", 
 				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(10, 10, 10, 10)));
-		//pnlDescription.setBackground(Color.LIGHT_GRAY);
 		
 		//Labels with description
 		JLabel lbRecogRate = new JLabel("Recognition Rate: " + df.format(recogRate));
@@ -246,6 +245,11 @@ public class ResultPanel extends JPanel
 		
 		JFreeChart chart = ChartFactory.createStackedBarChart3D("Annotation Result", "Class", "Rate (%)", dataset, PlotOrientation.VERTICAL, true, true, false);
 		CategoryPlot plot = chart.getCategoryPlot();
+		
+		ValueAxis axis = plot.getRangeAxis();
+		axis.setAutoRange(false);
+		axis.setRange(0, 100);
+		
 		CategoryItemRenderer r = plot.getRenderer(); 
 		r.setSeriesPaint(0, new Color(76, 182, 73)); 
 		r.setSeriesPaint(1, new Color(223, 34, 39));
@@ -267,6 +271,11 @@ public class ResultPanel extends JPanel
 		
 		JFreeChart chart = ChartFactory.createBarChart3D("Fold Results", "Class", "Rate (%)", dataset, PlotOrientation.VERTICAL, false, false, false);
 		CategoryPlot plot = chart.getCategoryPlot();
+		
+		ValueAxis axis = plot.getRangeAxis();
+		axis.setAutoRange(false);
+		axis.setRange(0, 100);
+		
 		CategoryItemRenderer r = plot.getRenderer(); 
 		r.setSeriesPaint(0, new Color(67, 40, 119)); 
 		//r.setSeriesPaint(1, new Color(223, 34, 39));

@@ -1,7 +1,13 @@
 package annotool.gui;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import annotool.classify.SavableClassifier;
 
 public class Chain {
 	private ArrayList<Extractor> extractors = null;
@@ -25,6 +31,17 @@ public class Chain {
 	}
 	public void addClassifierParam(String key, String value) {
 		classParams.put(key, value);
+	}
+	public boolean hasExtractors() {
+		if (extractors.size() > 0)
+			return true;
+		return false;
+	}
+	public boolean isComplete() {
+		//Chain is complete when there is at least one extractor(including none), one selector(including none) and one classifier
+		if(hasExtractors() && selector != null && classifier != null)
+			return true;
+		return false;
 	}
 	
 	@Override

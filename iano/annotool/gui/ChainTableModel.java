@@ -1,6 +1,7 @@
 package annotool.gui;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
@@ -9,7 +10,7 @@ public class ChainTableModel extends AbstractTableModel {
 	private boolean DEBUG = false;
 	
 	private String[] columnNames = {"",
-            						"Algorithms"};
+            						"Chained Algorithms"};
 	
 	private List<Object[]> items = new ArrayList<Object[]>();
 	
@@ -75,6 +76,10 @@ public class ChainTableModel extends AbstractTableModel {
 	public void removeRow(int row) {
 		if(row >= 0 && row < items.size())
 			items.remove(row);
+	    fireTableDataChanged();
+	}
+	public void removeAll() {
+		items.removeAll(items);
 	    fireTableDataChanged();
 	}
 }
