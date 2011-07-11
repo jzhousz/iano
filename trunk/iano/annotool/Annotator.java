@@ -611,10 +611,44 @@ public class Annotator implements Runnable
      * Useful for methods such as wavelet.
      * This method takes a HashMap for possible parameters.
      * This method is used by the GUI chain comparison module.
-     * TBD: The "extractor" may be a classname to allow dynamic loading of algorithm classes.
-     *
+     * TBD: The "extractor" may be a class name to allow dynamic loading of algorithm classes.
+     * Note: this is the first f.e. for the image
      */
-    public float[][] extractGivenAMethod(String extractor, java.util.HashMap<String, String> parameters, DataInput problem) {
+    public float[][] extractGivenAMethod(String chosenExtractor, java.util.HashMap<String, String> parameters, DataInput problem) {
+
+        float[][] features = null;
+    	int stackSize = problem.getStackSize();
+        
+    	if (chosenExtractor.equalsIgnoreCase("NONE")) 
+        {
+    		//use raw image or middle stack for 3D
+            int length = problem.getLength();
+            int height = problem.getHeight();
+            int width = problem.getWidth();
+            byte[][] data = problem.getData(stackSize / 2 + 1);
+            features = new float[length][width * height];
+            for (int i = 0; i < length; i++) {
+                for (int j = 0; j < width * height; j++) {
+                    features[i][j] = (float) (data[i][j] & 0xff);
+                }
+            }
+            return features;
+        }
+
+        //those that are not "NONE"    	    	
+    	FeatureExtractor extractor = getExtractorGivenName(chosenExtractor, parameters);
+
+    	//check if it is the right type of feature extractor (2D or 3D)
+    	if ((stackSize == 1 && extractor.is3DExtractor()) || (stackSize > 1 && (!extractor.is3DExtractor())))
+    	{
+            System.out.println("invalid stack size for the corresponding feature extractor");
+            System.exit(1);
+    	}
+
+    	features = extractor.calcFeatures(problem);	
+    	return features;	
+    	
+    	/*
         float[][] features = null;
         int stackSize = problem.getStackSize();
 
@@ -677,8 +711,53 @@ public class Annotator implements Runnable
             System.exit(1);
         }
 
-        return features;
+        return features; */
     }
+    
+    /* 
+     * overloaded method for applying 2nd+ extractor
+     * Need to supply float[][] as input data. DataInput will be used for some image-related parameter.
+     */
+    public float[][] extractGivenAMethod(String chosenExtractor, java.util.HashMap<String, String> parameters, float[][] data, DataInput problem) {
+
+        float[][] features = null;
+        
+    	if (chosenExtractor.equalsIgnoreCase("NONE")) 
+           return data;
+ 
+    	FeatureExtractor extractor = getExtractorGivenName(chosenExtractor, parameters);
+
+    	//check if it is the right type of feature extractor (2D or 3D)
+    	int stackSize = problem.getStackSize();
+    	if ((stackSize == 1 && extractor.is3DExtractor()) || (stackSize > 1 && (!extractor.is3DExtractor())))
+    	{
+            System.out.println("invalid stack size for the corresponding feature extractor");
+            System.exit(1);
+    	}
+
+    	features = extractor.calcFeatures(data, problem);	
+    	return features;	
+    }	
+    
+    public FeatureExtractor getExtractorGivenName(String name, HashMap<String, String> parameters)
+    {
+       FeatureExtractor extractor = null;
+       if (name.equalsIgnoreCase("HAAR")) 
+          extractor = new HaarFeatureExtractor(parameters);
+       
+      /* else if (name.equalsIgnoreCase("PARTIAL3D"))
+          extractor = new StackSimpleHaarFeatureExtractor(parameters);
+       else if (name.equals("LIGHT3D")) {
+    	   extractor = new StackThreeDirectionHaarFeatureExtractor(parameters);
+     */
+   	   else
+         setGUIOutput(name + "is not a supported extractor.");
+
+   	   return extractor;
+    	
+    }
+ 
+    
 
     /*
      * Overloaded version of the extractor that takes 2 data sets
@@ -686,7 +765,7 @@ public class Annotator implements Runnable
      * It may also take an object (e.g. transform matrix / model) and a problem.
      * Tb Be Done later.
      */
-    protected void extractGivenAMethod(String chosenExtractor, String parameter, DataInput trainingproblem, DataInput testingproblem) {
+   /* protected void extractGivenAMethod(String chosenExtractor, String parameter, DataInput trainingproblem, DataInput testingproblem) {
         //check which method it is;
         if (chosenExtractor.equals("Principal Components")) {
             System.out.println("PCA is to be added");
@@ -701,7 +780,7 @@ public class Annotator implements Runnable
         else {
             System.out.println("No need to call this version of extractGivenAMethod");
         }
-    }
+    }*/
 
     /*
      * Feature selector that takes 1 set. Used in cross validation mode.
