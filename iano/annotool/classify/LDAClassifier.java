@@ -458,7 +458,7 @@ public class LDAClassifier implements SavableClassifier {
     	  model = (LDATrainedModel) filestream.readObject();
     	}catch(ClassNotFoundException ce)
     	{
-    		System.err.println("Class Not Found in Loading SVM model");
+    		System.err.println("Class Not Found in Loading model");
     	}
     	filestream.close();
     	return model;
