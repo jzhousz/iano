@@ -342,23 +342,43 @@ public class SVMClassifier implements SavableClassifier
      */
     public void saveModel(Object trainedModel, String model_file_name) throws java.io.IOException
     {
+    	
+    	System.out.println("Saving SVM model to "+ model_file_name);	
+    	   
+    	java.io.ObjectOutputStream filestream = new java.io.ObjectOutputStream(new java.io.FileOutputStream(model_file_name));
+		filestream.writeObject(trainedModel);
+		filestream.close();
+
+        /*    	
     	try
     	{
-    	 System.out.println("Saving SVM model to "+ model_file_name);	
     	 svm.svm_save_model(model_file_name,(svm_model) trainedModel);
     	}catch(java.io.IOException e)
     	{
     		System.err.println("Problem in saving the trained model of SVM");
     		throw new java.io.IOException("Problem in saving the trained model of SVM");
-    	}
+    	}*/
     }
 
     // load the model from model file 
     public Object loadModel(String model_file_name) throws java.io.IOException
     {
+    	System.out.println("Loading SVM model from "+ model_file_name);		
+    	  
+    	svm_model model = null;
+    	java.io.ObjectInputStream filestream = new java.io.ObjectInputStream(new java.io.FileInputStream(model_file_name));
+    	try
+    	{
+    		model = (svm_model) filestream.readObject();
+    	}catch(ClassNotFoundException ce)
+    	{
+    		System.err.println("Class Not Found in Loading SVM model");
+    	}
+    	filestream.close();
+    	return model;
+     /*
 	  try
 	  {
-   	    System.out.println("Loading SVM model from "+ model_file_name);	
 		trainedModel = svm.svm_load_model(model_file_name);
 	   }catch(java.io.IOException e)
 	  {
@@ -366,6 +386,7 @@ public class SVMClassifier implements SavableClassifier
 	   throw new java.io.IOException("Problem in loading the trained model of SVM");
 	  }
 	  return  trainedModel;
+	  */
     }
 
     //return internal model
