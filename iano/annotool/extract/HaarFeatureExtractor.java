@@ -1,6 +1,7 @@
 package annotool.extract;
 
 import annotool.Util;
+import annotool.io.DataInput;
 
 
 /**
@@ -19,6 +20,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
    boolean singleImage = false; //handle many images by default
    protected byte[] singleData;
    public final static String LEVEL_KEY = "Wavelet Level";
+   boolean workOnRawBytes = true; //work as the first feature extractor by default
    
    
    public HaarFeatureExtractor(annotool.io.DataInput problem, java.util.HashMap<String, String> parameters)
@@ -33,16 +35,6 @@ public class HaarFeatureExtractor implements FeatureExtractor
 	   
    }
 
-   //get the first stack
-/*   public HaarFeatureExtractor(annotool.io.DataInput problem, int level)
-   {
-	   data = problem.getData();
-	   length = problem.getLength();
-	   totalwidth = problem.getWidth();
-	   totalheight = problem.getHeight();
-	   totallevel = level;
-   }
-  */ 
    public HaarFeatureExtractor(annotool.io.DataInput problem, int level, int stackindex)
    {
 	   data = problem.getData(stackindex);
@@ -54,6 +46,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
 
    public HaarFeatureExtractor(byte[][] data, int length, int width, int height)
    {
+	   
 	   totallevel = 2; //default wavelet level
 	   totalwidth = width;
 	   totalheight = height;
@@ -79,21 +72,52 @@ public class HaarFeatureExtractor implements FeatureExtractor
 	   this.length = 1;
 	   this.singleData = data;
 	   this.singleImage = true;
- }
+  }
    
+  // needed to aligning various feature extractors 
+  public HaarFeatureExtractor(java.util.HashMap<String, String> parameters)
+  {
+	   if (parameters != null && parameters.containsKey(LEVEL_KEY))
+		     totallevel = Integer.parseInt(parameters.get(LEVEL_KEY));
+  } 
+   
+  public float[][] calcFeatures(float[][] data, DataInput problem)
+  {
+ 	  this.features = data;
+	  workOnRawBytes = false;
+	  return calcFeatures(problem);
+  }
+  
+  public float[][] calcFeatures(DataInput problem)
+  {
+	  totalwidth = problem.getWidth();
+	  totalheight = problem.getHeight();
+	  this.length = problem.getLength();
+      if(workOnRawBytes)
+   	   data = problem.getData();
+	  return calcFeatures();
+  }
+  
    public float[][] calcFeatures()
    {
-	    features  = new float[length][totalwidth*totalheight]; //In Matlab, an 50*100 image has 5050 features due to rounding.
-        if(!singleImage)
-        {
+	    if(features == null)
+	       features  = new float[length][totalwidth*totalheight]; //In Matlab, an 50*100 image has 5050 features due to rounding.
+	    
+	    if(workOnRawBytes)
+	    {	
+          if(!singleImage)
+          {
 	       for(int i=0; i <length; i++)
             getHaarFeatureOfOneImage(data[i], features[i]);
-        }
-        else 
-        {
+          }
+          else 
         	getHaarFeatureOfOneImage(singleData, features[0]);
-        }
-        return features;
+	    }
+	    else //work as 2nd or 3rd feature extractor
+	       for(int i=0; i <length; i++)
+            getHaarFeatureOfOneImage(features[i]);
+
+	    return features;
 
    }
 
@@ -104,16 +128,21 @@ public class HaarFeatureExtractor implements FeatureExtractor
 	    for(int i = 0; i< totalwidth*totalheight; i++)
 	       feature[i] = data[i]&0xff;
 
-		//added 03232010:  standardize the image first, so that discreize may be easiler
+		//added 03232010:  standardize the image first, so that discretize may be easiler
 	    //scale based on 0-255.
 		Util.scaleAnImage(feature);
 		
         haarTransform(feature,  totalwidth, totalheight, totallevel, totalwidth);
-
-        //return total number of features ..
-
    }
 
+   
+   protected void getHaarFeatureOfOneImage(float[] feature)
+   {
+		Util.scaleAnImage(feature);
+		
+        haarTransform(feature,  totalwidth, totalheight, totallevel, totalwidth);
+   }
+   
    /* recursive function to do multilevel HaarTransform.
       feature is passed back via argument.
 
@@ -180,5 +209,8 @@ public class HaarFeatureExtractor implements FeatureExtractor
 	  else
         return features;
    }
+   
+   public boolean is3DExtractor()
+   {  return false; } 
 
 }
