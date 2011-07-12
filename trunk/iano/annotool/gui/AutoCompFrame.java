@@ -2,6 +2,7 @@ package annotool.gui;
 
 import javax.swing.*;
 
+import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -11,6 +12,8 @@ import java.awt.GridLayout;
 import java.awt.event.*;
 
 import annotool.classify.Validator;
+import annotool.gui.model.Extractor;
+import annotool.gui.model.Selector;
 import annotool.io.AlgoXMLParser;
 
 import java.io.File;
@@ -56,10 +59,7 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 		
 		pnlMain = new JPanel();
 		pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
-		pnlMain.setPreferredSize(new java.awt.Dimension(540, 680));
 		pnlMain.setBorder(new EmptyBorder(10, 10, 10, 10));
-		pnlMain.setAlignmentY(TOP_ALIGNMENT);
-		pnlMain.setAlignmentX(LEFT_ALIGNMENT);
 		//this.add(pnlMain, BorderLayout.WEST);
 		
 		//Buttons to add algorithms to chain
@@ -178,8 +178,10 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 	        pnlChain.addExtractor(ex);
 		}
 		else if(e.getSource() == btnAddSel) {
-			Algorithm selector = (Algorithm)cbSelector.getSelectedItem();	        
-	        pnlChain.addSelector(selector.getName(), getParameterList(selector, "Selector"));
+			Algorithm selector = (Algorithm)cbSelector.getSelectedItem();	
+			Selector sel = new Selector(selector.getName());
+			sel.setParams(getParameterList(selector, "Selector"));
+	        pnlChain.addSelector(sel);
 		}
 		else if(e.getSource() == btnAddClass) {
 			Algorithm classifier = (Algorithm)cbClassifier.getSelectedItem();	        
@@ -243,7 +245,6 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 		pnlExt.add(buildDynamicPanel(al, exParamControls), BorderLayout.CENTER);
 		
 		pnlExt.revalidate();
-		this.pack();
 	}
 
 	/*
@@ -264,7 +265,6 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 		pnlSel.add(buildDynamicPanel(al, selParamControls), BorderLayout.CENTER);
 		
 		pnlSel.revalidate();
-		this.pack();
 	}
     
 	/*
@@ -285,7 +285,6 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 		pnlClass.add(buildDynamicPanel(al, classParamControls), BorderLayout.CENTER);
 		
 		pnlClass.revalidate();
-		this.pack();
 	}
 	
 	/*
@@ -312,7 +311,7 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 				JCheckBox cb = new JCheckBox(param.getParamName());
 				
 				if(param.getParamDefault() != null)
-					cb.setSelected((param.getParamDefault().equals("1")) ? true: false);	//1 for true, everything else : false
+					cb.setSelected((param.getParamDefault().equals("1")) ? true : false);	//1 for true, everything else : false
 				
 				pnlItem.add(cb);			
 				
@@ -330,7 +329,7 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 				if(param.getParamDefault() != null)
 					snm.setValue(Integer.parseInt(param.getParamDefault()));
 				JSpinner sp = new JSpinner(snm);
-				sp.setPreferredSize(new java.awt.Dimension(80, 30));
+				sp.setPreferredSize(new java.awt.Dimension(60, 25));
 				
 				pnlItem.add(lb);
 				pnlItem.add(sp);
@@ -350,7 +349,7 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 					((JComboBox)component).setSelectedItem(param.getParamDefault());
 				}
 				
-				//component.setPreferredSize(new java.awt.Dimension(120, 30));
+				component.setPreferredSize(new java.awt.Dimension(60, 25));
 				pnlItem.add(lb);
 				pnlItem.add(component);
 				
@@ -374,11 +373,11 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 		btnAddClass.setEnabled(flag);
 	}
 	
-	public void addTab(String title, float[][] rates, ArrayList<String> labels) {
+	public void addTab(String title, float[][] rates, ArrayList<String> labels, ArrayList<String> chainNames, int imgWidth, int imgHeight, String channel) {
 		//Display result
-        ACResultPanel pnlResult = new ACResultPanel(tabPane);
+        ACResultPanel pnlResult = new ACResultPanel(tabPane, imgWidth, imgHeight, channel);
         tabPane.addTab(title, pnlResult);
-        pnlResult.showChart(rates, labels); 
+        pnlResult.display(rates, labels, chainNames); 
         
         //Add panel with title label and close button to the tab
         tabPane.setTabComponentAt(tabPane.getTabCount() - 1, 
@@ -386,9 +385,32 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 	}
     //Temporary main method for testing GUI
 	public static void main(String[] args) {
-		AutoCompFrame frame = new AutoCompFrame("Auto Comparison Mode", false, "g");
-		frame.pack();
-		frame.setVisible(true);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		JFrame.setDefaultLookAndFeelDecorated(true);
+        SwingUtilities.invokeLater(new Runnable() {
+          public void run() 
+          {
+	          try 
+	          {
+	        	  for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) 
+	        	  {
+	    		      if ("Nimbus".equals(info.getName())) 
+	    		      {
+	    		          UIManager.setLookAndFeel(info.getClassName());
+	    		          break;
+	    		      }
+	        	  }
+	          } 
+	          catch (Exception e) 
+	          {
+	        	  System.out.println("Substance L&F failed to initialize");
+	          }
+    		
+	          AutoCompFrame frame = new AutoCompFrame("Auto Comparison Mode", false, "g");
+	  		frame.pack();
+	  		frame.setVisible(true);
+	  		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+          }
+        });
+		
 	}
 }

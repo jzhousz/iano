@@ -12,8 +12,9 @@ import java.util.Scanner;
 import annotool.Annotator;
 import annotool.classify.Classifier;
 import annotool.classify.SavableClassifier;
-import annotool.gui.Chain;
-import annotool.gui.Extractor;
+import annotool.gui.model.Chain;
+import annotool.gui.model.Extractor;
+import annotool.gui.model.Selector;
 
 /*
  * Saves the list of algorithm chains from auto comaparision mode.
@@ -35,7 +36,7 @@ public class ChainIO {
 	  
 	    	for(Chain chain : chainList) {
 	    		writer.write("[CHAIN_START]" + newLine);
-		        
+	    		writer.write("Name=" + chain.getName() + newLine);
 	    		for(Extractor ex : chain.getExtractors()) {
 		        	//Write feature extractor
 		        	writer.write("[FEATURE_EXTRACTOR]" + newLine);
@@ -46,15 +47,14 @@ public class ChainIO {
 		        	}
 		        	writer.write("[PARAMETER_END]" + newLine);
 	        	}
-	        	
-	        	if(chain.getSelector() != null) {
-		    		//Write feature selector
+	    		
+	    		for(Selector sel : chain.getSelectors()) {
+		        	//Write feature selector
 		        	writer.write("[FEATURE_SELECTOR]" + newLine);
-		        	writer.write("Name=" + chain.getSelector() + newLine);
-		        	//Write selector parameters
+		        	writer.write("Name=" + sel.getName() + newLine);
 		        	writer.write("[PARAMETER_START]" + newLine);
-		        	for (String parameter : chain.getSelParams().keySet()) {
-		        		writer.write(parameter + "=" +chain.getSelParams().get(parameter) + newLine);
+		        	for (String parameter : sel.getParams().keySet()) {
+		        		writer.write(parameter + "=" +sel.getParams().get(parameter) + newLine);
 		        	}
 		        	writer.write("[PARAMETER_END]" + newLine);
 	        	}
@@ -107,7 +107,14 @@ public class ChainIO {
 				continue;
 			}
 			if(line.equals("[CHAIN_START]")) {
-				Chain chain = new Chain();
+				//First line after this tag should be name of the chain
+				line = scanner.nextLine();				
+				Chain chain = null;
+				if(line.startsWith("Name=")) {
+					chain = new Chain(line.replaceFirst("Name=", ""));	//Create chain object from name
+				}
+				else
+					throw new Exception("Invalid chain file.");
 				
 				while(scanner.hasNextLine()) {
 					line = scanner.nextLine();
@@ -148,9 +155,11 @@ public class ChainIO {
 					if(line.equals("[FEATURE_SELECTOR]")) {
 						//First line after this tag should be name of the selector
 						line = scanner.nextLine();
-						//Read selector name
+						
+						//Read selector
+						Selector sel = null;
 						if(line.startsWith("Name=")) {
-							chain.setSelector(line.replaceFirst("Name=", ""));
+							sel = new Selector(line.replaceFirst("Name=", "")); //Create selector object from name
 						}
 						else
 							throw new Exception("Invalid chain file.");
@@ -164,11 +173,12 @@ public class ChainIO {
 									break;
 								String params[] = line.split("=");
 								if(params.length == 2)
-									chain.addSelectorParam(params[0], params[1]);
+									sel.addParams(params[0], params[1]);
 								else
-									throw new Exception("Invalid extractor parameter.");
+									throw new Exception("Invalid selector parameter.");
 							}
 						}//End selector parameters
+						chain.addSelector(sel);
 					}//End Feature Selector
 					
 					if(line.equals("[CLASSIFIER]")) {

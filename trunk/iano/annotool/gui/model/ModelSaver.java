@@ -1,4 +1,4 @@
-package annotool.gui;
+package annotool.gui.model;
 
 import java.io.File;
 import annotool.io.ChainModel;
@@ -16,6 +16,9 @@ public class ModelSaver implements Runnable {
 	File file = null;
 	JButton[] buttons = null;
 	
+	/*
+	 * buttons: array of buttons that need to be disabled and re-enabled
+	 */
 	public ModelSaver(JProgressBar bar, AnnOutputPanel pnlOutput, JButton[] buttons, ChainModel[] chainModels, File file) {
 		  this.bar = bar;
 		  this.chainModels = chainModels;
