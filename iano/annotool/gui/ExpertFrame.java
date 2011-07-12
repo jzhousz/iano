@@ -16,6 +16,9 @@ import annotool.classify.SVMClassifier;
 import annotool.classify.SavableClassifier;
 import annotool.classify.Validator;
 import annotool.classify.WekaClassifiers;
+import annotool.gui.model.Extractor;
+import annotool.gui.model.ModelSaver;
+import annotool.gui.model.Selector;
 import annotool.io.AlgoXMLParser;
 
 import java.io.File;
@@ -76,6 +79,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 	private boolean isRunning;
 	
 	JFileChooser fileChooser;
+	
+	//To keep track of model for each genetic line
 	ChainModel[] chainModels = null;
 	
 	public ExpertFrame(String arg0, boolean is3D, String channel) {
@@ -86,7 +91,6 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		
 		pnlMain = new JPanel();
 		pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
-		//pnlMain.setPreferredSize(new java.awt.Dimension(540, 680));
 		pnlMain.setBorder(new EmptyBorder(10, 10, 10, 10));
 		pnlMain.setAlignmentY(TOP_ALIGNMENT);
 		pnlMain.setAlignmentX(LEFT_ALIGNMENT);
@@ -243,9 +247,18 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 				//TODO: check if chain models exist and apply
 				boolean modelLoaded = false;
 				
-				int returnVal = fileChooser.showOpenDialog(this);
+				if(chainModels == null) {
+					JOptionPane.showMessageDialog(this,
+						    "There is no trained model in memory.", 
+						    "Model Unavailable",
+						    JOptionPane.INFORMATION_MESSAGE);
+					return;
+				}
+				//AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[3]);
 				
-		        if (returnVal == JFileChooser.APPROVE_OPTION) {
+				/*int returnVal = fileChooser.showOpenDialog(this);
+				
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
 		            File file = fileChooser.getSelectedFile();
 					pnlOutput.setOutput("Loading model..");
 		            ChainModel ch = new ChainModel();
@@ -260,19 +273,19 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		            }
 		            
 		            //Display model properties in output area
-		            pnlOutput.setOutput("Feature Extractor: " + ch.getExtractorName());
-		            pnlOutput.setOutput("Params:");
-		            HashMap<String, String> params = ch.getExParams();
-		            for (String parameter : params.keySet()) {
-		            	pnlOutput.setOutput(parameter + "=" +params.get(parameter));
-		        	}
-		            pnlOutput.setOutput("Feature Selector: " + ch.getSelectorName());
+		            //pnlOutput.setOutput("Feature Extractor: " + ch.getExtractorName());
+		            //pnlOutput.setOutput("Params:");
+		            //HashMap<String, String> params = ch.getExParams();
+		            //for (String parameter : params.keySet()) {
+		            	//pnlOutput.setOutput(parameter + "=" +params.get(parameter));
+		        	//}
+		            //pnlOutput.setOutput("Feature Selector: " + ch.getSelectorName());
 		            for(int i=0; i < ch.getSelectedIndices().length; i++)
 		            	pnlOutput.setOutput(String.valueOf(ch.getSelectedIndices()[i]));
 		            pnlOutput.setOutput("Classifier: " + ch.getClassifierName());
 		            
 		            
-		        }
+		        }*/
 			}
 		}
 	}
@@ -452,9 +465,15 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
         	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         	chainModels[i].setMode("Training Only");
-        	chainModels[i].setExtractorName(featureExtractor);
-        	chainModels[i].setExParams(exParams);
-        	chainModels[i].setSelectorName(featureSelector);
+        	
+        	Extractor ex = new Extractor(featureExtractor);
+        	ex.setParams(exParams);
+        	chainModels[i].addExtractor(ex);
+        	
+        	Selector sel = new Selector(featureSelector);
+        	//sel.setParams(selParams);//Not used in saving model
+        	chainModels[i].addSelector(sel);
+        	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
         	chainModels[i].setClassifierName(classifierChoice);
@@ -564,9 +583,15 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	chainModels[i].setTestingSet(new File(Annotator.testdir).getAbsolutePath());
         	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         	chainModels[i].setMode("Training/Testing");
-        	chainModels[i].setExtractorName(featureExtractor);
-        	chainModels[i].setExParams(exParams);
-        	chainModels[i].setSelectorName(featureSelector);
+        	
+        	Extractor ex = new Extractor(featureExtractor);
+        	ex.setParams(exParams);
+        	chainModels[i].addExtractor(ex);
+        	
+        	Selector sel = new Selector(featureSelector);
+        	//sel.setParams(selParams);//Not used in saving model
+        	chainModels[i].addSelector(sel);
+        	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
         	chainModels[i].setResult(rate);
@@ -726,9 +751,15 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
             chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         	chainModels[i].setMode("Cross Validation. Fold: " + Annotator.fold);
-        	chainModels[i].setExtractorName(featureExtractor);
-        	chainModels[i].setExParams(exParams);
-        	chainModels[i].setSelectorName(featureSelector);
+        	
+        	Extractor ex = new Extractor(featureExtractor);
+        	ex.setParams(exParams);
+        	chainModels[i].addExtractor(ex);
+        	
+        	Selector sel = new Selector(featureSelector);
+        	//sel.setParams(selParams);//Not used in saving model
+        	chainModels[i].addSelector(sel);
+        	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
         	chainModels[i].setResult(recograte[K]);

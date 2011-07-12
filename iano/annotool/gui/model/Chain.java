@@ -1,4 +1,4 @@
-package annotool.gui;
+package annotool.gui.model;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -10,24 +10,31 @@ import java.util.HashMap;
 import annotool.classify.SavableClassifier;
 
 public class Chain {
+	private String name = null;
 	private ArrayList<Extractor> extractors = null;
-	private String selector = null;
-	private HashMap<String, String> selParams = null;
+	private ArrayList<Selector> selectors = null;
 	private String classifier = null;
 	private HashMap<String, String> classParams = null;
 	
-	public Chain() {
+	public Chain(String name) {
+		this.name = name;
+		
 		extractors = new ArrayList<Extractor>();
-		selParams = new HashMap<String, String>();
+		selectors = new ArrayList<Selector>();
 		classParams = new HashMap<String, String>();
 	}
 	
 	public void addExtractor(Extractor ex) {
 		extractors.add(ex);
 	}
-	
-	public void addSelectorParam(String key, String value) {
-		selParams.put(key, value);
+	public void addSelector(Selector sel) {
+		selectors.add(sel);
+	}
+	public void clearExtractors() {
+		extractors.clear();
+	}
+	public void clearSelectors() {
+		selectors.clear();
 	}
 	public void addClassifierParam(String key, String value) {
 		classParams.put(key, value);
@@ -37,9 +44,15 @@ public class Chain {
 			return true;
 		return false;
 	}
+	public boolean hasSelectors() {
+		if (selectors.size() > 0)
+			return true;
+		return false;
+	}
 	public boolean isComplete() {
-		//Chain is complete when there is at least one extractor(including none), one selector(including none) and one classifier
-		if(hasExtractors() && selector != null && classifier != null)
+		//Chain is complete when there is at least one classifier
+		//It is valid even if there is no extractor or selector because they should default to 'None'
+		if(classifier != null)
 			return true;
 		return false;
 	}
@@ -50,16 +63,38 @@ public class Chain {
 		for(int i = 0; i < extractors.size(); i++) {
 			str.append("FE"+ (i+1) +": " + extractors.get(i).getName() + " ");
 		}
-		if(selector != null)
-			str.append("; " + selector);
+		if(extractors.size() > 0)
+			str.append("; ");
+		else
+			str.append("FE: NONE; ");
+		
+		for(int i = 0; i < selectors.size(); i++) {
+			str.append("FS"+ (i+1) +": " + selectors.get(i).getName() + " ");
+		}
+		if(selectors.size() > 0)
+			str.append("; ");
+		else
+			str.append("FS: NONE; ");
+		
 		if(classifier != null)
-			str.append("; " + classifier);
+			str.append("Classifier: " + classifier);
+		else
+			str.append("Classifier: NONE");
+		
 		return str.toString();
-	}
+	}	
 
 	/*
 	 * Getters and Setters
 	 */
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+	
 	public ArrayList<Extractor> getExtractors() {
 		return extractors;
 	}
@@ -67,21 +102,13 @@ public class Chain {
 	public void setExtractors(ArrayList<Extractor> extractors) {
 		this.extractors = extractors;
 	}
-
-	public String getSelector() {
-		return selector;
+	
+	public ArrayList<Selector> getSelectors() {
+		return selectors;
 	}
 
-	public void setSelector(String selector) {
-		this.selector = selector;
-	}
-
-	public HashMap<String, String> getSelParams() {
-		return selParams;
-	}
-
-	public void setSelParams(HashMap<String, String> selParams) {
-		this.selParams = selParams;
+	public void setSelectors(ArrayList<Selector> selectors) {
+		this.selectors = selectors;
 	}
 
 	public String getClassifier() {

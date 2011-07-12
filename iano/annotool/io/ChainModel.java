@@ -12,6 +12,8 @@ import java.util.Scanner;
 import annotool.Annotator;
 import annotool.classify.Classifier;
 import annotool.classify.SavableClassifier;
+import annotool.gui.model.Extractor;
+import annotool.gui.model.Selector;
 
 public class ChainModel {
 	//Data members
@@ -21,13 +23,17 @@ public class ChainModel {
 	private String mode = null;
 	private float result;
 	private String label = null;
-	private String extractorName = null;
-	private HashMap<String, String> exParams = null;
-	private String selectorName = null;
+	private ArrayList<Extractor> extractors = null;
+	private ArrayList<Selector> selectors = null;
 	private int[] selectedIndices = null;
 	private String classifierName = null;
 	private Classifier classifier = null;
 	private HashMap<String, String> classParams = null;
+	
+	public ChainModel() {
+		extractors = new ArrayList<Extractor>();
+		selectors = new ArrayList<Selector>();
+	}
 	
 	/*
 	 * Method to write to file
@@ -56,16 +62,20 @@ public class ChainModel {
         	writer.newLine();
         	
         	//Write feature extractor
-        	writer.write("[FEATURE_EXTRACTOR]" + newLine);
-        	writer.write("Name=" + extractorName + newLine);
-        	writer.write("[PARAMETER_START]" + newLine);
-        	for (String parameter : exParams.keySet()) {
-        		writer.write(parameter + "=" +exParams.get(parameter) + newLine);
+        	for(Extractor ex : extractors) {
+	        	writer.write("[FEATURE_EXTRACTOR]" + newLine);
+	        	writer.write("Name=" + ex.getName() + newLine);
+	        	writer.write("[PARAMETER_START]" + newLine);
+	        	for (String parameter : ex.getParams().keySet()) {
+	        		writer.write(parameter + "=" +ex.getParams().get(parameter) + newLine);
+	        	}
+	        	writer.write("[PARAMETER_END]" + newLine);
         	}
-        	writer.write("[PARAMETER_END]" + newLine);
         	//Write feature selector
-        	writer.write("[FEATURE_SELECTOR]" + newLine);
-        	writer.write("Name=" + selectorName + newLine);
+        	for(Selector sel : selectors) {
+        		writer.write("[FEATURE_SELECTOR]" + newLine);
+        		writer.write("Name=" + sel.getName() + newLine);
+        	}
         	if(selectedIndices != null) {
         		writer.write("[SELECTED_INDICES_START]" + newLine);
 	        	for(int i=0; i < selectedIndices.length; i++) {
@@ -135,9 +145,11 @@ public class ChainModel {
 			if(line.equals("[FEATURE_EXTRACTOR]")) {
 				//First line after this tag should be name of the extractor
 				line = scanner.nextLine();
+				
+				Extractor ex = null;
 				//Read extractor name
 				if(line.startsWith("Name=")) {
-					extractorName = line.replaceFirst("Name=", "");
+					ex = new Extractor(line.replaceFirst("Name=", ""));
 				}
 				else
 					throw new Exception("Invalid chain file.");
@@ -146,14 +158,13 @@ public class ChainModel {
 				//Read extractor parameters
 				line = scanner.nextLine();
 				if(line.equals("[PARAMETER_START]")) {
-					exParams = new HashMap<String, String>();
 					while(scanner.hasNextLine()) {
 						line = scanner.nextLine();
 						if(line.equals("[PARAMETER_END]"))
 							break;
 						String params[] = line.split("=");
 						if(params.length == 2)
-							exParams.put(params[0], params[1]);
+							ex.addParams(params[0], params[1]);
 						else
 							throw new Exception("Invalid extractor parameter.");
 					}
@@ -163,31 +174,30 @@ public class ChainModel {
 			if(line.equals("[FEATURE_SELECTOR]")) {
 				//First line after this tag should be name of the selector
 				line = scanner.nextLine();
+				
+				Selector sel = null;
 				//Read selector name
 				if(line.startsWith("Name=")) {
-					selectorName = line.replaceFirst("Name=", "");
+					sel = new Selector(line.replaceFirst("Name=", ""));
 				}
 				else
 					throw new Exception("Invalid chain file.");
-				
-				//Read selected indices
-				if(scanner.hasNextLine()) {
-					line = scanner.nextLine();
-					if(line.equals("[SELECTED_INDICES_START]")) {
-						ArrayList<Integer> indices = new ArrayList<Integer>();
-						while(scanner.hasNextLine()) {
-							line = scanner.nextLine();
-							if(line.equals("[SELECTED_INDICES_END]"))
-								break;
-							indices.add(Integer.valueOf(line));						
-						}
-						//Convert to int array
-						selectedIndices = new int[indices.size()];
-						for(int i=0; i < indices.size(); i++)
-							selectedIndices[i] = indices.get(i);
-					}
-				}
 			}//End Feature Selector
+				
+			//Read selected indices			
+			if(line.equals("[SELECTED_INDICES_START]")) {
+				ArrayList<Integer> indices = new ArrayList<Integer>();
+				while(scanner.hasNextLine()) {
+					line = scanner.nextLine();
+					if(line.equals("[SELECTED_INDICES_END]"))
+						break;
+					indices.add(Integer.valueOf(line));						
+				}
+				//Convert to int array
+				selectedIndices = new int[indices.size()];
+				for(int i=0; i < indices.size(); i++)
+					selectedIndices[i] = indices.get(i);
+			}	
 			
 			if(line.equals("[CLASSIFIER]")) {
 				line = scanner.nextLine();
@@ -208,7 +218,7 @@ public class ChainModel {
 							break;
 						String params[] = line.split("=");
 						if(params.length == 2)
-							exParams.put(params[0], params[1]);
+							classParams.put(params[0], params[1]);
 						else
 							throw new Exception("Invalid classifier parameter.");
 					}
@@ -226,6 +236,14 @@ public class ChainModel {
 			}
 		}
 	}
+	
+	public void addExtractor(Extractor ex) {
+		this.extractors.add(ex);
+	}
+	public void addSelector(Selector sel) {
+		this.selectors.add(sel);
+	}
+	
 	//Getters and setters
 	public String getImageSet() {
 		return imageSet;
@@ -265,24 +283,20 @@ public class ChainModel {
 		this.label = label;
 	}
 
-	public String getExtractorName() {
-		return extractorName;
+	public ArrayList<Extractor> getExtractors() {
+		return extractors;
 	}
-	public void setExtractorName(String extractorName) {
-		this.extractorName = extractorName;
+
+	public void setExtractors(ArrayList<Extractor> extractors) {
+		this.extractors = extractors;
 	}
-	public HashMap<String, String> getExParams() {
-		return exParams;
+	public ArrayList<Selector> getSelectors() {
+		return selectors;
 	}
-	public void setExParams(HashMap<String, String> exParams) {
-		this.exParams = exParams;
+	public void setSelectors(ArrayList<Selector> selectors) {
+		this.selectors = selectors;
 	}
-	public String getSelectorName() {
-		return selectorName;
-	}
-	public void setSelectorName(String selectorName) {
-		this.selectorName = selectorName;
-	}
+
 	public int[] getSelectedIndices() {
 		return selectedIndices;
 	}

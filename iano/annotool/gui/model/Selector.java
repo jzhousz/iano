@@ -1,12 +1,12 @@
-package annotool.gui;
+package annotool.gui.model;
 
 import java.util.HashMap;
 
-public class Extractor {
+public class Selector {
 	private String name = null;
 	private HashMap<String, String> params = null;
 	
-	public Extractor(String name) {
+	public Selector(String name) {
 		this.name = name;
 		params = new HashMap<String, String>();
 	}

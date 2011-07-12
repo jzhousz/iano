@@ -1,4 +1,4 @@
-package annotool.gui;
+package annotool.gui.model;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,8 +9,8 @@ import javax.swing.table.AbstractTableModel;
 public class ChainTableModel extends AbstractTableModel {
 	private boolean DEBUG = false;
 	
-	private String[] columnNames = {"",
-            						"Chained Algorithms"};
+	private String[] columnNames = {"", "Name",
+            						"Algorithms"};
 	
 	private List<Object[]> items = new ArrayList<Object[]>();
 	
@@ -32,7 +32,7 @@ public class ChainTableModel extends AbstractTableModel {
 	public boolean isCellEditable(int row, int col) {
         //Note that the data/cell address is constant,
         //no matter where the cell appears onscreen.
-        if (col == 0) {
+        if (col < 2) {
             return true;
         } else {
             return false;

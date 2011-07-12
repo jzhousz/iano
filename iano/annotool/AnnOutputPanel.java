@@ -10,7 +10,7 @@ import java.awt.event.*;
 
 public class AnnOutputPanel extends JPanel implements ActionListener {
 
-	JTextArea output = new JTextArea(6,40);
+	JTextArea output = new JTextArea(6,30);
 	JScrollPane pane = new JScrollPane(output);
 	JButton clearOutputB = new JButton("Clear Output");
 

@@ -1,7 +1,8 @@
 CC = g++
 FLAG = -mno-cygwin -D __int64="long long"  #Cygwin gcc compiler needs to redefine __int64
-#INCLUDE = -I "C:\Program Files\Java\jdk1.6.0_01\include\" -I "C:\Program Files\Java\jdk1.6.0_01\include\win32"   #windows path for jni_md.h
-#INCLUDE = -I jdk1.6.0_01/include/ -I jdk1.6.0_01/include/win32   #windows path for jni_md.h
+#INCLUDE = -I "C:\Program Files\Java\jdk1.6.0_26\include\" -I "C:\Program Files\Java\jdk1.6.0_26\include\win32" 
+#windows path for jni_md.h
+#INCLUDE = -I jdk1.6.0_23/include/ -I jdk1.6.0_26/include/win32   #windows path for jni_md.h
 INCLUDE = -I .
 SHARED = -shared -Wl,--add-stdcall-alias
 
