@@ -13,6 +13,10 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
     int width;
     int height;
 
+	public PrincipalComponentFeatureExtractor(java.util.HashMap<String, String> parameters) {
+	  //process parameter if any	
+	
+	}
 	   
 	public PrincipalComponentFeatureExtractor(annotool.io.DataInput problem) {
 		
@@ -29,7 +33,22 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 	}
 
 	@Override
-	public float[][] calcFeatures() {
+	public float[][] calcFeatures(annotool.io.DataInput problem) {
+		   data = problem.getData();
+		   length = problem.getLength();
+		   width = problem.getWidth();
+		   height = problem.getHeight();
+		   
+		   features  = new float[length][width*height]; 
+		   
+	       for(int i=0; i <length; i++)
+ 		     for(int j = 0; j< width*height; j++)
+			       features[i][j] = data[i][j]&0xff;
+		
+	       return calcFeatures();
+	}
+	
+	protected float[][] calcFeatures() {
 
 	     //build a target to make Weka happy. Not needed for PCA.
 		int[] targets = new int[features.length];
@@ -53,4 +72,7 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 		return features;
 	}
 
+	
+	public boolean is3DExtractor()
+	{  return false;} 
 }

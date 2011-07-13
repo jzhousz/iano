@@ -1,5 +1,7 @@
 package annotool.extract;
 
+import annotool.io.DataInput;
+
 /*
  *  weighted average of stack features
  * 
@@ -11,6 +13,9 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 	int length, width, height;
 	int stackSize;
 	int level;
+    public final static String LEVEL_KEY = "Wavelet Level";
+    boolean workOnRawBytes = true; //work as the first feature extractor by default
+    
 
 	public StackSimpleHaarFeatureExtractor(annotool.io.DataInput problem, int level)
 	{
@@ -22,9 +27,44 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		this.level = level;
 	}
 
+	
+	public StackSimpleHaarFeatureExtractor(java.util.HashMap<String, String> parameters)
+	{
+	    if (parameters != null && parameters.containsKey(LEVEL_KEY))
+			  this.level = Integer.parseInt(parameters.get(LEVEL_KEY));
+
+	}
+	
+	public float[][] calcFeatures(float[][] data, annotool.io.DataInput problem)
+	{
+	 	//this.features = data;
+		//workOnRawBytes = false;
+		//return calcFeatures(problem);
+
+		//input is already an 2D array, not a set of image stacks
+		System.out.println("This 3D feature extractor can only be applied to raw image stacks.");
+		System.out.println("It can not be used as a subsequent feature extractor");
+		
+		System.exit(1);
+		
+		return null;
+	}
+	
+	public float[][] calcFeatures(DataInput problem)
+	{
+		this.problem = problem;
+		this.length = problem.getLength();
+		this.width  =  problem.getWidth();
+		this.height  = problem.getHeight();
+		this.stackSize  = problem.getStackSize();
+
+		return calcFeatures();
+	}
+	
 	public float[][] calcFeatures()
 	{
-		features  = new float[length][width*height]; 
+		if(features == null)
+		 features  = new float[length][width*height]; 
 
 		float[][] features4CurrentStack;
 		byte[][] data;
@@ -65,5 +105,7 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 				features[i][j] += weight*features4CurrentStack[i][j];
 	}
 
+	public boolean is3DExtractor()
+	{  return true;} 
 
 }

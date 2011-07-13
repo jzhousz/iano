@@ -1,5 +1,10 @@
 package annotool.extract;
 
+
+/*
+ * calculate 8 simple statistics features: 
+ * mean and standard deviation of 4 divisions: left, right, upper, down
+ */
 public class SimpleFeatureExtractor implements FeatureExtractor {
 
 	protected float[][] features = null;
@@ -8,6 +13,10 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 	int totalheight;
 	int length;
 
+	public SimpleFeatureExtractor(java.util.HashMap<String, String> parameters)
+	{
+	}
+	
 	public SimpleFeatureExtractor(byte[][] data, int length, int width, int height)
 	{
 		totalwidth = width;
@@ -15,8 +24,17 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 		this.data = data;
 		this.length = length;
 	}
-
+	
 	@Override
+	public float[][] calcFeatures(annotool.io.DataInput problem)
+	{
+		totalwidth = problem.getWidth();
+		totalheight = problem.getHeight();
+		this.length = problem.getLength();
+		this.data = problem.getData();
+		return calcFeatures();
+	}
+	
 	public float[][] calcFeatures() {
 		// calculate simple 8 features: mean and st of 4 divisions: left, right, upper, down
 		features  = new float[length][8]; //In Matlab, an 50*100 image has 5050 features due to rounding.
@@ -55,7 +73,7 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 		float mean = 0;	
 		for(int i = left; i < right; i++)
 			for (int j = top; j < bottom; j++)
-				mean += data[i*totalwidth + j];
+				mean += data[i*totalwidth + j]&0xff;
 		mean /= (right-left+1)*(bottom-top+1);
 		return mean;
 	}
@@ -65,7 +83,10 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 		float std = 0;	
 		for(int i = left; i < right; i++)
 			for (int j = top; j < bottom; j++)
-				std += (data[i*totalwidth + j] - mean)*(data[i*totalwidth + j] - mean);
+			{
+				float value = data[i*totalwidth + j]&0xff;
+				std += (value - mean)*(value - mean);
+			}
 		std /= (right-left+1)*(bottom-top+1);
 		return (float)Math.sqrt(std);
 	}
@@ -79,6 +100,8 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 			return features;
 	}    
 
+	public boolean is3DExtractor()
+	{  return false;} 
 }
 
 

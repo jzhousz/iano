@@ -11,9 +11,15 @@ package annotool.extract;
 public class StackFullHaarFeatureExtractor implements FeatureExtractor {
 
 	
-	public float[][] calcFeatures() {
+	public StackFullHaarFeatureExtractor(java.util.HashMap<String, String> parameters)
+	{
+		
+	}
+	public float[][] calcFeatures(annotool.io.DataInput problem) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
+	public boolean is3DExtractor()
+	{  return true;} 
 }
