@@ -602,9 +602,11 @@ public class Annotator implements Runnable
         setGUIOutput(chosenClassifier + "is not a supported classifer.");
        }
        return classifier;
-       
     }
 
+ 
+ 
+    
     /*
      *
      * Feature extractor that takes 1 data set.
@@ -647,78 +649,34 @@ public class Annotator implements Runnable
 
     	features = extractor.calcFeatures(problem);	
     	return features;	
+    }
+    
+    public FeatureExtractor getExtractorGivenName(String name, HashMap<String, String> parameters)
+    {
+       FeatureExtractor extractor = null;
+       if (name.equalsIgnoreCase("HAAR")) 
+          extractor = new HaarFeatureExtractor(parameters);
+       
+       else if (name.equalsIgnoreCase("PARTIAL3D"))
+          extractor = new StackSimpleHaarFeatureExtractor(parameters);
+       else if (name.equals("LIGHT3D")) 
+    	  extractor = new StackThreeDirectionHaarFeatureExtractor(parameters);
+       //else if (extractor.equals("2D Hu Moments")) {
+       //   extractor = new ImageMoments(parameters);
+
+   	   else
+          setGUIOutput(name + "is not a supported extractor.");
+
+   	   return extractor;
     	
-    	/*
-        float[][] features = null;
-        int stackSize = problem.getStackSize();
-
-        if (extractor.equals("2D Hu Moments")) {
-            if (stackSize == 1) {
-            	System.err.println("Will call ImageMoments class");
-            	System.exit(1);
-                //features = (new ImageMoments(problem)).calcFeatures();
-            }
-            else {
-                System.out.println("invalid stack size for 2D images: " + stackSize);
-            }
-        }
-        if (extractor.equals("HAAR")) {
-            if (stackSize == 1) {
-            	 //Class.forName(extractor, )
-                features = (new HaarFeatureExtractor(problem, parameters)).getFeatures();
-            }
-            else {
-                System.out.println("invalid stack size for 2D images: " + stackSize);
-            }
-        }
-        else if (extractor.equals("PARTIAL3D")) {
-            if (stackSize > 1)//3D image stack
-            {
-                features = (new StackSimpleHaarFeatureExtractor(problem, getWavletLevel())).calcFeatures();
-            }
-            else {
-                System.out.println("invalid stack size for 3D images: " + stackSize);
-            }
-        }
-        else if (extractor.equals("LIGHT3D")) {
-            if (stackSize > 1)//3D image stack
-            {
-                features = (new StackThreeDirectionHaarFeatureExtractor(problem, getWavletLevel())).calcFeatures();
-            }
-            else {
-                System.out.println("invalid stack size for 3D images: " + stackSize);
-            }
-        }
-        else if (extractor.equals("Principal Components")) {  //TO BE DONE,
-            System.err.println("PCA is to be added");
-            return null;
-        }
-        else if (extractor.equalsIgnoreCase("NONE")) //use raw image or middle stack for 3D
-        {
-            int length = problem.getLength();
-            int height = problem.getHeight();
-            int width = problem.getWidth();
-            byte[][] data = problem.getData(stackSize / 2 + 1);
-            features = new float[length][width * height];
-            for (int i = 0; i < length; i++) {
-                for (int j = 0; j < width * height; j++) {
-                    features[i][j] = (float) (data[i][j] & 0xff);
-                }
-            }
-        }
-        else{
-            System.err.println("Unrecognized Algorithm Name.  Exiting.");
-            System.exit(1);
-        }
-
-        return features; */
     }
     
     /* 
-     * overloaded method for applying 2nd+ extractor
+     * overloaded method for applying 2nd+ subsequent (not parallel) extractor
+     * Not used in GUI.
      * Need to supply float[][] as input data. DataInput will be used for some image-related parameter.
      */
-    public float[][] extractGivenAMethod(String chosenExtractor, java.util.HashMap<String, String> parameters, float[][] data, DataInput problem) {
+    /* public float[][] extractGivenAMethod(String chosenExtractor, java.util.HashMap<String, String> parameters, float[][] data, DataInput problem) {
 
         float[][] features = null;
         
@@ -737,28 +695,8 @@ public class Annotator implements Runnable
 
     	features = extractor.calcFeatures(data, problem);	
     	return features;	
-    }	
+    }	*/
     
-    public FeatureExtractor getExtractorGivenName(String name, HashMap<String, String> parameters)
-    {
-       FeatureExtractor extractor = null;
-       if (name.equalsIgnoreCase("HAAR")) 
-          extractor = new HaarFeatureExtractor(parameters);
-       
-      /* else if (name.equalsIgnoreCase("PARTIAL3D"))
-          extractor = new StackSimpleHaarFeatureExtractor(parameters);
-       else if (name.equals("LIGHT3D")) {
-    	   extractor = new StackThreeDirectionHaarFeatureExtractor(parameters);
-     */
-   	   else
-         setGUIOutput(name + "is not a supported extractor.");
-
-   	   return extractor;
-    	
-    }
- 
-    
-
     /*
      * Overloaded version of the extractor that takes 2 data sets
      * It may be useful for methods such as PCA when feature extraction cannot be done separately.

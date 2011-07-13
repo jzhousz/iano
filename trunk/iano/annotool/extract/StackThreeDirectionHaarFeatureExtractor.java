@@ -13,6 +13,13 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 	int length, width, height;
 	int stackSize;
 	int level;
+	public final static String LEVEL_KEY = "Wavelet Level";
+	  
+	public StackThreeDirectionHaarFeatureExtractor(java.util.HashMap<String, String> parameters)
+	{
+	    if (parameters != null && parameters.containsKey(LEVEL_KEY))
+	 		     level = Integer.parseInt(parameters.get(LEVEL_KEY));
+	}
 
 	public StackThreeDirectionHaarFeatureExtractor(annotool.io.DataInput problem, int level)
 	{
@@ -23,8 +30,20 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 		this.stackSize  = problem.getStackSize();
 		this.level = level;
 	}
-
-	public float[][] calcFeatures() {
+	
+    public float[][] calcFeatures(annotool.io.DataInput problem)
+    {
+		this.problem = problem;
+		this.length = problem.getLength();
+		this.width  =  problem.getWidth();
+		this.height  = problem.getHeight();
+		this.stackSize  = problem.getStackSize();
+		
+		return calcFeatures();
+    	
+    }
+	
+	protected float[][] calcFeatures() {
 		//number of extracted features
 		int dim = width*height + width*stackSize + height*stackSize;
 		features  = new float[length][dim];
@@ -93,5 +112,8 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 			for (int j = 0; j<dimension; j++)
 				features[i][j+startDim] += weight*features4CurrentStack[i][j];
 	}
+	
+	public boolean is3DExtractor()
+	{  return true;} 
 
 }
