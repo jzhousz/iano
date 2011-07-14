@@ -73,8 +73,8 @@ public class Annotator implements Runnable
     public final static String DEFAULT_CLASSIFIER = "SVM";
     //mode of the annotator.
     public final static String DEFAULT_OUTPUT = "TT";
-    //Choice of modes: TT: Training/Testing; CV: cross-validation; ROI: Region-Of-Interest; TO: Train Only
-    public final static String[] OUTPUT_CHOICES = {"TT", "CV", "ROI", "TO"};
+    //Choice of modes: TT: Training/Testing; CV: cross-validation; ROI: Region-Of-Interest; TO: Train Only; AN: Annotate
+    public final static String[] OUTPUT_CHOICES = {"TT", "CV", "ROI", "TO", "AN"};
     //number of folders for cross-validation. Can be Leave-One-Out (LOO).
     public final static String DEFAULT_FOLD = "LOO";
     //image channel used by the algorithm. Such as r, g, b. (all to be added)
@@ -93,6 +93,7 @@ public class Annotator implements Runnable
     public final static String DEFAULT_THRESHOLD = "0"; //for mRMR
     public final static String DEFAULT_SVM = "-t 0"; // for SVM
     public final static String DEFAULT_WAVLEVEL = "1";  //for wavelet extractor
+    
     /*
      * The above properties can be changed at command line using name/value pair:
      *    java -Dimgext=.png  classname
