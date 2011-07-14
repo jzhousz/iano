@@ -26,7 +26,7 @@ public class ChainIO {
 	/*
 	 * Saves the list of algorithm chains to file
 	 */
-	public void save(File file, ArrayList<Chain> chainList) throws IOException{
+	public void save(File file, ArrayList<Chain> chainList) throws IOException{		
 		//Cross platform new line character
     	String newLine = System.getProperty("line.separator");
     	

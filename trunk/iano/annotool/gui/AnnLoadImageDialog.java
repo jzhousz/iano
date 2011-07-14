@@ -65,6 +65,11 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 	    {
 	    	getContentPane().add(buildFileLoadingPanel());
 	    }
+	    else if(modeflag == Annotator.OUTPUT_CHOICES[4]) //Annotate
+	    {
+	    	testingTarget = false;				
+	    	getContentPane().add(buildFileLoadingPanel());
+	    }
 
 		pack(); //pack() need to called first to make relative position right.
 		setLocationRelativeTo(frame);
@@ -87,7 +92,11 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 	{
 		//the panel to load one set of images
 		JPanel  luPanel =  new JPanel();
-		luPanel.setLayout(new GridLayout(4,1, 5, 5));
+		if(testingTarget)
+			luPanel.setLayout(new GridLayout(4,1, 5, 5));
+		else
+			luPanel.setLayout(new GridLayout(3,1, 5, 5));
+		
 		JPanel  lur1Panel = new JPanel();
 		lur1Panel.setLayout(new BorderLayout(5,5));
 		lur1Panel.add(fileL, BorderLayout.WEST);
@@ -113,7 +122,8 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 
 		luPanel.add(lur1Panel);
 		luPanel.add(lur2Panel);
-		luPanel.add(lur3Panel);
+		if(testingTarget)
+			luPanel.add(lur3Panel);
 		luPanel.add(lur4Panel);
 
 		luPanel.setBorder(new CompoundBorder(new TitledBorder(null, "input images", 
@@ -121,7 +131,8 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 		//luPanel.setBackground(java.awt.Color.white);
 
 		filedir.addActionListener(this);  //launch dir chooser
-		targetFile.addActionListener(this);  //launch file chooser
+		if(testingTarget)
+			targetFile.addActionListener(this);  //launch file chooser
 		loadImageB.addActionListener(this);
 		cancelB.addActionListener(this);
 		
@@ -238,7 +249,12 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 			Annotator.ext = (String) extBox.getSelectedItem(); 
 			Annotator.targetFile =  targetField.getText().trim();
 			//display images, plus enable the go button if successful
-			boolean displayOK = pnlImage.getTablePanel().displayOneImageTable(Annotator.dir, Annotator.targetFile, Annotator.ext);
+			boolean displayOK = true;
+			if(testingTarget)
+				displayOK = pnlImage.getTablePanel().displayOneImageTable(Annotator.dir, Annotator.targetFile, Annotator.ext);
+			else
+				displayOK = pnlImage.getTablePanel().displayOneImageTable(Annotator.dir, Annotator.ext);
+				
 			//controlPanel.thingsEnabled(displayOK);
 			if (displayOK) //if display is true
 			{
@@ -249,7 +265,8 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 
 			//write some information about the opened image in the outputpanel ...
 			pnlImage.getOutputPanel().setOutput("Images loaded from "+dirField.getText().trim()+ ".");
-			pnlImage.getOutputPanel().setOutput("Target file loaded from "+Annotator.targetFile+ ".");
+			if(testingTarget)
+				pnlImage.getOutputPanel().setOutput("Target file loaded from "+Annotator.targetFile+ ".");
 
 			//Display the panel with images
 			pnlLanding.displayImageReadyPanel();

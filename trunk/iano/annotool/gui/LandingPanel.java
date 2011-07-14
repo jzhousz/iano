@@ -282,6 +282,12 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 			pnlImages.setMode();
 			AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[3]);
 		}
+		else if(e.getSource() == btnAnnotate) 
+		{
+			Annotator.output = Annotator.OUTPUT_CHOICES[4];
+			pnlImages.setMode();
+			AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[4]);
+		}
 		else if(e.getSource() == btnLoadImages)
 		{
 			if(rbTT.isSelected())
@@ -306,7 +312,7 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 				pnlImages.setMode();
 				AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[1]);
 			}
-		}
+		}		
 	}
 	/*
 	 * Item Listener

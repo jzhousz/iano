@@ -3,6 +3,7 @@ package annotool.gui;
 import javax.swing.*;
 import java.awt.BorderLayout;
 import java.awt.Graphics2D;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Rectangle2D;
@@ -15,7 +16,9 @@ import javax.swing.BorderFactory;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -43,6 +46,9 @@ import com.itextpdf.text.pdf.PdfTemplate;
 import com.itextpdf.text.pdf.PdfWriter;
 
 import annotool.Annotator;
+import annotool.gui.model.Chain;
+import annotool.gui.model.Extractor;
+import annotool.gui.model.Selector;
 
 public class ACResultPanel extends JPanel implements ActionListener{
 	private int tabIndex; //the index of this panel in the parent tabbed pane
@@ -50,8 +56,7 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	private ChartPanel pnlChart = null;
 	JFreeChart chart = null;
 	private JPanel pnlDesc, 
-				   pnlImageInfo, pnlRunInfo,
-				   pnlButtons;
+				   pnlImageInfo, pnlRunInfo, pnlDisplay;
 	
 	private JButton btnSaveReport;
 	
@@ -59,6 +64,10 @@ public class ACResultPanel extends JPanel implements ActionListener{
 				   lbImgExt, lbTestExt,
 				   lbImgSize, 
 				   lbMode, lbChannel;
+	private ArrayList<Chain> selectedChains = new ArrayList<Chain>();
+	
+	private JTextArea taChainDetail = new JTextArea();
+	private JScrollPane detailPane = new JScrollPane(taChainDetail);
 	
 	JFileChooser fileChooser = new JFileChooser();
 	
@@ -70,11 +79,13 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	//Font objects to use while writing pdf
 	public static final Font FONT_TITLE = new Font(FontFamily.HELVETICA, 18, Font.BOLD, new BaseColor(181, 0, 0));
 	public static final Font FONT_HEADING = new Font(FontFamily.HELVETICA, 14, Font.BOLDITALIC, new BaseColor(230, 120, 0));
+	public static final Font FONT_HEADING2 = new Font(FontFamily.HELVETICA, 12, Font.BOLD, new BaseColor(130, 60, 0));
 	public static final Font FONT_LABEL = new Font(FontFamily.HELVETICA, 12, Font.BOLD, BaseColor.BLACK);
 	
-	public ACResultPanel(JTabbedPane parentPane, int imgWidth, int imgHeight, String channel) {
+	public ACResultPanel(JTabbedPane parentPane, int imgWidth, int imgHeight, String channel, ArrayList<Chain> selectedChains) {
 	   	this.parentPane = parentPane;
 	   	this.tabIndex = parentPane.getTabCount();
+	   	this.selectedChains = selectedChains;
 	   	
 	   	this.setLayout(new BorderLayout());
 	   	this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -98,12 +109,17 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	   	
 	   	this.imgWidth = imgWidth;
 	   	this.imgHeight = imgHeight;
+	   	
+	   	taChainDetail.setEditable(false);
+	   	taChainDetail.setMargin(new Insets(10,10,10,10));
 	}
 	
-	public void display(float[][] rates, ArrayList<String> labels, ArrayList<String> chainNames) {
-		showChart(rates, labels, chainNames);
+	public void display(float[][] rates, ArrayList<String> labels) {
+		showChart(rates, labels, selectedChains);
 		
 		showInfo();
+		
+		showChainDetails();
 		
 		//Display current visualization tab
 		parentPane.setEnabledAt(tabIndex,true);
@@ -151,6 +167,13 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		pnlRunInfo.add(lbMode);
 		pnlRunInfo.add(lbChannel);
 		
+		//Build chain details panel
+		pnlDisplay = new JPanel(new java.awt.GridLayout(1,1));
+		pnlDisplay.setBorder(new CompoundBorder(new TitledBorder(null, "Chain Inforamtion", 
+				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(10, 10, 10, 10)));
+		pnlDisplay.add(detailPane);
+		pnlDisplay.setAlignmentX(RIGHT_ALIGNMENT);
+		
 		//Buttons
 		btnSaveReport = new JButton("Save Report");
 		btnSaveReport.addActionListener(this);
@@ -158,19 +181,20 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		
 		pnlDesc.add(pnlImageInfo);
 		pnlDesc.add(pnlRunInfo);
+		pnlDesc.add(pnlDisplay);
 		pnlDesc.add(btnSaveReport);
 		this.add(pnlDesc, BorderLayout.EAST);
 	}
 	/*
 	 * Argument: float[][] rates: recognition rate for each label for each chain
 	 */
-	private void showChart(float[][] rates, ArrayList<String> labels, ArrayList<String> chainNames) {
+	private void showChart(float[][] rates, ArrayList<String> labels, ArrayList<Chain> selectedChains) {
 		// create the dataset...
         final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 
         for(int i=0; i < rates.length; i++){			//Each chain 
         	for(int j=0; j < rates[i].length; j++) {	//Each label
-        		dataset.addValue(100.0*rates[i][j], labels.get(j), chainNames.get(i));
+        		dataset.addValue(100.0*rates[i][j], labels.get(j), selectedChains.get(i).getName());
         	}
         }
 		
@@ -210,6 +234,9 @@ public class ACResultPanel extends JPanel implements ActionListener{
 					
 					document.add(createImageInfo());
 					document.add(createOtherInfo());
+					document.add(createChainInfo());
+					
+					document.newPage();//TODO: Or I can check if there is enough space in the page for image first
 					
 					//Add chart to pdf
 					int width = 520;
@@ -294,5 +321,87 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		info.add(Chunk.NEWLINE);
 		
 		return info;
+	}
+	private Paragraph createChainInfo() {
+		Paragraph info = new Paragraph();
+		info.setSpacingBefore(36);
+		info.add(new Paragraph("Chain Information", FONT_HEADING));
+		
+		info.add(new Chunk("-----------------------------------------------------------------------"));
+		info.add(Chunk.NEWLINE);
+		for(Chain chain : selectedChains) {
+			info.add(new Chunk("CHAIN: " + chain.getName(), FONT_HEADING2));
+			info.add(Chunk.NEWLINE);
+			
+			info.add(new Paragraph("Extractor(s)", FONT_LABEL));
+			for(Extractor ex : chain.getExtractors()) {
+				info.add(new Chunk(ex.getName()));
+				info.add(Chunk.NEWLINE);
+				for (String parameter : ex.getParams().keySet()) {
+					info.add(new Chunk(parameter + "=" + ex.getParams().get(parameter)));
+					info.add(Chunk.NEWLINE);
+	        	}
+				info.add(Chunk.NEWLINE);
+			}
+			
+			info.add(new Paragraph("Selector(s)", FONT_LABEL));
+			for(Selector sel : chain.getSelectors()) {
+				info.add(new Chunk(sel.getName()));
+				info.add(Chunk.NEWLINE);
+				for (String parameter : sel.getParams().keySet()) {
+					info.add(new Chunk(parameter + "=" + sel.getParams().get(parameter)));
+					info.add(Chunk.NEWLINE);
+	        	}
+				info.add(Chunk.NEWLINE);
+			}
+			
+			info.add(new Paragraph("Classifier", FONT_LABEL));
+			info.add(new Chunk(chain.getClassifier()));
+			info.add(Chunk.NEWLINE);
+			for (String parameter : chain.getClassParams().keySet()) {
+				info.add(new Chunk(parameter + "=" + chain.getClassParams().get(parameter)));
+				info.add(Chunk.NEWLINE);
+        	}
+			info.add(Chunk.NEWLINE);
+			info.add(new Chunk("-----------------------------------------------------------------------"));
+			info.add(Chunk.NEWLINE);
+		}		
+		return info;
+	}
+	
+	private void showChainDetails() {
+		taChainDetail.setText("");
+		for(Chain chain : selectedChains) {
+			taChainDetail.setText(taChainDetail.getText() + "CHAIN:"+ chain.getName() +"\n");
+			taChainDetail.setText(taChainDetail.getText() + "=========================================================\n");
+			if(chain.getExtractors().size() > 0) {
+				taChainDetail.setText(taChainDetail.getText() + "Feature Extractor(s):\n");
+				for(Extractor ex : chain.getExtractors()) {
+					taChainDetail.setText(taChainDetail.getText() + ex.getName() + "\n");
+					for (String parameter : ex.getParams().keySet()) {
+						taChainDetail.setText(taChainDetail.getText() + parameter + "=" + ex.getParams().get(parameter) + "\n");
+		        	}
+					taChainDetail.setText(taChainDetail.getText() + "\n");
+				}
+			}
+			if(chain.getSelectors().size() > 0) {
+				taChainDetail.setText(taChainDetail.getText() + "Feature Selector(s):\n");
+				for(Selector sel : chain.getSelectors()) {
+					taChainDetail.setText(taChainDetail.getText() + sel.getName() + "\n");
+					for (String parameter : sel.getParams().keySet()) {
+						taChainDetail.setText(taChainDetail.getText() + parameter + "=" + sel.getParams().get(parameter) + "\n");
+		        	}
+					taChainDetail.setText(taChainDetail.getText() + "\n");
+				}
+			}
+			if(chain.getClassifier() != null) {
+				taChainDetail.setText(taChainDetail.getText() + "Classifier:\n");
+				taChainDetail.setText(taChainDetail.getText() + chain.getClassifier() + "\n");
+				for (String parameter : chain.getClassParams().keySet()) {
+					taChainDetail.setText(taChainDetail.getText() + parameter + "=" +chain.getClassParams().get(parameter) + "\n");
+		    	}
+			}
+			taChainDetail.setText(taChainDetail.getText() + "\n\n\n");
+		}
 	}
 }

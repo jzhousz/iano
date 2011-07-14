@@ -12,6 +12,7 @@ import java.awt.GridLayout;
 import java.awt.event.*;
 
 import annotool.classify.Validator;
+import annotool.gui.model.Chain;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
 import annotool.io.AlgoXMLParser;
@@ -343,13 +344,13 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 				if(param.getParamDomain() == null) {
 					component = new JTextField(param.getParamDefault());
 					((JTextField)component).setText(param.getParamDefault());
+					component.setPreferredSize(new java.awt.Dimension(60, 25));
 				}
 				else {
 					component = new JComboBox(param.getParamDomain());
 					((JComboBox)component).setSelectedItem(param.getParamDefault());
-				}
+				}				
 				
-				component.setPreferredSize(new java.awt.Dimension(60, 25));
 				pnlItem.add(lb);
 				pnlItem.add(component);
 				
@@ -373,11 +374,11 @@ public class AutoCompFrame extends JFrame implements ActionListener, ItemListene
 		btnAddClass.setEnabled(flag);
 	}
 	
-	public void addTab(String title, float[][] rates, ArrayList<String> labels, ArrayList<String> chainNames, int imgWidth, int imgHeight, String channel) {
+	public void addTab(String title, float[][] rates, ArrayList<String> labels, ArrayList<Chain> selectedChains, int imgWidth, int imgHeight, String channel) {
 		//Display result
-        ACResultPanel pnlResult = new ACResultPanel(tabPane, imgWidth, imgHeight, channel);
+        ACResultPanel pnlResult = new ACResultPanel(tabPane, imgWidth, imgHeight, channel, selectedChains);
         tabPane.addTab(title, pnlResult);
-        pnlResult.display(rates, labels, chainNames); 
+        pnlResult.display(rates, labels); 
         
         //Add panel with title label and close button to the tab
         tabPane.setTabComponentAt(tabPane.getTabCount() - 1, 
