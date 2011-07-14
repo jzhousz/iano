@@ -11,9 +11,11 @@ import java.util.Scanner;
 
 import annotool.Annotator;
 import annotool.classify.Classifier;
+import annotool.classify.SVMClassifier;
 import annotool.classify.SavableClassifier;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
+import annotool.gui.model.Utils;
 
 public class ChainModel {
 	//Data members
@@ -21,6 +23,7 @@ public class ChainModel {
 	private String testingSet = null; //Used if training/testing
 	private String imageSize = null;
 	private String mode = null;
+	private String channel = null;
 	private float result;
 	private String label = null;
 	private ArrayList<Extractor> extractors = null;
@@ -42,7 +45,11 @@ public class ChainModel {
 		//Cross platform new line character
     	String newLine = System.getProperty("line.separator");
     	
-		File file = new File(baseFile.getParent(), baseFile.getName() + "_" + label);
+    	String fileName = baseFile.getName();
+    	if(fileName.endsWith("." + Utils.MODEL_EXT))
+    		fileName = Utils.removeExtension(fileName);
+    	
+    	File file = new File(baseFile.getParent(), fileName + "_" + label + "." + Utils.MODEL_EXT);
         try {
     		//FileWriter baseFileWriter = new FileWriter(baseFile);
     		//baseFileWriter.write(file.getPath() + newLine + "EOF");
@@ -56,6 +63,7 @@ public class ChainModel {
         	}
         	writer.write("# Image Size: " + imageSize + newLine);
         	writer.write("# Mode: " + mode + newLine);
+        	writer.write("# Channel: " + channel + newLine);
         	writer.write("# Result: " + result * 100 + "%" + newLine);
         	writer.write("# Label: " + label + newLine);
         	
@@ -97,7 +105,7 @@ public class ChainModel {
         	//Save trained model of the classifier
         	if(classifier != null) {
         		if(classifier instanceof SavableClassifier) {
-	        		String modelPath = getUniquePath(file.getParent(), file.getName() + "_model");            	
+	        		String modelPath = getUniquePath(file.getParent(), fileName + "_" + label + "_model");            	
 	        		((SavableClassifier)classifier).saveModel(((SavableClassifier)classifier).getModel(), modelPath);
 	        		writer.write("Path=" + modelPath + newLine);
         		}
@@ -108,15 +116,16 @@ public class ChainModel {
         }
         catch(IOException ex) {
         	System.out.println("Exception occured while writing file: " + file.getName());
+        	System.out.println("Exception: " + ex.getMessage());
         	ex.printStackTrace();
         }
 	}
 	/*
 	 * Gets a unique file name, given a parent path and base name
 	 */
-	private String getUniquePath(String path, String name) {//TODO
+	private String getUniquePath(String path, String name) {
 		int trail = 0;
-		File f = new File(path, name + trail);
+		File f = new File(path, name);
 		while(f.exists()) {
 			trail++;
 			f = new File(path, name + trail);
@@ -229,8 +238,8 @@ public class ChainModel {
 				if(line.startsWith("Path=")) {
 					String path = line.replaceFirst("Path=", "");
 					Classifier classifierObj = (new Annotator()).getClassifierGivenName(classifierName, classParams);
-					if(classifierObj instanceof SavableClassifier) {
-						((SavableClassifier)classifier).loadModel(path);
+					if(classifierObj instanceof SVMClassifier) {
+						((SVMClassifier)classifier).loadModel(path);
 					}
 				}
 			}
@@ -269,6 +278,14 @@ public class ChainModel {
 	public void setMode(String mode) {
 		this.mode = mode;
 	}
+	public String getChannel() {
+		return channel;
+	}
+
+	public void setChannel(String channel) {
+		this.channel = channel;
+	}
+
 	public float getResult() {
 		return result;
 	}

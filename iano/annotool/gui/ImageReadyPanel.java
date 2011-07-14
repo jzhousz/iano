@@ -11,10 +11,14 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
+import java.io.File;
+import java.util.ArrayList;
 
 import annotool.AnnOutputPanel;
 import annotool.AnnTablePanel;
 import annotool.Annotator;
+import annotool.gui.model.ModelFilter;
+import annotool.io.ChainModel;
 
 public class ImageReadyPanel extends JPanel implements ActionListener
 {
@@ -23,7 +27,8 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	
 	JLabel lbModelInfo;
 	JRadioButton rbRed, rbGreen, rbBlue;
-	JButton btnExpert, btnAutoComp;
+	JButton btnExpert, btnAutoComp,
+			btnLoadModel;
 	
 	String[] channels = {  "red (channel 1)", "green (channel 2)", "blue (channel 3)" };
 	String[] channelInputs = {  "r", "g", "b" };//actual input to algorithm
@@ -82,12 +87,16 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		btnAutoComp = new JButton("Auto Comp");
 		btnAutoComp.addActionListener(this);
 		
+		//Load model button
+		btnLoadModel = new JButton("Load Model");
+		btnLoadModel.addActionListener(this);
+		
 		//Panel for buttons
 		pnlButton = new JPanel();
-		pnlButton.setLayout(new GridLayout(1, 2));
-		pnlButton.add(btnExpert);
-		pnlButton.add(btnAutoComp);
-		
+		//pnlButton.setLayout(new GridLayout(1, 2));
+		//pnlButton.add(btnExpert);
+		//pnlButton.add(btnAutoComp); 			
+			
 		//Add components to right side bar
 		pnlRight = new JPanel(new BorderLayout());
 		pnlRight.add(pnlModelInfo, BorderLayout.NORTH);
@@ -174,6 +183,41 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			int y = (int)(dim.getHeight() - getHeight())/2;
 			frame.setLocation(x,y);
 		}
+		else if(e.getSource() == btnLoadModel)
+		{	
+			ArrayList<ChainModel> chainModels = new ArrayList<ChainModel>();
+			
+			JFileChooser fileChooser = new JFileChooser();
+			fileChooser.setMultiSelectionEnabled(true);
+			fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+			fileChooser.addChoosableFileFilter(new ModelFilter());
+			
+			int returnVal = fileChooser.showOpenDialog(this);
+			
+			if (returnVal == JFileChooser.APPROVE_OPTION) {
+	            File[] files = fileChooser.getSelectedFiles();
+	            
+				pnlStatus.setOutput("Loading model..");
+				
+				//For each selected file or directory
+				for(int i=0; i < files.length; i++) {
+					if(files[i].isDirectory()) {
+						File[] childFiles = files[i].listFiles();
+					}
+		            ChainModel ch = new ChainModel();
+		            try {
+		            	ch.read(files[i]);
+			            chainModels.add(ch);
+		            	pnlStatus.setOutput("Model loaded successfully.");
+		            }
+		            catch (Exception ex) {
+		            	pnlStatus.setOutput("Model loading failure.");
+		            	System.out.println(ex.getMessage());
+		            }
+				}
+	        }
+			pnlStatus.setOutput(String.valueOf(chainModels.size()));
+		}
 	}
 	public AnnTablePanel getTablePanel()
 	{
@@ -207,6 +251,20 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[3])) {
 			modelInfo = "Train Only";
 			btnAutoComp.setEnabled(false);
+		}
+		
+		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[4])) {
+			modelInfo = "Annotate";
+			
+			pnlButton.removeAll();
+			pnlButton.setLayout(new GridLayout(1, 1));
+			pnlButton.add(btnLoadModel);
+		}
+		else {
+			pnlButton.removeAll();
+			pnlButton.setLayout(new GridLayout(1, 2));
+			pnlButton.add(btnExpert);
+			pnlButton.add(btnAutoComp);
 		}
 		
 		lbModelInfo.setText("<html><b>Mode: </b>" + modelInfo + "</html>");

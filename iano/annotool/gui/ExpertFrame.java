@@ -19,6 +19,7 @@ import annotool.classify.WekaClassifiers;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.ModelSaver;
 import annotool.gui.model.Selector;
+import annotool.gui.model.Utils;
 import annotool.io.AlgoXMLParser;
 
 import java.io.File;
@@ -229,8 +230,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		            pnlOutput.setOutput("Saving Model...");
 		        	File file = fileChooser.getSelectedFile();		            
 		            
-		            
-		            //Reset progress bar
+		        	//Reset progress bar
 		            bar.setValue(0);
 		            
 		            JButton[] buttons = {btnRun, btnSaveModel, btnAnnotate}; 
@@ -465,6 +465,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
         	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         	chainModels[i].setMode("Training Only");
+        	chainModels[i].setChannel(channel);
         	
         	Extractor ex = new Extractor(featureExtractor);
         	ex.setParams(exParams);
@@ -583,6 +584,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	chainModels[i].setTestingSet(new File(Annotator.testdir).getAbsolutePath());
         	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         	chainModels[i].setMode("Training/Testing");
+        	chainModels[i].setChannel(channel);
         	
         	Extractor ex = new Extractor(featureExtractor);
         	ex.setParams(exParams);
@@ -658,27 +660,10 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             return;
         }
         
-        /*
-         * Apply Feature Selection and Classification in CV mode.
-         * This method uses k-fold CV.
-         * Output the recognition rate of each task (per column) to a file.
-         */
-        
+        //Apply Feature Selection and Classification in CV mode.        
         int incomingDim = features[0].length;
         int length = features.length;
         int numoffeatures = incomingDim; //original dimension before selection
-
-        /*if (Annotator.fileFlag.equals("true")) {
-            try {
-                outputfile = new java.io.BufferedWriter(new java.io.FileWriter("output"));
-                ;
-                outputfile.write("Outputs:\n");
-                outputfile.flush();
-            }
-            catch (Exception e) {
-                System.out.println("Output File Cann't Be Generated.");
-            }
-        }*/
         
         // parameters that are same for all target labels
         boolean shuffle = Boolean.parseBoolean(Annotator.shuffleFlag);
@@ -751,6 +736,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
             chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         	chainModels[i].setMode("Cross Validation. Fold: " + Annotator.fold);
+        	chainModels[i].setChannel(channel);
         	
         	Extractor ex = new Extractor(featureExtractor);
         	ex.setParams(exParams);
@@ -777,30 +763,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             //Add panel with title label and close button to the tab
             tabPane.setTabComponentAt(tabPane.getTabCount() - 1, 
                     new ButtonTabComponent("Result - " + anno.getAnnotationLabels().get(i), tabPane));
-            
-            /*if (outputfile != null && fileFlag.equals("true")) {
-                try {
-                    outputfile.write("Recognition Rate for annotation target " + i + ": " + recograte);
-                    outputfile.flush();
-                }
-                catch (java.io.IOException e) {
-                    System.out.println("Writing to output file failed.");
-                }
-            }*/
         } //end of loop for annotation targets
-
-        /*if (outputfile != null && fileFlag.equals("true")) {
-            try {
-                outputfile.close();
-            }
-            catch (Exception e) {
-            }
-        }
-
-        //put the prediction results back to GUI
-        if (container != null) {
-            container.getTablePanel().updateCVTable(results);
-        }*/
 	}
 	
 	/*
@@ -955,13 +918,13 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 				if(param.getParamDomain() == null) {
 					component = new JTextField(param.getParamDefault());
 					((JTextField)component).setText(param.getParamDefault());
+					component.setPreferredSize(new java.awt.Dimension(60, 25));
 				}
 				else {
 					component = new JComboBox(param.getParamDomain());
 					((JComboBox)component).setSelectedItem(param.getParamDefault());
 				}
 				
-				//component.setPreferredSize(new java.awt.Dimension(120, 30));
 				pnlItem.add(lb);
 				pnlItem.add(component);
 				
