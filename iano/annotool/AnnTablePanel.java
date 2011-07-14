@@ -39,7 +39,33 @@ public class AnnTablePanel extends JPanel  {
 		{
 			this.setLayout(new java.awt.BorderLayout());
 			this.add(tableOne, java.awt.BorderLayout.CENTER);
-			tableOne.setBorder(new CompoundBorder(new TitledBorder(null, "cross validation data set", 
+			tableOne.setBorder(new CompoundBorder(new TitledBorder(null, "data set", 
+					TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5))); 
+			currentCVTable = cvTable;
+			adjustFrame();
+			return true;
+		}
+		else return false;
+	}
+	
+	// No target case - eg. annotate 
+	public boolean displayOneImageTable(String directory, String ext)
+	{
+		//remove the old table from the table panel first, if any.
+		if (tableOne != null)
+			this.remove(tableOne);
+
+		if (tableTwo != null)
+			this.remove(tableTwo);
+
+		AnnImageTable cvTable = new AnnImageTable();
+		tableOne = cvTable.buildImageTable(directory, ext);
+
+		if (tableOne != null)
+		{
+			this.setLayout(new java.awt.BorderLayout());
+			this.add(tableOne, java.awt.BorderLayout.CENTER);
+			tableOne.setBorder(new CompoundBorder(new TitledBorder(null, "data set", 
 					TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5))); 
 			currentCVTable = cvTable;
 			adjustFrame();
