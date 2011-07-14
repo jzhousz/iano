@@ -22,30 +22,28 @@ Command line Usage:
 java -Djava.library.path="../mRMRFeatureselector" annotool.Annotator
 
 Properties can be set to change the default parameters such as image directory and extensions. 
-
-May 2nd, 2011:  CV modes are not calling the ..Given...() methods. To be checked later.
-
+  
 A List of Todos And Thoughts (May 2011):
--- algorithm parameters will be passed in separately as a Hashmap of String (instead of property)
--- ! Save project (model) (provide a better GUI with algorithm details),Save results. 
-Open project. (project explorer at the left has details of projects).
--- Load examples with suggested models
+-x-  algorithm parameters will be passed in separately as a Hashmap of String (instead of property)
+-x-  Save project (model) (provide a better GUI with algorithm details),Save results. 
+      Open project. (project explorer at the left has details of projects).
+-x - read from a property file such as "./.annotool_properties". (take care by GUI now)
+-x- ROI can save model after training to save time.(Now training/annotation can be separated.)
+-x- GUI: Multiple tabs for result visualization; project detail; image detail.
+-x- Manual mode (current);  Auto mode (comparison, by Aleksey L, Santosh L)
+-x- CV modes are not calling the ..Given...() methods. To be checked later.
 
+-- Load examples with suggested models
 -- Plug-and-play by passing in full class names of the algorithms.
--- read from a property file such as "./.annotool_properties".
 -- an option to provide probability output of some classifiers
 -- provide ranked output of the annotation result for entire image (based on the probability output).
 -- Principal component feature extraction: transform matrix based on training images needs to be saved and then applied to testing images.  
--- ROI can save model after training to save time.
 -- Check out LibLinear for fast training.
 -- The option of "all" channels was done in Bala-Sift module. To be incorporated.
 -- rethink GUI: swt, using Eclipse professional style: 
-Left Panel: Project Explore and Image Explore, when clicked, show in the middle? 
-Center Panel: multiple tabs for result visualization; project detail; image detail.
-Manual mode (current);  Auto mode (comparison, by Aleksey Levy)
-Save project (model) (provide a better GUI with algorithm setup details), 
-Open project. (project explorer at the left has details of projects).
--- Load examples with suggested models
+-- GUI: Project Explorer and Image Explorer, when clicked, show in the middle? 
+-- Save project (model) (provide a better GUI with algorithm setup details), 
+-- Open project. (project explorer at the left has details of projects).
 
  ************************************************************************************************************/
 public class Annotator implements Runnable
@@ -560,7 +558,7 @@ public class Annotator implements Runnable
 
 
     /*
-     *  A classifier that takes a particular classification algorithm and returns
+     *  A classifier that takes a particular classification algorithm (as a String) and returns
      *   recognition rate. 
      *    
      */
@@ -571,22 +569,23 @@ public class Annotator implements Runnable
     	float rate = 0;
     	if(classifier != null)
     	    rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
-        //System.out.println("recognition rate:" + rate);
         return rate;
         
     }
     /*
-     *  A classifier that takes a particular classification algorithm and returns
+     *  A classifier that takes Classifier object as a particular classification algorithm and returns
      *   recognition rate. 
      *    
      */
     public float classifyGivenAMethod(Classifier classifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) throws Exception {
         
         float rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
-        //System.out.println("recognition rate:" + rate);
         return rate;
     }
 
+    /*
+     * get an object of a classifier based on name
+     */
     public Classifier getClassifierGivenName(String chosenClassifier, HashMap<String, String> parameters)
     {
        Classifier classifier = null;
@@ -605,17 +604,15 @@ public class Annotator implements Runnable
        return classifier;
     }
 
- 
- 
     
     /*
      *
-     * Feature extractor that takes 1 data set.
-     * Useful for methods such as wavelet.
+     * The feature extractor that takes 1 data set.
+     * Useful for methods such as wavelet transform.
      * This method takes a HashMap for possible parameters.
-     * This method is used by the GUI chain comparison module.
+     * 
      * TBD: The "extractor" may be a class name to allow dynamic loading of algorithm classes.
-     * Note: this is the first f.e. for the image
+     *
      */
     public float[][] extractGivenAMethod(String chosenExtractor, java.util.HashMap<String, String> parameters, DataInput problem) {
 
@@ -701,8 +698,9 @@ public class Annotator implements Runnable
     /*
      * Overloaded version of the extractor that takes 2 data sets
      * It may be useful for methods such as PCA when feature extraction cannot be done separately.
-     * It may also take an object (e.g. transform matrix / model) and a problem.
-     * Tb Be Done later.
+     * Or it takes an object (e.g. transform matrix/model) and a problem?
+     * (07/2011: So the feature extractor can also return a model or apply a model, similar as a classifier!)
+     * To Be Done later. 
      */
    /* protected void extractGivenAMethod(String chosenExtractor, String parameter, DataInput trainingproblem, DataInput testingproblem) {
         //check which method it is;
@@ -722,7 +720,8 @@ public class Annotator implements Runnable
     }*/
 
     /*
-     * Feature selector that takes 1 set. Used in cross validation mode.
+     * The feature selector that takes 1 set. 
+     * Used in cross validation mode.
      *
      */
     public ComboFeatures selectGivenAMethod(String chosenSelector, HashMap<String,String> parameters, float[][] features, int[] targets) {
@@ -771,7 +770,7 @@ public class Annotator implements Runnable
     }
 
     /*
-     *  Feature selector that takes 2 sets (training and testing)
+     *  The feature selector that takes 2 sets (training and testing)
      *  Return: two feature sets wrapped in ComboFeatures
      *  This method takes a HashMap for possible parameters.
      */
@@ -784,7 +783,7 @@ public class Annotator implements Runnable
         else //is also passed in through parameter argument if applicable to the algorithm 
             numoffeatures = getNumberofFeatures();
  
-        //if incrementally reading the images, the flow will be different (cann't get features in one shot .. 5/3/2011)
+        //Note: If incrementally reading the images, the flow will be different (cann't get features in one shot .. 5/3/2011)
         float[][] selectedTrainingFeatures = null;
         int[] indices = null;
         ComboFeatures result = new ComboFeatures();
