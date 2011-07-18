@@ -16,6 +16,12 @@ a150 a273
 0  1   k150_a273_8-14-07_L13_B1_GR1_R1.lsm__AJ-F__GF.tif
 0  1   k150_a273_8-14-07_L8_B1_GR1_R1.lsm__AJ-F__GF.tif
 0  1   k150_a273_8-14-07_L9_B1_GR1_R1.lsm__AJ-F__GF.tif
+
+Added July 2011: The second line contains pairs of digital targets and the corresponding class names.
+The class names are used in reports.  
+For example:
+1:Yes 0:No
+1:a150 2:a273 3:ato
  ****/
 
 public class LabelReader
@@ -24,6 +30,7 @@ public class LabelReader
 	int maxNumOfClass = 0;
 	int length;
 	java.util.ArrayList<String> annotations = null;
+	java.util.HashMap<String, String> classNames = null;
 
 	public LabelReader(int nsample, java.util.ArrayList<String> annoLabels)
 	{
@@ -67,6 +74,24 @@ public class LabelReader
                }
                lineScanner.close();
            }
+	       //scan the second line to get names of classes
+	       if (classNames == null)
+	    	   classNames = new java.util.HashMap<String, String>();
+	       if(scanner.hasNextLine())
+	       {
+			   String line = scanner.nextLine();
+			   Scanner lineScanner = new Scanner(line);
+               while(lineScanner.hasNext())
+               {
+                  if (classNames!= null)
+                  {
+                	  String pair[] = lineScanner.next().split(":");
+                	  classNames.put(pair[0],pair[1]);
+                  }
+               }
+               lineScanner.close();
+	       }
+	       
            //scan the rest lines to get nsample.
            while(scanner.hasNextLine())
            {
@@ -98,7 +123,8 @@ public class LabelReader
                   e.printStackTrace();
                   throw e;
    	       }
-           //skip the first line of annotations.
+           //skip the first lines of annotations and classnames.
+   	       scanner.nextLine();
    	       scanner.nextLine();
    	       
    	       //rewrite to consider filenames; 
@@ -130,14 +156,26 @@ public class LabelReader
 
 	//read in the list of annotations (a list of strings)
     //for the purpose of displaying output etc.
-	public java.util.ArrayList getAnnotations()
+	public java.util.ArrayList<String> getAnnotations() throws Exception
 	{
 		if (annotations == null)
+		{
 	          System.out.println("Error: Reading annotation and targets first!");
-
+	          throw new Exception("Error: Reading annotation and targets first!");
+		}
 		return annotations;
     }
 
+	public java.util.HashMap<String, String> getClassnames() throws Exception
+	{
+		if (classNames == null)
+		{
+	          System.out.println("Error: The classnames are not yet read!");
+	          throw new Exception("Error: The classnames are not yet read!");
+		}
+		return classNames;
+    }
+	
     public int getNumOfAnnotations()
     {
 	   return numOfAnno;
@@ -148,14 +186,14 @@ public class LabelReader
 	   return maxNumOfClass;
     }
     
-    public java.util.ArrayList calNumOfClasses(int[][] targets)
+    public java.util.ArrayList<Integer> calNumOfClasses(int[][] targets)
     {
        //one row per annotation.
     	int maxNum = 0;
-    	java.util.ArrayList infoNumOfClass = new java.util.ArrayList();
+    	java.util.ArrayList<Integer> infoNumOfClass = new java.util.ArrayList<Integer>();
         for(int i=0; i< numOfAnno; i++)
         {
-        	java.util.ArrayList labels = new java.util.ArrayList();
+        	java.util.ArrayList<Integer> labels = new java.util.ArrayList<Integer>();
         	for(int j=0; j < length; j++)
         		if (!labels.contains(targets[i][j]))
         			labels.add(targets[i][j]);
@@ -170,7 +208,7 @@ public class LabelReader
     //an utility method to return number of classes for one annotation target
     public static int infoNumOfClasses(int[] targets)
     {
-        java.util.ArrayList labels = new java.util.ArrayList();
+        java.util.ArrayList<Integer> labels = new java.util.ArrayList<Integer>();
         for(int j=0; j < targets.length; j++) 
         	if (!labels.contains(targets[j]))
         		labels.add(targets[j]);
