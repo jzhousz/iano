@@ -1,0 +1,22 @@
+genetic_line 
+1:a150  2:a273 3:a278 4:ato
+1   k150_a150_4-23-07_L10_Sum.lsm__AJ-F__GF.tif.jpg
+1   k150_a150_4-23-07_L11_Sum.lsm__AJ-F__GF.tif.jpg
+1   k150_a150_4-23-07_L12_Sum.lsm__AJ-F__GF.tif.jpg
+1   k150_a150_4-23-07_L7_Sum.lsm__AJ-F__GF.tif.jpg
+1   k150_a150_4-23-07_L8_Sum.lsm__AJ-F__GF.tif.jpg
+2   k150_a273_8-14-07_L10_B1_GR1_R1.lsm__AJ-F__GF.tif.jpg
+2   k150_a273_8-14-07_L11_B1_GR1_R1.lsm__AJ-F__GF.tif.jpg
+2   k150_a273_8-14-07_L13_B1_GR1_R1.lsm__AJ-F__GF.tif.jpg
+2   k150_a273_8-14-07_L8_B1_GR1_R1.lsm__AJ-F__GF.tif.jpg
+2   k150_a273_8-14-07_L9_B1_GR1_R1.lsm__AJ-F__GF.tif.jpg
+3   k150_a278_8-16-07_L1_Sum.lsm__AJ-F__GF.tif.jpg
+3   k150_a278_8-16-07_L2_Sum.lsm__AJ-F__GF.tif.jpg
+3   k150_a278_8-16-07_L3_Sum.lsm__AJ-F__GF.tif.jpg
+3   k150_a278_8-16-07_L4_Sum.lsm__AJ-F__GF.tif.jpg
+3   k150_a278_8-16-07_L5_Sum.lsm__AJ-F__GF.tif.jpg
+4   k150_ato_8-30-07_L18_Sum.lsm__AJ-F__GF.tif.jpg
+4   k150_ato_8-30-07_L19_Sum.lsm__AJ-F__GF.tif.jpg
+4   k150_ato_8-30-07_L20_Sum.lsm__AJ-F__GF.tif.jpg
+4   k150_ato_8-30-07_L21_Sum.lsm__AJ-F__GF.tif.jpg
+4   k150_ato_8-30-07_L22_Sum.lsm__AJ-F__GF.tif.jpg
