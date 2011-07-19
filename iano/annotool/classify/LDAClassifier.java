@@ -87,7 +87,7 @@ public class LDAClassifier implements SavableClassifier {
             //somewhere else		
 			System.out.println("Loading...");
 			Object model = classifier.loadModel("testLDA_model");
- 	        predictions = classifier.classifyUsingModel(model, testing);
+ 	        predictions = classifier.classifyUsingModel(model, testing, probest);
 		}catch(Exception e)
 		{ e.printStackTrace();}
 		
@@ -346,16 +346,16 @@ public class LDAClassifier implements SavableClassifier {
     }
     
     //call the overloaded version
-    public int classifyUsingModel(Object model, float[] testingPattern) throws Exception
+    public int classifyUsingModel(Object model, float[] testingPattern, double[] prob) throws Exception
     { 
      	float[][] testingPatterns = new float[1][testingPattern.length];
      	testingPatterns[0] = testingPattern;
-     	int[] results = classifyUsingModel(model, testingPatterns);
+     	int[] results = classifyUsingModel(model, testingPatterns, prob);
      	return results[0];
     
     }
     
-    public int[] classifyUsingModel(Object model, float[][] testingPatterns) throws Exception
+    public int[] classifyUsingModel(Object model, float[][] testingPatterns, double[] probesti) throws Exception
     { 
       	if (model != null) //model may be null, but only when the internal model is already set.
        		if (model instanceof LDATrainedModel) //pass in an internal model
@@ -425,7 +425,7 @@ public class LDAClassifier implements SavableClassifier {
 					target = k;
 					max = posterior[i][k];
 				}
-			//probesti[i] = max;  // probability estimation can be useful later.
+			probesti[i] = max;  // probability estimation can be useful later.
 			predictions[i] =  ((Integer) targetMap.get(target)).intValue();	
 		}
       	
@@ -486,4 +486,8 @@ public class LDAClassifier implements SavableClassifier {
     	return priors;
     }
 	
+    public boolean doesSupportProbability()
+    {  
+    	return true;
+    }
 }

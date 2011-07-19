@@ -32,10 +32,10 @@ A List of Todos And Thoughts (May 2011):
 -x- GUI: Multiple tabs for result visualization; project detail; image detail.
 -x- Manual mode (current);  Auto mode (comparison, by Aleksey L, Santosh L)
 -x- CV modes are not calling the ..Given...() methods. To be checked later.
+-x- an option to provide probability output of some classifiers
 
 -- Load examples with suggested models
 -- Plug-and-play by passing in full class names of the algorithms.
--- an option to provide probability output of some classifiers
 -- provide ranked output of the annotation result for entire image (based on the probability output).
 -- Principal component feature extraction: transform matrix based on training images needs to be saved and then applied to testing images.  
 -- Check out LibLinear for fast training.
@@ -538,13 +538,21 @@ public class Annotator implements Runnable
             maxClassAllTargets = labelReader.getNumOfClasses();
             //annotationLabels = labelReader.getAnnotations();
             numOfAnno = labelReader.getNumOfAnnotations();
+            
+            if (debugFlag.equals("true")) 
+            {
+              java.util.HashMap<String, String> classnames = labelReader.getClassnames();
+              for(int i=0; i<classnames.size(); i++)
+              {
+            	for (Map.Entry<String, String> e : classnames.entrySet())
+            	    System.out.println(e.getKey() + ": " + e.getValue());
+              }
 
-            if (debugFlag.equals("true")) {
-                for (int i = 0; i < numOfAnno; i++) {
+              for (int i = 0; i < numOfAnno; i++) {
                     for (int j = 0; j < length; j++) {
                         System.out.print(targets[i][j] + " ");
                     }
-                }
+              }
             }
         }
         catch (Exception e) {
@@ -581,6 +589,24 @@ public class Annotator implements Runnable
         
         float rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
         return rate;
+    }
+
+    
+    /*
+     *  A classifier that takes SavableClassifier object as a particular classification algorithm
+     *  It has a trained model in it.  Returns prediction results (and probabilities via Annotation argument).
+     */
+    public int[] classifyGivenAMethod(SavableClassifier classifier, float[][] selectedTrainingFeatures, float[][] testingFeatures, Annotation[] annotations) throws Exception {
+        int[] results = null;
+        double[] prob = new double[testingFeatures.length];
+
+        results = classifier.classifyUsingModel(classifier.getModel(), testingFeatures, prob);
+        for(int i=0; i<testingFeatures.length; i++)
+        {
+        	  annotations[i].anno = results[i];
+              annotations[i].prob = prob[i];
+        }
+        return results;
     }
 
     /*

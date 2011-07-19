@@ -187,4 +187,8 @@ public WekaClassifiers(String classifierType) {
     }
 	
 
+    public boolean doesSupportProbability()
+    {
+    	return false;
+    }
 }

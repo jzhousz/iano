@@ -6,8 +6,6 @@ import java.util.StringTokenizer;
 
 /**
 
-   Note: When probability of estimation is needed, this class assumes that the num of class less than 10 (can be changed by passing an argument to classify()).
-
    The following LibSVM options are from LibSVM website http://www.csie.ntu.edu.tw/~cjlin/libsvm/.
 
 Examples of options: -s 0 -c 10 -t 1 -g 1 -r 1 -d 3
@@ -52,6 +50,7 @@ public class SVMClassifier implements SavableClassifier
     public final static String KEY_PARA = "General Parameter";
     public final static String DEFAULT_MODEL_FILE = "SVM_MODELFILE";
     svm_model trainedModel = null;
+    boolean supportProbability = false;
     
    //initialize # of samples and # of dimension
    public SVMClassifier(java.util.HashMap<String,String> parameters)
@@ -181,7 +180,7 @@ public class SVMClassifier implements SavableClassifier
 		prob.l = traininglength;
 		prob.y = new double[prob.l];
 
-		maxClassNum = getMaxNumOfClass(trainingtargets);// annotool.Annotator.maxClass;
+		maxClassNum = getMaxNumOfClass(trainingtargets);
 		System.out.println("maxClassNum:"+ maxClassNum);
 		double[] prob_estimates = new double[maxClassNum];
 
@@ -226,23 +225,25 @@ public class SVMClassifier implements SavableClassifier
 			    //typecast to int for category labels.
 			    //predictions[i] =  (int) svm.svm_predict(model, testx);
 			    predictions[i] =  (int) svm.svm_predict_probability(model,testx,prob_estimates);
-			    //System.out.println("prediction: "+ predictions[i]);
 			    
-			    //To be fixed: 
-			    //prob_estimates may be ordered based on the order the LibSVM sees the label. 
-			    //I.e.: prob_estimates[2] may not correspond to label 2.
-			    //Note that maxClassNum may not be fully used by libSVM depends on the column
-			    /*
-			    for (int index = 0; index < maxClassNum; index++)
-			    {
-			    	if (predictions[i] == ???labels[index] )
-			    	{ 	
-			           probesti[i] = prob_estimates[index];
-			           break;
-			    	}
-			    }*/
-			    //System.out.println("prediction: "+ predictions[i] + "  prob_estimates[0]:"+ prob_estimates[0]+"   prob_estimates[1]:"+prob_estimates[1]);
-
+			    //Check if the model supports probability  (-b 1 is not set or the model cann't be used to estimate probability) 
+				if(svm.svm_check_probability_model(model)==0)
+					supportProbability = false;
+				else
+				{
+				    supportProbability = true;		
+				    double max = 0; 
+			        for (int index = 0; index < maxClassNum; index++)
+			       {
+			         System.out.println("prob["+index+"]="+prob_estimates[index]);
+			         
+			         if (max <  prob_estimates[index])
+			             max = prob_estimates[index];
+			       }
+			       probesti[i] = max;
+			       System.out.println("prediction: "+ predictions[i] + "  probability:"+ probesti[i]);
+				}
+			     	
 			}
         }
    }
@@ -419,7 +420,7 @@ public class SVMClassifier implements SavableClassifier
      * @return prediction (int)
      * @throws Exception
      */
-    public int classifyUsingModel(Object model, float[] testingPattern) throws Exception
+    public int classifyUsingModel(Object model, float[] testingPattern, double[] prob) throws Exception
     {
        	if (model != null) //model may be null, but only when the internal model is already set.
        	{
@@ -434,12 +435,9 @@ public class SVMClassifier implements SavableClassifier
     		throw new Exception("Err: must pass in a model.");
     	}   	
     	
-       	//maxClassNum is needed by prob estimation, yet it is only available from training samples. So if it is not set, assume a large number.
-		double[] prob_estimates;
-		if (maxClassNum == 0) //not known
-		  prob_estimates = new double[100];
-		else 
-		  prob_estimates = new double[maxClassNum];
+ 		
+		maxClassNum = svm.svm_get_nr_class(trainedModel);
+	    double[] prob_estimates = new double[maxClassNum];
 
 	    int dimension = testingPattern.length;
 	    svm_node[] testx = new svm_node[dimension];
@@ -450,6 +448,22 @@ public class SVMClassifier implements SavableClassifier
 	      testx[j].value = (double) testingPattern[j];
 	    }
 	    int prediction =  (int) svm.svm_predict_probability(trainedModel,testx,prob_estimates);
+	    
+	    //set the probability
+		if(svm.svm_check_probability_model(trainedModel)==0)
+			supportProbability = false;
+		else
+		{
+		    supportProbability = true;		
+		    double max = 0; 
+	        for (int index = 0; index < maxClassNum; index++)
+	       {
+	         System.out.println("prob["+index+"]="+prob_estimates[index]);
+	         if (max <  prob_estimates[index])
+	             max = prob_estimates[index];
+	       }
+	       prob[0] = max;
+		}
         System.out.println(prediction+" ");
        	return prediction;
        	
@@ -460,7 +474,7 @@ public class SVMClassifier implements SavableClassifier
         it calls the version that work with one testing pattern.
         The first parameter is essencially a String (filename) in the case of SVM.
      */     
-    public int[] classifyUsingModel(Object model, float[][] testingPatterns) throws Exception
+    public int[] classifyUsingModel(Object model, float[][] testingPatterns, double[] probest) throws Exception
     {
         //check the type of model
     	if (model != null) //model may be null, but only when the internal model is already set.
@@ -479,11 +493,21 @@ public class SVMClassifier implements SavableClassifier
     	
     	//allocate predictions
     	int[] predictions = new int[testingPatterns.length];
+    	double[] probforone = new double[1];
      	for(int i = 0; i < testingPatterns.length; i++)
-    	  predictions[i] = classifyUsingModel(null, testingPatterns[i]);
+     	{
+    	  predictions[i] = classifyUsingModel(null, testingPatterns[i], probforone);
+    	  probest[i] = probforone[0];
+     	}
     	
     	return predictions;
     			
+    }
+    
+    //default false. May be modified in classify if working with probability estimation
+    public boolean doesSupportProbability()
+    {
+    	return supportProbability;
     }
        
 }

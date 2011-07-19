@@ -15,8 +15,8 @@ public interface SavableClassifier extends Classifier {
 	void setModel(java.lang.Object model) throws Exception; 
 
 	//two methods that classify one or multiple testing patterns.
-	int classifyUsingModel(Object model, float[] testingPattern) throws Exception;
-	int[] classifyUsingModel(Object model, float[][] testingPatterns) throws Exception;
+	int classifyUsingModel(Object model, float[] testingPattern, double[] prob) throws Exception;
+	int[] classifyUsingModel(Object model, float[][] testingPatterns, double[] prob) throws Exception;
 	
 	//two methods that load and save model to file
     void saveModel(Object trainedModel, String model_file_name) throws java.io.IOException;
