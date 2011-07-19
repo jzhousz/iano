@@ -374,7 +374,7 @@ public class Validator
 			//System.out.println("predicted category:" + predictions[i]);
 			//System.out.println("actual category:" + testingTargets[i]);
     	    annotations[i].anno = predictions[i];
-            //annos[i].prob = prob[i];
+            annotations[i].prob = prob[i];
 	        if(predictions[i] == testingTargets[i])
 	           correct ++;
 	    }

@@ -140,6 +140,9 @@ public class TreeClassifier implements Classifier {
 			return targetList.size();
     }
 
-	
+    public boolean doesSupportProbability()
+    {
+    	return false;
+    }
 	
 }
