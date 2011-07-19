@@ -52,20 +52,20 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 		this.pnlLanding = pnlLanding;
 		this.pnlImage = pnlLanding.getImageReadyPanel();
 		
-	    if(modeflag == Annotator.OUTPUT_CHOICES[0]) //tt, can set testingTarget to false too.
+	    if(modeflag == Annotator.TT) //tt, can set testingTarget to false too.
 			getContentPane().add(buildTrainTestFileLoadingPanel());
-	    else if(modeflag == Annotator.OUTPUT_CHOICES[1]) //cv
+	    else if(modeflag == Annotator.CV) //cv
 			getContentPane().add(buildFileLoadingPanel());
-	    else if(modeflag == Annotator.OUTPUT_CHOICES[2]) //roi
+	    else if(modeflag == Annotator.ROI) //roi
 	    {
 	    	testingTarget = false;
 			getContentPane().add(buildTrainTestFileLoadingPanel());
 	    }
-	    else if(modeflag == Annotator.OUTPUT_CHOICES[3]) //train only
+	    else if(modeflag == Annotator.TO) //train only
 	    {
 	    	getContentPane().add(buildFileLoadingPanel());
 	    }
-	    else if(modeflag == Annotator.OUTPUT_CHOICES[4]) //Annotate
+	    else if((modeflag == Annotator.CL) || (modeflag == Annotator.AN)) //Annotate
 	    {
 	    	testingTarget = false;				
 	    	getContentPane().add(buildFileLoadingPanel());

@@ -32,7 +32,14 @@ public class AlgoXMLParser
 	public void runParser()
 	{
 		parseXmlFile();
-		parseDocument();
+		
+		//If dom is null (no algorithm file), then add default classifier
+		if (dom == null){
+			classifiers.add(new Algorithm("None", "Classifier"));
+			return;
+		}
+		else
+			parseDocument();
 	}
 	private void parseXmlFile()
 	{

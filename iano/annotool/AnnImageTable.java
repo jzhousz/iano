@@ -220,6 +220,42 @@ public class AnnImageTable {
 		//update the model
 		table.setModel(dataModel);
 	}
+	
+	//Overloaded version: added July 19, 2011 : for update after applying saved model
+	public void updateTable(Annotation[][] predictions, String[] modelLabels)
+	{
+		int numModels = predictions.length;
+		final String[] columnNames;
+		columnNames = new String[2 + numModels];
+		columnNames[0] = "image thumbnail";
+		columnNames[1]= "file name";
+		for(int i= 0; i < numModels; i++)
+			columnNames[2+i] = modelLabels[i];
+
+		final Object[][] tabledata = new Object[children.length][columnNames.length];
+		for (int i = 0; i < children.length; i++)
+		{
+			tabledata[i][0] =  getButtonCell(i); 
+			tabledata[i][1] = children[i];
+			for (int j = 0; j < numModels; j++)
+				tabledata[i][2+j] = predictions[j][i].anno;
+		}		
+
+		javax.swing.table.TableModel dataModel = new javax.swing.table.AbstractTableModel() { 
+			public int getColumnCount() { return columnNames.length; } 
+			public int getRowCount() { return tabledata.length;} 
+			public Object getValueAt(int row, int col) {return tabledata[row][col];} 
+			public String getColumnName(int column) {return columnNames[column];} 
+			public Class getColumnClass(int c) {return getValueAt(0, c).getClass();} 
+			public boolean isCellEditable(int row, int col) {return false ;} 
+			public void setValueAt(Object aValue, int row, int column) 
+			{ tabledata[row][column] = aValue; 
+			fireTableCellUpdated(row, column); //needed if data could change
+			} 
+		}; 
+		//update the model
+		table.setModel(dataModel);
+	}
 
 	//called after a button click in the table
 	private void displayImageInPanel(int index)

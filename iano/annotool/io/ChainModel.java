@@ -9,9 +9,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import javax.swing.JProgressBar;
+import javax.swing.SwingUtilities;
+
 import annotool.Annotator;
 import annotool.classify.Classifier;
-import annotool.classify.SVMClassifier;
 import annotool.classify.SavableClassifier;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
@@ -28,10 +30,11 @@ public class ChainModel {
 	private String label = null;
 	private ArrayList<Extractor> extractors = null;
 	private ArrayList<Selector> selectors = null;
-	private int[] selectedIndices = null;
 	private String classifierName = null;
 	private Classifier classifier = null;
 	private HashMap<String, String> classParams = null;
+	
+	JProgressBar bar = null;
 	
 	public ChainModel() {
 		extractors = new ArrayList<Extractor>();
@@ -69,6 +72,8 @@ public class ChainModel {
         	
         	writer.newLine();
         	
+        	setProgress(5);
+        	
         	//Write feature extractor
         	for(Extractor ex : extractors) {
 	        	writer.write("[FEATURE_EXTRACTOR]" + newLine);
@@ -79,18 +84,24 @@ public class ChainModel {
 	        	}
 	        	writer.write("[PARAMETER_END]" + newLine);
         	}
+        	
+        	setProgress(15);
+        	
         	//Write feature selector
         	for(Selector sel : selectors) {
         		writer.write("[FEATURE_SELECTOR]" + newLine);
         		writer.write("Name=" + sel.getName() + newLine);
+        		int[] selectedIndices = sel.getSelectedIndices();
+        		if(selectedIndices != null){
+        			writer.write("[SELECTED_INDICES_START]" + newLine);
+    	        	for(int i=0; i < selectedIndices.length; i++) {
+    	        		writer.write(selectedIndices[i] + newLine);
+    	        	}
+    	        	writer.write("[SELECTED_INDICES_END]" + newLine);
+        		}
         	}
-        	if(selectedIndices != null) {
-        		writer.write("[SELECTED_INDICES_START]" + newLine);
-	        	for(int i=0; i < selectedIndices.length; i++) {
-	        		writer.write(selectedIndices[i] + newLine);
-	        	}
-	        	writer.write("[SELECTED_INDICES_END]" + newLine);
-        	}	
+        	
+        	setProgress(30);
         	
         	//Write classifier
         	writer.write("[CLASSIFIER]" + newLine);
@@ -111,8 +122,12 @@ public class ChainModel {
         		}
         	}
         	
+        	setProgress(80);
+        	
         	writer.flush();
         	writer.close();
+        	
+        	setProgress(100);
         }
         catch(IOException ex) {
         	System.out.println("Exception occured while writing file: " + file.getName());
@@ -148,7 +163,17 @@ public class ChainModel {
 		while(scanner.hasNextLine()) {
 			String line = scanner.nextLine();
 			if(line.startsWith("#")) {
-				//Ignore comments
+				//Read channel information
+				if(line.startsWith("# Channel")) {
+					channel = line.replaceFirst("# Channel:", "").trim();
+				}
+				else if(line.startsWith("# Image Size:")) {
+					imageSize = line.replaceFirst("# Image Size:", "").trim();
+				}
+				else if(line.startsWith("# Label:")) {
+					label = line.replaceFirst("# Label:", "").trim();
+				}
+				//Ignore other comments
 				continue;
 			}
 			if(line.equals("[FEATURE_EXTRACTOR]")) {
@@ -177,7 +202,8 @@ public class ChainModel {
 						else
 							throw new Exception("Invalid extractor parameter.");
 					}
-				}//End extractor parameters				
+				}//End extractor parameters	
+				extractors.add(ex);
 			}
 			
 			if(line.equals("[FEATURE_SELECTOR]")) {
@@ -191,22 +217,25 @@ public class ChainModel {
 				}
 				else
 					throw new Exception("Invalid chain file.");
-			}//End Feature Selector
 				
-			//Read selected indices			
-			if(line.equals("[SELECTED_INDICES_START]")) {
-				ArrayList<Integer> indices = new ArrayList<Integer>();
-				while(scanner.hasNextLine()) {
-					line = scanner.nextLine();
-					if(line.equals("[SELECTED_INDICES_END]"))
-						break;
-					indices.add(Integer.valueOf(line));						
-				}
-				//Convert to int array
-				selectedIndices = new int[indices.size()];
-				for(int i=0; i < indices.size(); i++)
-					selectedIndices[i] = indices.get(i);
-			}	
+				//Read selected indices
+				line = scanner.nextLine();
+				if(line.equals("[SELECTED_INDICES_START]")) {
+                    ArrayList<Integer> indices = new ArrayList<Integer>();
+                    while(scanner.hasNextLine()) {
+                    	line = scanner.nextLine();
+                        if(line.equals("[SELECTED_INDICES_END]"))
+                        	break;
+                        indices.add(Integer.valueOf(line));                                             
+                    }
+                    //Convert to int array
+                    int[] selectedIndices = new int[indices.size()];
+                    for(int i=0; i < indices.size(); i++)
+                    	selectedIndices[i] = indices.get(i);
+                    sel.setSelectedIndices(selectedIndices);
+				}				
+				selectors.add(sel);
+			}//End Feature Selector
 			
 			if(line.equals("[CLASSIFIER]")) {
 				line = scanner.nextLine();
@@ -237,13 +266,38 @@ public class ChainModel {
 				//Read classifier model path
 				if(line.startsWith("Path=")) {
 					String path = line.replaceFirst("Path=", "");
-					Classifier classifierObj = (new Annotator()).getClassifierGivenName(classifierName, classParams);
-					if(classifierObj instanceof SVMClassifier) {
-						((SVMClassifier)classifier).loadModel(path);
+					classifier = (new Annotator()).getClassifierGivenName(classifierName, classParams);
+					if(classifier instanceof SavableClassifier) {
+						//TODO: Load model from file and set the model for the classifier (may be the loadmodel() should set as well)
+						((SavableClassifier)classifier).setModel(((SavableClassifier)classifier).loadModel(path));
 					}
 				}
 			}
 		}
+	}
+	
+	/*
+	 * Used for testing that the loaded model is valid. It is valid if there is at least a classifier model
+	 */
+	public boolean isValid() {
+		if(classifier instanceof SavableClassifier) {
+			if(((SavableClassifier)classifier).getModel() != null)
+				return true;
+		}		
+		return false;
+	}
+	
+	/*
+	 * Shows progress in progress bar if there is one
+	 */
+	private void setProgress(final int currentProgress)
+	{
+		if (bar!=null) 
+	        SwingUtilities.invokeLater(new Runnable() {
+	            public void run() {
+	            	bar.setValue(currentProgress);
+	            }
+	        });
 	}
 	
 	public void addExtractor(Extractor ex) {
@@ -313,13 +367,6 @@ public class ChainModel {
 	public void setSelectors(ArrayList<Selector> selectors) {
 		this.selectors = selectors;
 	}
-
-	public int[] getSelectedIndices() {
-		return selectedIndices;
-	}
-	public void setSelectedIndices(int[] selectedIndices) {
-		this.selectedIndices = selectedIndices;
-	}
 	public String getClassifierName() {
 		return classifierName;
 	}
@@ -337,5 +384,8 @@ public class ChainModel {
 	}
 	public void setClassParams(HashMap<String, String> classParams) {
 		this.classParams = classParams;
+	}
+	public void setBar(JProgressBar bar) {
+		this.bar = bar;
 	}
 }

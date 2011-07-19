@@ -5,6 +5,7 @@ import java.util.HashMap;
 public class Selector {
 	private String name = null;
 	private HashMap<String, String> params = null;
+	private int[] selectedIndices = null;
 	
 	public Selector(String name) {
 		this.name = name;
@@ -25,5 +26,13 @@ public class Selector {
 	}
 	public void addParams(String key, String value) {
 		this.params.put(key, value);
+	}
+
+	public int[] getSelectedIndices() {
+		return selectedIndices;
+	}
+
+	public void setSelectedIndices(int[] selectedIndices) {
+		this.selectedIndices = selectedIndices;
 	}
 }

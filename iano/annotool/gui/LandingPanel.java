@@ -6,9 +6,11 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 
 import annotool.Annotator;
+import annotool.gui.model.Utils;
 
 import java.awt.event.*;
 import java.awt.CardLayout;
+import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
@@ -36,14 +38,23 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 	private JSpinner spFold;
 	
 	//Path of image icons for the buttons on main screen
-	final static String imgMS = "images/ms.png";
-	final static String imgTrain = "images/train.png";
-	final static String imgAnnotate = "images/anno.png";
+	final static String IMGMS = "images/ms.png";
+	final static String IMGTRAIN = "images/train.png";
+	final static String IMGANNOTATE = "images/anno.png";
+	
+	//Text for labels
+	final static String TXTMS = "Model Selection";
+	final static String TXTMSSMALL = "Select algorithm using training/testing image sets or cross validation.";
+	final static String TXTTRAIN = "Training Only";
+	final static String TXTTRAINSMALL = "Training using an entire set.";
+	final static String TXTANNOTATE = "Annotation";
+	final static String TXTANNOTATESMALL = "Image classification and labelling using a trained model.";
 	
 	//String for defining panels in card layout
 	final static String MAIN = "First Panel";
 	final static String MODESELECT = "Mode Select Panel";
 	final static String IMAGEREADY = "Image Ready Panel";
+	final static String ANNOTYPES = "Annotation Type Selection Panel";
 	
 	//Larger font for titles
 	Font titleFont = new Font("Dialog", 1, 14);
@@ -60,6 +71,7 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		
 		buildMainScreen();
 		buildModeSelectScreen();
+		buildAnnoTypesScreen();
 		
 		//Add panel for loaded images
 		pnlImages = new ImageReadyPanel(gui);
@@ -78,22 +90,26 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		pnlMainScreen.setLayout(new GridLayout(3, 1, 15, 15));
 		
 		//Icons
-		iconMS = createImageIcon("/" + imgMS);
-		iconTrain = createImageIcon("/" + imgTrain);
-		iconAnnotate = createImageIcon("/" + imgAnnotate);
+		iconMS = Utils.createImageIcon("/" + IMGMS);
+		iconTrain = Utils.createImageIcon("/" + IMGTRAIN);
+		iconAnnotate = Utils.createImageIcon("/" + IMGANNOTATE);
 		
 		//If image was not loaded, use relative path
 		if(iconMS == null)
-			iconMS = new ImageIcon(imgMS);
+			iconMS = new ImageIcon(IMGMS);
 		if(iconTrain == null)
-			iconTrain = new ImageIcon(imgTrain);
+			iconTrain = new ImageIcon(IMGTRAIN);
 		if(iconAnnotate == null)
-			iconAnnotate = new ImageIcon(imgAnnotate);
+			iconAnnotate = new ImageIcon(IMGANNOTATE);
 		
 		//Buttons
 		btnModelSelect = new JButton(iconMS);
 		btnTrain = new JButton(iconTrain);
 		btnAnnotate = new JButton(iconAnnotate);
+		
+		btnModelSelect.setPreferredSize(new Dimension(120, 100));
+		btnTrain.setPreferredSize(new Dimension(120, 100));
+		btnAnnotate.setPreferredSize(new Dimension(120, 100));
 		
 		//Button Listeners
 		btnModelSelect.addActionListener(this);
@@ -101,12 +117,12 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		btnAnnotate.addActionListener(this);
 		
 		//Labels
-		lbMS = new JLabel("Model Selection");
-		lbTrain = new JLabel("Training Only");
-		lbAnnotate = new JLabel("Annotation");
-		lbMSSmall = new JLabel("Select algorithm using training/testing image sets or cross validation.");
-		lbTrainSmall = new JLabel("Training using an entire set.");
-		lbAnnotateSmall = new JLabel("Image classification and labelling using a trained model.");
+		lbMS = new JLabel(TXTMS);
+		lbTrain = new JLabel(TXTTRAIN);
+		lbAnnotate = new JLabel(TXTANNOTATE);
+		lbMSSmall = new JLabel(TXTMSSMALL);
+		lbTrainSmall = new JLabel(TXTTRAINSMALL);
+		lbAnnotateSmall = new JLabel(TXTANNOTATESMALL);
 		
 		//Set a larger font for the title labels
 		lbMS.setFont(titleFont);
@@ -247,7 +263,15 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		//Disable the fold selection panel by default
 		this.foldEnabled(false); 
 	}
-	
+	/* 
+	 * Creates the screen for annotation type selection
+	 * It contains three buttons for three main tasks : Image Classification, Image Annotation and ROI Annotation
+	 */
+	private void buildAnnoTypesScreen()
+	{
+		AnnoTypePanel pnlAnnoType = new AnnoTypePanel(gui);
+		this.add(pnlAnnoType, ANNOTYPES);
+	}
 	/**
      * Creates an ImageIcon if the path is valid.
      * @param String - resource path
@@ -278,24 +302,23 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		}
 		else if(e.getSource() == btnTrain) 
 		{
-			Annotator.output = Annotator.OUTPUT_CHOICES[3];
+			Annotator.output = Annotator.TO;
 			pnlImages.setMode();
-			AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[3]);
+			AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.TO);
 		}
 		else if(e.getSource() == btnAnnotate) 
 		{
-			Annotator.output = Annotator.OUTPUT_CHOICES[4];
-			pnlImages.setMode();
-			AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[4]);
+			CardLayout cl = (CardLayout)(this.getLayout());
+			cl.show(this, ANNOTYPES);			
 		}
 		else if(e.getSource() == btnLoadImages)
 		{
 			if(rbTT.isSelected())
 			{
 				//Load separate training and testing image sets
-				Annotator.output = Annotator.OUTPUT_CHOICES[0];
+				Annotator.output = Annotator.TT;
 				pnlImages.setMode();
-				AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[0]);
+				AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.TT);
 			}
 			else
 			{
@@ -308,9 +331,9 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 					Annotator.shuffleFlag = (cbShuffle.isSelected()) ? "true" : "false";
 				}
 				//Load one image set for cross validation
-				Annotator.output = Annotator.OUTPUT_CHOICES[1];
+				Annotator.output = Annotator.CV;
 				pnlImages.setMode();
-				AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[1]);
+				AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.CV);
 			}
 		}		
 	}

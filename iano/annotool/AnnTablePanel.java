@@ -150,6 +150,13 @@ public class AnnTablePanel extends JPanel  {
 			currentCVTable.updateTable(predictions);
 		adjustFrame();
 	}
+	
+	public void updateAnnotationTable(Annotation[][] predictions, String[] modelLabels)
+	{
+		if (currentCVTable != null)
+			currentCVTable.updateTable(predictions, modelLabels);
+		adjustFrame();
+	}
 
 	private void adjustFrame()
 	{
