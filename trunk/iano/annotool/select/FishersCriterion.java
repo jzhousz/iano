@@ -493,10 +493,10 @@ public class FishersCriterion implements FeatureSelector
     }
 
     public float[][] selectFeaturesGivenIndices(int[] indices) {
-        float[][] selectedFeatures = new float[this.features.length][this.output_number_of_features];
+        float[][] selectedFeatures = new float[this.features.length][indices.length];
 
         for (int i = 0; i < this.features.length; i++) {
-            for (int j = 0; j < this.output_number_of_features; j++) {
+            for (int j = 0; j < indices.length; j++) {
                 selectedFeatures[i][j] = this.features[i][indices[j]];
             }
         }

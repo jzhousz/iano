@@ -34,6 +34,8 @@ public class ModelSaver implements Runnable {
 		
 		//Iterate through the chain models and write a file for each label
 		for(int i = 0; i < chainModels.length; i++) {
+			pnlOutput.setOutput("Saving model: " + (i + 1) + "/" + chainModels.length);	//Display which model is being saved
+			chainModels[i].setBar(bar);													//Specify the progress bar that should be used by the ChainModel
         	chainModels[i].write(file);
         	try {
         		Thread.sleep(100);
@@ -43,7 +45,7 @@ public class ModelSaver implements Runnable {
         		pnlOutput.setOutput(ex.getMessage());
         		return;
         	}
-        	setProgress((i + 1)*100/chainModels.length);
+        	//setProgress((i + 1)*100/chainModels.length);//Removed because setting bar progress has been delegated to ChainModel
         }
         pnlOutput.setOutput("Save complete. Dump file base path: " + file.getPath());
         
@@ -51,7 +53,7 @@ public class ModelSaver implements Runnable {
 		for(int i = 0; i < buttons.length; i++)
 			buttons[i].setEnabled(true);
 	}
-	private void setProgress(final int currentProgress)
+	/*private void setProgress(final int currentProgress)
 	{
 		if (bar!=null) 
 	        SwingUtilities.invokeLater(new Runnable() {
@@ -59,5 +61,5 @@ public class ModelSaver implements Runnable {
 	            	bar.setValue(currentProgress);
 	            }
 	        });
-	}
+	}*/
 }

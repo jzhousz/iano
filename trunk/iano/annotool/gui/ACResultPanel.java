@@ -40,8 +40,11 @@ import com.itextpdf.text.Font;
 import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Font.FontFamily;
+import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.DefaultFontMapper;
 import com.itextpdf.text.pdf.PdfContentByte;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfTemplate;
 import com.itextpdf.text.pdf.PdfWriter;
 
@@ -81,6 +84,13 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	public static final Font FONT_HEADING = new Font(FontFamily.HELVETICA, 14, Font.BOLDITALIC, new BaseColor(230, 120, 0));
 	public static final Font FONT_HEADING2 = new Font(FontFamily.HELVETICA, 12, Font.BOLD, new BaseColor(130, 60, 0));
 	public static final Font FONT_LABEL = new Font(FontFamily.HELVETICA, 12, Font.BOLD, BaseColor.BLACK);
+	public static final Font FONT_TABLE_TITLE = new Font(FontFamily.HELVETICA, 12, Font.BOLD, BaseColor.WHITE);
+	public static final Font FONT_TABLE_TITLE2 = new Font(FontFamily.HELVETICA, 11, Font.BOLD, BaseColor.WHITE);
+	
+	//Color objects : table
+	public static final BaseColor COLOR_TITLE = new BaseColor(229, 120, 0);
+	public static final BaseColor COLOR_TITLE2 = new BaseColor(244, 164, 96);
+	public static final BaseColor COLOR_BORDER = new BaseColor(185, 100, 0);
 	
 	public ACResultPanel(JTabbedPane parentPane, int imgWidth, int imgHeight, String channel, ArrayList<Chain> selectedChains) {
 	   	this.parentPane = parentPane;
@@ -92,11 +102,11 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	   	
 	   	//Set data members to use later
 	   	imageSet = new File(Annotator.dir).getAbsolutePath();
-	   	if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[0])) {
+	   	if(Annotator.output.equals(Annotator.TT)) {
 			mode = "Testing/Training";
 			testSet = new File(Annotator.testdir).getAbsolutePath();
 		}
-		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[1])) {
+		else if(Annotator.output.equals(Annotator.CV)) {
 			mode = "Cross Validation " + "[Fold: " + Annotator.fold + "]";
 		}
 	   	
@@ -135,11 +145,11 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		lbImgExt = new JLabel("<html><b>Image Extension: </b>" + Annotator.ext + "</html>");
 		lbImgSize = new JLabel("<html><b>Image Size: </b>" + imgWidth + "x" + imgHeight + "</html>");
 		
-		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[0])) {
+		if(Annotator.output.equals(Annotator.TT)) {
 			lbTestSet = new JLabel("<html><b>Testing Image Set: </b>" + testSet + "</html>");
 			lbTestExt = new JLabel("<html><b>Test Image Extension: </b>" + Annotator.testext + "</html>");
 		}
-		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[1])) {
+		else if(Annotator.output.equals(Annotator.CV)) {
 			lbTestSet = new JLabel("");
 			lbTestExt = new JLabel("");
 		}
@@ -230,11 +240,17 @@ public class ACResultPanel extends JPanel implements ActionListener{
 					document.open();
 					Paragraph title = new Paragraph("AUTO COMPARISON REPORT", FONT_TITLE);
 					title.setAlignment(Element.ALIGN_CENTER);
+					title.setSpacingAfter(36);
 					document.add(title);
 					
 					document.add(createImageInfo());
 					document.add(createOtherInfo());
-					document.add(createChainInfo());
+					
+					document.add(new Paragraph("Chain Information", FONT_HEADING));				
+					//Add chain table for each chain
+					for(Chain chain : selectedChains) {
+						document.add(createChainTable(chain));
+					}
 					
 					document.newPage();//TODO: Or I can check if there is enough space in the page for image first
 					
@@ -260,6 +276,8 @@ public class ACResultPanel extends JPanel implements ActionListener{
 					canvas.addTemplate(tp, 38, writer.getVerticalPosition(true)- height - 20);
 					
 					document.close();
+					
+					System.out.println("Report saved: " + file.getAbsolutePath());
 				} catch (FileNotFoundException e) {
 					JOptionPane.showMessageDialog(this,
 						    "Failed to write to the file specified.", 
@@ -276,11 +294,12 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	        }
 		}
 	}
-	//Content to write to pdf file
-	//TODO: need to make it professional
+	/*
+	 * Creates and returns the paragraph with image information
+	 */
 	private Paragraph createImageInfo() {
 		Paragraph info = new Paragraph();
-		info.setSpacingBefore(36);
+		info.setSpacingAfter(36);
 		info.add(new Paragraph("Image Information", FONT_HEADING));
 		
 		info.add(new Chunk("Image Set: ", FONT_LABEL));
@@ -291,7 +310,7 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		info.add(new Chunk(Annotator.ext));
 		info.add(Chunk.NEWLINE);
 		
-		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[0])) {
+		if(Annotator.output.equals(Annotator.TT)) {
 			info.add(new Chunk("Test Image Set: ", FONT_LABEL));
 			info.add(new Chunk(testSet));
 			info.add(Chunk.NEWLINE);
@@ -307,9 +326,12 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		
 		return info;
 	}
+	/*
+	 * Creates and returns the paragraph with other information
+	 */
 	private Paragraph createOtherInfo() {
 		Paragraph info = new Paragraph();
-		info.setSpacingBefore(36);
+		info.setSpacingAfter(36);
 		info.add(new Paragraph("Other Information", FONT_HEADING));
 		
 		info.add(new Chunk("Mode: ", FONT_LABEL));
@@ -322,53 +344,111 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		
 		return info;
 	}
-	private Paragraph createChainInfo() {
-		Paragraph info = new Paragraph();
-		info.setSpacingBefore(36);
-		info.add(new Paragraph("Chain Information", FONT_HEADING));
+	
+	/*
+	 * Creates and return table of chain information for the passed in chain
+	 */
+	private PdfPTable createChainTable(Chain chain) throws DocumentException {
+		PdfPTable table = new PdfPTable(3);
+		table.setWidthPercentage(100);
+		table.setSpacingBefore(5);
+		table.setSpacingAfter(5);
 		
-		info.add(new Chunk("-----------------------------------------------------------------------"));
-		info.add(Chunk.NEWLINE);
-		for(Chain chain : selectedChains) {
-			info.add(new Chunk("CHAIN: " + chain.getName(), FONT_HEADING2));
+		//First row for chain name
+		PdfPCell titleCell = new PdfPCell(new Phrase("Chain: " + chain.getName(), FONT_TABLE_TITLE));
+		titleCell.setColspan(3);
+		titleCell.setMinimumHeight(24f);
+		titleCell.setPadding(4);
+		titleCell.setBackgroundColor(COLOR_TITLE);
+		titleCell.setBorderColor(COLOR_BORDER);
+		
+		//Second row has three column titles
+		PdfPCell exTitleCell, selTitleCell, classTitleCell;
+		exTitleCell = new PdfPCell(new Phrase("Extractor(s)", FONT_TABLE_TITLE2));
+		selTitleCell = new PdfPCell(new Phrase("Selector(s)", FONT_TABLE_TITLE2));
+		classTitleCell = new PdfPCell(new Phrase("Classifier", FONT_TABLE_TITLE2));
+		exTitleCell.setBorderColor(COLOR_BORDER);
+		exTitleCell.setPadding(3);
+		exTitleCell.setBackgroundColor(COLOR_TITLE2);
+		selTitleCell.setBorderColor(COLOR_BORDER);
+		selTitleCell.setPadding(3);
+		selTitleCell.setBackgroundColor(COLOR_TITLE2);
+		classTitleCell.setBorderColor(COLOR_BORDER);
+		classTitleCell.setPadding(3);
+		classTitleCell.setBackgroundColor(COLOR_TITLE2);
+		
+		//Lastly, the content for each column
+		PdfPCell exCell, selCell, classCell;
+		exCell = new PdfPCell(getExtractorInfo(chain));
+		selCell = new PdfPCell(getSelectorInfo(chain));
+		classCell = new PdfPCell(getClassifierInfo(chain));
+		exCell.setBorderColor(COLOR_BORDER);
+		exCell.setPadding(3);
+		selCell.setBorderColor(COLOR_BORDER);
+		selCell.setPadding(3);
+		classCell.setBorderColor(COLOR_BORDER);
+		classCell.setPadding(3);
+		
+		//Add title cells to table
+		table.addCell(titleCell);
+		table.addCell(exTitleCell);
+		table.addCell(selTitleCell);
+		table.addCell(classTitleCell);
+		
+		//Add content cells
+		table.addCell(exCell);
+		table.addCell(selCell);
+		table.addCell(classCell);		
+		
+		return table;
+	}
+	/*
+	 * Creates and returns the paragraph of extractor info for passed in chain
+	 */
+	private Paragraph getExtractorInfo(Chain chain) {
+		Paragraph info = new Paragraph();
+		for(Extractor ex : chain.getExtractors()) {
+			info.add(new Chunk(ex.getName()));
 			info.add(Chunk.NEWLINE);
-			
-			info.add(new Paragraph("Extractor(s)", FONT_LABEL));
-			for(Extractor ex : chain.getExtractors()) {
-				info.add(new Chunk(ex.getName()));
-				info.add(Chunk.NEWLINE);
-				for (String parameter : ex.getParams().keySet()) {
-					info.add(new Chunk(parameter + "=" + ex.getParams().get(parameter)));
-					info.add(Chunk.NEWLINE);
-	        	}
-				info.add(Chunk.NEWLINE);
-			}
-			
-			info.add(new Paragraph("Selector(s)", FONT_LABEL));
-			for(Selector sel : chain.getSelectors()) {
-				info.add(new Chunk(sel.getName()));
-				info.add(Chunk.NEWLINE);
-				for (String parameter : sel.getParams().keySet()) {
-					info.add(new Chunk(parameter + "=" + sel.getParams().get(parameter)));
-					info.add(Chunk.NEWLINE);
-	        	}
-				info.add(Chunk.NEWLINE);
-			}
-			
-			info.add(new Paragraph("Classifier", FONT_LABEL));
-			info.add(new Chunk(chain.getClassifier()));
-			info.add(Chunk.NEWLINE);
-			for (String parameter : chain.getClassParams().keySet()) {
-				info.add(new Chunk(parameter + "=" + chain.getClassParams().get(parameter)));
+			for (String parameter : ex.getParams().keySet()) {
+				info.add(new Chunk(parameter + "=" + ex.getParams().get(parameter)));
 				info.add(Chunk.NEWLINE);
         	}
+		}
+		return info;
+	}
+	/*
+	 * Creates and returns the paragraph of selector info for passed in chain
+	 */
+	private Paragraph getSelectorInfo(Chain chain) {
+		Paragraph info = new Paragraph();
+		for(Selector sel : chain.getSelectors()) {
+			info.add(new Chunk(sel.getName()));
 			info.add(Chunk.NEWLINE);
-			info.add(new Chunk("-----------------------------------------------------------------------"));
+			for (String parameter : sel.getParams().keySet()) {
+				info.add(new Chunk(parameter + "=" + sel.getParams().get(parameter)));
+				info.add(Chunk.NEWLINE);
+        	}
+		}
+		return info;
+	}
+	/*
+	 * Creates and returns the paragraph of classifier info for passed in chain
+	 */
+	private Paragraph getClassifierInfo(Chain chain) {
+		Paragraph info = new Paragraph();		
+		info.add(new Chunk(chain.getClassifier()));
+		info.add(Chunk.NEWLINE);
+		for (String parameter : chain.getClassParams().keySet()) {
+			info.add(new Chunk(parameter + "=" + chain.getClassParams().get(parameter)));
 			info.add(Chunk.NEWLINE);
-		}		
+    	}
 		return info;
 	}
 	
+	/*
+	 * Displays the list of algorithms from the chains in the gui
+	 */
 	private void showChainDetails() {
 		taChainDetail.setText("");
 		for(Chain chain : selectedChains) {

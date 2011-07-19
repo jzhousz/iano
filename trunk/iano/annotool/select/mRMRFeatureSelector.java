@@ -100,10 +100,10 @@ public class mRMRFeatureSelector implements FeatureSelector
 	
 	public float[][] selectFeaturesGivenIndices(int[] indices)
 	{
-		float[][] selectedFeatures = new float[length][numberofFeatures];
+		float[][] selectedFeatures = new float[length][indices.length];
 		
 		for(int i=0; i<length; i++)
-			for(int j=0; j<numberofFeatures; j++)
+			for(int j=0; j<indices.length; j++)
 			{
 				//System.out.println("j: " + j + "feature index"+ indices[j]);
 				selectedFeatures[i][j] = features[i][indices[j]];

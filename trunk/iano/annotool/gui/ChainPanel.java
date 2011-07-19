@@ -29,8 +29,10 @@ import annotool.classify.Classifier;
 import annotool.classify.SavableClassifier;
 import annotool.classify.Validator;
 import annotool.gui.model.Chain;
+import annotool.gui.model.ChainFilter;
 import annotool.gui.model.ChainTableModel;
 import annotool.gui.model.Extractor;
+import annotool.gui.model.ModelFilter;
 import annotool.gui.model.ModelSaver;
 import annotool.gui.model.Selector;
 import annotool.gui.model.Utils;
@@ -47,7 +49,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	private JScrollPane scrollPane = null;
 	
 	private JButton btnNew, btnRemove, 
-					btnSave, btnLoad, 
+					btnSaveChain, btnLoadChain, 
 					btnRun, btnSaveModel;
 	private ChainTableModel tableModel = new ChainTableModel();
 	
@@ -57,7 +59,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	
 	AutoCompFrame gui = null;
 	
-	JFileChooser fileChooser = new JFileChooser();
+	JFileChooser fileChooser = null;
 	
 	private Thread thread = null;
 	private boolean isRunning = false;
@@ -82,6 +84,9 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		this.gui = gui;
 		gui.setButtonsEnabled(false);
 		this.pnlOutput = pnlOutput;
+		
+		fileChooser = new JFileChooser();
+		fileChooser.setAcceptAllFileFilterUsed(false); //Remove "all files" options from file chooser
 		
 		this.setLayout(new BorderLayout());
 		this.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -130,11 +135,11 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnRemove = new JButton("Remove");
 		btnRemove.setEnabled(false);
 		btnRemove.addActionListener(this);		
-		btnSave = new JButton("Save Chains");
-		btnSave.setEnabled(false);
-		btnSave.addActionListener(this);
-		btnLoad = new JButton("Load Chains");
-		btnLoad.addActionListener(this);
+		btnSaveChain = new JButton("Save Chains");
+		btnSaveChain.setEnabled(false);
+		btnSaveChain.addActionListener(this);
+		btnLoadChain = new JButton("Load Chains");
+		btnLoadChain.addActionListener(this);
 		btnRun = new JButton("Run");
 		btnRun.setEnabled(false);
 		btnRun.addActionListener(this);
@@ -145,8 +150,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		pnlButton = new JPanel(new GridLayout(3, 2));
 		pnlButton.add(btnNew);
 		pnlButton.add(btnRemove);
-		pnlButton.add(btnSave);
-		pnlButton.add(btnLoad);
+		pnlButton.add(btnSaveChain);
+		pnlButton.add(btnLoadChain);
 		pnlButton.add(btnRun);
 		pnlButton.add(btnSaveModel);
 		
@@ -208,7 +213,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			taDetail.setText("");
 			setButtonState();
 		}
-		else if(ev.getSource().equals(btnSave)) {
+		else if(ev.getSource().equals(btnSaveChain)) {
 			//Save chains to file
 			ArrayList<Chain> chainList = new ArrayList<Chain>();
 			
@@ -222,7 +227,10 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 					    JOptionPane.INFORMATION_MESSAGE);
 				return;
         	}
-			int returnVal = fileChooser.showSaveDialog(this);			
+        	
+        	fileChooser.resetChoosableFileFilters();
+        	fileChooser.addChoosableFileFilter(new ChainFilter());
+			int returnVal = fileChooser.showSaveDialog(this);
 	        if (returnVal == JFileChooser.APPROVE_OPTION) {	        	
 	        	ChainIO chainSaver = new ChainIO();
 	        	try {
@@ -242,7 +250,9 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        	}
 	        }
 		}
-		else if(ev.getSource().equals(btnLoad)) {
+		else if(ev.getSource().equals(btnLoadChain)) {
+			fileChooser.resetChoosableFileFilters();
+			fileChooser.addChoosableFileFilter(new ChainFilter());
 			int returnVal = fileChooser.showOpenDialog(this);
 			
 	        if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -304,7 +314,9 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 				
 				if(choice == JOptionPane.CANCEL_OPTION)
 					return;
-				
+
+				fileChooser.resetChoosableFileFilters();
+				fileChooser.addChoosableFileFilter(new ModelFilter());
 		        int returnVal = fileChooser.showSaveDialog(this);
 	
 		        if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -328,13 +340,13 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	private void setButtonState() {
 		if(tableModel.getRowCount() > 0) {
 			btnRemove.setEnabled(true);
-			btnSave.setEnabled(true);
+			btnSaveChain.setEnabled(true);
 			btnRun.setEnabled(true);
 			gui.setButtonsEnabled(true);
 		}
 		else {
 			btnRemove.setEnabled(false);
-			btnSave.setEnabled(false);
+			btnSaveChain.setEnabled(false);
 			btnRun.setEnabled(false);
 			gui.setButtonsEnabled(false);
 		}
@@ -453,16 +465,16 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnRun.setEnabled(false);
 		btnNew.setEnabled(false);
 		btnRemove.setEnabled(false);
-		btnLoad.setEnabled(false);
+		btnLoadChain.setEnabled(false);
 		btnSaveModel.setEnabled(false);
 		gui.setButtonsEnabled(false);
 		tblChain.setEnabled(false);
 		
 		//Initiate appropriate process
-		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[0])) {				//TT Mode
+		if(Annotator.output.equals(Annotator.TT)) {				//TT Mode
 			ttRun();
 		}
-		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[1])) {			//Cross validation mode
+		else if(Annotator.output.equals(Annotator.CV)) {			//Cross validation mode
 			cvRun();			
 		}
 		
@@ -473,11 +485,213 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnRun.setEnabled(true);
 		btnNew.setEnabled(true);
 		btnRemove.setEnabled(true);
-		btnLoad.setEnabled(true);
+		btnLoadChain.setEnabled(true);
 		btnSaveModel.setEnabled(true);
 		gui.setButtonsEnabled(true);
 		tblChain.setEnabled(true);
 	}
+	//Training/Testing
+	private void ttRun() {
+		Annotator anno = new Annotator();
+		
+		//read images and wrapped into DataInput instances.
+	    DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);
+	    DataInput testingProblem = new DataInput(Annotator.testdir, Annotator.testext, channel);	        
+	
+	    int[] resArr = new int[2]; //place holder for misc results
+	    ArrayList<String> annoLabels = new ArrayList<String>();
+	    int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels);
+	    //get statistics from training set
+	    int numOfAnno = resArr[0];
+	    anno.setAnnotationLabels(annoLabels);	        
+	
+	    //testing set targets
+	    int[][] testingTargets = anno.readTargets(testingProblem, Annotator.testtargetFile, resArr, null);
+	    
+	    
+	    //Initialize float array to hold rates for each annotation for each selected chain and list of selected chains to pass to result panel
+	    ArrayList<Chain> selectedChains = new ArrayList<Chain>(); 
+	    int chainCount = 0;
+	    for(int row = 0; row < tableModel.getRowCount(); row++) {
+	    	if((Boolean)tableModel.getValueAt(row, COL_CHECK)) {
+	    		chainCount++;
+	    		selectedChains.add((Chain)tableModel.getValueAt(row, COL_CHAIN));
+	    	}
+	    }
+	    float[][] rates = new float[chainCount][numOfAnno];
+	    chainCount = 0; //Reset chain count to use later to put rates for each selected chain
+	    
+	    boolean executed = false;	//Set to true if at least one chain is executed
+	    
+	  	//Keep features to be dumped into chain file
+	    int imgWidth = trainingProblem.getWidth();
+	    int imgHeight = trainingProblem.getHeight();
+	    
+	    //Chain Models to keep track of the best model for each target
+	    chainModels = new ChainModel[numOfAnno];
+	    
+	    //Initialize common features for chain models
+	    for(int i = 0; i < numOfAnno; i++) {
+	    	chainModels[i] = new ChainModel();
+	    	//Save information to dump in chain file
+	    	chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
+	    	chainModels[i].setTestingSet(new File(Annotator.testdir).getAbsolutePath());
+	    	chainModels[i].setMode("Training/Testing");
+	    	chainModels[i].setChannel(channel);
+	    	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
+	    	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
+	    }
+	    
+	    for(int row = 0; row < tableModel.getRowCount(); row++) {
+	    	//Only use the checked chains
+	    	if(!(Boolean)tableModel.getValueAt(row, COL_CHECK))
+	    		continue;        	
+	    
+	    	executed = true;
+	    	
+	    	selectRow(row);
+	    	//feature extraction.
+	        if (!setProgress(30))  {
+	            return;
+	        }
+	        
+	    	Chain chain = (Chain)tableModel.getValueAt(row, COL_CHAIN);//Second column is chain object
+	    	
+	    	pnlOutput.setOutput("Processing " + chain.getName() + ":");
+	    	
+	    	//Chain list loaded from file may have incomplete chain in the middle if the file has been tampered with
+	    	if(!chain.isComplete()) {
+	    		pnlOutput.setOutput("Incomplete chain encountered. Chain = " + chain.getName());
+	    		continue;
+	    	}
+	    	
+	        pnlOutput.setOutput("Extracting features...");
+	        
+	        //Start of extraction
+	        String extractor = "None";
+	        HashMap<String, String> params = new HashMap<String, String>();
+	        
+	        int numExtractors = chain.getExtractors().size();
+	        float[][][] exTrainFeatures = new float[numExtractors][][];
+	        float[][][] exTestFeatures = new float[numExtractors][][];
+	        
+	        int trainSize = 0, testSize = 0;	//To keep track of total size
+	        for(int exIndex=0; exIndex < numExtractors; exIndex++) {
+	        	extractor = chain.getExtractors().get(exIndex).getName();
+	        	params = chain.getExtractors().get(exIndex).getParams();
+	        	
+	        	exTrainFeatures[exIndex] = anno.extractGivenAMethod(extractor, params, trainingProblem);
+	        	exTestFeatures[exIndex] = anno.extractGivenAMethod(extractor, params, testingProblem);
+	        	
+	        	trainSize += exTrainFeatures[exIndex][0].length;
+	        	testSize += exTestFeatures[exIndex][0].length;
+	        }
+	        
+	        float[][] trainingFeatures = null;
+	        float[][] testingFeatures = null;
+	        
+	        if(numExtractors < 1) {	//If no extractor, call the function by passing "None"
+	        	trainingFeatures = anno.extractGivenAMethod(extractor, params, trainingProblem);
+	        	testingFeatures = anno.extractGivenAMethod(extractor, params, testingProblem);
+	        }
+	        else {	//Else, create feature array with enough space to hold data from all extractors 
+	        	trainingFeatures = new float[trainingProblem.getLength()][trainSize];
+	        	testingFeatures = new float[testingProblem.getLength()][testSize];
+	        	
+	        	int destPosTrain = 0, destPosTest = 0;
+	        	for(int exIndex=0; exIndex < numExtractors; exIndex++) {
+	        		for(int item=0; item < trainingFeatures.length; item++) {
+	        			System.arraycopy(exTrainFeatures[exIndex][item], 0, trainingFeatures[item], destPosTrain, exTrainFeatures[exIndex][item].length);
+		        		System.arraycopy(exTestFeatures[exIndex][item], 0, testingFeatures[item], destPosTest, exTestFeatures[exIndex][item].length);
+	        		}
+	        		destPosTrain += exTrainFeatures[exIndex][0].length;
+	        		destPosTest += exTestFeatures[exIndex][0].length;
+	        	}
+	        }
+	        exTrainFeatures = null;
+	        exTestFeatures = null;
+	        //End of extraction
+	        
+	        //apply feature selector and classifier
+	        if (!setProgress(50)) {
+	            return;
+	        }
+	        //trainingTestingOutput(trainingFeatures, testingFeatures, trainingTargets, testingTargets, numOfAnno);
+	        
+	        int testingLength = testingFeatures.length;
+	        int numoffeatures;
+	
+	        //initialize structure to store annotation results
+	        Annotation[][] annotations = new Annotation[numOfAnno][testingLength];
+	        for (int i = 0; i < numOfAnno; i++) {
+	            for (int j = 0; j < testingLength; j++) {
+	                annotations[i][j] = new Annotation();
+	            }
+	        }
+	        
+	        //loop for each annotation target (one image may have multiple labels)
+	        for (int i = 0; i < numOfAnno; i++) {
+	        	ComboFeatures combo = null;
+	            if(chain.hasSelectors()) 
+	            {
+	                pnlOutput.setOutput("Selecting features...");
+	                
+	                //Apply each feature selector in the chain
+	                for(Selector selector : chain.getSelectors()) {
+		            	//Supervised feature selectors need corresponding target data
+		                combo = anno.selectGivenAMethod(selector.getName(), selector.getParams(), trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i]);
+		                //selected features overrides the passed in original features
+		                trainingFeatures = combo.getTrainingFeatures();
+		                testingFeatures = combo.getTestingFeatures();
+		                
+		                //Set the selected indices
+		                selector.setSelectedIndices(combo.getSelectedIndices());
+	                }
+	            }
+	            numoffeatures = trainingFeatures[0].length;
+	
+	            //pass the training and testing data to Validator
+	            //get rate and prediction results for testing data
+	            float rate = 0;
+	            pnlOutput.setOutput("Classifying/Annotating...");
+	            
+	            Classifier classifierObj = anno.getClassifierGivenName(chain.getClassifier(), chain.getClassParams());
+	            try {
+	            	rate = anno.classifyGivenAMethod(classifierObj, chain.getClassParams(), trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
+	            }
+	            catch(Exception ex) {
+	            	ex.printStackTrace();
+	            }
+	            
+	            rates[chainCount][i] = rate;
+	            
+	            //If rate for this target(ith target) is better with this chain,
+	            //then, save this as new best model
+	            if(rate > chainModels[i].getResult()) {
+	            	chainModels[i].setExtractors(chain.getExtractors());
+	            	chainModels[i].setSelectors(chain.getSelectors());
+	            	
+	            	chainModels[i].setClassifierName(chain.getClassifier());
+	            	chainModels[i].setClassifier(classifierObj);
+	            	chainModels[i].setClassParams(chain.getClassParams());
+	            	chainModels[i].setResult(rate);
+	            }	            	
+	            
+	            System.out.println(rate);
+	                
+	            pnlOutput.setOutput("Recognition rate for " + anno.getAnnotationLabels().get(i) + ": " + rate);
+	            if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
+	                return;
+	            }
+	        }//end of loop for annotation targets
+	        chainCount++;
+	    }//End of loop for chains
+	    
+	    //Display result
+	    if(executed)	//Display result if at least one chain is executed
+	    	gui.addTab("Auto Comparison Results", rates, anno.getAnnotationLabels(), selectedChains, imgWidth, imgHeight, channel);
+	}
+
 	private void cvRun() {
 		Annotator anno = new Annotator();
 		
@@ -552,15 +766,41 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        }
 	        pnlOutput.setOutput("Extracing features ... ");
 	        
+	        //Start of extraction
 	        String extractor = "None";
 	        HashMap<String, String> params = new HashMap<String, String>();
-	        if(chain.hasExtractors()) {
-	        	extractor = chain.getExtractors().get(0).getName();
-	        	params = chain.getExtractors().get(0).getParams();
+	        
+	        int numExtractors = chain.getExtractors().size();
+	        float[][][] exFeatures = new float[numExtractors][][];
+	        
+	        int size = 0;	//To keep track of total size
+	        for(int exIndex=0; exIndex < numExtractors; exIndex++) {
+	        	extractor = chain.getExtractors().get(exIndex).getName();
+	        	params = chain.getExtractors().get(exIndex).getParams();
+	        	
+	        	exFeatures[exIndex] = anno.extractGivenAMethod(extractor, params, problem);
+	        	
+	        	size += exFeatures[exIndex][0].length;
 	        }
 	        
-	        //for now lets just assume 1 extractor at index 0 TODO
-	        float[][] features = anno.extractGivenAMethod(extractor, params, problem);
+	        float[][] features = null;
+	        
+	        if(numExtractors < 1) {	//If no extractor, call the function by passing "None"
+	        	features = anno.extractGivenAMethod(extractor, params, problem);
+	        }
+	        else {	//Else, create feature array with enough space to hold data from all extractors 
+	        	features = new float[problem.getLength()][size];
+	        	
+	        	int destPos = 0;
+	        	for(int exIndex=0; exIndex < numExtractors; exIndex++) {
+	        		for(int item=0; item < features.length; item++) {
+	        			System.arraycopy(exFeatures[exIndex][item], 0, features[item], destPos, exFeatures[exIndex][item].length);
+	        		}
+	        		destPos += exFeatures[exIndex][0].length;
+	        	}
+	        }
+	        exFeatures = null;
+	        //End of extraction
 	        
 	        //raw data is not used after this point, set to null.: commented because used for subsequent loop runs
 	        //problem.setDataNull();
@@ -622,6 +862,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		                combo = anno.selectGivenAMethod(selector.getName(), selector.getParams(), features, targets[i]);
 		                //selected features overrides the passed in original features
 		                features = combo.getTrainingFeatures();
+		                
+		                selector.setSelectedIndices(combo.getSelectedIndices());
 	                }
 	            }
 	            numoffeatures = features[0].length;
@@ -643,11 +885,6 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            if(recograte[K] > chainModels[i].getResult()) {
 	            	chainModels[i].setExtractors(chain.getExtractors());
 	            	chainModels[i].setSelectors(chain.getSelectors());
-
-	            	if(combo != null)
-	            		chainModels[i].setSelectedIndices(combo.getSelectedIndices());
-	            	else
-	            		chainModels[i].setSelectedIndices(null);
 	            	
 	            	chainModels[i].setClassifierName(chain.getClassifier());
 	            	chainModels[i].setClassifier(classifierObj);
@@ -667,186 +904,6 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
         if(executed)	//Display result if at least one chain is executed
         	gui.addTab("Auto Comparison Results", rates, anno.getAnnotationLabels(), selectedChains, imgWidth, imgHeight, channel);
 	}
-	//Training/Testing
-	private void ttRun() {
-		Annotator anno = new Annotator();
-		
-		//read images and wrapped into DataInput instances.
-        DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);
-        DataInput testingProblem = new DataInput(Annotator.testdir, Annotator.testext, channel);	        
-      
-        int[] resArr = new int[2]; //place holder for misc results
-        ArrayList<String> annoLabels = new ArrayList<String>();
-        int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels);
-        //get statistics from training set
-        int numOfAnno = resArr[0];
-        anno.setAnnotationLabels(annoLabels);	        
-
-        //testing set targets
-        int[][] testingTargets = anno.readTargets(testingProblem, Annotator.testtargetFile, resArr, null);
-        
-        
-        //Initialize float array to hold rates for each annotation for each selected chain and list of selected chains to pass to result panel
-        ArrayList<Chain> selectedChains = new ArrayList<Chain>(); 
-        int chainCount = 0;
-        for(int row = 0; row < tableModel.getRowCount(); row++) {
-        	if((Boolean)tableModel.getValueAt(row, COL_CHECK)) {
-        		chainCount++;
-        		selectedChains.add((Chain)tableModel.getValueAt(row, COL_CHAIN));
-        	}
-        }
-        float[][] rates = new float[chainCount][numOfAnno];
-        chainCount = 0; //Reset chain count to use later to put rates for each selected chain
-        
-        boolean executed = false;	//Set to true if at least one chain is executed
-        
-      	//Keep features to be dumped into chain file
-        int imgWidth = trainingProblem.getWidth();
-        int imgHeight = trainingProblem.getHeight();
-        
-        //Chain Models to keep track of the best model for each target
-        chainModels = new ChainModel[numOfAnno];
-        
-        //Initialize common features for chain models
-        for(int i = 0; i < numOfAnno; i++) {
-        	chainModels[i] = new ChainModel();
-        	//Save information to dump in chain file
-        	chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
-        	chainModels[i].setTestingSet(new File(Annotator.testdir).getAbsolutePath());
-        	chainModels[i].setMode("Training/Testing");
-        	chainModels[i].setChannel(channel);
-        	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
-        	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
-        }
-        
-        for(int row = 0; row < tableModel.getRowCount(); row++) {
-        	//Only use the checked chains
-        	if(!(Boolean)tableModel.getValueAt(row, COL_CHECK))
-        		continue;        	
-        
-        	executed = true;
-        	
-        	selectRow(row);
-        	//feature extraction.
-            if (!setProgress(30))  {
-                return;
-            }
-            
-        	Chain chain = (Chain)tableModel.getValueAt(row, COL_CHAIN);//Second column is chain object
-        	
-        	pnlOutput.setOutput("Processing " + chain.getName() + ":");
-        	
-        	//Chain list loaded from file may have incomplete chain in the middle if the file has been tampered with
-        	if(!chain.isComplete()) {
-        		pnlOutput.setOutput("Incomplete chain encountered. Chain = " + chain.getName());
-        		continue;
-        	}
-        	
-	        pnlOutput.setOutput("Extracting features...");
-	        
-	        String extractor = "None";
-	        HashMap<String, String> params = new HashMap<String, String>();
-	        if(chain.hasExtractors()) {
-	        	extractor = chain.getExtractors().get(0).getName();
-	        	params = chain.getExtractors().get(0).getParams();
-	        }
-	        
-	        //for now lets just assume 1 extractor at index 0 TODO
-	        float[][] trainingFeatures = anno.extractGivenAMethod(extractor, params, trainingProblem);
-	        float[][] testingFeatures = anno.extractGivenAMethod(extractor, params, testingProblem);
-	        
-	        /*for(Extractor ex : chain.getExtractors()) {
-	        trainingFeatures = anno.extractGivenAMethod(ex.getName(), ex.getParams(), trainingProblem);
-	        testingFeatures = anno.extractGivenAMethod(ex.getName(), ex.getParams(), testingProblem);
-	        //TODO: append how? float[problem.length][width*height]
-        	}*/
-	        
-	        //clear data memory : commented out because these are needed in subsequent loop runs
-	        //trainingProblem.setDataNull();
-	        //testingProblem.setDataNull();
-	
-	        //apply feature selector and classifier
-	        if (!setProgress(50)) {
-	            return;
-	        }
-	        //trainingTestingOutput(trainingFeatures, testingFeatures, trainingTargets, testingTargets, numOfAnno);
-	        
-	        int testingLength = testingFeatures.length;
-	        int numoffeatures;
-	
-	        //initialize structure to store annotation results
-	        Annotation[][] annotations = new Annotation[numOfAnno][testingLength];
-	        for (int i = 0; i < numOfAnno; i++) {
-	            for (int j = 0; j < testingLength; j++) {
-	                annotations[i][j] = new Annotation();
-	            }
-	        }
-	        
-	        //loop for each annotation target (one image may have multiple labels)
-	        for (int i = 0; i < numOfAnno; i++) {
-            	ComboFeatures combo = null;
-	            if(chain.hasSelectors()) 
-	            {
-	                pnlOutput.setOutput("Selecting features...");
-	                
-	                //Apply each feature selector in the chain
-	                for(Selector selector : chain.getSelectors()) {
-		            	//Supervised feature selectors need corresponding target data
-		                combo = anno.selectGivenAMethod(selector.getName(), selector.getParams(), trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i]);
-		                //selected features overrides the passed in original features
-		                trainingFeatures = combo.getTrainingFeatures();
-		                testingFeatures = combo.getTestingFeatures();
-	                }
-	            }
-	            numoffeatures = trainingFeatures[0].length;
-	
-	            //pass the training and testing data to Validator
-	            //get rate and prediction results for testing data
-	            float rate = 0;
-	            pnlOutput.setOutput("Classifying/Annotating...");
-	            
-	            Classifier classifierObj = anno.getClassifierGivenName(chain.getClassifier(), chain.getClassParams());
-	            try {
-	            	rate = anno.classifyGivenAMethod(classifierObj, chain.getClassParams(), trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
-	            }
-	            catch(Exception ex) {
-	            	ex.printStackTrace();
-	            }
-	            
-	            rates[chainCount][i] = rate;
-	            
-	            //If rate for this target(ith target) is better with this chain,
-	            //then, save this as new best model
-	            if(rate > chainModels[i].getResult()) {
-	            	chainModels[i].setExtractors(chain.getExtractors());
-	            	chainModels[i].setSelectors(chain.getSelectors());
-
-	            	if(combo != null)
-	            		chainModels[i].setSelectedIndices(combo.getSelectedIndices());
-	            	else
-	            		chainModels[i].setSelectedIndices(null);
-	            	
-	            	chainModels[i].setClassifierName(chain.getClassifier());
-	            	chainModels[i].setClassifier(classifierObj);
-	            	chainModels[i].setClassParams(chain.getClassParams());
-	            	chainModels[i].setResult(rate);
-	            }	            	
-	            
-	            System.out.println(rate);
-	                
-	            pnlOutput.setOutput("Recognition rate for " + anno.getAnnotationLabels().get(i) + ": " + rate);
-	            if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
-	                return;
-	            }
-	        }//end of loop for annotation targets
-	        chainCount++;
-        }//End of loop for chains
-        
-        //Display result
-        if(executed)	//Display result if at least one chain is executed
-        	gui.addTab("Auto Comparison Results", rates, anno.getAnnotationLabels(), selectedChains, imgWidth, imgHeight, channel);
-	}
-	
 	/*
      * The method has 2 purposes:
      * 1. update the value of the progress bar in GUI.

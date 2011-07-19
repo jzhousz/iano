@@ -185,7 +185,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		pnlButton.add(btnSaveModel);
 		pnlButton.add(btnAnnotate);	
 		
-		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[3])) {	//If train only mode
+		if(Annotator.output.equals(Annotator.TO)) {	//If train only mode
 			btnRun.setText("Train");
 		}
 		
@@ -245,8 +245,6 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		else if (e.getSource() == btnAnnotate) {
 			if(thread == null) {
 				//TODO: check if chain models exist and apply
-				boolean modelLoaded = false;
-				
 				if(chainModels == null) {
 					JOptionPane.showMessageDialog(this,
 						    "There is no trained model in memory.", 
@@ -254,38 +252,6 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 						    JOptionPane.INFORMATION_MESSAGE);
 					return;
 				}
-				//AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.OUTPUT_CHOICES[3]);
-				
-				/*int returnVal = fileChooser.showOpenDialog(this);
-				
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-		            File file = fileChooser.getSelectedFile();
-					pnlOutput.setOutput("Loading model..");
-		            ChainModel ch = new ChainModel();
-		            try {
-		            	ch.read(file);
-		            	pnlOutput.setOutput("Model loaded successfully.");
-		            	modelLoaded = true;
-		            }
-		            catch (Exception ex) {
-		            	pnlOutput.setOutput("Model loading failure.");
-		            	System.out.println(ex.getMessage());
-		            }
-		            
-		            //Display model properties in output area
-		            //pnlOutput.setOutput("Feature Extractor: " + ch.getExtractorName());
-		            //pnlOutput.setOutput("Params:");
-		            //HashMap<String, String> params = ch.getExParams();
-		            //for (String parameter : params.keySet()) {
-		            	//pnlOutput.setOutput(parameter + "=" +params.get(parameter));
-		        	//}
-		            //pnlOutput.setOutput("Feature Selector: " + ch.getSelectorName());
-		            for(int i=0; i < ch.getSelectedIndices().length; i++)
-		            	pnlOutput.setOutput(String.valueOf(ch.getSelectedIndices()[i]));
-		            pnlOutput.setOutput("Classifier: " + ch.getClassifierName());
-		            
-		            
-		        }*/
 			}
 		}
 	}
@@ -376,13 +342,13 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		anno = new Annotator();
 		
 		//Initiate appropriate process
-		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[0])) {				//TT Mode
+		if(Annotator.output.equals(Annotator.TT)) {				//TT Mode
 			ttRun();
 		}
-		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[1])) {			//Cross validation mode
+		else if(Annotator.output.equals(Annotator.CV)) {			//Cross validation mode
 			cvRun();			
 		}
-		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[3])) {			//Training only
+		else if(Annotator.output.equals(Annotator.TO)) {			//Training only
 			trainOnly();			
 		}
 		
@@ -449,7 +415,10 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
  
                 
                 //For dump file
-                chainModels[i].setSelectedIndices(combo.getSelectedIndices());
+                Selector sel = new Selector(featureSelector);
+            	sel.setSelectedIndices(combo.getSelectedIndices());
+            	//sel.setParams(selParams);//Not used in saving model
+            	chainModels[i].addSelector(sel);
             }
 
             pnlOutput.setOutput("Creating training model...");
@@ -470,10 +439,6 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	Extractor ex = new Extractor(featureExtractor);
         	ex.setParams(exParams);
         	chainModels[i].addExtractor(ex);
-        	
-        	Selector sel = new Selector(featureSelector);
-        	//sel.setParams(selParams);//Not used in saving model
-        	chainModels[i].addSelector(sel);
         	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
@@ -560,7 +525,10 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
                 numoffeatures = trainingFeatures[0].length;
                 
                 //For dump file
-                chainModels[i].setSelectedIndices(combo.getSelectedIndices());
+                Selector sel = new Selector(featureSelector);
+            	sel.setSelectedIndices(combo.getSelectedIndices());
+            	//sel.setParams(selParams);//Not used in saving model
+            	chainModels[i].addSelector(sel);
             }
 
             //pass the training and testing data to Validator
@@ -589,10 +557,6 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	Extractor ex = new Extractor(featureExtractor);
         	ex.setParams(exParams);
         	chainModels[i].addExtractor(ex);
-        	
-        	Selector sel = new Selector(featureSelector);
-        	//sel.setParams(selParams);//Not used in saving model
-        	chainModels[i].addSelector(sel);
         	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
@@ -714,8 +678,11 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
                 
                 numoffeatures = features[0].length;
                 
-                //For chain dump
-                chainModels[i].setSelectedIndices(combo.getSelectedIndices());
+                //For dump file
+                Selector sel = new Selector(featureSelector);
+            	sel.setSelectedIndices(combo.getSelectedIndices());
+            	//sel.setParams(selParams);//Not used in saving model
+            	chainModels[i].addSelector(sel);
             }
 
             pnlOutput.setOutput("Classifying/Annotating ... ");
@@ -741,10 +708,6 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	Extractor ex = new Extractor(featureExtractor);
         	ex.setParams(exParams);
         	chainModels[i].addExtractor(ex);
-        	
-        	Selector sel = new Selector(featureSelector);
-        	//sel.setParams(selParams);//Not used in saving model
-        	chainModels[i].addSelector(sel);
         	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));

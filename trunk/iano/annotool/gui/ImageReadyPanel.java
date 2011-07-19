@@ -16,9 +16,13 @@ import java.util.ArrayList;
 
 import annotool.AnnOutputPanel;
 import annotool.AnnTablePanel;
+import annotool.Annotation;
 import annotool.Annotator;
 import annotool.gui.model.ModelFilter;
+import annotool.gui.model.ModelLoader;
+import annotool.gui.model.Utils;
 import annotool.io.ChainModel;
+import annotool.io.ReportSaver;
 
 public class ImageReadyPanel extends JPanel implements ActionListener
 {
@@ -28,7 +32,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	JLabel lbModelInfo;
 	JRadioButton rbRed, rbGreen, rbBlue;
 	JButton btnExpert, btnAutoComp,
-			btnLoadModel;
+			btnLoadModel, btnApplyModel, btnSaveReport;
 	
 	String[] channels = {  "red (channel 1)", "green (channel 2)", "blue (channel 3)" };
 	String[] channelInputs = {  "r", "g", "b" };//actual input to algorithm
@@ -43,8 +47,11 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	
 	private int openFrameCount = 0;
 	
-	public ImageReadyPanel(AnnotatorGUI gui)
-	{
+	private ModelLoader loader = null;
+	JFileChooser fileChooser = new JFileChooser();
+	private Annotation[][] annotations = null;
+	
+	public ImageReadyPanel(AnnotatorGUI gui) {
 		this.gui = gui;		
 		
 		lbModelInfo = new JLabel();
@@ -87,9 +94,15 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		btnAutoComp = new JButton("Auto Comp");
 		btnAutoComp.addActionListener(this);
 		
-		//Load model button
+		//Load and model button
+		btnApplyModel = new JButton("Apply Model");
+		btnApplyModel.addActionListener(this);
+		
 		btnLoadModel = new JButton("Load Model");
 		btnLoadModel.addActionListener(this);
+		
+		btnSaveReport = new JButton("Save Report");
+		btnSaveReport.addActionListener(this);
 		
 		//Panel for buttons
 		pnlButton = new JPanel();
@@ -116,10 +129,8 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		this.add(pnlTable, BorderLayout.CENTER);
 		
 	}
-	public void actionPerformed(ActionEvent e)
-	{
-		if(e.getSource() == btnExpert)
-		{
+	public void actionPerformed(ActionEvent e) {
+		if(e.getSource() == btnExpert) {
 			if(rbRed.isSelected())
 				Annotator.channel = channelInputs[0];
 			else if(rbGreen.isSelected())
@@ -150,8 +161,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			int y = (int)(dim.getHeight() - getHeight())/2;
 			ef.setLocation(x,y);
 		}
-		else if(e.getSource() == btnAutoComp)
-		{
+		else if(e.getSource() == btnAutoComp) {
 			if(rbRed.isSelected())
 				Annotator.channel = channelInputs[0];
 			else if(rbGreen.isSelected())
@@ -183,90 +193,127 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			int y = (int)(dim.getHeight() - getHeight())/2;
 			frame.setLocation(x,y);
 		}
-		else if(e.getSource() == btnLoadModel)
-		{	
-			ArrayList<ChainModel> chainModels = new ArrayList<ChainModel>();
-			
-			JFileChooser fileChooser = new JFileChooser();
-			fileChooser.setMultiSelectionEnabled(true);
-			fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-			fileChooser.addChoosableFileFilter(new ModelFilter());
-			
-			int returnVal = fileChooser.showOpenDialog(this);
-			
-			if (returnVal == JFileChooser.APPROVE_OPTION) {
-	            File[] files = fileChooser.getSelectedFiles();
-	            
-				pnlStatus.setOutput("Loading model..");
-				
-				//For each selected file or directory
-				for(int i=0; i < files.length; i++) {
-					if(files[i].isDirectory()) {
-						File[] childFiles = files[i].listFiles();
-					}
-		            ChainModel ch = new ChainModel();
-		            try {
-		            	ch.read(files[i]);
-			            chainModels.add(ch);
-		            	pnlStatus.setOutput("Model loaded successfully.");
-		            }
-		            catch (Exception ex) {
-		            	pnlStatus.setOutput("Model loading failure.");
-		            	System.out.println(ex.getMessage());
-		            }
+		else if(e.getSource() == btnLoadModel) {
+			loader = new ModelLoader(this);
+			if(loader.loadModels()) {
+				btnApplyModel.setEnabled(true);
+			}
+		}
+		else if(e.getSource() == btnApplyModel) {	
+			//If it is image classification mode, load the model first
+			if(Annotator.output.equals(Annotator.CL)) {
+				loader = new ModelLoader(this);
+				if(!loader.loadModel()) {					
+					return;
 				}
+			}
+			
+			//Check if model has same information for channel as the current channel selection
+			if(!loader.validate()) {
+				int choice = JOptionPane.showConfirmDialog(this,
+					    "Channel information in the loaded model(s) is different than the selected one.\n" +
+					    "Do you still want to apply?",
+					    "Confirmation",
+					    JOptionPane.OK_CANCEL_OPTION,
+					    JOptionPane.INFORMATION_MESSAGE);
+				
+				if(choice == JOptionPane.CANCEL_OPTION) {
+					pnlStatus.setOutput("Annotation cancelled by user.");
+					return;
+				}
+			}
+			
+			loader.applyModel();
+			annotations = loader.getAnnotations();
+		}
+		else if(e.getSource() == btnSaveReport) {
+			int returnVal = fileChooser.showSaveDialog(this);
+			
+	        if (returnVal == JFileChooser.APPROVE_OPTION) {
+	            File file = fileChooser.getSelectedFile();
+	            String filePath = file.getPath();
+	            if(!filePath.toLowerCase().endsWith(".pdf")) {
+	            	file = new File(filePath + ".pdf");
+	            }
+	            
+	            ReportSaver reportSaver = new ReportSaver();
+	            reportSaver.saveAnnotationReport(file, annotations);
 	        }
-			pnlStatus.setOutput(String.valueOf(chainModels.size()));
 		}
 	}
-	public AnnTablePanel getTablePanel()
-	{
+	public AnnTablePanel getTablePanel() {
 		return pnlTable;
 	}
-	public AnnOutputPanel getOutputPanel()
-	{
+	public AnnOutputPanel getOutputPanel() {
 		return pnlStatus;
 	}
-	public void channelEnabled(boolean flag)
-	{
+	public void channelEnabled(boolean flag) {
 		rbRed.setEnabled(flag);
 		rbGreen.setEnabled(flag);
 		rbBlue.setEnabled(flag);
 	}
-	public void setIs3D(boolean flag)
-	{
+	public void setIs3D(boolean flag) {
 		this.is3D = flag;
 	}
-	public void setMode()
-	{
+	public void setMode() {
 		//Information panel with label to display info		
-		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[0])) {
+		if(Annotator.output.equals(Annotator.TT)) {
 			modelInfo = "Testing/Training";
 			btnAutoComp.setEnabled(true);
 		}
-		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[1])) {
+		else if(Annotator.output.equals(Annotator.CV)) {
 			modelInfo = "Cross Validation. " + "Fold: " + Annotator.fold;
 			btnAutoComp.setEnabled(true);
 		}
-		else if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[3])) {
+		else if(Annotator.output.equals(Annotator.TO)) {
 			modelInfo = "Train Only";
 			btnAutoComp.setEnabled(false);
 		}
 		
-		if(Annotator.output.equals(Annotator.OUTPUT_CHOICES[4])) {
-			modelInfo = "Annotate";
+		//Add or remove appropriate buttons
+		pnlButton.removeAll();
+		if(Annotator.output.equals(Annotator.CL)) {
+			modelInfo = "Image Classification";
+			pnlButton.setLayout(new GridLayout(1, 2));
+			btnApplyModel.setText("Load/Apply Model");
+			pnlButton.add(btnApplyModel);
 			
-			pnlButton.removeAll();
-			pnlButton.setLayout(new GridLayout(1, 1));
+			btnSaveReport.setEnabled(false);
+			pnlButton.add(btnSaveReport);
+		}
+		else if(Annotator.output.equals(Annotator.AN)) {
+			modelInfo = "Image Annotation";
+			pnlButton.setLayout(new GridLayout(2, 2));
 			pnlButton.add(btnLoadModel);
+			
+			btnApplyModel.setText("Apply Model");
+			btnApplyModel.setEnabled(false);
+			pnlButton.add(btnApplyModel);
+			
+			btnSaveReport.setEnabled(false);
+			pnlButton.add(btnSaveReport);
 		}
 		else {
-			pnlButton.removeAll();
 			pnlButton.setLayout(new GridLayout(1, 2));
 			pnlButton.add(btnExpert);
 			pnlButton.add(btnAutoComp);
 		}
 		
 		lbModelInfo.setText("<html><b>Mode: </b>" + modelInfo + "</html>");
+	}
+	public void enableSaveReport(boolean state){
+		btnSaveReport.setEnabled(state);
+	}
+	public String getSelectedChannel() {
+		String selectedChannel = null;
+		
+		if(rbRed.isSelected())
+			selectedChannel = channelInputs[0];
+		else if(rbGreen.isSelected())
+			selectedChannel = channelInputs[1];
+		else if(rbBlue.isSelected())
+			selectedChannel = channelInputs[2];
+		
+		return selectedChannel;
 	}
 }

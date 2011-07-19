@@ -72,7 +72,14 @@ public class Annotator implements Runnable
     //mode of the annotator.
     public final static String DEFAULT_OUTPUT = "TT";
     //Choice of modes: TT: Training/Testing; CV: cross-validation; ROI: Region-Of-Interest; TO: Train Only; AN: Annotate
-    public final static String[] OUTPUT_CHOICES = {"TT", "CV", "ROI", "TO", "AN"};
+    public final static String[] OUTPUT_CHOICES = {"TT", "CV", "ROI", "TO", "AN"};//TODO: remove this because the lines below are substitute for it
+    public final static String TT = "TT"; //Training Testing
+    public final static String CV = "CV"; //Cross Validation
+    public final static String TO = "TO"; //Training Only
+    public final static String CL = "CL"; //Classification
+    public final static String AN = "AN"; //Annotation
+    public final static String ROI = "ROI"; //Region of Interest
+    
     //number of folders for cross-validation. Can be Leave-One-Out (LOO).
     public final static String DEFAULT_FOLD = "LOO";
     //image channel used by the algorithm. Such as r, g, b. (all to be added)
@@ -596,7 +603,7 @@ public class Annotator implements Runnable
      *  A classifier that takes SavableClassifier object as a particular classification algorithm
      *  It has a trained model in it.  Returns prediction results (and probabilities via Annotation argument).
      */
-    public int[] classifyGivenAMethod(SavableClassifier classifier, float[][] selectedTrainingFeatures, float[][] testingFeatures, Annotation[] annotations) throws Exception {
+    public int[] classifyGivenAMethod(SavableClassifier classifier, float[][] testingFeatures, Annotation[] annotations) throws Exception {
         int[] results = null;
         double[] prob = new double[testingFeatures.length];
 
@@ -880,6 +887,42 @@ public class Annotator implements Runnable
 
         return result;
 
+    }
+    
+    /**
+     * Selects the features based on pre-determined set of indices
+     * 
+     * @param chosenSelector
+     * @param features
+     * @param indices
+     * @return Selected features
+     */
+    public float[][] selectGivenIndices(String chosenSelector, float[][] features, int[] indices) {
+    	float[][] result = null;
+    	
+        if (chosenSelector.equalsIgnoreCase("None"))
+        	result = features;
+
+        if (chosenSelector.equalsIgnoreCase("Fisher")) {
+            FeatureSelector selector = (new FishersCriterion(features, null, new HashMap<String, String>()));
+            try {
+            	result = selector.selectFeaturesGivenIndices(indices);
+            }
+            catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
+        }
+        else if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || chosenSelector.equalsIgnoreCase("mRMR-MID")) {
+            FeatureSelector selector = (new mRMRFeatureSelector(features, null, chosenSelector,  new HashMap<String, String>()));	
+            try {
+                result = selector.selectFeaturesGivenIndices(indices);
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
+        }
+
+        return result;
+        
     }
 
     // ----- temporary methods for parsing algorithm parameters.	
