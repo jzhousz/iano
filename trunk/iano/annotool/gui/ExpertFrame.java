@@ -442,6 +442,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
+        	chainModels[i].setClassNames(anno.getClassNames());
         	chainModels[i].setClassifierName(classifierChoice);
         	chainModels[i].setClassifier(classifierObj);
         	chainModels[i].setClassParams(classParams);            
@@ -560,6 +561,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
+        	chainModels[i].setClassNames(anno.getClassNames());
         	chainModels[i].setResult(rate);
         	chainModels[i].setClassifierName(classifierChoice);
         	chainModels[i].setClassifier(classifierObj);
@@ -586,8 +588,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
                 /*if (gui != null) {
                     gui.addCompareResultPanel(AnnControlPanel.classifiers, rates, AnnControlPanel.classifiers.length - 1);
                 }*/
-        }//end of loop for annotation targets        
-        
+        }//end of loop for annotation targets  
 	}
 	
 	//Cross validation
@@ -711,6 +712,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
+        	chainModels[i].setClassNames(anno.getClassNames());
         	chainModels[i].setResult(recograte[K]);
         	chainModels[i].setClassifierName(classifierChoice);
         	chainModels[i].setClassifier(classifierObj);

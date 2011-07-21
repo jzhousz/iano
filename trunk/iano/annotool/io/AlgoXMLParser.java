@@ -35,7 +35,12 @@ public class AlgoXMLParser
 		
 		//If dom is null (no algorithm file), then add default classifier
 		if (dom == null){
-			classifiers.add(new Algorithm("None", "Classifier"));
+			Algorithm al = new Algorithm("SVM", "Classifier");
+			al.setDescription("Support Vector Machine");
+			Parameter param = new Parameter("General Parameter", "String");
+			param.setParamDefault("-t 0");
+			al.addParam(param);
+			classifiers.add(al);
 			return;
 		}
 		else

@@ -126,6 +126,8 @@ public class Annotator implements Runnable
     //Other variables
     //public static int maxClass = 10; //used by class SVMClassifier,
     java.util.ArrayList<String> annotationLabels = null; //set after reading targets, used by GUI
+    java.util.HashMap<String, String> classNames = null; //Also set after reading targets
+    
     protected java.io.Writer outputfile = null;  //will get file name from user;
     //Needed by GUI-based tool.
     protected Thread thread; //the running thread for background work.
@@ -544,6 +546,8 @@ public class Annotator implements Runnable
             targets = labelReader.getTargets(filename, problem.getChildren());
             maxClassAllTargets = labelReader.getNumOfClasses();
             //annotationLabels = labelReader.getAnnotations();
+            classNames = labelReader.getClassnames();
+            
             numOfAnno = labelReader.getNumOfAnnotations();
             
             if (debugFlag.equals("true")) 
@@ -891,38 +895,20 @@ public class Annotator implements Runnable
     
     /**
      * Selects the features based on pre-determined set of indices
-     * 
-     * @param chosenSelector
+     *      
      * @param features
      * @param indices
      * @return Selected features
      */
-    public float[][] selectGivenIndices(String chosenSelector, float[][] features, int[] indices) {
-    	float[][] result = null;
+    public float[][] selectGivenIndices(float[][] features, int[] indices) {
+    	float[][] selectedFeatures = new float[features.length][indices.length];
     	
-        if (chosenSelector.equalsIgnoreCase("None"))
-        	result = features;
-
-        if (chosenSelector.equalsIgnoreCase("Fisher")) {
-            FeatureSelector selector = (new FishersCriterion(features, null, new HashMap<String, String>()));
-            try {
-            	result = selector.selectFeaturesGivenIndices(indices);
-            }
-            catch (Exception e) {
-                System.err.println(e.getMessage());
+        for (int i = 0; i < features.length; i++) {
+            for (int j = 0; j < indices.length; j++) {
+                selectedFeatures[i][j] = features[i][indices[j]];
             }
         }
-        else if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || chosenSelector.equalsIgnoreCase("mRMR-MID")) {
-            FeatureSelector selector = (new mRMRFeatureSelector(features, null, chosenSelector,  new HashMap<String, String>()));	
-            try {
-                result = selector.selectFeaturesGivenIndices(indices);
-            } catch (Exception e) {
-                System.err.println(e.getMessage());
-            }
-        }
-
-        return result;
-        
+        return selectedFeatures;        
     }
 
     // ----- temporary methods for parsing algorithm parameters.	
@@ -1079,6 +1065,14 @@ public class Annotator implements Runnable
 
 	public void setAnnotationLabels(java.util.ArrayList<String> annotationLabels) {
 		this.annotationLabels = annotationLabels;
+	}
+
+	public java.util.HashMap<String, String> getClassNames() {
+		return classNames;
+	}
+
+	public void setClassNames(java.util.HashMap<String, String> classNames) {
+		this.classNames = classNames;
 	}
 
     /*

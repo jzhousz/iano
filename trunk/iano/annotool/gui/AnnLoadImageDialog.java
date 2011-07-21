@@ -260,19 +260,18 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 			{
 				pnlImage.setIs3D(is3D());
 				pnlImage.channelEnabled(isColor());
-			}
-			//controlPanel.foldEnabled(displayOK);
+				
+				//write some information about the opened image in the outputpanel ...
+				pnlImage.getOutputPanel().setOutput("Images loaded from "+dirField.getText().trim()+ ".");
+				if(testingTarget)
+					pnlImage.getOutputPanel().setOutput("Target file loaded from "+Annotator.targetFile+ ".");
 
-			//write some information about the opened image in the outputpanel ...
-			pnlImage.getOutputPanel().setOutput("Images loaded from "+dirField.getText().trim()+ ".");
-			if(testingTarget)
-				pnlImage.getOutputPanel().setOutput("Target file loaded from "+Annotator.targetFile+ ".");
-
-			//Display the panel with images
-			pnlLanding.displayImageReadyPanel();
-			
-			//close the dialog
-			setVisible(false);
+				//Display the panel with images
+				pnlLanding.displayImageReadyPanel();
+				
+				//close the dialog
+				setVisible(false);
+			}		
 		}
 		else if (e.getSource() == testfiledir)
 			openDir(testdirField);
@@ -301,20 +300,19 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 			{
 				pnlImage.setIs3D(is3D());
 				pnlImage.channelEnabled(isColor());
+				
+				//write some information about the opened image in the outputpanel ...
+				pnlImage.getOutputPanel().setOutput("Training Images loaded from "+dirField.getText().trim()+ ".");
+				pnlImage.getOutputPanel().setOutput("Training Target file loaded from "+Annotator.targetFile+ ".");
+				pnlImage.getOutputPanel().setOutput("Testing Images loaded from "+testdirField.getText().trim()+ ".");
+				pnlImage.getOutputPanel().setOutput("Testing Target file loaded from "+Annotator.testtargetFile+ ".");
+	
+				//Display the panel with images
+				pnlLanding.displayImageReadyPanel();
+				
+				//close the dialog
+				setVisible(false);
 			}
-			//controlPanel.foldEnabled(false);//TT doesn't need fold
-
-			//write some information about the opened image in the outputpanel ...
-			pnlImage.getOutputPanel().setOutput("Training Images loaded from "+dirField.getText().trim()+ ".");
-			pnlImage.getOutputPanel().setOutput("Training Target file loaded from "+Annotator.targetFile+ ".");
-			pnlImage.getOutputPanel().setOutput("Testing Images loaded from "+testdirField.getText().trim()+ ".");
-			pnlImage.getOutputPanel().setOutput("Testing Target file loaded from "+Annotator.testtargetFile+ ".");
-
-			//Display the panel with images
-			pnlLanding.displayImageReadyPanel();
-			
-			//close the dialog
-			setVisible(false);
 		}
 	}
 
