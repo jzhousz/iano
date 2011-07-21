@@ -16,6 +16,7 @@ import annotool.classify.Validator;
 import annotool.gui.ButtonTabComponent;
 import annotool.gui.ImageReadyPanel;
 import annotool.gui.ResultPanel;
+import annotool.gui.StatsPanel;
 import annotool.io.ChainModel;
 import annotool.io.DataInput;
 import annotool.select.FeatureSelector;
@@ -215,6 +216,7 @@ public class ModelLoader implements Runnable {
         }
         //Also, initialize a list of annotation labels to use for updated table column
         String[] modelLabels = new String[numModels];
+        boolean[] supportsProb = new boolean[numModels];
         
         for(int modelIndex = 0; modelIndex < numModels; modelIndex++) {
         	pnlStatus.setOutput("Applying model: " + (modelIndex + 1) + " of " + numModels);
@@ -272,25 +274,32 @@ public class ModelLoader implements Runnable {
 	        for(Selector sel : model.getSelectors()) {
 		        if(sel.getSelectedIndices() != null) {
 		        	pnlStatus.setOutput("Selecting features with " + sel.getName());
-		        	features = anno.selectGivenIndices(sel.getName(), features, sel.getSelectedIndices());
+		        	features = anno.selectGivenIndices(features, sel.getSelectedIndices());
 		        }
 	        }
 	        
 	        //Classify using model
 	        pnlStatus.setOutput("Classifying ... ");
 	        
-	        int[] results = null;
-	        SavableClassifier classifier = (SavableClassifier)model.getClassifier();	        
+	        SavableClassifier classifier = (SavableClassifier)model.getClassifier();
+	        supportsProb[modelIndex] = classifier.doesSupportProbability();
 	        try {
-				results = anno.classifyGivenAMethod(classifier, features, annotations[modelIndex]);
+				anno.classifyGivenAMethod(classifier, features, annotations[modelIndex]);
 			} catch (Exception ex) {
 				pnlStatus.setOutput("Classification using model failed.");
 				ex.printStackTrace();
 			}
+		        
         }//End of loop for models
         
         //Display results
-		pnlImages.getTablePanel().updateAnnotationTable(annotations, modelLabels);
+		pnlImages.getTablePanel().updateAnnotationTable(annotations, modelLabels, supportsProb);
+		
+		//Display statistics
+		HashMap<String, String> classNames = chainModels.get(0).getClassNames();//TODO: each model should have it's own set of class names
+		StatsPanel pnlStats = new StatsPanel(annotations, classNames, modelLabels);
+		pnlImages.addStatsPanel(pnlStats);
+		
 		pnlStatus.setOutput("DONE");
 	}
 

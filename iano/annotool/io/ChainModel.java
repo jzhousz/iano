@@ -28,6 +28,7 @@ public class ChainModel {
 	private String channel = null;
 	private float result;
 	private String label = null;
+	private HashMap<String, String> classNames = null;
 	private ArrayList<Extractor> extractors = null;
 	private ArrayList<Selector> selectors = null;
 	private String classifierName = null;
@@ -69,6 +70,14 @@ public class ChainModel {
         	writer.write("# Channel: " + channel + newLine);
         	writer.write("# Result: " + result * 100 + "%" + newLine);
         	writer.write("# Label: " + label + newLine);
+        	
+        	if(classNames != null && classNames.size() > 0) {
+        		writer.write("# Classes: ");
+	        	for(String key : classNames.keySet()) {
+	        		writer.write(key + ":" + classNames.get(key) + "   ");
+	        	}
+	        	writer.newLine();
+        	}
         	
         	writer.newLine();
         	
@@ -116,9 +125,10 @@ public class ChainModel {
         	//Save trained model of the classifier
         	if(classifier != null) {
         		if(classifier instanceof SavableClassifier) {
-	        		String modelPath = getUniquePath(file.getParent(), fileName + "_" + label + "_model");            	
+        			String modelfileName = getUniqueFileName(file.getParent(), fileName + "_" + label + "_model");
+	        		String modelPath = file.getParent() + File.separatorChar + modelfileName;            	
 	        		((SavableClassifier)classifier).saveModel(((SavableClassifier)classifier).getModel(), modelPath);
-	        		writer.write("Path=" + modelPath + newLine);
+	        		writer.write("Path=" + modelfileName + newLine);
         		}
         	}
         	
@@ -138,14 +148,14 @@ public class ChainModel {
 	/*
 	 * Gets a unique file name, given a parent path and base name
 	 */
-	private String getUniquePath(String path, String name) {
+	private String getUniqueFileName(String path, String name) {
 		int trail = 0;
 		File f = new File(path, name);
 		while(f.exists()) {
 			trail++;
 			f = new File(path, name + trail);
 		}
-		return f.getPath();
+		return f.getName();
 	}
 	/*
 	 * Scans and reads the chain file and loads model properties from file content
@@ -172,6 +182,17 @@ public class ChainModel {
 				}
 				else if(line.startsWith("# Label:")) {
 					label = line.replaceFirst("# Label:", "").trim();
+				}
+				else if(line.startsWith("# Classes:")) {
+					line = line.replaceFirst("# Classes:", "");
+					
+					Scanner lineScanner = new Scanner(line);
+					classNames = new HashMap<String, String>();
+					while(lineScanner.hasNext()){
+		                String pair[] = lineScanner.next().split(":");
+		                classNames.put(pair[0], pair[1]);
+		            }
+		            lineScanner.close();  
 				}
 				//Ignore other comments
 				continue;
@@ -266,6 +287,7 @@ public class ChainModel {
 				//Read classifier model path
 				if(line.startsWith("Path=")) {
 					String path = line.replaceFirst("Path=", "");
+					path = file.getParent() + File.separatorChar + path; 
 					classifier = (new Annotator()).getClassifierGivenName(classifierName, classParams);
 					if(classifier instanceof SavableClassifier) {
 						//TODO: Load model from file and set the model for the classifier (may be the loadmodel() should set as well)
@@ -352,6 +374,14 @@ public class ChainModel {
 
 	public void setLabel(String label) {
 		this.label = label;
+	}
+
+	public HashMap<String, String> getClassNames() {
+		return classNames;
+	}
+
+	public void setClassNames(HashMap<String, String> classNames) {
+		this.classNames = classNames;
 	}
 
 	public ArrayList<Extractor> getExtractors() {

@@ -539,6 +539,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	    	chainModels[i].setMode("Training/Testing");
 	    	chainModels[i].setChannel(channel);
 	    	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
+	    	chainModels[i].setClassNames(anno.getClassNames());//TODO: each annotation label should have different class names
 	    	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
 	    }
 	    
@@ -737,6 +738,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
         	chainModels[i].setMode("Cross Validation. Fold: " + Annotator.fold);
         	chainModels[i].setChannel(channel);
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
+        	chainModels[i].setClassNames(anno.getClassNames());//TODO: each annotation label should have different class names
         	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         }
         

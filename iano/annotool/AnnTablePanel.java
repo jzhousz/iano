@@ -86,15 +86,15 @@ public class AnnTablePanel extends JPanel  {
 
 		tableOne = new AnnImageTable().buildImageTable(directory, targetFile, ext);
 		AnnImageTable testingTable = new AnnImageTable();
-		tableTwo = testingTable.buildImageTable(testdir, testtargetFile, testext);
-
-		tableOne.setBorder(new CompoundBorder(new TitledBorder(null, "training images", 
-				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5))); 
-		tableTwo.setBorder(new CompoundBorder(new TitledBorder(null, "testing images", 
-				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5))); 
+		tableTwo = testingTable.buildImageTable(testdir, testtargetFile, testext);		
 
 		if (tableOne != null &&tableTwo != null)
 		{
+			tableOne.setBorder(new CompoundBorder(new TitledBorder(null, "training images", 
+					TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5))); 
+			tableTwo.setBorder(new CompoundBorder(new TitledBorder(null, "testing images", 
+					TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5))); 
+			
 			this.setLayout(new java.awt.GridLayout(1,2,5,5));
 			this.add(tableOne);
 			this.add(tableTwo);
@@ -151,10 +151,10 @@ public class AnnTablePanel extends JPanel  {
 		adjustFrame();
 	}
 	
-	public void updateAnnotationTable(Annotation[][] predictions, String[] modelLabels)
+	public void updateAnnotationTable(Annotation[][] predictions, String[] modelLabels, boolean[] supportsProb)
 	{
 		if (currentCVTable != null)
-			currentCVTable.updateTable(predictions, modelLabels);
+			currentCVTable.updateTable(predictions, modelLabels, supportsProb);
 		adjustFrame();
 	}
 

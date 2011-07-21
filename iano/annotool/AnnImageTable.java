@@ -222,7 +222,7 @@ public class AnnImageTable {
 	}
 	
 	//Overloaded version: added July 19, 2011 : for update after applying saved model
-	public void updateTable(Annotation[][] predictions, String[] modelLabels)
+	public void updateTable(Annotation[][] predictions, String[] modelLabels, boolean[] supportsProb)
 	{
 		int numModels = predictions.length;
 		final String[] columnNames;
@@ -237,8 +237,12 @@ public class AnnImageTable {
 		{
 			tabledata[i][0] =  getButtonCell(i); 
 			tabledata[i][1] = children[i];
-			for (int j = 0; j < numModels; j++)
-				tabledata[i][2+j] = predictions[j][i].anno;
+			for (int j = 0; j < numModels; j++) {
+				if(Annotator.output.equals(Annotator.AN) && supportsProb[j])
+					tabledata[i][2+j] = predictions[j][i].prob;
+				else
+					tabledata[i][2+j] = predictions[j][i].anno;
+			}
 		}		
 
 		javax.swing.table.TableModel dataModel = new javax.swing.table.AbstractTableModel() { 

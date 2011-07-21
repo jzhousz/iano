@@ -39,6 +39,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	
 	private AnnOutputPanel pnlStatus;
 	private AnnTablePanel pnlTable;
+	
 	AnnotatorGUI gui = null;
 	
 	String modelInfo = null;
@@ -50,6 +51,8 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	private ModelLoader loader = null;
 	JFileChooser fileChooser = new JFileChooser();
 	private Annotation[][] annotations = null;
+	
+	private StatsPanel pnlStats = null;
 	
 	public ImageReadyPanel(AnnotatorGUI gui) {
 		this.gui = gui;		
@@ -315,5 +318,15 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			selectedChannel = channelInputs[2];
 		
 		return selectedChannel;
+	}
+	public void addStatsPanel(StatsPanel pnlStats) {
+		pnlRightCenter.removeAll();
+		pnlRightCenter.add(pnlChannel, BorderLayout.NORTH);
+		
+		this.pnlStats = pnlStats;
+		pnlRightCenter.add(pnlStats, BorderLayout.CENTER);
+		
+		pnlRightCenter.revalidate();
+		pnlRightCenter.repaint();
 	}
 }
