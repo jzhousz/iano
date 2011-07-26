@@ -167,6 +167,11 @@ public class AnnTablePanel extends JPanel  {
 		int y = (int)(dim.getHeight() - frame.getHeight())/2;
 		frame.setLocation(x,y);
 	}
+	
+	//Added: santosh 7/25/2011
+	public AnnImageTable getAnnotationTable() {
+		return currentCVTable;
+	}
 
 
 

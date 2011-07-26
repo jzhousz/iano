@@ -33,6 +33,9 @@ public class ModelLoader implements Runnable {
 	private Thread thread = null;
 	
 	private Annotation[][] annotations = null;
+	HashMap<String, String> classNames = null;
+	private String[] modelLabels = null;
+	private boolean[] supportsProb = null; 
 	
 	public ModelLoader(ImageReadyPanel pnlImages) {
 		this.pnlImages = pnlImages;
@@ -57,6 +60,8 @@ public class ModelLoader implements Runnable {
 	 * Loads models from multiple files and directories.
 	 * Each selected directory is traversed to locate model files to load.
 	 * Sub-directories are not traversed.
+	 * 
+	 * Loaded models are available in chainModels
 	 * 
 	 * @return True if model was loaded, false if canceled
 	 */
@@ -123,7 +128,7 @@ public class ModelLoader implements Runnable {
 		return false;
 	}
 	/**
-	 * Loads model from a single file.
+	 * Loads model from a single file. Not used anymore after merging annotation and classification
 	 * 
 	 * @return True if model was loaded, false if canceled or invalid model
 	 */
@@ -215,8 +220,8 @@ public class ModelLoader implements Runnable {
             }
         }
         //Also, initialize a list of annotation labels to use for updated table column
-        String[] modelLabels = new String[numModels];
-        boolean[] supportsProb = new boolean[numModels];
+        modelLabels = new String[numModels];
+        supportsProb = new boolean[numModels];
         
         for(int modelIndex = 0; modelIndex < numModels; modelIndex++) {
         	pnlStatus.setOutput("Applying model: " + (modelIndex + 1) + " of " + numModels);
@@ -270,7 +275,7 @@ public class ModelLoader implements Runnable {
 	        //raw data is not used after this point, set to null.
 	        problem.setDataNull();
 	        
-	        //TODO: Selecting features
+	        //Selecting features
 	        for(Selector sel : model.getSelectors()) {
 		        if(sel.getSelectedIndices() != null) {
 		        	pnlStatus.setOutput("Selecting features with " + sel.getName());
@@ -296,7 +301,7 @@ public class ModelLoader implements Runnable {
 		pnlImages.getTablePanel().updateAnnotationTable(annotations, modelLabels, supportsProb);
 		
 		//Display statistics
-		HashMap<String, String> classNames = chainModels.get(0).getClassNames();//TODO: each model should have it's own set of class names
+		classNames = chainModels.get(0).getClassNames();								//TODO
 		StatsPanel pnlStats = new StatsPanel(annotations, classNames, modelLabels);
 		pnlImages.addStatsPanel(pnlStats);
 		
@@ -305,5 +310,26 @@ public class ModelLoader implements Runnable {
 
 	public Annotation[][] getAnnotations() {
 		return annotations;
+	}
+
+	public HashMap<String, String> getClassNames() {
+		return classNames;
+	}
+
+	public String[] getModelLabels() {
+		return modelLabels;
+	}
+
+	public boolean[] getSupportsProb() {
+		return supportsProb;
+	}
+	
+	/*
+	 * Used for setting chainModels from array of chain models (from memory).
+	 */
+	public void setChainModelsFromArray(ChainModel[] chainModelsArr) {
+		if(chainModelsArr != null)
+			for(ChainModel model : chainModelsArr)
+				this.chainModels.add(model);
 	}
 }

@@ -50,7 +50,9 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	
 	private JButton btnNew, btnRemove, 
 					btnSaveChain, btnLoadChain, 
-					btnRun, btnSaveModel;
+					btnRun, btnSaveModel,
+					btnApplyModel;
+	
 	private ChainTableModel tableModel = new ChainTableModel();
 	
 	//Details
@@ -146,14 +148,18 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnSaveModel = new JButton("Save Model");
 		btnSaveModel.setEnabled(false);
 		btnSaveModel.addActionListener(this);
+		btnApplyModel = new JButton("Apply Model");
+		btnApplyModel.setEnabled(false);
+		btnApplyModel.addActionListener(this);
 		
-		pnlButton = new JPanel(new GridLayout(3, 2));
+		pnlButton = new JPanel(new GridLayout(4, 2));
 		pnlButton.add(btnNew);
 		pnlButton.add(btnRemove);
 		pnlButton.add(btnSaveChain);
 		pnlButton.add(btnLoadChain);
 		pnlButton.add(btnRun);
 		pnlButton.add(btnSaveModel);
+		pnlButton.add(btnApplyModel);
 		
 		pnlControl = new JPanel();
 		pnlControl.setLayout(new FlowLayout());
@@ -293,13 +299,13 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 						    JOptionPane.INFORMATION_MESSAGE);
 					return;
 				}
-			}
 			
-			if (thread == null)  {
-	            thread = new Thread(this);
-	            isRunning = true;
-	            thread.start();
-	        }
+				if (thread == null)  {
+		            thread = new Thread(this);
+		            isRunning = true;
+		            thread.start();
+		        }
+			}
 		}
 		else if(ev.getSource().equals(btnSaveModel)) {
 			if(thread == null) {
@@ -335,21 +341,50 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			else
 				pnlOutput.setOutput("Cannot save model during processing.");
 		}
+		else if(ev.getSource().equals(btnApplyModel)) {
+			if(thread == null) {
+				int choice = JOptionPane.showConfirmDialog(this,
+					    "This will close all other open windows and take you to annotation options.\n" + 
+					    "Any unsaved progress will be discarded.\n" + 
+					    "Do you wish to continue?",
+					    "Information",
+					    JOptionPane.OK_CANCEL_OPTION,
+					    JOptionPane.INFORMATION_MESSAGE);
+				
+				if(choice == JOptionPane.CANCEL_OPTION)
+					return;
+				
+				//Set the flag that indicates this frame as annotation firing frame and then fire close window
+				gui.applyModelFired = true;
+				gui.setChainModels(chainModels);
+				gui.pullThePlug();				
+			}
+		}
 		
 	}
 	private void setButtonState() {
 		if(tableModel.getRowCount() > 0) {
 			btnRemove.setEnabled(true);
 			btnSaveChain.setEnabled(true);
-			btnRun.setEnabled(true);
 			gui.setButtonsEnabled(true);
 		}
 		else {
 			btnRemove.setEnabled(false);
 			btnSaveChain.setEnabled(false);
-			btnRun.setEnabled(false);
 			gui.setButtonsEnabled(false);
-		}
+		}		
+
+		btnRun.setEnabled(hasSelectedChain());
+	}
+	/*
+	 * Checks if there is at least one selected chain.
+	 */
+	private boolean hasSelectedChain() {		
+		for(int row = 0; row < tableModel.getRowCount(); row++) {
+	    	if((Boolean)tableModel.getValueAt(row, COL_CHECK)) 
+	    		return true;
+	    }
+		return false;
 	}
 	public void valueChanged(ListSelectionEvent ev) {
 		if (ev.getValueIsAdjusting()) {
@@ -369,6 +404,9 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
         	String name = model.getValueAt(row, column).toString();
         	Chain chain = (Chain)model.getValueAt(row, COL_CHAIN);
         	chain.setName(name);
+        }
+        else if(columnName.equals("")) {	//If check box state changed, then enable/disable run button
+        	btnRun.setEnabled(hasSelectedChain());
         }
 	}
 	public void addExtractor(Extractor ex) {
@@ -467,6 +505,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnRemove.setEnabled(false);
 		btnLoadChain.setEnabled(false);
 		btnSaveModel.setEnabled(false);
+		btnApplyModel.setEnabled(false);
 		gui.setButtonsEnabled(false);
 		tblChain.setEnabled(false);
 		
@@ -487,6 +526,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnRemove.setEnabled(true);
 		btnLoadChain.setEnabled(true);
 		btnSaveModel.setEnabled(true);
+		btnApplyModel.setEnabled(true);
 		gui.setButtonsEnabled(true);
 		tblChain.setEnabled(true);
 	}
@@ -500,13 +540,14 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	
 	    int[] resArr = new int[2]; //place holder for misc results
 	    ArrayList<String> annoLabels = new ArrayList<String>();
-	    int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels);
+	    HashMap<String, String> classNames = new HashMap<String, String>();
+	    int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels, classNames);
 	    //get statistics from training set
 	    int numOfAnno = resArr[0];
 	    anno.setAnnotationLabels(annoLabels);	        
 	
 	    //testing set targets
-	    int[][] testingTargets = anno.readTargets(testingProblem, Annotator.testtargetFile, resArr, null);
+	    int[][] testingTargets = anno.readTargets(testingProblem, Annotator.testtargetFile, resArr, null, null);
 	    
 	    
 	    //Initialize float array to hold rates for each annotation for each selected chain and list of selected chains to pass to result panel
@@ -539,7 +580,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	    	chainModels[i].setMode("Training/Testing");
 	    	chainModels[i].setChannel(channel);
 	    	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
-	    	chainModels[i].setClassNames(anno.getClassNames());//TODO: each annotation label should have different class names
+	    	chainModels[i].setClassNames(classNames);
 	    	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
 	    }
 	    
@@ -620,7 +661,6 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        //trainingTestingOutput(trainingFeatures, testingFeatures, trainingTargets, testingTargets, numOfAnno);
 	        
 	        int testingLength = testingFeatures.length;
-	        int numoffeatures;
 	
 	        //initialize structure to store annotation results
 	        Annotation[][] annotations = new Annotation[numOfAnno][testingLength];
@@ -632,6 +672,12 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        
 	        //loop for each annotation target (one image may have multiple labels)
 	        for (int i = 0; i < numOfAnno; i++) {
+	        	//Selected features for each annotation labels
+	        	float[][] selectedTrainingFeatures = trainingFeatures;
+	        	float[][] selectedTestingFeatures = testingFeatures;
+	        	
+	        	ArrayList<Selector> selectors = new ArrayList<Selector>();
+	        	
 	        	ComboFeatures combo = null;
 	            if(chain.hasSelectors()) 
 	            {
@@ -640,17 +686,17 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	                //Apply each feature selector in the chain
 	                for(Selector selector : chain.getSelectors()) {
 		            	//Supervised feature selectors need corresponding target data
-		                combo = anno.selectGivenAMethod(selector.getName(), selector.getParams(), trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i]);
+		                combo = anno.selectGivenAMethod(selector.getName(), selector.getParams(), selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i]);
 		                //selected features overrides the passed in original features
-		                trainingFeatures = combo.getTrainingFeatures();
-		                testingFeatures = combo.getTestingFeatures();
+		                selectedTrainingFeatures = combo.getTrainingFeatures();
+		                selectedTestingFeatures = combo.getTestingFeatures();
 		                
-		                //Set the selected indices
-		                selector.setSelectedIndices(combo.getSelectedIndices());
+		                //This is needed for saving model, each annotation label needs a new selector to be created (i.e. cannot reuse selectors in chain)
+		                Selector currentSelector = new Selector(selector.getName());
+		                currentSelector.setSelectedIndices(combo.getSelectedIndices());
+		                selectors.add(currentSelector);
 	                }
 	            }
-	            numoffeatures = trainingFeatures[0].length;
-	
 	            //pass the training and testing data to Validator
 	            //get rate and prediction results for testing data
 	            float rate = 0;
@@ -658,7 +704,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            
 	            Classifier classifierObj = anno.getClassifierGivenName(chain.getClassifier(), chain.getClassParams());
 	            try {
-	            	rate = anno.classifyGivenAMethod(classifierObj, chain.getClassParams(), trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
+	            	rate = anno.classifyGivenAMethod(classifierObj, chain.getClassParams(), selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
 	            }
 	            catch(Exception ex) {
 	            	ex.printStackTrace();
@@ -669,8 +715,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            //If rate for this target(ith target) is better with this chain,
 	            //then, save this as new best model
 	            if(rate > chainModels[i].getResult()) {
-	            	chainModels[i].setExtractors(chain.getExtractors());
-	            	chainModels[i].setSelectors(chain.getSelectors());
+	            	chainModels[i].setExtractors(chain.getExtractors());//Can use extractors from chain because every annotation label shares the same extractors
+	            	chainModels[i].setSelectors(selectors);				//Cannot use selectors from chain because each annotation label needs separate selected indices
 	            	
 	            	chainModels[i].setClassifierName(chain.getClassifier());
 	            	chainModels[i].setClassifier(classifierObj);
@@ -705,7 +751,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
         }
         int[] resArr = new int[2]; //place holder for misc results
         ArrayList<String> annoLabels = new ArrayList<String>();
-        int[][] targets = anno.readTargets(problem, Annotator.targetFile, resArr, annoLabels);
+        HashMap<String, String> classNames = new HashMap<String, String>();
+        int[][] targets = anno.readTargets(problem, Annotator.targetFile, resArr, annoLabels, classNames);
         int numOfAnno = resArr[0];
         anno.setAnnotationLabels(annoLabels);
         
@@ -738,7 +785,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
         	chainModels[i].setMode("Cross Validation. Fold: " + Annotator.fold);
         	chainModels[i].setChannel(channel);
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
-        	chainModels[i].setClassNames(anno.getClassNames());//TODO: each annotation label should have different class names
+        	chainModels[i].setClassNames(classNames);
         	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         }
         
@@ -813,10 +860,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        
 	        
 	        //Apply Feature Selection and Classification in CV mode.
-	        
-	        int incomingDim = features[0].length;
 	        int length = features.length;
-	        int numoffeatures = incomingDim; //original dimension before selection
 	
 	        // parameters that are same for all target labels
 	        boolean shuffle = Boolean.parseBoolean(Annotator.shuffleFlag);
@@ -853,6 +897,9 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            int start = 50 + i * 50 / numOfAnno;
 	            int region = 50 / numOfAnno;
 	            
+	            //Selected features for each annotation labels
+	            float[][] selectedFeatures = features;
+	            
 	            ComboFeatures combo = null;
 	            if(chain.hasSelectors()) 
 	            {
@@ -861,19 +908,18 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	                //Apply each feature selector in the chain
 	                for(Selector selector : chain.getSelectors()) {
 		            	//Supervised feature selectors need corresponding target data
-		                combo = anno.selectGivenAMethod(selector.getName(), selector.getParams(), features, targets[i]);
+		                combo = anno.selectGivenAMethod(selector.getName(), selector.getParams(), selectedFeatures, targets[i]);
 		                //selected features overrides the passed in original features
-		                features = combo.getTrainingFeatures();
+		                selectedFeatures = combo.getTrainingFeatures();
 		                
 		                selector.setSelectedIndices(combo.getSelectedIndices());
 	                }
 	            }
-	            numoffeatures = features[0].length;
 	
 	            pnlOutput.setOutput("Classifying/Annotating ... ");
 	            Classifier classifierObj = anno.getClassifierGivenName(chain.getClassifier(), chain.getClassParams());
 	            try {
-	            	recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierObj, chain.getClassParams(), shuffle, results[i]);
+	            	recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, selectedFeatures, targets[i], classifierObj, chain.getClassParams(), shuffle, results[i]);
 	            }
 	            catch(Exception ex) {
 	            	pnlOutput.setOutput("Exception! " + ex.getMessage());

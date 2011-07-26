@@ -221,7 +221,7 @@ public class AnnImageTable {
 		table.setModel(dataModel);
 	}
 	
-	//Overloaded version: added July 19, 2011 : for update after applying saved model
+	//Overloaded version: added July 19, 2011 : for update after applying model
 	public void updateTable(Annotation[][] predictions, String[] modelLabels, boolean[] supportsProb)
 	{
 		int numModels = predictions.length;
@@ -238,7 +238,7 @@ public class AnnImageTable {
 			tabledata[i][0] =  getButtonCell(i); 
 			tabledata[i][1] = children[i];
 			for (int j = 0; j < numModels; j++) {
-				if(Annotator.output.equals(Annotator.AN) && supportsProb[j])
+				if(supportsProb[j])
 					tabledata[i][2+j] = predictions[j][i].prob;
 				else
 					tabledata[i][2+j] = predictions[j][i].anno;
@@ -399,5 +399,9 @@ public class AnnImageTable {
 			//forwardEventToButton(e);
 		}
 	} //end of innerclass
+
+	public String[] getChildren() {
+		return children;
+	}
 
 }
