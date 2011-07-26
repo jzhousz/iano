@@ -16,11 +16,8 @@ import java.util.ArrayList;
 
 import annotool.AnnOutputPanel;
 import annotool.AnnTablePanel;
-import annotool.Annotation;
 import annotool.Annotator;
-import annotool.gui.model.ModelFilter;
 import annotool.gui.model.ModelLoader;
-import annotool.gui.model.Utils;
 import annotool.io.ChainModel;
 import annotool.io.ReportSaver;
 
@@ -50,10 +47,10 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	
 	private ModelLoader loader = null;
 	JFileChooser fileChooser = new JFileChooser();
-	private Annotation[][] annotations = null;
 	
-	private StatsPanel pnlStats = null;
-	
+	ArrayList<PopUpFrame> openFrames = new ArrayList<PopUpFrame>();
+	ChainModel[] chainModels = null;
+		
 	public ImageReadyPanel(AnnotatorGUI gui) {
 		this.gui = gui;		
 		
@@ -101,7 +98,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		btnApplyModel = new JButton("Apply Model");
 		btnApplyModel.addActionListener(this);
 		
-		btnLoadModel = new JButton("Load Model");
+		btnLoadModel = new JButton("Load Model(s)");
 		btnLoadModel.addActionListener(this);
 		
 		btnSaveReport = new JButton("Save Report");
@@ -141,23 +138,23 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			else if(rbBlue.isSelected())
 				Annotator.channel = channelInputs[2];
 			
-			ExpertFrame ef = new ExpertFrame("Expert Mode", is3D, Annotator.channel);			
+			ExpertFrame ef = new ExpertFrame("Expert Mode", is3D, Annotator.channel);
 			ef.setVisible(true);
-			ef.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			//ef.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			ef.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+			
+			//Keep track of opened frames
+			openFrames.add(ef);
 			openFrameCount++;
 			gui.setNewWizardEnabled(false);	//Disable new wizard item
 			ef.addWindowListener(new WindowAdapter() {
 	            public void windowClosing(WindowEvent evt) {
-	            	//ef.setVisible(false);
-	            	//ef.getContentPane().removeAll();
-	            	//ef.dispose();
-	            	openFrameCount--;
-	            	if(openFrameCount < 1)
-	            		gui.setNewWizardEnabled(true); //Enable new wizard when all pop up frames are closed
+	            	PopUpFrame frame = (PopUpFrame)evt.getSource();
+	            	frameClosed(frame);
 	            }
 	        });
-			
 			ef.pack();
+			
 			Dimension dim =
 				Toolkit.getDefaultToolkit().getScreenSize();
 			int x = (int)(dim.getWidth() - getWidth())/2;
@@ -174,18 +171,16 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			
 			AutoCompFrame frame = new AutoCompFrame("Auto Comparison Mode", is3D, Annotator.channel);			
 			frame.setVisible(true);
-			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+			
+			//Keep track of opened frames
+			openFrames.add(frame);
 			openFrameCount++;
 			gui.setNewWizardEnabled(false);	//Disable new wizard item
 			frame.addWindowListener(new WindowAdapter() {
 	            public void windowClosing(WindowEvent evt) {
-	            	//frame.setVisible(false);
-	            	//frame.getContentPane().removeAll();
-	            	//frame.dispose();
-                    
-	            	openFrameCount--;
-	            	if(openFrameCount < 1)
-	            		gui.setNewWizardEnabled(true); //Enable new wizard when all pop up frames are closed
+	            	PopUpFrame frame = (PopUpFrame)evt.getSource();
+	            	frameClosed(frame);
 	            }
 	        });
 			
@@ -202,15 +197,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 				btnApplyModel.setEnabled(true);
 			}
 		}
-		else if(e.getSource() == btnApplyModel) {	
-			//If it is image classification mode, load the model first
-			if(Annotator.output.equals(Annotator.CL)) {
-				loader = new ModelLoader(this);
-				if(!loader.loadModel()) {					
-					return;
-				}
-			}
-			
+		else if(e.getSource() == btnApplyModel) {
 			//Check if model has same information for channel as the current channel selection
 			if(!loader.validate()) {
 				int choice = JOptionPane.showConfirmDialog(this,
@@ -227,7 +214,6 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			}
 			
 			loader.applyModel();
-			annotations = loader.getAnnotations();
 		}
 		else if(e.getSource() == btnSaveReport) {
 			int returnVal = fileChooser.showSaveDialog(this);
@@ -240,7 +226,13 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	            }
 	            
 	            ReportSaver reportSaver = new ReportSaver();
-	            reportSaver.saveAnnotationReport(file, annotations);
+	            boolean success = reportSaver.saveAnnotationReport(file, loader.getAnnotations(), loader.getClassNames(), loader.getModelLabels(), loader.getSupportsProb(),
+	            		pnlTable.getAnnotationTable().getChildren());
+	            
+	            if(success)
+	            	pnlStatus.setOutput("Report saved: " + file.getAbsolutePath());
+	            else
+	            	pnlStatus.setOutput("Failed to save report.");
 	        }
 		}
 	}
@@ -275,22 +267,14 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		
 		//Add or remove appropriate buttons
 		pnlButton.removeAll();
-		if(Annotator.output.equals(Annotator.CL)) {
-			modelInfo = "Image Classification";
-			pnlButton.setLayout(new GridLayout(1, 2));
-			btnApplyModel.setText("Load/Apply Model");
-			pnlButton.add(btnApplyModel);
-			
-			btnSaveReport.setEnabled(false);
-			pnlButton.add(btnSaveReport);
-		}
-		else if(Annotator.output.equals(Annotator.AN)) {
+		
+		if(Annotator.output.equals(Annotator.AN)) {
 			modelInfo = "Image Annotation";
 			pnlButton.setLayout(new GridLayout(2, 2));
 			pnlButton.add(btnLoadModel);
 			
-			btnApplyModel.setText("Apply Model");
-			btnApplyModel.setEnabled(false);
+			if(chainModels == null)
+				btnApplyModel.setEnabled(false);
 			pnlButton.add(btnApplyModel);
 			
 			btnSaveReport.setEnabled(false);
@@ -323,10 +307,35 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		pnlRightCenter.removeAll();
 		pnlRightCenter.add(pnlChannel, BorderLayout.NORTH);
 		
-		this.pnlStats = pnlStats;
 		pnlRightCenter.add(pnlStats, BorderLayout.CENTER);
 		
 		pnlRightCenter.revalidate();
 		pnlRightCenter.repaint();
+	}
+	
+	private void frameClosed(PopUpFrame frame) {
+		if(openFrames.contains(frame))
+    		openFrames.remove(frame);
+        
+    	openFrameCount--;
+    	if(openFrameCount < 1)
+    		gui.setNewWizardEnabled(true); //Enable new wizard when all pop up frames are closed
+    	
+    	//If this frame initiated apply model, then get chainModels in memory and close all pop up frames
+    	if(frame.isApplyModelFired()) {
+    		chainModels = frame.getChainModels();
+    		for(PopUpFrame aFrame : openFrames)
+    			aFrame.pullThePlug();
+    		openFrameCount = 0;
+    		
+    		loader = new ModelLoader(this);
+    		loader.setChainModelsFromArray(chainModels);
+    		
+    		gui.initAnnotation();
+    	}
+    	
+    	//Get rid of the frame
+    	frame.setVisible(false);
+    	frame.dispose();
 	}
 }

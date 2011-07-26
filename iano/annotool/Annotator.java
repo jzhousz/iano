@@ -72,11 +72,10 @@ public class Annotator implements Runnable
     //mode of the annotator.
     public final static String DEFAULT_OUTPUT = "TT";
     //Choice of modes: TT: Training/Testing; CV: cross-validation; ROI: Region-Of-Interest; TO: Train Only; AN: Annotate
-    public final static String[] OUTPUT_CHOICES = {"TT", "CV", "ROI", "TO", "AN"};//TODO: remove this because the lines below are substitute for it
+    public final static String[] OUTPUT_CHOICES = {"TT", "CV", "ROI"};//TODO: these are only used for old codes
     public final static String TT = "TT"; //Training Testing
     public final static String CV = "CV"; //Cross Validation
     public final static String TO = "TO"; //Training Only
-    public final static String CL = "CL"; //Classification
     public final static String AN = "AN"; //Annotation
     public final static String ROI = "ROI"; //Region of Interest
     
@@ -126,7 +125,6 @@ public class Annotator implements Runnable
     //Other variables
     //public static int maxClass = 10; //used by class SVMClassifier,
     java.util.ArrayList<String> annotationLabels = null; //set after reading targets, used by GUI
-    java.util.HashMap<String, String> classNames = null; //Also set after reading targets
     
     protected java.io.Writer outputfile = null;  //will get file name from user;
     //Needed by GUI-based tool.
@@ -546,7 +544,6 @@ public class Annotator implements Runnable
             targets = labelReader.getTargets(filename, problem.getChildren());
             maxClassAllTargets = labelReader.getNumOfClasses();
             //annotationLabels = labelReader.getAnnotations();
-            classNames = labelReader.getClassnames();
             
             numOfAnno = labelReader.getNumOfAnnotations();
             
@@ -574,7 +571,58 @@ public class Annotator implements Runnable
         resArr[1] = maxClassAllTargets;
         return targets;
     }
+    
+    /* Overloaded version - also takes as argument classNames
+     * 
+     * return the target matrix
+     * resArr: should have memory allocated in caller (2 int).
+     *     resArry[0]: number of annotations (targets); resArry[1]: max class in all columns of targets
+     * Other: set the annotationLabels via argument (if input is null, it won't be set). Same with classNames
+     * 
+     */
+    public int[][] readTargets(DataInput problem, String filename, int[] resArr, ArrayList<String> annotationLabels, HashMap<String, String> classNames) {
+        int numOfAnno = 0;
+        int maxClassAllTargets = 0;
+        int[][] targets = null;
+        try {
+            int length = problem.getLength();
+            LabelReader labelReader = new LabelReader(length, annotationLabels);
 
+            targets = labelReader.getTargets(filename, problem.getChildren());
+            maxClassAllTargets = labelReader.getNumOfClasses();
+            //annotationLabels = labelReader.getAnnotations();
+            
+            //Put the class names read with LabelReader for use by caller
+            if(classNames != null)
+            	for(String key : labelReader.getClassnames().keySet())
+            		classNames.put(key, labelReader.getClassnames().get(key));
+            
+            numOfAnno = labelReader.getNumOfAnnotations();
+            
+            if (debugFlag.equals("true")) 
+            {
+              java.util.HashMap<String, String> classnames = labelReader.getClassnames();
+              for(int i=0; i<classnames.size(); i++)
+              {
+            	for (Map.Entry<String, String> e : classnames.entrySet())
+            	    System.out.println(e.getKey() + ": " + e.getValue());
+              }
+
+              for (int i = 0; i < numOfAnno; i++) {
+                    for (int j = 0; j < length; j++) {
+                        System.out.print(targets[i][j] + " ");
+                    }
+              }
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        resArr[0] = numOfAnno;
+        resArr[1] = maxClassAllTargets;
+        return targets;
+    }
 
     /*
      *  A classifier that takes a particular classification algorithm (as a String) and returns
@@ -1065,14 +1113,6 @@ public class Annotator implements Runnable
 
 	public void setAnnotationLabels(java.util.ArrayList<String> annotationLabels) {
 		this.annotationLabels = annotationLabels;
-	}
-
-	public java.util.HashMap<String, String> getClassNames() {
-		return classNames;
-	}
-
-	public void setClassNames(java.util.HashMap<String, String> classNames) {
-		this.classNames = classNames;
 	}
 
     /*

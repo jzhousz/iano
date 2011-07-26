@@ -11,15 +11,11 @@ import java.awt.GridLayout;
 import java.awt.event.*;
 
 import annotool.classify.Classifier;
-import annotool.classify.LDAClassifier;
-import annotool.classify.SVMClassifier;
 import annotool.classify.SavableClassifier;
 import annotool.classify.Validator;
-import annotool.classify.WekaClassifiers;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.ModelSaver;
 import annotool.gui.model.Selector;
-import annotool.gui.model.Utils;
 import annotool.io.AlgoXMLParser;
 
 import java.io.File;
@@ -35,7 +31,7 @@ import annotool.Annotator;
 import annotool.ComboFeatures;
 import annotool.AnnOutputPanel;
 
-public class ExpertFrame extends JFrame implements ActionListener, ItemListener, Runnable {
+public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListener, Runnable {
 	private JTabbedPane tabPane;
 	private JPanel pnlMain,
 				   pnlAlgo,
@@ -80,9 +76,6 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 	private boolean isRunning;
 	
 	JFileChooser fileChooser;
-	
-	//To keep track of model for each genetic line
-	ChainModel[] chainModels = null;
 	
 	public ExpertFrame(String arg0, boolean is3D, String channel) {
 		super(arg0);
@@ -176,7 +169,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		btnSaveModel = new JButton("Save Model", new ImageIcon("images/save.png"));
 		btnSaveModel.setEnabled(false);
 		btnSaveModel.addActionListener(this);
-		btnAnnotate = new JButton("Apply Model/Annotate");
+		btnAnnotate = new JButton("Annotate");
 		btnAnnotate.setEnabled(false);
 		btnAnnotate.addActionListener(this);
 		
@@ -244,14 +237,20 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
 		}
 		else if (e.getSource() == btnAnnotate) {
 			if(thread == null) {
-				//TODO: check if chain models exist and apply
-				if(chainModels == null) {
-					JOptionPane.showMessageDialog(this,
-						    "There is no trained model in memory.", 
-						    "Model Unavailable",
-						    JOptionPane.INFORMATION_MESSAGE);
+				int choice = JOptionPane.showConfirmDialog(this,
+					    "This will close all other open windows and take you to annotation options.\n" + 
+					    "Any unsaved progress will be discarded.\n" + 
+					    "Do you wish to continue?",
+					    "Information",
+					    JOptionPane.OK_CANCEL_OPTION,
+					    JOptionPane.INFORMATION_MESSAGE);
+				
+				if(choice == JOptionPane.CANCEL_OPTION)
 					return;
-				}
+				
+				//Set the flag that indicates this frame as annotation firing frame and then fire close window
+				applyModelFired = true;
+				this.pullThePlug();				
 			}
 		}
 	}
@@ -367,7 +366,9 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
       
         int[] resArr = new int[2]; //place holder for misc results
         ArrayList<String> annoLabels = new ArrayList<String>();
-        int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels);
+        HashMap<String, String> classNames = new HashMap<String, String>();
+        
+        int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels, classNames);
         //get statistics from training set
         int numOfAnno = resArr[0];
         anno.setAnnotationLabels(annoLabels);
@@ -393,8 +394,6 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             return;
         }
         
-        int numoffeatures;
-        
         //Initialize ChainModel object for each label
         chainModels = new ChainModel[numOfAnno];
         
@@ -402,8 +401,9 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         for (int i = 0; i < numOfAnno; i++) {
         	chainModels[i] = new ChainModel();
         	
-            if (featureSelector.equalsIgnoreCase("None")) { //use the original feature without selection -- overwrite numoffeatures value
-            	numoffeatures = trainingFeatures[0].length;
+        	float[][] selectedFeatures = null;
+            if (featureSelector.equalsIgnoreCase("None")) { //use the original feature without selection
+            	selectedFeatures = trainingFeatures;
             }
             else 
             {
@@ -411,7 +411,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             	//Supervised feature selectors need corresponding target data
                 ComboFeatures combo = anno.selectGivenAMethod(featureSelector, selParams, trainingFeatures, trainingTargets[i]);
                 //selected features overrides the passed in original features
-                trainingFeatures = combo.getTrainingFeatures();
+                selectedFeatures = combo.getTrainingFeatures();
  
                 
                 //For dump file
@@ -426,8 +426,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             Classifier classifierObj = anno.getClassifierGivenName(classifierChoice, classParams);
             
             if(classifierObj instanceof SavableClassifier) {
-            	((SavableClassifier)classifierObj).trainingOnly(trainingFeatures, trainingTargets[i]);
-            	//TODO: If classifier does not guarantee that the trained model is set, then need to set it explicitly
+            	((SavableClassifier)classifierObj).trainingOnly(selectedFeatures, trainingTargets[i]);
             }
             
             //Save information to dump in chain file
@@ -442,7 +441,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
-        	chainModels[i].setClassNames(anno.getClassNames());
+        	chainModels[i].setClassNames(classNames);
         	chainModels[i].setClassifierName(classifierChoice);
         	chainModels[i].setClassifier(classifierObj);
         	chainModels[i].setClassParams(classParams);            
@@ -462,7 +461,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
       
         int[] resArr = new int[2]; //place holder for misc results
         ArrayList<String> annoLabels = new ArrayList<String>();
-        int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels);
+        HashMap<String, String> classNames = new HashMap<String, String>();
+        int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels, classNames);
         //get statistics from training set
         int numOfAnno = resArr[0];
         anno.setAnnotationLabels(annoLabels);	        
@@ -495,7 +495,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         //trainingTestingOutput(trainingFeatures, testingFeatures, trainingTargets, testingTargets, numOfAnno);
         
         int testingLength = testingFeatures.length;
-        int numoffeatures;
+        //int numoffeatures;
 
         //initialize structure to store annotation results
         Annotation[][] annotations = new Annotation[numOfAnno][testingLength];
@@ -512,8 +512,13 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         for (int i = 0; i < numOfAnno; i++) {
         	chainModels[i] = new ChainModel();
         	
-            if (featureSelector.equalsIgnoreCase("None")) { //use the original feature without selection -- overwrite numoffeatures value
-            	numoffeatures = trainingFeatures[0].length;
+        	//Selected features for each annotation label
+        	float[][] selectedTrainingFeatures = null;
+        	float[][] selectedTestingFeatures = null;
+        	
+            if (featureSelector.equalsIgnoreCase("None")) { //use the original feature without selection
+            	selectedTrainingFeatures = trainingFeatures;
+            	selectedTestingFeatures = testingFeatures;
             }
             else 
             {
@@ -521,9 +526,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             	//Supervised feature selectors need corresponding target data
                 ComboFeatures combo = anno.selectGivenAMethod(featureSelector, selParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i]);
                 //selected features overrides the passed in original features
-                trainingFeatures = combo.getTrainingFeatures();
-                testingFeatures = combo.getTestingFeatures();
-                numoffeatures = trainingFeatures[0].length;
+                selectedTrainingFeatures = combo.getTrainingFeatures();
+                selectedTestingFeatures = combo.getTestingFeatures();
                 
                 //For dump file
                 Selector sel = new Selector(featureSelector);
@@ -540,7 +544,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             
             Classifier classifierObj = anno.getClassifierGivenName(classifierChoice, classParams);
             try {
-            	rate = anno.classifyGivenAMethod(classifierObj, classParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
+            	rate = anno.classifyGivenAMethod(classifierObj, classParams, selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
             }
             catch(Exception ex) {
             	ex.printStackTrace();
@@ -561,7 +565,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
-        	chainModels[i].setClassNames(anno.getClassNames());
+        	chainModels[i].setClassNames(classNames);
         	chainModels[i].setResult(rate);
         	chainModels[i].setClassifierName(classifierChoice);
         	chainModels[i].setClassifier(classifierObj);
@@ -580,15 +584,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
                 return;
             }
-                //put the prediction results back to GUI
-                //if (container != null) {
-                    //container.getTablePanel().updateTestingTable(annotations);
-                //}
-            
-                /*if (gui != null) {
-                    gui.addCompareResultPanel(AnnControlPanel.classifiers, rates, AnnControlPanel.classifiers.length - 1);
-                }*/
-        }//end of loop for annotation targets  
+        }//end of loop for annotation targets 
 	}
 	
 	//Cross validation
@@ -602,7 +598,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         }
         int[] resArr = new int[2]; //place holder for misc results
         java.util.ArrayList<String> annoLabels = new java.util.ArrayList<String>();
-        int[][] targets = anno.readTargets(problem, Annotator.targetFile, resArr, annoLabels);
+        HashMap<String, String> classNames = new HashMap<String, String>();
+        int[][] targets = anno.readTargets(problem, Annotator.targetFile, resArr, annoLabels, classNames);
         int numOfAnno = resArr[0];
         anno.setAnnotationLabels(annoLabels);
         
@@ -625,10 +622,8 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             return;
         }
         
-        //Apply Feature Selection and Classification in CV mode.        
-        int incomingDim = features[0].length;
+        //Apply Feature Selection and Classification in CV mode. 
         int length = features.length;
-        int numoffeatures = incomingDim; //original dimension before selection
         
         // parameters that are same for all target labels
         boolean shuffle = Boolean.parseBoolean(Annotator.shuffleFlag);
@@ -670,14 +665,18 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             int start = 50 + i * 50 / numOfAnno;
             int region = 50 / numOfAnno;
 
-            //If selector is None, use default numoffeatures. Else, call the selector.
-            if (!featureSelector.equalsIgnoreCase("None")) {
+            //Selected features for each annotation label
+            float[][] selectedFeatures = null;
+            
+            //If selector is None, use default features. Else, call the selector.
+            if (featureSelector.equalsIgnoreCase("None")) {
+            	selectedFeatures = features;
+            }
+            else {
                 pnlOutput.setOutput("Selecting features ... ");
                 //override the original features and num of features
                 ComboFeatures combo = anno.selectGivenAMethod(featureSelector, selParams, features, targets[i]);
-                features = combo.getTrainingFeatures();
-                
-                numoffeatures = features[0].length;
+                selectedFeatures = combo.getTrainingFeatures();
                 
                 //For dump file
                 Selector sel = new Selector(featureSelector);
@@ -689,7 +688,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
             pnlOutput.setOutput("Classifying/Annotating ... ");
             Classifier classifierObj = anno.getClassifierGivenName(classifierChoice, classParams);
             try {
-            	recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierObj, classParams, shuffle, results[i]);
+            	recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, selectedFeatures, targets[i], classifierObj, classParams, shuffle, results[i]);
             }
             catch(Exception ex) {
             	pnlOutput.setOutput("Exception! " + ex.getMessage());
@@ -712,7 +711,7 @@ public class ExpertFrame extends JFrame implements ActionListener, ItemListener,
         	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
-        	chainModels[i].setClassNames(anno.getClassNames());
+        	chainModels[i].setClassNames(classNames);
         	chainModels[i].setResult(recograte[K]);
         	chainModels[i].setClassifierName(classifierChoice);
         	chainModels[i].setClassifier(classifierObj);

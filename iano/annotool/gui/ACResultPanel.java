@@ -31,15 +31,12 @@ import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 
-import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Chunk;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Element;
-import com.itextpdf.text.Font;
 import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.Font.FontFamily;
 import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.DefaultFontMapper;
 import com.itextpdf.text.pdf.PdfContentByte;
@@ -52,6 +49,7 @@ import annotool.Annotator;
 import annotool.gui.model.Chain;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
+import annotool.gui.model.Styles;
 
 public class ACResultPanel extends JPanel implements ActionListener{
 	private int tabIndex; //the index of this panel in the parent tabbed pane
@@ -78,19 +76,6 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	String channelName = null, mode = null,
 		   imageSet = null, testSet = null;
 	int imgWidth, imgHeight;
-	
-	//Font objects to use while writing pdf
-	public static final Font FONT_TITLE = new Font(FontFamily.HELVETICA, 18, Font.BOLD, new BaseColor(181, 0, 0));
-	public static final Font FONT_HEADING = new Font(FontFamily.HELVETICA, 14, Font.BOLDITALIC, new BaseColor(230, 120, 0));
-	public static final Font FONT_HEADING2 = new Font(FontFamily.HELVETICA, 12, Font.BOLD, new BaseColor(130, 60, 0));
-	public static final Font FONT_LABEL = new Font(FontFamily.HELVETICA, 12, Font.BOLD, BaseColor.BLACK);
-	public static final Font FONT_TABLE_TITLE = new Font(FontFamily.HELVETICA, 12, Font.BOLD, BaseColor.WHITE);
-	public static final Font FONT_TABLE_TITLE2 = new Font(FontFamily.HELVETICA, 11, Font.BOLD, BaseColor.WHITE);
-	
-	//Color objects : table
-	public static final BaseColor COLOR_TITLE = new BaseColor(229, 120, 0);
-	public static final BaseColor COLOR_TITLE2 = new BaseColor(244, 164, 96);
-	public static final BaseColor COLOR_BORDER = new BaseColor(185, 100, 0);
 	
 	public ACResultPanel(JTabbedPane parentPane, int imgWidth, int imgHeight, String channel, ArrayList<Chain> selectedChains) {
 	   	this.parentPane = parentPane;
@@ -238,7 +223,7 @@ public class ACResultPanel extends JPanel implements ActionListener{
 				try {
 					PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(file));
 					document.open();
-					Paragraph title = new Paragraph("AUTO COMPARISON REPORT", FONT_TITLE);
+					Paragraph title = new Paragraph("AUTO COMPARISON REPORT", Styles.FONT_TITLE);
 					title.setAlignment(Element.ALIGN_CENTER);
 					title.setSpacingAfter(36);
 					document.add(title);
@@ -246,7 +231,7 @@ public class ACResultPanel extends JPanel implements ActionListener{
 					document.add(createImageInfo());
 					document.add(createOtherInfo());
 					
-					document.add(new Paragraph("Chain Information", FONT_HEADING));				
+					document.add(new Paragraph("Chain Information", Styles.FONT_HEADING));				
 					//Add chain table for each chain
 					for(Chain chain : selectedChains) {
 						document.add(createChainTable(chain));
@@ -300,27 +285,27 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	private Paragraph createImageInfo() {
 		Paragraph info = new Paragraph();
 		info.setSpacingAfter(36);
-		info.add(new Paragraph("Image Information", FONT_HEADING));
+		info.add(new Paragraph("Image Information", Styles.FONT_HEADING));
 		
-		info.add(new Chunk("Image Set: ", FONT_LABEL));
+		info.add(new Chunk("Image Set: ", Styles.FONT_LABEL));
 		info.add(new Chunk(imageSet));
 		info.add(Chunk.NEWLINE);
 		
-		info.add(new Chunk("Image Extension: ", FONT_LABEL));
+		info.add(new Chunk("Image Extension: ", Styles.FONT_LABEL));
 		info.add(new Chunk(Annotator.ext));
 		info.add(Chunk.NEWLINE);
 		
 		if(Annotator.output.equals(Annotator.TT)) {
-			info.add(new Chunk("Test Image Set: ", FONT_LABEL));
+			info.add(new Chunk("Test Image Set: ", Styles.FONT_LABEL));
 			info.add(new Chunk(testSet));
 			info.add(Chunk.NEWLINE);
 			
-			info.add(new Chunk("Test Image Extension: ", FONT_LABEL));
+			info.add(new Chunk("Test Image Extension: ", Styles.FONT_LABEL));
 			info.add(new Chunk(Annotator.testext));
 			info.add(Chunk.NEWLINE);
 		}
 		
-		info.add(new Chunk("Image Size: ", FONT_LABEL));
+		info.add(new Chunk("Image Size: ", Styles.FONT_LABEL));
 		info.add(new Chunk(imgWidth + "x" + imgHeight));
 		info.add(Chunk.NEWLINE);
 		
@@ -332,13 +317,13 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	private Paragraph createOtherInfo() {
 		Paragraph info = new Paragraph();
 		info.setSpacingAfter(36);
-		info.add(new Paragraph("Other Information", FONT_HEADING));
+		info.add(new Paragraph("Other Information", Styles.FONT_HEADING));
 		
-		info.add(new Chunk("Mode: ", FONT_LABEL));
+		info.add(new Chunk("Mode: ", Styles.FONT_LABEL));
 		info.add(new Chunk(mode));
 		info.add(Chunk.NEWLINE);
 		
-		info.add(new Chunk("Channel: ", FONT_LABEL));
+		info.add(new Chunk("Channel: ", Styles.FONT_LABEL));
 		info.add(new Chunk(channelName));
 		info.add(Chunk.NEWLINE);
 		
@@ -355,38 +340,38 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		table.setSpacingAfter(5);
 		
 		//First row for chain name
-		PdfPCell titleCell = new PdfPCell(new Phrase("Chain: " + chain.getName(), FONT_TABLE_TITLE));
+		PdfPCell titleCell = new PdfPCell(new Phrase("Chain: " + chain.getName(), Styles.FONT_TABLE_TITLE));
 		titleCell.setColspan(3);
 		titleCell.setMinimumHeight(24f);
 		titleCell.setPadding(4);
-		titleCell.setBackgroundColor(COLOR_TITLE);
-		titleCell.setBorderColor(COLOR_BORDER);
+		titleCell.setBackgroundColor(Styles.COLOR_TITLE);
+		titleCell.setBorderColor(Styles.COLOR_BORDER);
 		
 		//Second row has three column titles
 		PdfPCell exTitleCell, selTitleCell, classTitleCell;
-		exTitleCell = new PdfPCell(new Phrase("Extractor(s)", FONT_TABLE_TITLE2));
-		selTitleCell = new PdfPCell(new Phrase("Selector(s)", FONT_TABLE_TITLE2));
-		classTitleCell = new PdfPCell(new Phrase("Classifier", FONT_TABLE_TITLE2));
-		exTitleCell.setBorderColor(COLOR_BORDER);
+		exTitleCell = new PdfPCell(new Phrase("Extractor(s)", Styles.FONT_TABLE_TITLE2));
+		selTitleCell = new PdfPCell(new Phrase("Selector(s)", Styles.FONT_TABLE_TITLE2));
+		classTitleCell = new PdfPCell(new Phrase("Classifier", Styles.FONT_TABLE_TITLE2));
+		exTitleCell.setBorderColor(Styles.COLOR_BORDER);
 		exTitleCell.setPadding(3);
-		exTitleCell.setBackgroundColor(COLOR_TITLE2);
-		selTitleCell.setBorderColor(COLOR_BORDER);
+		exTitleCell.setBackgroundColor(Styles.COLOR_TITLE2);
+		selTitleCell.setBorderColor(Styles.COLOR_BORDER);
 		selTitleCell.setPadding(3);
-		selTitleCell.setBackgroundColor(COLOR_TITLE2);
-		classTitleCell.setBorderColor(COLOR_BORDER);
+		selTitleCell.setBackgroundColor(Styles.COLOR_TITLE2);
+		classTitleCell.setBorderColor(Styles.COLOR_BORDER);
 		classTitleCell.setPadding(3);
-		classTitleCell.setBackgroundColor(COLOR_TITLE2);
+		classTitleCell.setBackgroundColor(Styles.COLOR_TITLE2);
 		
 		//Lastly, the content for each column
 		PdfPCell exCell, selCell, classCell;
 		exCell = new PdfPCell(getExtractorInfo(chain));
 		selCell = new PdfPCell(getSelectorInfo(chain));
 		classCell = new PdfPCell(getClassifierInfo(chain));
-		exCell.setBorderColor(COLOR_BORDER);
+		exCell.setBorderColor(Styles.COLOR_BORDER);
 		exCell.setPadding(3);
-		selCell.setBorderColor(COLOR_BORDER);
+		selCell.setBorderColor(Styles.COLOR_BORDER);
 		selCell.setPadding(3);
-		classCell.setBorderColor(COLOR_BORDER);
+		classCell.setBorderColor(Styles.COLOR_BORDER);
 		classCell.setPadding(3);
 		
 		//Add title cells to table

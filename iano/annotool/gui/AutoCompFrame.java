@@ -30,7 +30,7 @@ import annotool.Annotator;
 import annotool.ComboFeatures;
 import annotool.AnnOutputPanel;
 
-public class AutoCompFrame extends JFrame implements ActionListener, ItemListener {
+public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemListener {
 	private JTabbedPane tabPane;
 	private JPanel pnlMainOuter,
 				   pnlMain,

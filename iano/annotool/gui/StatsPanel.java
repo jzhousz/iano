@@ -13,6 +13,14 @@ import annotool.Annotation;
 public class StatsPanel extends JPanel {
 	private HashMap<String, String> classNames = null;
 	
+	public StatsPanel(HashMap<String, String> classNames) {
+		this.classNames = classNames;
+		
+		this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+		
+		//Build panel for legends
+		this.add(getLegendsPanel());
+	}
 	public StatsPanel(Annotation[][] annotations, HashMap<String, String> classNames, String[] modelLabels) {
 		this.classNames = classNames;
 		
@@ -40,7 +48,7 @@ public class StatsPanel extends JPanel {
 
 		JPanel pnlStatGroup = new JPanel();
 		pnlStatGroup.setLayout(new BoxLayout(pnlStatGroup, BoxLayout.PAGE_AXIS));
-		JLabel lbTitle = new JLabel("<html><b>Identified classes (" + modelLabel + "):<b></html>");
+		JLabel lbTitle = new JLabel("<html><b>Identified classes (" + modelLabel + "): <b></html>");
 		this.add(lbTitle);
 		
 		for(String key : counts.keySet()) {
@@ -49,5 +57,18 @@ public class StatsPanel extends JPanel {
 		}
 		
 		return pnlStatGroup;
+	}
+	private JPanel getLegendsPanel() {
+		JPanel pnlLegends = new JPanel();
+		pnlLegends.setLayout(new BoxLayout(pnlLegends, BoxLayout.PAGE_AXIS));
+		JLabel lbTitle = new JLabel("<html><b>Classes: <b></html>");
+		this.add(lbTitle);
+		
+		for(String key : classNames.keySet()) {
+			JLabel lb = new JLabel(key + " : " + classNames.get(key));			//eg. 1 : className
+			this.add(lb);
+		}
+		
+		return pnlLegends;
 	}
 }

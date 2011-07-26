@@ -75,11 +75,18 @@ public class AnnotatorGUI extends JFrame
           }
         });
 	}
-	public void reset()
-	{
+	public void reset() {
 		this.remove(pnlLanding);
 		pnlLanding = new LandingPanel(this);
 		this.add(pnlLanding);
+		this.pack();
+	}
+	
+	/*
+	 * Starts annotation panel in landing panel
+	 */
+	public void initAnnotation() {
+		pnlLanding.displayChosenPanel(LandingPanel.ANNOTYPES);
 		this.pack();
 	}
 	

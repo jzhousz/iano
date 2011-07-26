@@ -378,6 +378,11 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 		CardLayout cl = (CardLayout)(this.getLayout());
 		cl.show(this, IMAGEREADY);
 	}
+	public void displayChosenPanel(String panelTitle)
+	{
+		CardLayout cl = (CardLayout)(this.getLayout());
+		cl.show(this, panelTitle);
+	}
 	public ImageReadyPanel getImageReadyPanel()
 	{
 		return this.pnlImages;
