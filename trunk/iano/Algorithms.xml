@@ -68,6 +68,10 @@
 	<Algorithm type="Classifier">
 		<Name>LDA</Name>
 		<Desc>Linear Discriminant Analysis</Desc>
+		<Parameter type="Real">
+			<Name>Priors</Name>
+			<Default>0.3 0.7</Default>
+		</Parameter>
 	</Algorithm>
 	<Algorithm type="Classifier">
 		<Name>W_Tree</Name>
