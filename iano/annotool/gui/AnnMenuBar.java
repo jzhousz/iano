@@ -15,25 +15,28 @@ public class AnnMenuBar implements ActionListener {
 
 	AnnotatorGUI frame;
 	final String NEWWZ = "New Wizard";
-	final String LOADST = "Load Training/Testing Data Sets..";
-	final String LOADCVST = "Load Cross Validation Data Set..";
-	final String LOADROIST = "Load ROI (RegionOfInterest) Annotation Data Set..";
+	
+	final String MODELSELECT = "Model Selection";
+	final String TRAINONLY = "Training Only";
+	
+	final String ANNO = "Annotate";
+	final String IMGANNO = "Image Annotation";
+	final String ROIANNO = "Region of Interest Annotation";
+	
 	final String LOADEX  = "Load Examples..";
 	final String EXAMPLE1  = "Fruitfly Brain Neuronal Bundles (2D) ";
 	final String EXAMPLE2  = "Fruitfly Brain Neuronal Bundles (3D) ";
-	final String imageResTT = "images/Open16_TT.gif";
-	final String imageResCV = "images/Open16_CV.gif";
-	final String imageResROI = "images/Open16_ROI.gif";
+	
 	final String imageResPA = "images/Preferences16.gif";
 	final String imageResHelp = "images/ContextualHelp16.gif";
 	final String imageResAbout = "images/About16.gif";
 	final String imageResExit ="images/exit16.gif";
-	JButton btt, bcv, broi, bpa, babout, bhelp, bexit; //icons on toolbar
-	ImageIcon  ttIcon= new ImageIcon(imageResTT);
-	ImageIcon cvIcon = new ImageIcon(imageResCV);
-	ImageIcon roiIcon = new ImageIcon(imageResROI);
 	
-	JMenuItem newWizardItem;
+	JButton bpa, babout, bhelp, bexit; //icons on toolbar
+	
+	JMenuItem newWizardItem, itemMDSelect, itemTrainOnly;
+	
+	JMenu annoMenu;
 
 	public AnnMenuBar(AnnotatorGUI frame)
 	{
@@ -50,23 +53,18 @@ public class AnnMenuBar implements ActionListener {
 		newWizardItem = new JMenuItem(NEWWZ);
 		newWizardItem.addActionListener(this);
 		
-		JMenuItem loadItem = new JMenuItem(LOADST, ttIcon);
-		loadItem.setMnemonic('L');
-		loadItem.setAccelerator(KeyStroke.getKeyStroke(
-				KeyEvent.VK_L, ActionEvent.ALT_MASK));
-		loadItem.addActionListener(this);
-
-		JMenuItem loadcvItem = new JMenuItem(LOADCVST, cvIcon);
-		loadcvItem.setMnemonic('C');
-		loadcvItem.setAccelerator(KeyStroke.getKeyStroke(
-				KeyEvent.VK_C, ActionEvent.ALT_MASK));
-		loadcvItem.addActionListener(this);
-
-		JMenuItem loadroiItem = new JMenuItem(LOADROIST, roiIcon);
-		loadroiItem.setMnemonic('R');
-		loadroiItem.setAccelerator(KeyStroke.getKeyStroke(
-				KeyEvent.VK_R, ActionEvent.ALT_MASK));
-		loadroiItem.addActionListener(this);
+		itemMDSelect = new JMenuItem(MODELSELECT);
+		itemTrainOnly = new JMenuItem(TRAINONLY);
+		itemMDSelect.addActionListener(this);
+		itemTrainOnly.addActionListener(this);
+		
+		annoMenu = new JMenu(ANNO);
+		JMenuItem imgAnnoItem = new JMenuItem(IMGANNO);
+		JMenuItem roiAnnoItem = new JMenuItem(ROIANNO);
+		annoMenu.add(imgAnnoItem);
+		annoMenu.add(roiAnnoItem);
+		imgAnnoItem.addActionListener(this);
+		roiAnnoItem.addActionListener(this);
 
 		//load example data sets with configuration
 		JMenu loadexMenu = new JMenu(LOADEX);
@@ -83,6 +81,7 @@ public class AnnMenuBar implements ActionListener {
 		saveItem.setAccelerator(KeyStroke.getKeyStroke(
 				KeyEvent.VK_S, ActionEvent.ALT_MASK));
 		saveItem.addActionListener(this);
+		saveItem.setEnabled(false);
 
 		
 		JMenuItem exitItem = new JMenuItem("Exit");
@@ -91,31 +90,17 @@ public class AnnMenuBar implements ActionListener {
 				KeyEvent.VK_X, ActionEvent.ALT_MASK));
 		exitItem.addActionListener(this);
 		//add them onto the right place.
-		fileMenu.add(newWizardItem); 
-		fileMenu.add(loadItem);
-		fileMenu.add(loadcvItem);
-		fileMenu.add(loadroiItem);
+		fileMenu.add(newWizardItem);
+		
+		fileMenu.add(itemMDSelect);
+		fileMenu.add(itemTrainOnly);
+		
+		fileMenu.add(annoMenu);
+		
 		fileMenu.add(loadexMenu);
 		fileMenu.add(saveItem);
 		fileMenu.addSeparator();
 		fileMenu.add(exitItem);
-
-		//need to be disabled/enabled based on control panel selection
-		JMenu paraMenu = new JMenu("Parameters");
-		paraMenu.setMnemonic('P');
-		JMenuItem fexParaItem = new JMenuItem("Feature Extractor Tuning");
-		fexParaItem.setMnemonic('E');
-		fexParaItem.addActionListener(this);
-		JMenuItem fseParaItem = new JMenuItem("Feature Selector Tuning");
-		fseParaItem.setMnemonic('S');
-		fseParaItem.addActionListener(this);
-		JMenuItem classParaItem = new JMenuItem("Classifier Tuning");
-		classParaItem.setMnemonic('C');
-		fseParaItem.addActionListener(this);
-		paraMenu.add(fexParaItem);
-		paraMenu.add(fseParaItem);
-		paraMenu.add(classParaItem);
-		classParaItem.setEnabled(false); //03/10/2010. To be enabled.
 
 		JMenu helpMenu = new JMenu("Help");
 		helpMenu.setMnemonic('H');
@@ -129,7 +114,6 @@ public class AnnMenuBar implements ActionListener {
 		helpMenu.add(aboutItem);
 
 		bar.add(fileMenu);
-		bar.add(paraMenu);
 		bar.add(buildLFMenu());
 		//bar.add(buildComponentMenu());  //12/20/08: removed.
 		bar.add(helpMenu);
@@ -150,19 +134,6 @@ public class AnnMenuBar implements ActionListener {
 		try
 		{
 			System.out.println("Load icon images from resources..");
-			url = this.getClass().getResource("/"+imageResTT);
-			System.out.println("url:"+ url);
-			//ttIcon = new ImageIcon(frame.createImage((java.awt.image.ImageProducer)url.getContent()));
-			ttIcon = new ImageIcon(url);
-			btt = new JButton(ttIcon);
-
-			url = this.getClass().getResource("/"+imageResCV);
-			cvIcon = new ImageIcon(url);
-			bcv = new JButton(cvIcon);
-
-			url = this.getClass().getResource("/"+imageResROI);
-			roiIcon = new ImageIcon(url);
-			broi = new JButton(roiIcon);
 			
 			url = this.getClass().getResource("/"+imageResPA);
 			ImageIcon img = new ImageIcon(url);
@@ -192,36 +163,24 @@ public class AnnMenuBar implements ActionListener {
 		if (!loaded)
 		{
 			//System.out.println("Try to load application icon images from relative path.");
-			btt = new JButton(new ImageIcon(imageResTT)); //opentt
-			bcv = new JButton(new ImageIcon(imageResCV)); //open
-			broi = new JButton(new ImageIcon(imageResROI)); //ROI
 			bpa = new JButton(new ImageIcon(imageResPA)); //preference
 			bhelp = new JButton(new ImageIcon(imageResHelp)); //help
 			babout = new JButton(new ImageIcon(imageResAbout)); //about
 			bexit = new JButton(new ImageIcon(imageResExit)); //about
 		}
 
-		btt.setToolTipText(LOADST);
-		bcv.setToolTipText(LOADCVST);
-		broi.setToolTipText(LOADROIST);
 		bpa.setToolTipText("Set Parameters");
 		bhelp.setToolTipText("Help");
 		babout.setToolTipText("About");
 		bexit.setToolTipText("Exit");
 
 
-		toolBar.add(btt);
-		toolBar.add(bcv);
-		toolBar.add(broi);
 		toolBar.add(bpa);
 		toolBar.add(bhelp);
 		toolBar.add(babout);
 		toolBar.add(bexit);
 
 
-		btt.addActionListener(this);
-		bcv.addActionListener(this);
-		broi.addActionListener(this);
 		bpa.addActionListener(this);
 		bhelp.addActionListener(this);
 		babout.addActionListener(this);
@@ -235,12 +194,15 @@ public class AnnMenuBar implements ActionListener {
 	{
 		String command = e.getActionCommand();
 		Object source = e.getSource();
-		if(command.equals(LOADST) || source == btt)
-			loadImagesPerformed();
-		else if(command.equals(LOADCVST) || source == bcv)
-			loadCVImagesPerformed();
-		else if(command.equals(LOADROIST) || source == broi)
-			loadROIImagesPerformed();
+		
+		if(command.equals(MODELSELECT))
+			frame.initModelSelectWizard();
+		else if(command.equals(TRAINONLY))
+			frame.initTrainOnly();
+		else if(command.equals(IMGANNO))
+			frame.initAnnotate();
+		else if(command.equals(ROIANNO))
+			frame.initROI();
 		else if(command.equals(EXAMPLE1))
 			loadExamples(1);
 		else if(command.equals(EXAMPLE2))
@@ -250,13 +212,6 @@ public class AnnMenuBar implements ActionListener {
 		
 		else if(command.equals("Exit") || source == bexit)
 			System.exit(0);
-
-		/*else if(command.equals("Feature Extractor Tuning") || source == bpa)
-			frame.setPane(1);
-		else if(command.equals("Feature Selector Tuning") || source == bpa)
-			frame.setPane(1);
-		else if(command.equals("Classifier Tuning") || source == bpa)
-			frame.setPane(1);*/
 
 		else if(command.equals("Metal LF"))
 			setLF("Metal");
@@ -295,6 +250,7 @@ public class AnnMenuBar implements ActionListener {
 			}
 			UIManager.setLookAndFeel(lookAndFeel);
 			SwingUtilities.updateComponentTreeUI(frame);
+			frame.pnlLanding.getImageReadyPanel().updateLookAndFeelForOpenFrames();
 			frame.pack();
 		}catch (UnsupportedLookAndFeelException e) {
 			e.printStackTrace();
@@ -312,30 +268,6 @@ public class AnnMenuBar implements ActionListener {
 			e.printStackTrace();
 		}
 
-	}
-
-	protected void loadImagesPerformed()
-	{
-		//set the mode to Training/Testing, and pop up a dialog to load images
-		//Annotator.output = Annotator.OUTPUT_CHOICES[0];
-		//AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(frame, controlPanel, Annotator.OUTPUT_CHOICES[0]);
-	}
-
-	protected void loadCVImagesPerformed()
-	{
-		//set the mode of one of the cross validation modes
-		//Annotator.output = Annotator.OUTPUT_CHOICES[1];
-		//AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(frame, controlPanel, Annotator.OUTPUT_CHOICES[1]);
-	}	
-
-	protected void loadROIImagesPerformed()
-	{
-		//load roi training images, load roi tag file (similar as loadCV)--display?
-		//load the image(s) to be annotated and display!
-		//result of ROI annotation should show on the image, how?
-		//additional parameters: jumping gap of moving window for annotation? 
-		//Annotator.output = Annotator.OUTPUT_CHOICES[2];
-		//AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(frame, controlPanel, Annotator.OUTPUT_CHOICES[2]);
 	}
 	
 	//load the example
@@ -372,32 +304,6 @@ public class AnnMenuBar implements ActionListener {
 		
 		return buildMenu;
 	}
-
-	private JMenu buildComponentMenu()
-	{
-		JMenu componentMenu = new JMenu("Components");
-		componentMenu.setMnemonic('C');
-		JMenuItem addExItem = new JMenuItem("Add a feature extractor");
-		addExItem.setMnemonic('e');
-		JMenuItem addEsItem = new JMenuItem("Add a feature selector");
-		addExItem.setMnemonic('s');
-		JMenuItem addClItem = new JMenuItem("Add a classifier");
-		addClItem.setMnemonic('c');
-
-		componentMenu.add(addExItem);
-		componentMenu.add(addEsItem);
-		componentMenu.add(addClItem);
-
-		//functionality is not implemented yet
-		//dynamic adding feature extractor etc involves invoking editor, compiler or just add
-		//an existing class file?
-		addExItem.setEnabled(false);
-		addEsItem.setEnabled(false);
-		addClItem.setEnabled(false);
-
-		return componentMenu;
-	}
-
 
 	public void displayAbout()
 	{
@@ -439,8 +345,11 @@ public class AnnMenuBar implements ActionListener {
 	/*
 	 * Enables/disables the new wizard menu item
 	 */
-	public void setNewWizardEnabled(boolean isEnabled) {
+	public void setMenuEnabled(boolean isEnabled) {
 		newWizardItem.setEnabled(isEnabled);
+		itemMDSelect.setEnabled(isEnabled); 
+		itemTrainOnly.setEnabled(isEnabled);		
+		annoMenu.setEnabled(isEnabled);
 	}
 
 }

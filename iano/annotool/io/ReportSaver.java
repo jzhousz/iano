@@ -98,7 +98,7 @@ public class ReportSaver {
 					String value = String.valueOf(annotations[model][target].anno);					//Annotation result has target along second dimension, model along first
 					//Also, show probability if the particular model supports probability
 					if(supportsProb[model])
-						value += String.format(" (%.2f%%)", annotations[model][target].prob);
+						value += String.format(" (%.2f%%)", 100 * annotations[model][target].prob);
 					
 					PdfPCell cell = new PdfPCell(new Phrase(value));
 					cell.setBorderColor(Styles.COLOR_BORDER);

@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.UIManager.LookAndFeelInfo;
 
 import annotool.AnnSplashScreen;
+import annotool.Annotator;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -76,21 +77,49 @@ public class AnnotatorGUI extends JFrame
         });
 	}
 	public void reset() {
-		this.remove(pnlLanding);
-		pnlLanding = new LandingPanel(this);
-		this.add(pnlLanding);
+		//this.remove(pnlLanding);
+		//pnlLanding = new LandingPanel(this);
+		pnlLanding.displayChosenPanel(LandingPanel.MAIN);
+		pnlLanding.getImageReadyPanel().reset();
+		//this.add(pnlLanding);
 		this.pack();
 	}
 	
-	/*
-	 * Starts annotation panel in landing panel
+	/**
+	 * Shows annotation mode step of the wizard
 	 */
-	public void initAnnotation() {
+	public void initAnnotationWizard() {
+		pnlLanding.getImageReadyPanel().reset();
 		pnlLanding.displayChosenPanel(LandingPanel.ANNOTYPES);
 		this.pack();
 	}
+	/**
+	 * Shows model selection step of the wizard
+	 */
+	public void initModelSelectWizard() {
+		pnlLanding.getImageReadyPanel().reset();
+		pnlLanding.displayChosenPanel(LandingPanel.MODESELECT);
+		this.pack();
+	}
 	
-	public void setNewWizardEnabled(boolean isEnabled) {
-		menuBar.setNewWizardEnabled(isEnabled);
+	public void setMenuEnabled(boolean isEnabled) {
+		menuBar.setMenuEnabled(isEnabled);
+	}
+	public void initTT() {
+		//Load separate training and testing image sets
+		Annotator.output = Annotator.TT;
+		AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(this, pnlLanding, Annotator.TT);
+	}
+	public void initTrainOnly() {
+		Annotator.output = Annotator.TO;
+		AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(this, pnlLanding, Annotator.TO);
+	}
+	public void initAnnotate() {
+		Annotator.output = Annotator.AN;
+		AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(this, pnlLanding, Annotator.AN);
+	}
+	public void initROI() {
+		Annotator.output = Annotator.ROI;
+		AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(this, pnlLanding, Annotator.ROI);
 	}
 }

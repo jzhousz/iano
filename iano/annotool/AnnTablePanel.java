@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.util.HashMap;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -19,6 +20,8 @@ public class AnnTablePanel extends JPanel  {
 	AnnImageTable currentTestImageTable = null; 
 	AnnImageTable currentCVTable = null;
 	JFrame frame;
+	
+	HashMap<String, String> classNames;
 
 	public AnnTablePanel(JFrame frame) 
 	{ this.frame = frame;	}
@@ -34,6 +37,7 @@ public class AnnTablePanel extends JPanel  {
 
 		AnnImageTable cvTable = new AnnImageTable();
 		tableOne = cvTable.buildImageTable(directory, targetFile, ext);
+		classNames = cvTable.getClassNames();
 
 		if (tableOne != null)
 		{
@@ -60,6 +64,7 @@ public class AnnTablePanel extends JPanel  {
 
 		AnnImageTable cvTable = new AnnImageTable();
 		tableOne = cvTable.buildImageTable(directory, ext);
+		classNames = cvTable.getClassNames();
 
 		if (tableOne != null)
 		{
@@ -84,7 +89,10 @@ public class AnnTablePanel extends JPanel  {
 		if (tableTwo != null)
 			this.remove(tableTwo);
 
-		tableOne = new AnnImageTable().buildImageTable(directory, targetFile, ext);
+		AnnImageTable trainingTable = new AnnImageTable();
+		tableOne = trainingTable.buildImageTable(directory, targetFile, ext);
+		classNames = trainingTable.getClassNames();
+		
 		AnnImageTable testingTable = new AnnImageTable();
 		tableTwo = testingTable.buildImageTable(testdir, testtargetFile, testext);		
 
@@ -171,6 +179,18 @@ public class AnnTablePanel extends JPanel  {
 	//Added: santosh 7/25/2011
 	public AnnImageTable getAnnotationTable() {
 		return currentCVTable;
+	}
+	
+	public void removeTables() {
+		if (tableOne != null)
+			this.remove(tableOne);
+
+		if (tableTwo != null)
+			this.remove(tableTwo);
+	}
+
+	public HashMap<String, String> getClassNames() {
+		return classNames;
 	}
 
 

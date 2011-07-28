@@ -41,7 +41,7 @@ public class AnnoTypePanel extends JPanel implements ActionListener{
 		this.gui = gui;
 		
 		this.setBorder(new EmptyBorder(20, 20, 20, 20) );
-		this.setLayout(new GridLayout(3, 1, 15, 15));
+		this.setLayout(new GridLayout(2, 1, 15, 15));
 		
 		//Icons
 		iconAnnotate = Utils.createImageIcon("/" + IMGANNOTATE);
@@ -103,15 +103,9 @@ public class AnnoTypePanel extends JPanel implements ActionListener{
 	}
 	
 	public void actionPerformed(ActionEvent ev) {
-		if(ev.getSource() == btnAnnotate) {
-			Annotator.output = Annotator.AN;
-			gui.pnlLanding.getImageReadyPanel().setMode();
-			AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, gui.pnlLanding, Annotator.AN);
-		}
-		else if(ev.getSource() == btnROI) {
-			Annotator.output = Annotator.ROI;
-			gui.pnlLanding.getImageReadyPanel().setMode();
-			AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, gui.pnlLanding, Annotator.ROI);
-		}
-	}
+		if(ev.getSource() == btnAnnotate)
+			gui.initAnnotate();
+		else if(ev.getSource() == btnROI)
+			gui.initROI();
+	}	
 }

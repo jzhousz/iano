@@ -7,29 +7,32 @@ import javax.swing.border.TitledBorder;
 
 import java.awt.event.*;
 import java.awt.BorderLayout;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import annotool.AnnOutputPanel;
 import annotool.AnnTablePanel;
+import annotool.Annotation;
 import annotool.Annotator;
+import annotool.gui.model.ModelHelper;
 import annotool.gui.model.ModelLoader;
-import annotool.io.ChainModel;
 import annotool.io.ReportSaver;
 
 public class ImageReadyPanel extends JPanel implements ActionListener
 {
-	private JPanel pnlRight, pnlRightCenter,
+	private JPanel pnlRight, pnlRightCenter, pnlLegends,
 				   pnlModelInfo, pnlChannel, pnlButton;
 	
 	JLabel lbModelInfo;
 	JRadioButton rbRed, rbGreen, rbBlue;
 	JButton btnExpert, btnAutoComp,
-			btnLoadModel, btnApplyModel, btnSaveReport;
+			btnLoadModel, btnApplyModel, btnSaveReport, btnViewModels;
 	
 	String[] channels = {  "red (channel 1)", "green (channel 2)", "blue (channel 3)" };
 	String[] channelInputs = {  "r", "g", "b" };//actual input to algorithm
@@ -49,7 +52,6 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	JFileChooser fileChooser = new JFileChooser();
 	
 	ArrayList<PopUpFrame> openFrames = new ArrayList<PopUpFrame>();
-	ChainModel[] chainModels = null;
 		
 	public ImageReadyPanel(AnnotatorGUI gui) {
 		this.gui = gui;		
@@ -88,6 +90,10 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		pnlRightCenter = new JPanel(new BorderLayout());
 		pnlRightCenter.add(pnlChannel, BorderLayout.NORTH);
 		
+		pnlLegends = new JPanel();
+		pnlLegends.setLayout(new BoxLayout(pnlLegends, BoxLayout.PAGE_AXIS));
+		pnlRightCenter.add(pnlLegends, BorderLayout.CENTER);
+		
 		//Expert and Auto Comparison buttons
 		btnExpert = new JButton("Expert");
 		btnExpert.addActionListener(this);
@@ -101,8 +107,12 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		btnLoadModel = new JButton("Load Model(s)");
 		btnLoadModel.addActionListener(this);
 		
+		btnViewModels = new JButton("View Model(s)");
+		btnViewModels.addActionListener(this);
+		
 		btnSaveReport = new JButton("Save Report");
-		btnSaveReport.addActionListener(this);
+		btnSaveReport.addActionListener(this);	
+		
 		
 		//Panel for buttons
 		pnlButton = new JPanel();
@@ -146,7 +156,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			//Keep track of opened frames
 			openFrames.add(ef);
 			openFrameCount++;
-			gui.setNewWizardEnabled(false);	//Disable new wizard item
+			gui.setMenuEnabled(false);	//Disable new wizard item
 			ef.addWindowListener(new WindowAdapter() {
 	            public void windowClosing(WindowEvent evt) {
 	            	PopUpFrame frame = (PopUpFrame)evt.getSource();
@@ -176,7 +186,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			//Keep track of opened frames
 			openFrames.add(frame);
 			openFrameCount++;
-			gui.setNewWizardEnabled(false);	//Disable new wizard item
+			gui.setMenuEnabled(false);	//Disable new wizard item
 			frame.addWindowListener(new WindowAdapter() {
 	            public void windowClosing(WindowEvent evt) {
 	            	PopUpFrame frame = (PopUpFrame)evt.getSource();
@@ -192,10 +202,13 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			frame.setLocation(x,y);
 		}
 		else if(e.getSource() == btnLoadModel) {
+			gui.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			loader = new ModelLoader(this);
 			if(loader.loadModels()) {
 				btnApplyModel.setEnabled(true);
+				btnViewModels.setEnabled(true);
 			}
+			gui.setCursor(Cursor.getDefaultCursor());
 		}
 		else if(e.getSource() == btnApplyModel) {
 			//Check if model has same information for channel as the current channel selection
@@ -235,6 +248,12 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	            	pnlStatus.setOutput("Failed to save report.");
 	        }
 		}
+		else if(e.getSource() == btnViewModels) {
+			JOptionPane.showMessageDialog(this, 
+					ModelHelper.getModelInfo(loader.getChainModels()), 
+					"Loaded Models", 
+					JOptionPane.INFORMATION_MESSAGE);
+		}
 	}
 	public AnnTablePanel getTablePanel() {
 		return pnlTable;
@@ -273,9 +292,12 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			pnlButton.setLayout(new GridLayout(2, 2));
 			pnlButton.add(btnLoadModel);
 			
-			if(chainModels == null)
+			if(loader == null || loader.getChainModels().size() < 1) {
 				btnApplyModel.setEnabled(false);
+				btnViewModels.setEnabled(false);
+			}
 			pnlButton.add(btnApplyModel);
+			pnlButton.add(btnViewModels);
 			
 			btnSaveReport.setEnabled(false);
 			pnlButton.add(btnSaveReport);
@@ -288,9 +310,11 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		
 		lbModelInfo.setText("<html><b>Mode: </b>" + modelInfo + "</html>");
 	}
+	
 	public void enableSaveReport(boolean state){
 		btnSaveReport.setEnabled(state);
 	}
+	
 	public String getSelectedChannel() {
 		String selectedChannel = null;
 		
@@ -303,39 +327,74 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		
 		return selectedChannel;
 	}
-	public void addStatsPanel(StatsPanel pnlStats) {
-		pnlRightCenter.removeAll();
-		pnlRightCenter.add(pnlChannel, BorderLayout.NORTH);
-		
-		pnlRightCenter.add(pnlStats, BorderLayout.CENTER);
-		
-		pnlRightCenter.revalidate();
-		pnlRightCenter.repaint();
+	
+	/**
+	 * Displays simple statistics for the annotation results
+	 * 
+	 * @param classNames
+	 * @param annotations
+	 * @param modelLabels
+	 */
+	public void showStats(HashMap<String, String> classNames, Annotation[][] annotations, String[] modelLabels) {
+		JLabel lbInfo = new JLabel(ModelHelper.getStatsInfo(classNames, annotations, modelLabels));
+		pnlLegends.removeAll();
+		pnlLegends.add(lbInfo);		
+		pnlLegends.revalidate();
+		pnlLegends.repaint();
 	}
 	
+	public void showClassLegends() {
+		if(pnlTable.getClassNames() != null) {
+			JLabel lbInfo = new JLabel(ModelHelper.getClassNamesInfo(pnlTable.getClassNames()));
+			pnlLegends.removeAll();
+			pnlLegends.add(lbInfo);		
+			pnlLegends.revalidate();
+			pnlLegends.repaint();
+		}
+	}
+	
+	/**
+	 * Called when the PopUp frame is closed.
+	 * Removes the frame from a list of open frames. If none of the frames are open, enables the menu items (New Wizard etc).
+	 * 
+	 * Also, it checks if the frame initiated annotation process. If so, it closes all the other pop up frames and takes the user to annotation mode selection.
+	 * 
+	 * @param frame
+	 */
 	private void frameClosed(PopUpFrame frame) {
 		if(openFrames.contains(frame))
     		openFrames.remove(frame);
         
     	openFrameCount--;
     	if(openFrameCount < 1)
-    		gui.setNewWizardEnabled(true); //Enable new wizard when all pop up frames are closed
+    		gui.setMenuEnabled(true); //Enable new wizard etc when all pop up frames are closed
     	
     	//If this frame initiated apply model, then get chainModels in memory and close all pop up frames
     	if(frame.isApplyModelFired()) {
-    		chainModels = frame.getChainModels();
+    		loader = new ModelLoader(this);
+    		loader.setChainModelsFromArray(frame.getChainModels());
+    		
     		for(PopUpFrame aFrame : openFrames)
     			aFrame.pullThePlug();
-    		openFrameCount = 0;
+    		openFrameCount = 0;    
     		
-    		loader = new ModelLoader(this);
-    		loader.setChainModelsFromArray(chainModels);
-    		
-    		gui.initAnnotation();
+    		gui.initAnnotationWizard();
     	}
     	
     	//Get rid of the frame
     	frame.setVisible(false);
     	frame.dispose();
+	}
+	/**
+	 * Resets the image ready panel minimal state. Used when starting new wizard
+	 */
+	public void reset() {
+		rbGreen.setSelected(true);
+		pnlLegends.removeAll();
+		pnlTable.removeTables();
+	}
+	public void updateLookAndFeelForOpenFrames() {
+		for(PopUpFrame frame : openFrames)
+			SwingUtilities.updateComponentTreeUI(frame);
 	}
 }
