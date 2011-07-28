@@ -273,10 +273,8 @@ public class Annotator implements Runnable
      *  Called by TTAnnotate().
      */
     private void trainingTestingOutput(float[][] trainingfeatures, float[][] testingfeatures, int[][] trainingtargets, int[][] testingtargets, int numOfAnno) {
-        int trainingLength = trainingfeatures.length;
         int testingLength = testingfeatures.length;
-        int numoffeatures;
-
+  
         //initialize structure to store annotation results
         Annotation[][] annotations = new Annotation[numOfAnno][testingLength];
         for (int i = 0; i < numOfAnno; i++) {
@@ -296,18 +294,24 @@ public class Annotator implements Runnable
 
         //loop for each annotation target (one image may have multiple labels)
         for (int i = 0; i < numOfAnno; i++) {
+        	//selected features must be cleared for next annotation label
+        	float[][] selectedTrainingFeatures = null;
+        	float[][] selectedTestingFeatures = null;
+        	
             if (featureSelector.equalsIgnoreCase("None")) //use the original feature without selection -- overwrite numoffeatures value
             {
-                numoffeatures = trainingfeatures[0].length;
+                //numoffeatures = trainingfeatures[0].length;
+                selectedTrainingFeatures = trainingfeatures;
+                selectedTestingFeatures = testingfeatures;
             }
             else {
                 setGUIOutput("Selecting features ... ");
                 //Supervised feature selectors need corresponding target data
                 ComboFeatures combo = selectGivenAMethod(featureSelector, para, trainingfeatures, testingfeatures, trainingtargets[i], testingtargets[i]);
-                //selected features overrides the passed in original features
-                trainingfeatures = combo.getTrainingFeatures();
-                testingfeatures = combo.getTestingFeatures();
-                numoffeatures = trainingfeatures[0].length;
+                //selected features should not override the passed-in original features
+                selectedTrainingFeatures = combo.getTrainingFeatures();
+                selectedTestingFeatures = combo.getTestingFeatures();
+                //numoffeatures = trainingfeatures[0].length;
             }
 
             //pass the training and testing data to Validator
@@ -321,7 +325,7 @@ public class Annotator implements Runnable
                 }
                 try
                 {
-                  rate = classifyGivenAMethod(classifierChoice, para, trainingfeatures, testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
+                  rate = classifyGivenAMethod(classifierChoice, para, selectedTrainingFeatures, selectedTestingFeatures, trainingtargets[i], testingtargets[i], annotations[i]);
                   setGUIOutput("Recog Rate for " + annotationLabels.get(i) + ": " + rate);
                   if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
                     return;
@@ -744,9 +748,8 @@ public class Annotator implements Runnable
           extractor = new StackSimpleHaarFeatureExtractor(parameters);
        else if (name.equals("LIGHT3D")) 
     	  extractor = new StackThreeDirectionHaarFeatureExtractor(parameters);
-       //else if (extractor.equals("2D Hu Moments")) {
-       //   extractor = new ImageMoments(parameters);
-
+       else if (name.equals("2D Hu Moments")) 
+          extractor = new ImageMoments(parameters);
    	   else
           setGUIOutput(name + "is not a supported extractor.");
 
@@ -905,9 +908,11 @@ public class Annotator implements Runnable
                 indices = selector.getIndices();
             }
             catch (Exception e) {
+            	e.printStackTrace();
                 System.err.println(e.getMessage());
             }
             selector = (new mRMRFeatureSelector(testingFeatures, testTargets, chosenSelector, parameters));
+            System.out.println("indices.length = " + indices.length);
             float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
             result.setTrainingFeatures(selectedTrainingFeatures);
             result.setTestingFeatures(selectedTestingFeatures);

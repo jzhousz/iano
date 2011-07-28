@@ -5,8 +5,9 @@ import Jama.*;
 //  Linear Discriminant Classifier based on Multivariate Normal Distribution.
 //  Estimate the pooled covariance matrix of all classes.
 // TODO 11/11/08:  
-//       1. normalize posterior probability
+//       1. normalize posterior probability (done 07/26/2011)
 //       2. check the pooled covariance matrix to be positive definite
+//  
 
 public class LDAClassifier implements SavableClassifier {
 
@@ -53,28 +54,34 @@ public class LDAClassifier implements SavableClassifier {
 		double[] probest = new double[5];
 
 		//There are three ways to use this classifier.
-        /*
+        
+		
         //the one method version		
 		LDAClassifier classifier = new LDAClassifier(priors);
 		try {
 		classifier.classify(training,  trainingtargets, testing, predictions, probest);
+		for(int i=0; i< 5; i++)
+		  System.out.println(predictions[i]+":prob:"+probest[i]);
 		}catch(Exception e)
 		{ e.printStackTrace();}
-        */
-		
-		/*
+        
+ 		
+        /*  		
 		//the two methods (train/classify) version
 		java.util.HashMap<String, String> parameters = new java.util.HashMap<String, String>();
 		parameters.put("Priors", "0.3 0.7");
 		SavableClassifier classifier = new LDAClassifier(parameters);
 		Object model = classifier.trainingOnly(training, trainingtargets);
 		try{
-		   predictions = classifier.classifyUsingModel(model, testing);
+		   predictions = classifier.classifyUsingModel(model, testing, probest);
+			for(int i=0; i< 5; i++)
+				  System.out.println(predictions[i]+":prob:"+probest[i]);
+
 		}catch(Exception e)
 		{ e.printStackTrace();}
 		*/
-		
-		
+		 
+		/*
 		//the save model to file version
 		java.util.HashMap<String, String> parameters = new java.util.HashMap<String, String>();
 		parameters.put("Priors", "0.3 0.7");
@@ -92,8 +99,9 @@ public class LDAClassifier implements SavableClassifier {
 		{ e.printStackTrace();}
 		
 		for(int i = 0; i < predictions.length; i++)
-			System.out.println(predictions[i]); //11121
+			System.out.println(predictions[i]+ ":probability"+ probest[i]); //11121
 		
+		*/
 	}
 
 	public LDAClassifier(java.util.HashMap<String, String> parameters)
@@ -117,6 +125,13 @@ public class LDAClassifier implements SavableClassifier {
 	public void classify(float[][] trainingPatterns, int[] trainingtargets, float[][] testingPatterns, int[] predictions, double[] probesti) throws Exception
 	{
 		LDATrainedModel trainedModel = (LDATrainedModel) trainingOnly(trainingPatterns, trainingtargets);
+	    int[] results = classifyUsingModel(trainedModel, testingPatterns, probesti);
+
+	    //set to the passed in structure
+	    for(int i=0; i<predictions.length; i++)
+	    	predictions[i] = results[i]; 
+
+	    /*
 		int testinglength = testingPatterns.length;
 	   	Matrix R = trainedModel.getTrainedR();
        	double logDetSigma = trainedModel.getLogDetSigma();
@@ -167,15 +182,25 @@ public class LDAClassifier implements SavableClassifier {
 		{
 			double max = posterior[i][0]; 
 			int target = 0;
+			//use total to normalize posterior probability
+			double total = Math.exp(posterior[i][0]);
 			for(int k = 1; k < ngroups; k++)
+			{
 				if (posterior[i][k] > max)
 				{
 					target = k;
 					max = posterior[i][k];
 				}
-			probesti[i] = max;
+				total += Math.exp(posterior[i][k]);
+				//System.out.println(Math.exp(posterior[i][k]));
+			}
+			//System.out.println("total:"+ total);
+			//probesti[i] = Math.exp(max);
+			probesti[i] = Math.exp(max)/total;
 			predictions[i] =  ((Integer) targetmap.get(target)).intValue();	
 		}
+		
+		*/
 	}
 
 	// Do data transform to double, and calculate the means.
@@ -291,6 +316,8 @@ public class LDAClassifier implements SavableClassifier {
 		int[] convertedTargets = convertTargets(trainingtargets);
 		for(int i =0; i < convertedTargets.length; i++)
 			System.out.println(convertedTargets[i]);
+		
+		System.out.print("ngroups before setUniformPriors "+ ngroups);
 		
 		if(priors == null && ngroups != 0)
 			setUniformPriors();
@@ -419,13 +446,20 @@ public class LDAClassifier implements SavableClassifier {
 		{
 			double max = posterior[i][0]; 
 			int target = 0;
+			//use total to normalize posterior probability
+			double total = Math.exp(posterior[i][0]);
+
 			for(int k = 1; k < ngroups; k++)
+			{
 				if (posterior[i][k] > max)
 				{
 					target = k;
 					max = posterior[i][k];
 				}
-			probesti[i] = max;  // probability estimation can be useful later.
+			    total += Math.exp(posterior[i][k]);
+			}
+			//probesti[i] = max;  
+			probesti[i] = Math.exp(max)/total;
 			predictions[i] =  ((Integer) targetMap.get(target)).intValue();	
 		}
       	
