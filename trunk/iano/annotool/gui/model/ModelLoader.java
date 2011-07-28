@@ -9,18 +9,10 @@ import javax.swing.JFileChooser;
 import annotool.AnnOutputPanel;
 import annotool.Annotation;
 import annotool.Annotator;
-import annotool.ComboFeatures;
-import annotool.classify.Classifier;
 import annotool.classify.SavableClassifier;
-import annotool.classify.Validator;
-import annotool.gui.ButtonTabComponent;
 import annotool.gui.ImageReadyPanel;
-import annotool.gui.ResultPanel;
-import annotool.gui.StatsPanel;
 import annotool.io.ChainModel;
 import annotool.io.DataInput;
-import annotool.select.FeatureSelector;
-import annotool.select.FishersCriterion;
 
 public class ModelLoader implements Runnable {
 	AnnOutputPanel pnlStatus = null;
@@ -302,8 +294,7 @@ public class ModelLoader implements Runnable {
 		
 		//Display statistics
 		classNames = chainModels.get(0).getClassNames();								//TODO
-		StatsPanel pnlStats = new StatsPanel(annotations, classNames, modelLabels);
-		pnlImages.addStatsPanel(pnlStats);
+		pnlImages.showStats(classNames, annotations, modelLabels);
 		
 		pnlStatus.setOutput("DONE");
 	}
@@ -331,5 +322,9 @@ public class ModelLoader implements Runnable {
 		if(chainModelsArr != null)
 			for(ChainModel model : chainModelsArr)
 				this.chainModels.add(model);
+	}
+
+	public ArrayList<ChainModel> getChainModels() {
+		return chainModels;
 	}
 }

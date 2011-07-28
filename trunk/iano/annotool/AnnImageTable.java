@@ -6,6 +6,7 @@ import ij.process.*;
 import java.awt.Component;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.HashMap;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -35,6 +36,7 @@ public class AnnImageTable {
 	//Object[][] tabledata = null;
 	int numOfAnno;
 	java.util.ArrayList<String> annotations; //labels
+	HashMap<String, String> classNames;
 
 	AnnImageTable()
 	{	}
@@ -64,6 +66,7 @@ public class AnnImageTable {
 			targets = labelReader.getTargets(targetFile,children);
 			numOfAnno = labelReader.getNumOfAnnotations();
 			//annotations = labelReader.getAnnotations();
+			classNames = labelReader.getClassnames();
 		}catch(java.io.FileNotFoundException e)
 		{
 		    e.printStackTrace();
@@ -402,6 +405,10 @@ public class AnnImageTable {
 
 	public String[] getChildren() {
 		return children;
+	}
+
+	public HashMap<String, String> getClassNames() {
+		return classNames;
 	}
 
 }

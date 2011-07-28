@@ -266,6 +266,9 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 				if(testingTarget)
 					pnlImage.getOutputPanel().setOutput("Target file loaded from "+Annotator.targetFile+ ".");
 
+				pnlImage.setMode();
+				pnlImage.showClassLegends();
+				
 				//Display the panel with images
 				pnlLanding.displayImageReadyPanel();
 				
@@ -307,6 +310,9 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 				pnlImage.getOutputPanel().setOutput("Testing Images loaded from "+testdirField.getText().trim()+ ".");
 				pnlImage.getOutputPanel().setOutput("Testing Target file loaded from "+Annotator.testtargetFile+ ".");
 	
+				pnlImage.setMode();
+				pnlImage.showClassLegends();
+				
 				//Display the panel with images
 				pnlLanding.displayImageReadyPanel();
 				

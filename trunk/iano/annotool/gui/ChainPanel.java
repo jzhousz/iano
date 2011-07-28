@@ -148,7 +148,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnSaveModel = new JButton("Save Model");
 		btnSaveModel.setEnabled(false);
 		btnSaveModel.addActionListener(this);
-		btnApplyModel = new JButton("Apply Model");
+		btnApplyModel = new JButton("Annotate");
 		btnApplyModel.setEnabled(false);
 		btnApplyModel.addActionListener(this);
 		
