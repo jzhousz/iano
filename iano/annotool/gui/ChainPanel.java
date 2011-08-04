@@ -609,7 +609,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	    	
 	        pnlOutput.setOutput("Extracting features...");
 	        
-	        //Start of extraction
+	        //Start of extraction: TODO:
 	        String extractor = "None";
 	        HashMap<String, String> params = new HashMap<String, String>();
 	        
@@ -816,39 +816,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        pnlOutput.setOutput("Extracing features ... ");
 	        
 	        //Start of extraction
-	        String extractor = "None";
-	        HashMap<String, String> params = new HashMap<String, String>();
-	        
-	        int numExtractors = chain.getExtractors().size();
-	        float[][][] exFeatures = new float[numExtractors][][];
-	        
-	        int size = 0;	//To keep track of total size
-	        for(int exIndex=0; exIndex < numExtractors; exIndex++) {
-	        	extractor = chain.getExtractors().get(exIndex).getName();
-	        	params = chain.getExtractors().get(exIndex).getParams();
-	        	
-	        	exFeatures[exIndex] = anno.extractGivenAMethod(extractor, params, problem);
-	        	
-	        	size += exFeatures[exIndex][0].length;
-	        }
-	        
-	        float[][] features = null;
-	        
-	        if(numExtractors < 1) {	//If no extractor, call the function by passing "None"
-	        	features = anno.extractGivenAMethod(extractor, params, problem);
-	        }
-	        else {	//Else, create feature array with enough space to hold data from all extractors 
-	        	features = new float[problem.getLength()][size];
-	        	
-	        	int destPos = 0;
-	        	for(int exIndex=0; exIndex < numExtractors; exIndex++) {
-	        		for(int item=0; item < features.length; item++) {
-	        			System.arraycopy(exFeatures[exIndex][item], 0, features[item], destPos, exFeatures[exIndex][item].length);
-	        		}
-	        		destPos += exFeatures[exIndex][0].length;
-	        	}
-	        }
-	        exFeatures = null;
+	        float[][] features =  anno.extractWithMultipleExtractors(problem, chain.getExtractors());
 	        //End of extraction
 	        
 	        //raw data is not used after this point, set to null.: commented because used for subsequent loop runs

@@ -410,5 +410,12 @@ public class AnnImageTable {
 	public HashMap<String, String> getClassNames() {
 		return classNames;
 	}
+	
+	public int[] getSelectedRows() {
+		if (table != null)
+			return table.getSelectedRows();
+		
+		return null;
+	}
 
 }

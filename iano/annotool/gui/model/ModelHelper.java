@@ -73,7 +73,7 @@ public class ModelHelper {
 		strBuffer.append("<html>");		
 		String newLine = "<br/>";
 		
-		strBuffer.append("<b>Classes: </b>" + newLine);
+		//strBuffer.append("<b>Classes: </b>" + newLine);
 		for(String key : sortedClassNames.keySet())
 			strBuffer.append(key + " : " + sortedClassNames.get(key) + newLine);
 		
@@ -89,7 +89,7 @@ public class ModelHelper {
 		strBuffer.append("<html>");		
 		String newLine = "<br/>";
 		
-		strBuffer.append("<b>Identified Classes: </b>" + newLine);
+		//strBuffer.append("<b>Identified Classes: </b>" + newLine);
 		//Build panel for each annotation label
 		for(int i=0; i < annotations.length; i++)
 			strBuffer.append(getStatsInfoForModel(classNames, annotations[i], modelLabels[i]) + newLine);		

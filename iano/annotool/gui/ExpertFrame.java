@@ -14,6 +14,7 @@ import annotool.classify.Classifier;
 import annotool.classify.SavableClassifier;
 import annotool.classify.Validator;
 import annotool.gui.model.Extractor;
+import annotool.gui.model.ModelFilter;
 import annotool.gui.model.ModelSaver;
 import annotool.gui.model.Selector;
 import annotool.io.AlgoXMLParser;
@@ -77,11 +78,14 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	
 	JFileChooser fileChooser;
 	
+	boolean enableSave = false;
+	
 	public ExpertFrame(String arg0, boolean is3D, String channel) {
 		super(arg0);
 		this.channel = channel;
 		
 		fileChooser = new JFileChooser();
+		fileChooser.addChoosableFileFilter(new ModelFilter());
 		
 		pnlMain = new JPanel();
 		pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
@@ -356,8 +360,11 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		this.pack();
 		//Re-enable the buttons
 		btnRun.setEnabled(true);
-		btnSaveModel.setEnabled(true);
-		btnAnnotate.setEnabled(true);
+		
+		if(enableSave) {
+			btnSaveModel.setEnabled(true);
+			btnAnnotate.setEnabled(true);
+		}
 	}
 	//Train Only
 	private void trainOnly() {
@@ -427,7 +434,10 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             
             if(classifierObj instanceof SavableClassifier) {
             	((SavableClassifier)classifierObj).trainingOnly(selectedFeatures, trainingTargets[i]);
+            	enableSave = false;
             }
+            else
+            	enableSave = true;
             
             //Save information to dump in chain file
         	chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
@@ -549,6 +559,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             catch(Exception ex) {
             	ex.printStackTrace();
             }
+            
+            enableSave = (classifierObj instanceof SavableClassifier)? true : false;
             		
             System.out.println(rate);
             
@@ -694,6 +706,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             	pnlOutput.setOutput("Exception! " + ex.getMessage());
             	ex.printStackTrace();
             }
+            
+            enableSave = (classifierObj instanceof SavableClassifier)? true : false;
             
             //output results to GUI and file
             System.out.println("rate for annotation target " + i + ": " + recograte[K]);

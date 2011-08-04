@@ -27,12 +27,14 @@ public class AnnMenuBar implements ActionListener {
 	final String EXAMPLE1  = "Fruitfly Brain Neuronal Bundles (2D) ";
 	final String EXAMPLE2  = "Fruitfly Brain Neuronal Bundles (3D) ";
 	
-	final String imageResPA = "images/Preferences16.gif";
-	final String imageResHelp = "images/ContextualHelp16.gif";
-	final String imageResAbout = "images/About16.gif";
-	final String imageResExit ="images/exit16.gif";
+	final String imageResNewWiz = "images/icons/bullet_green.png";
+	final String imageResHelp = "images/icons/help.png";
+	final String imageResAbout = "images/icons/information.png";
+	final String imageResExit ="images/icons/cross.png";
 	
-	JButton bpa, babout, bhelp, bexit; //icons on toolbar
+	final String aboutText = "About BI-CAT (Biological Image Classification and Annotation Tool)";
+	
+	JButton bNewWiz, babout, bhelp, bexit; //icons on toolbar
 	
 	JMenuItem newWizardItem, itemMDSelect, itemTrainOnly;
 	
@@ -47,8 +49,8 @@ public class AnnMenuBar implements ActionListener {
 
 		JMenuBar bar = new JMenuBar();
 		
-		JMenu fileMenu = new JMenu("File");
-		fileMenu.setMnemonic('F');
+		JMenu fileMenu = new JMenu("Home");
+		fileMenu.setMnemonic('o');
 
 		newWizardItem = new JMenuItem(NEWWZ);
 		newWizardItem.addActionListener(this);
@@ -107,7 +109,7 @@ public class AnnMenuBar implements ActionListener {
 		JMenuItem helpCItem = new JMenuItem("Help Contents");
 		helpCItem.setMnemonic('e');
 		helpCItem.addActionListener(this);
-		JMenuItem aboutItem = new JMenuItem("About IANO (Image Annotation Tool)");
+		JMenuItem aboutItem = new JMenuItem(aboutText);
 		aboutItem.setMnemonic('A');
 		aboutItem.addActionListener(this);
 		helpMenu.add(helpCItem);
@@ -135,10 +137,10 @@ public class AnnMenuBar implements ActionListener {
 		{
 			System.out.println("Load icon images from resources..");
 			
-			url = this.getClass().getResource("/"+imageResPA);
-			ImageIcon img = new ImageIcon(url);
-			if (img!=null)   bpa = new JButton(img);
-
+			url = this.getClass().getResource("/"+imageResNewWiz);
+			ImageIcon img1 = new ImageIcon(url);
+			if (img1!=null)   bNewWiz = new JButton(img1);
+			
 			url = this.getClass().getResource("/"+imageResHelp);
 			ImageIcon img2 = new ImageIcon(url);
 			if (img2!=null)   bhelp = new JButton(img2);
@@ -163,25 +165,25 @@ public class AnnMenuBar implements ActionListener {
 		if (!loaded)
 		{
 			//System.out.println("Try to load application icon images from relative path.");
-			bpa = new JButton(new ImageIcon(imageResPA)); //preference
+			bNewWiz = new JButton(new ImageIcon(imageResNewWiz)); //New Wizard
 			bhelp = new JButton(new ImageIcon(imageResHelp)); //help
 			babout = new JButton(new ImageIcon(imageResAbout)); //about
 			bexit = new JButton(new ImageIcon(imageResExit)); //about
 		}
 
-		bpa.setToolTipText("Set Parameters");
+		bNewWiz.setToolTipText("New Wizard");
 		bhelp.setToolTipText("Help");
 		babout.setToolTipText("About");
 		bexit.setToolTipText("Exit");
 
 
-		toolBar.add(bpa);
+		toolBar.add(bNewWiz);
 		toolBar.add(bhelp);
 		toolBar.add(babout);
 		toolBar.add(bexit);
 
 
-		bpa.addActionListener(this);
+		bNewWiz.addActionListener(this);
 		bhelp.addActionListener(this);
 		babout.addActionListener(this);
 		bexit.addActionListener(this);
@@ -221,9 +223,9 @@ public class AnnMenuBar implements ActionListener {
 			setLF("Nimbus");
 		else if(command.equals("Help Contents") || source == bhelp)
 			displayHelp();
-		else if(command.equals("About IANO (Image Annotation Tool)") || source == babout)
+		else if(command.equals(aboutText) || source == babout)
 			displayAbout();
-		else if(command.equals(NEWWZ))
+		else if(command.equals(NEWWZ) || source == bNewWiz)
 			frame.reset();
 	}
 
@@ -307,7 +309,7 @@ public class AnnMenuBar implements ActionListener {
 
 	public void displayAbout()
 	{
-		String aboutString =  "IANO (Image Annotation Tool)\n\n" +
+		String aboutString =  "BI-CAT (Biological Image Classification and Annotation Tool)\n\n" +
 		"Version: 1.0.0\n\n" +
 		"Jie Zhou, Hanchuan Peng and other contributors\n" +
 		"2008 - 2009.  All rights reserved.\n\n" +
@@ -316,7 +318,10 @@ public class AnnMenuBar implements ActionListener {
 		"ImageJ -- \thttp://rsbweb.nih.gov/ij \n" +
 		"LibSVM -- \thttp://www.csie.ntu.edu.tw/~cjlin/libsvm/ \n" +
 		"Jama -- \thttp://math.nist.gov/javanumerics/jama/ \n\n" +
-		"Weka -- \thttp://www.cs.waikato.ac.nz/ml/weka/ \n\n";
+		"Weka -- \thttp://www.cs.waikato.ac.nz/ml/weka/ \n\n" +
+		"jFreeChart -- \thttp://www.jfree.org/jfreechart/ \n" +
+		"iText -- \thttp://itextpdf.com/ \n\n" +
+		"Toolbar icons -- \thttp://www.famfamfam.com/lab/icons/silk/\n";
 //		"Reference:\n" +
 //	"Jie Zhou and Hanchuan Peng, \"Automatic recognition and annotation of gene expression \n"+
 //		   "patterns of fly embryos,\" Bioinformatics, 23(5):589-596, 2007.";
@@ -325,22 +330,21 @@ public class AnnMenuBar implements ActionListener {
 
 	}
 
-	public void displayHelp()
-	{
-		String helpString =  "IANO (Image Annotation Tool): \n" +
+	public void displayHelp() {
+		String helpString =  "BI-CAT (Biological Image Classification and Annotation Tool): \n" +
 		"Annotation tool for multi-dimensional biological images.\n\n" +
-		"-- It supports three modes: training/testing,  cross-validation and RegionOfInterest.\n\n" + 
+		"It supports Training/Testing and Cross Validation modes for selecting model. \n" + 
+		"Training only mode can also be used.\n\n" +
+		"For each of these methods, there are two modes - Expert mode and Auto-comparision mode.\n\n" +
+		"In Expert mode, the user can select a single algorithm for feature extractor, feature selector and classifier.\n" + 
+		"Then the selected algorithms will be applied and a model created. \n\n" + 
+		"In Auto-comparison mode, the user can create multiple chains of algorithms and run the selected chains. \n" +
+		"The best chain identified for a given problem will be selected.\n\n" +
+		"For image classification and annotation, there are two modes - Image Annotation and ROI(Region of Interest) Annotation.\n\n" +
+		"Both of these modes can be used by loading saved model or by using the model in memory.\n\n";
 		
-/*
-		"-- 3D Feature Extractors: For a 3Dimage of size nx*ny*nz:\n" + 
-		" Number of features after the partial frames approach is (nx*ny)\n"+
-		" Number of features after the light approach is (nx*ny + nx*nz + ny*nz)\n"+
-		" Number of features after the full approach is (nx*ny*nz)\n\n"+
-*/
-		"More help contents to be added.";
 
-		javax.swing.JOptionPane.showMessageDialog(null,helpString);
-
+		javax.swing.JOptionPane.showMessageDialog(null, helpString);
 	}
 	/*
 	 * Enables/disables the new wizard menu item
