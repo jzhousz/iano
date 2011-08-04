@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Algorithms>
-	<Algorithm type="2DExtractor">
-		<Name>Principal Components</Name>
-		<Parameter type="Boolean">
-			<Name>Reduction</Name>
-			<Default>0</Default>
-		</Parameter>
-	</Algorithm>
 	<Algorithm type="Selector">
 		<Name>mRMR-MIQ</Name>
 		<Parameter type="Integer">
@@ -52,6 +45,14 @@
 	<Algorithm type="2DExtractor">
 		<Name>HAAR</Name>
 		<Desc>HAAR wavelet transform</Desc>
+		<Parameter type="Integer">
+			<Name>Wavelet Level</Name>
+			<Default>2</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="3DExtractor">
+		<Name>Partial3D</Name>
+		<Desc>Average HAAR of middle frame</Desc>
 		<Parameter type="Integer">
 			<Name>Wavelet Level</Name>
 			<Default>2</Default>

@@ -59,7 +59,7 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 	    else if(modeflag == Annotator.ROI) //roi
 	    {
 	    	testingTarget = false;
-			getContentPane().add(buildTrainTestFileLoadingPanel());
+			getContentPane().add(buildFileLoadingPanel());
 	    }
 	    else if(modeflag == Annotator.TO) //train only
 	    {

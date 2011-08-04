@@ -3,6 +3,7 @@ package annotool;
 import javax.swing.SwingUtilities;
 import java.util.*;
 
+import annotool.gui.model.Extractor;
 import annotool.io.*;
 import annotool.extract.*;
 import annotool.select.*;
@@ -757,6 +758,50 @@ public class Annotator implements Runnable
     	
     }
     
+    /**
+     * This method combines together the extraction result with multiple extractors in a single dimension (per problem)
+     * 
+     * @param problem
+     * @param extractors
+     * @return Array of extracted features for each image
+     */
+    public float[][] extractWithMultipleExtractors(DataInput problem, ArrayList<Extractor> extractors) {
+    	String extractor = "None";
+        HashMap<String, String> params = new HashMap<String, String>();
+        
+        int numExtractors = extractors.size();
+        float[][][] exFeatures = new float[numExtractors][][];
+        
+        int dataSize = 0;	//To keep track of total size
+        for(int exIndex=0; exIndex < numExtractors; exIndex++) {
+        	extractor = extractors.get(exIndex).getName();
+        	params = extractors.get(exIndex).getParams();
+        	
+        	exFeatures[exIndex] = this.extractGivenAMethod(extractor, params, problem);
+        	
+        	dataSize += exFeatures[exIndex][0].length;
+        }
+        
+        float[][] features = null;
+        
+        if(numExtractors < 1) {	//If no extractor, call the function by passing "None"
+        	features = this.extractGivenAMethod(extractor, params, problem);
+        }
+        else {	//Else, create feature array with enough space to hold data from all extractors 
+        	features = new float[problem.getLength()][dataSize];
+        	
+        	int destPos = 0;
+        	for(int exIndex=0; exIndex < numExtractors; exIndex++) {
+        		for(int item=0; item < features.length; item++) {
+        			System.arraycopy(exFeatures[exIndex][item], 0, features[item], destPos, exFeatures[exIndex][item].length);
+        		}
+        		destPos += exFeatures[exIndex][0].length;
+        	}
+        }
+        
+        return features;
+    }
+    
     /* 
      * overloaded method for applying 2nd+ subsequent (not parallel) extractor
      * Not used in GUI.
@@ -962,7 +1007,7 @@ public class Annotator implements Runnable
             }
         }
         return selectedFeatures;        
-    }
+    }    
 
     // ----- temporary methods for parsing algorithm parameters.	
     //parse a parameter for feature selector.

@@ -26,10 +26,12 @@ import annotool.io.ReportSaver;
 
 public class ImageReadyPanel extends JPanel implements ActionListener
 {
-	private JPanel pnlRight, pnlRightCenter, pnlLegends,
-				   pnlModelInfo, pnlChannel, pnlButton;
+	private JPanel pnlRight, pnlRightCenter, pnlDynamic, 
+				   pnlLegends,
+				   pnlModeInfo, pnlChannel, pnlButton;
+	private ROIParameterPanel pnlROIParam = null;
 	
-	JLabel lbModelInfo;
+	JLabel lbModeInfo;
 	JRadioButton rbRed, rbGreen, rbBlue;
 	JButton btnExpert, btnAutoComp,
 			btnLoadModel, btnApplyModel, btnSaveReport, btnViewModels;
@@ -54,45 +56,55 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	ArrayList<PopUpFrame> openFrames = new ArrayList<PopUpFrame>();
 		
 	public ImageReadyPanel(AnnotatorGUI gui) {
-		this.gui = gui;		
+		this.gui = gui;
 		
-		lbModelInfo = new JLabel();
+		//Center panel for displaying loaded images		
+		pnlTable = new AnnTablePanel(gui);
+		//Text area for status
+		pnlStatus = new AnnOutputPanel();
 		
-		pnlModelInfo = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		pnlModelInfo.setBorder(new EmptyBorder(5,5,5,5));
-		pnlModelInfo.add(lbModelInfo);		
+		//Mode information
+		pnlModeInfo = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		lbModeInfo = new JLabel();	
+		pnlModeInfo.add(lbModeInfo);		
 		
-		//Channel selection panel
-		pnlChannel = new JPanel();
-		pnlChannel.setLayout(new GridLayout(3, 1));
-		pnlChannel.setBorder(new CompoundBorder(new TitledBorder(null, "Channel", 
-				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5)));
-		
-		//Channel radio buttons
-		rbRed = new JRadioButton(channels[0]);
-		rbGreen = new JRadioButton(channels[1]);
-		rbBlue = new JRadioButton(channels[2]);
-		
-		//Group radio buttons
-		ButtonGroup channelGroup = new ButtonGroup();
-		channelGroup.add(rbRed);
-		channelGroup.add(rbGreen);
-		channelGroup.add(rbBlue);
-		
-		rbGreen.setSelected(true);     //Default channel of green
-		
-		//Add radio buttons to container
-		pnlChannel.add(rbRed);
-		pnlChannel.add(rbGreen);
-		pnlChannel.add(rbBlue);
+		createChannelPanel();
+		createButtonsPanel();
 		
 		//Panel for center part of right panel
 		pnlRightCenter = new JPanel(new BorderLayout());
 		pnlRightCenter.add(pnlChannel, BorderLayout.NORTH);
 		
+		//Container for dynamic panels
+		pnlDynamic = new JPanel();
+		pnlDynamic.setLayout(new BoxLayout(pnlDynamic, BoxLayout.PAGE_AXIS));
+		pnlRightCenter.add(pnlDynamic, BorderLayout.CENTER);
+		
+		//Container for legends
 		pnlLegends = new JPanel();
 		pnlLegends.setLayout(new BoxLayout(pnlLegends, BoxLayout.PAGE_AXIS));
-		pnlRightCenter.add(pnlLegends, BorderLayout.CENTER);
+		pnlDynamic.add(pnlLegends);	
+			
+		//Add components to right side bar
+		pnlRight = new JPanel(new BorderLayout());
+		pnlRight.add(pnlModeInfo, BorderLayout.NORTH);
+		pnlRight.add(pnlRightCenter, BorderLayout.CENTER);
+		pnlRight.add(pnlButton, BorderLayout.SOUTH);
+		
+		
+		//Add components to top level container
+		this.setLayout(new BorderLayout());
+		this.add(pnlTable, BorderLayout.CENTER);
+		this.add(pnlRight, BorderLayout.EAST);
+		this.add(pnlStatus, BorderLayout.SOUTH);
+		
+	}
+	
+	//Creates the panel with buttons
+	//The actually addition of  buttons to pnlButton id done in setMode method since separate modes require separate button sets
+	private void createButtonsPanel() {
+		//Panel for buttons
+		pnlButton = new JPanel();
 		
 		//Expert and Auto Comparison buttons
 		btnExpert = new JButton("Expert");
@@ -112,32 +124,33 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		
 		btnSaveReport = new JButton("Save Report");
 		btnSaveReport.addActionListener(this);	
+	}
+	
+	//Creates the panel with radio buttons for channel selection
+	private void createChannelPanel() {
+		//Channel selection panel
+		pnlChannel = new JPanel();
+		pnlChannel.setLayout(new GridLayout(3, 1));
+		pnlChannel.setBorder(BorderFactory.createTitledBorder(null, "Channel", 
+				TitledBorder.LEFT, TitledBorder.TOP));
 		
+		//Channel radio buttons
+		rbRed = new JRadioButton(channels[0]);
+		rbGreen = new JRadioButton(channels[1]);
+		rbBlue = new JRadioButton(channels[2]);
 		
-		//Panel for buttons
-		pnlButton = new JPanel();
-		//pnlButton.setLayout(new GridLayout(1, 2));
-		//pnlButton.add(btnExpert);
-		//pnlButton.add(btnAutoComp); 			
-			
-		//Add components to right side bar
-		pnlRight = new JPanel(new BorderLayout());
-		pnlRight.add(pnlModelInfo, BorderLayout.NORTH);
-		pnlRight.add(pnlRightCenter, BorderLayout.CENTER);
-		pnlRight.add(pnlButton, BorderLayout.SOUTH);
+		//Group radio buttons
+		ButtonGroup channelGroup = new ButtonGroup();
+		channelGroup.add(rbRed);
+		channelGroup.add(rbGreen);
+		channelGroup.add(rbBlue);
 		
-		//Text area for status
-		pnlStatus = new AnnOutputPanel();
+		rbGreen.setSelected(true);     //Default channel of green
 		
-		//Center panel for displaying loaded images		
-		pnlTable = new AnnTablePanel(gui);
-		
-		//Add components to top level container
-		this.setLayout(new BorderLayout());
-		this.add(pnlRight, BorderLayout.EAST);
-		this.add(pnlStatus, BorderLayout.SOUTH);
-		this.add(pnlTable, BorderLayout.CENTER);
-		
+		//Add radio buttons to container
+		pnlChannel.add(rbRed);
+		pnlChannel.add(rbGreen);
+		pnlChannel.add(rbBlue);
 	}
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == btnExpert) {
@@ -211,6 +224,18 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			gui.setCursor(Cursor.getDefaultCursor());
 		}
 		else if(e.getSource() == btnApplyModel) {
+			//If ROI mode, check if at least one image is selected
+			if(Annotator.output.equals(Annotator.ROI)) {
+				int[] selectedRows = pnlTable.getAnnotationTable().getSelectedRows();
+				if(selectedRows == null || selectedRows.length < 1) {
+					JOptionPane.showMessageDialog(this,
+						    "Select one or more image for ROI annotation.", 
+						    "No image selected",
+						    JOptionPane.INFORMATION_MESSAGE);
+					return;
+				}
+			}
+			
 			//Check if model has same information for channel as the current channel selection
 			if(!loader.validate()) {
 				int choice = JOptionPane.showConfirmDialog(this,
@@ -270,6 +295,17 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		this.is3D = flag;
 	}
 	public void setMode() {
+		//Remove roi parameter panel if it exists and reset legends panel
+		if(pnlROIParam != null) {
+			pnlDynamic.remove(pnlROIParam);
+			pnlROIParam = null;
+			pnlDynamic.revalidate();
+		}
+		pnlLegends.removeAll();
+		pnlLegends.setBorder(BorderFactory.createEmptyBorder());
+		pnlLegends.revalidate();
+		gui.pack();
+		
 		//Information panel with label to display info		
 		if(Annotator.output.equals(Annotator.TT)) {
 			modelInfo = "Testing/Training";
@@ -283,12 +319,18 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			modelInfo = "Train Only";
 			btnAutoComp.setEnabled(false);
 		}
+		else if(Annotator.output.equals(Annotator.AN)) {
+			modelInfo = "Image Annotation";
+		}
+		else if(Annotator.output.equals(Annotator.ROI)) {
+			modelInfo = "ROI Annotation";
+			createAndShowROIParam();
+		}		
 		
 		//Add or remove appropriate buttons
 		pnlButton.removeAll();
 		
-		if(Annotator.output.equals(Annotator.AN)) {
-			modelInfo = "Image Annotation";
+		if(Annotator.output.equals(Annotator.AN) || Annotator.output.equals(Annotator.ROI)) {
 			pnlButton.setLayout(new GridLayout(2, 2));
 			pnlButton.add(btnLoadModel);
 			
@@ -308,7 +350,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			pnlButton.add(btnAutoComp);
 		}
 		
-		lbModelInfo.setText("<html><b>Mode: </b>" + modelInfo + "</html>");
+		lbModeInfo.setText("<html><b>Mode: </b>" + modelInfo + "</html>");
 	}
 	
 	public void enableSaveReport(boolean state){
@@ -338,19 +380,33 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	public void showStats(HashMap<String, String> classNames, Annotation[][] annotations, String[] modelLabels) {
 		JLabel lbInfo = new JLabel(ModelHelper.getStatsInfo(classNames, annotations, modelLabels));
 		pnlLegends.removeAll();
+		pnlLegends.setBorder(BorderFactory.createTitledBorder(null, "Identified Classes", 
+				TitledBorder.LEFT, TitledBorder.TOP));
 		pnlLegends.add(lbInfo);		
 		pnlLegends.revalidate();
 		pnlLegends.repaint();
+		gui.pack();
 	}
 	
 	public void showClassLegends() {
 		if(pnlTable.getClassNames() != null) {
 			JLabel lbInfo = new JLabel(ModelHelper.getClassNamesInfo(pnlTable.getClassNames()));
 			pnlLegends.removeAll();
+			pnlLegends.setBorder(BorderFactory.createTitledBorder(null, "Classes", 
+					TitledBorder.LEFT, TitledBorder.TOP));
 			pnlLegends.add(lbInfo);		
 			pnlLegends.revalidate();
 			pnlLegends.repaint();
+			gui.pack();
 		}
+	}
+	
+	private void createAndShowROIParam() {
+		pnlROIParam = new ROIParameterPanel();
+		pnlDynamic.add(pnlROIParam);
+		pnlROIParam.revalidate();
+		pnlROIParam.repaint();
+		gui.pack();
 	}
 	
 	/**
@@ -391,10 +447,21 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	public void reset() {
 		rbGreen.setSelected(true);
 		pnlLegends.removeAll();
+		pnlLegends.setBorder(BorderFactory.createEmptyBorder());
+		
+		if(pnlROIParam != null) {
+			pnlDynamic.remove(pnlROIParam);
+			pnlROIParam = null;
+		}
+			
 		pnlTable.removeTables();
 	}
 	public void updateLookAndFeelForOpenFrames() {
 		for(PopUpFrame frame : openFrames)
 			SwingUtilities.updateComponentTreeUI(frame);
+	}
+
+	public ROIParameterPanel getPnlROIParam() {
+		return pnlROIParam;
 	}
 }

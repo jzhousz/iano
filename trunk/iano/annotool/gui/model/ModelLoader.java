@@ -11,8 +11,11 @@ import annotool.Annotation;
 import annotool.Annotator;
 import annotool.classify.SavableClassifier;
 import annotool.gui.ImageReadyPanel;
+import annotool.gui.ROIAnnotator;
+import annotool.gui.ROIParameterPanel;
 import annotool.io.ChainModel;
 import annotool.io.DataInput;
+import annotool.io.DataInputDynamic;
 
 public class ModelLoader implements Runnable {
 	AnnOutputPanel pnlStatus = null;
@@ -171,8 +174,12 @@ public class ModelLoader implements Runnable {
 	
 	@Override
 	public void run() {
-		//TODO: disable buttons and enable at the end		
-		classify();
+		//TODO: disable buttons and enable at the end	
+		if (Annotator.output.equals(Annotator.AN))
+			classify();
+		else if (Annotator.output.equals(Annotator.ROI)) {
+			roiAnnotate();
+		}
 		thread = null;
 		pnlImages.enableSaveReport(true);
 	}
@@ -188,7 +195,27 @@ public class ModelLoader implements Runnable {
 	}
 	
 	/**
-	 * Image Classification.
+	 * Region of interest annotation
+	 */
+	private void roiAnnotate() {
+		//Get the parameters
+		ROIParameterPanel pnlROIParam = pnlImages.getPnlROIParam();
+		if(pnlROIParam == null) {
+			System.err.println("Parameter panel is null");
+			return;
+		}
+		
+		int interval = pnlROIParam.getSelectedInterval();
+		int mode = pnlROIParam.getSelectedMode();
+		String channel = pnlImages.getSelectedChannel();
+		
+		int[] selectedImages = pnlImages.getTablePanel().getAnnotationTable().getSelectedRows();
+		
+		ROIAnnotator roiAnnotator = new ROIAnnotator(interval, mode, channel, chainModels, selectedImages);
+	}
+	
+	/**
+	 * Image Classification/Annotation.
 	 */
 	private void classify() {
 		String channel = pnlImages.getSelectedChannel();
@@ -228,40 +255,8 @@ public class ModelLoader implements Runnable {
         	
 	        pnlStatus.setOutput("Extracing features ... ");
 	        
-	        //Start of extraction : TODO: this and similar parts can be centralized somewhere(in Annotator or a helper class)
-	        String extractor = "None";
-	        HashMap<String, String> params = new HashMap<String, String>();
-	        
-	        int numExtractors = model.getExtractors().size();
-	        float[][][] exFeatures = new float[numExtractors][][];
-	        
-	        int dataSize = 0;	//To keep track of total size
-	        for(int exIndex=0; exIndex < numExtractors; exIndex++) {
-	        	extractor = model.getExtractors().get(exIndex).getName();
-	        	params = model.getExtractors().get(exIndex).getParams();
-	        	
-	        	exFeatures[exIndex] = anno.extractGivenAMethod(extractor, params, problem);
-	        	
-	        	dataSize += exFeatures[exIndex][0].length;
-	        }
-	        
-	        float[][] features = null;
-	        
-	        if(numExtractors < 1) {	//If no extractor, call the function by passing "None"
-	        	features = anno.extractGivenAMethod(extractor, params, problem);
-	        }
-	        else {	//Else, create feature array with enough space to hold data from all extractors 
-	        	features = new float[problemSize][dataSize];
-	        	
-	        	int destPos = 0;
-	        	for(int exIndex=0; exIndex < numExtractors; exIndex++) {
-	        		for(int item=0; item < features.length; item++) {
-	        			System.arraycopy(exFeatures[exIndex][item], 0, features[item], destPos, exFeatures[exIndex][item].length);
-	        		}
-	        		destPos += exFeatures[exIndex][0].length;
-	        	}
-	        }
-	        exFeatures = null;
+	        //Start of extraction
+	        float[][] features =  anno.extractWithMultipleExtractors(problem, model.getExtractors());
 	        //End of extraction
 	        
 	        //raw data is not used after this point, set to null.
