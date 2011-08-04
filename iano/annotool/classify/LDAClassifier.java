@@ -229,15 +229,15 @@ public class LDAClassifier implements SavableClassifier {
 		}
 
 		//divide the count
-		System.out.println("Means:");
+		//System.out.println("Means:");
 		for (int i = 0 ; i< ngroups; i++)
 		{
 			for (int j = 0 ; j< dimension; j++)
 			{
 				means[i][j] /= (float)groupcount[i];
-				System.out.print(means[i][j] + "\t");
+				//System.out.print(means[i][j] + "\t");
 			}
-			System.out.println();
+			//System.out.println();
 		}
 
 		for (int i = 0 ; i< trainingPatterns.length; i++)
@@ -314,10 +314,10 @@ public class LDAClassifier implements SavableClassifier {
 		int traininglength = trainingPatterns.length; 
 		int dimension = trainingPatterns[0].length;
 		int[] convertedTargets = convertTargets(trainingtargets);
-		for(int i =0; i < convertedTargets.length; i++)
-			System.out.println(convertedTargets[i]);
+		//for(int i =0; i < convertedTargets.length; i++)
+		//	System.out.println(convertedTargets[i]);
 		
-		System.out.print("ngroups before setUniformPriors "+ ngroups);
+		System.out.print("ngroups before checking priors "+ ngroups);
 		
 		if(priors == null && ngroups != 0)
 			setUniformPriors();
@@ -342,7 +342,6 @@ public class LDAClassifier implements SavableClassifier {
 		Matrix B = new Matrix(R.getRowDimension(), R.getColumnDimension(),  cons);
 		R.arrayRightDivideEquals(B);
 
-		System.out.println(ngroups);
 		SingularValueDecomposition svd = new SingularValueDecomposition(R);
 		//s is a vector containing the singular values
 		//s = svd(R)
@@ -413,7 +412,7 @@ public class LDAClassifier implements SavableClassifier {
 			//A/B roughly the same as A*inv(B)
 			Matrix A;
 			try{
-			A = testingM.times(R.inverse()); //may throw exception for singular R
+			    A = testingM.times(R.inverse()); //may throw exception for singular R
 			}catch(Exception e)
 			{
 				System.err.println("Matrix is singular. Results are not reliable. Please try another classifier.");
@@ -434,12 +433,12 @@ public class LDAClassifier implements SavableClassifier {
 			}
 		}  
 
-		for(int i = 0; i < testinglength; i++)
+		/*for(int i = 0; i < testinglength; i++)
 		{
 			for(int k = 0; k < ngroups; k++)
 				System.out.print(posterior[i][k] + "\t");
 			System.out.println();
-		}
+		}*/
 
 		//fill predictions 
 		for(int i = 0; i < testinglength; i++)
