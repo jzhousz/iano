@@ -50,6 +50,9 @@
 			<Default>2</Default>
 		</Parameter>
 	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>2D Hu Moments</Name>
+	</Algorithm>
 	<Algorithm type="3DExtractor">
 		<Name>Partial3D</Name>
 		<Desc>Average HAAR of middle frame</Desc>
