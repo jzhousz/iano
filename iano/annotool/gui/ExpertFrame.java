@@ -242,9 +242,10 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		else if (e.getSource() == btnAnnotate) {
 			if(thread == null) {
 				int choice = JOptionPane.showConfirmDialog(this,
-					    "This will close all other open windows and take you to annotation options.\n" + 
-					    "Any unsaved progress will be discarded.\n" + 
-					    "Do you wish to continue?",
+						"This will close all open windows.\n" +
+						"The model from the current window will be used for the annotation process.\n" + 
+						"All other unsaved progress will be lost.\n" +
+						"Do you wish to continue?",
 					    "Information",
 					    JOptionPane.OK_CANCEL_OPTION,
 					    JOptionPane.INFORMATION_MESSAGE);
@@ -433,8 +434,13 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             Classifier classifierObj = anno.getClassifierGivenName(classifierChoice, classParams);
             
             if(classifierObj instanceof SavableClassifier) {
-            	((SavableClassifier)classifierObj).trainingOnly(selectedFeatures, trainingTargets[i]);
-            	enableSave = false;
+            	try {
+            		((SavableClassifier)classifierObj).trainingOnly(selectedFeatures, trainingTargets[i]);
+            		enableSave = false;
+            	}
+            	catch (Exception ex) {
+            		ex.printStackTrace();
+            	}
             }
             else
             	enableSave = true;

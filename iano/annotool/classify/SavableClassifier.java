@@ -8,7 +8,7 @@ package annotool.classify;
 public interface SavableClassifier extends Classifier {
 	
 	//it trains and returns (typically also sets) an internal model   
-	Object trainingOnly(float[][] trainingpatterns, int[] trainingtargets);
+	Object trainingOnly(float[][] trainingpatterns, int[] trainingtargets) throws Exception;
 	   
 	//matching pair that returns and sets the model
 	Object getModel(); 
