@@ -302,8 +302,8 @@ public class LDAClassifier implements SavableClassifier {
 	{
 		if (ngroups != 0)
 		{
-			if (priors == null)
-	    	   priors = new float[ngroups];
+			//if (priors == null)  //overwrite even if it is null
+	    	priors = new float[ngroups];
 			for(int i = 0; i < ngroups; i++)
 		  	   priors[i] = (float) 1.0/ngroups;
 		}
