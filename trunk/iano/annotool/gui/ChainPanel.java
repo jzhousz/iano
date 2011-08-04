@@ -344,9 +344,10 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		else if(ev.getSource().equals(btnApplyModel)) {
 			if(thread == null) {
 				int choice = JOptionPane.showConfirmDialog(this,
-					    "This will close all other open windows and take you to annotation options.\n" + 
-					    "Any unsaved progress will be discarded.\n" + 
-					    "Do you wish to continue?",
+						"This will close all open windows.\n" +
+						"The best model from the comparison will be used for the annotation process.\n" + 
+						"All other unsaved progress will be lost.\n" +
+						"Do you wish to continue?",
 					    "Information",
 					    JOptionPane.OK_CANCEL_OPTION,
 					    JOptionPane.INFORMATION_MESSAGE);

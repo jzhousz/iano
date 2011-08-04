@@ -107,9 +107,9 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		pnlButton = new JPanel();
 		
 		//Expert and Auto Comparison buttons
-		btnExpert = new JButton("Expert");
+		btnExpert = new JButton("Simple");
 		btnExpert.addActionListener(this);
-		btnAutoComp = new JButton("Auto Comp");
+		btnAutoComp = new JButton("Comparison");
 		btnAutoComp.addActionListener(this);
 		
 		//Load and model button
