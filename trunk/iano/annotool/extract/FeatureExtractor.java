@@ -1,6 +1,7 @@
 package annotool.extract;
 
 import annotool.io.DataInput;
+import annotool.ImgDimension;
 
 /** interface for all feature extractors such as HaarFeatureExtractor **/
 
@@ -8,6 +9,9 @@ public interface FeatureExtractor
 {
    //get features based on raw image in the problem
    public float[][] calcFeatures(DataInput problem);
+
+   //get features based on byte data, with dimension information. 
+   public float[][] calcFeatures(byte[][] data, ImgDimension dim);
 
    //indicate if it is applicable to 3D image stack.
    boolean is3DExtractor();

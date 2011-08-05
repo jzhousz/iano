@@ -309,7 +309,7 @@ public class LDAClassifier implements SavableClassifier {
 		}
 	}
 	
-    public Object trainingOnly(float[][] trainingPatterns, int[] trainingtargets)
+    public Object trainingOnly(float[][] trainingPatterns, int[] trainingtargets) throws Exception
     { 
 		int traininglength = trainingPatterns.length; 
 		int dimension = trainingPatterns[0].length;
@@ -332,11 +332,16 @@ public class LDAClassifier implements SavableClassifier {
 		double[][] normalizedTraining = normalizeTraining(trainingPatterns, convertedTargets, means);
 		Matrix trainingM = new Matrix(normalizedTraining);
 
-		QRDecomposition decom = new QRDecomposition(trainingM);
-		Matrix R = decom.getR();
+		Matrix R = null;
+		try{
+		    QRDecomposition decom = new QRDecomposition(trainingM);
+		    R = decom.getR();
 		//System.out.println("R:");
 		//R.print(10, 7);
-
+		}catch(Exception e)
+		{
+			throw new Exception("Problem in LDA training. Try to reduce the number of features.");
+		}
 		//R = R/sqrt(n-ngroups)
 		double cons = Math.sqrt(traininglength - ngroups);
 		Matrix B = new Matrix(R.getRowDimension(), R.getColumnDimension(),  cons);

@@ -1,5 +1,7 @@
 package annotool.extract;
 
+import annotool.ImgDimension;
+
 
 /**
  *  3 directions (x, y, z)  3D wavelet features
@@ -42,6 +44,13 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 		return calcFeatures();
     	
     }
+    
+	public float[][] calcFeatures(byte[][] data, ImgDimension dim)
+	{
+		System.out.println("This method is not yet supported by 3D feature extractors");
+		return null;
+	}
+
 	
 	protected float[][] calcFeatures() {
 		//number of extracted features

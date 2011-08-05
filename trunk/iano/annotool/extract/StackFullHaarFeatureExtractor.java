@@ -1,5 +1,7 @@
 package annotool.extract;
 
+import annotool.ImgDimension;
+
 
 /*
  * 
@@ -17,6 +19,12 @@ public class StackFullHaarFeatureExtractor implements FeatureExtractor {
 	}
 	public float[][] calcFeatures(annotool.io.DataInput problem) {
 		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public float[][] calcFeatures(byte[][] data, ImgDimension dim)
+	{
+		System.out.println("This method is not yet supported by 3D feature extractors");
 		return null;
 	}
 
