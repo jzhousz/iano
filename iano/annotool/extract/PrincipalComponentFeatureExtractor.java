@@ -1,5 +1,6 @@
 package annotool.extract;
 
+import annotool.ImgDimension;
 import weka.attributeSelection.PrincipalComponents;
 import weka.core.Instances;
 
@@ -47,6 +48,24 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 		
 	       return calcFeatures();
 	}
+	
+	
+	public float[][] calcFeatures(byte[][] data, ImgDimension dim)
+	{
+		   length = data.length;
+		   width = dim.width;
+		   height = dim.height;
+		   
+		   features  = new float[length][width*height]; 
+		   
+	       for(int i=0; i <length; i++)
+ 		     for(int j = 0; j< width*height; j++)
+			       features[i][j] = data[i][j]&0xff;
+		
+	       return calcFeatures();
+	}
+	   
+	
 	
 	protected float[][] calcFeatures() {
 

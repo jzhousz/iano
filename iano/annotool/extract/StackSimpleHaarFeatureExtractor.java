@@ -1,5 +1,6 @@
 package annotool.extract;
 
+import annotool.ImgDimension;
 import annotool.io.DataInput;
 
 /*
@@ -60,6 +61,14 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 
 		return calcFeatures();
 	}
+	
+	
+	public float[][] calcFeatures(byte[][] data, ImgDimension dim)
+	{
+		System.out.println("This method is not yet supported by 3D feature extractors");
+		return null;
+	}
+	
 	
 	public float[][] calcFeatures()
 	{

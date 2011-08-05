@@ -738,6 +738,48 @@ public class Annotator implements Runnable
     	features = extractor.calcFeatures(problem);	
     	return features;	
     }
+
+    
+    /* 
+     * overloaded method for applying extractor to a ROI
+     *   Need to supply float[][] as input data. 
+     *   ImgDimension is the size of the ROI, e.g. width, height, depth (maybe 2D or 3D)
+     *   
+     *  8/5/2011: Current version only deals with 2DROI, and ignores depth in dimension
+     *  In order to handle 3D ROI, 3D feature extractors need to work with byte[] with 3D info.     
+     */
+     public float[][] extractGivenAMethod(String chosenExtractor, java.util.HashMap<String, String> parameters, byte[][] data, ImgDimension dim)
+     {
+         float[][] features = null;
+
+    	 if (chosenExtractor.equalsIgnoreCase("NONE")) 
+         {
+            int length = data.length;
+            int height = dim.height;
+            int width = dim.width;
+            features = new float[length][width * height];
+            for (int i = 0; i < length; i++) {
+                    for (int j = 0; j < width * height; j++) {
+                        features[i][j] = (float) (data[i][j] & 0xff);
+                    }
+                }
+            return features;
+          }
+            
+         //those that are not "NONE"    	    	
+     	FeatureExtractor extractor = getExtractorGivenName(chosenExtractor, parameters);
+
+     	//check if it is the right type of feature extractor (2D or 3D)
+    	if (dim.depth > 1 || extractor.is3DExtractor())
+    	{
+            System.out.println("3D ROI feature extractor is not yet supported");
+            System.exit(1);
+    	}
+
+    	features = extractor.calcFeatures(data, dim);	
+    	return features;	
+     }
+     
     
     public FeatureExtractor getExtractorGivenName(String name, HashMap<String, String> parameters)
     {
@@ -807,7 +849,7 @@ public class Annotator implements Runnable
      * Not used in GUI.
      * Need to supply float[][] as input data. DataInput will be used for some image-related parameter.
      */
-    /* public float[][] extractGivenAMethod(String chosenExtractor, java.util.HashMap<String, String> parameters, float[][] data, DataInput problem) {
+     /* public float[][] extractGivenAMethod(String chosenExtractor, java.util.HashMap<String, String> parameters, float[][] data, DataInput problem) {
 
         float[][] features = null;
         
@@ -828,6 +870,7 @@ public class Annotator implements Runnable
     	return features;	
     }	*/
     
+
     /*
      * Overloaded version of the extractor that takes 2 data sets
      * It may be useful for methods such as PCA when feature extraction cannot be done separately.
@@ -885,6 +928,8 @@ public class Annotator implements Runnable
             } catch (Exception e) {
                 System.err.println(e.getMessage());
             }
+            result.setTrainingFeatures(features);
+            result.setIndices(selector.getIndices());
         }
         else if (chosenSelector.equalsIgnoreCase("Information Gain")) {
             int numoffeatures = getNumberofFeatures(); // will be passed in as parameter to selector later

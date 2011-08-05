@@ -1,5 +1,7 @@
 package annotool.extract;
 
+import annotool.ImgDimension;
+
 
 /*
  * calculate 8 simple statistics features: 
@@ -32,6 +34,16 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 		totalheight = problem.getHeight();
 		this.length = problem.getLength();
 		this.data = problem.getData();
+		return calcFeatures();
+	}
+	
+	
+	public float[][] calcFeatures(byte[][] data, ImgDimension dim)
+	{
+		totalwidth = dim.width;
+		totalheight = dim.height;
+		this.length = data.length;
+		this.data = data;
 		return calcFeatures();
 	}
 	

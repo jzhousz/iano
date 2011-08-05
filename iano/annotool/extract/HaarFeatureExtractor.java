@@ -1,5 +1,7 @@
 package annotool.extract;
 
+import annotool.ImgDimension;
+
 import annotool.Util;
 import annotool.io.DataInput;
 
@@ -97,6 +99,16 @@ public class HaarFeatureExtractor implements FeatureExtractor
       if(workOnRawBytes)
    	   data = problem.getData();
 	  return calcFeatures();
+  }
+  
+  
+  public float[][] calcFeatures(byte[][] data, ImgDimension dim)
+  {
+ 	 totalwidth = dim.width;
+	 totalheight = dim.height;
+	 this.length = data.length;
+	 this.data = data;
+	 return calcFeatures();
   }
   
    public float[][] calcFeatures()

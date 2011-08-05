@@ -1,5 +1,6 @@
 package annotool.extract;
 
+import annotool.ImgDimension;
 import annotool.io.DataInput;
 
 
@@ -46,20 +47,11 @@ public class ImageMoments implements FeatureExtractor
     //but 2d arrays are a lot easier to work with...
     //a 4000x4000 image takes ~135ms to convert on my computer (2.53Ghz cpu)
     protected byte[][] convert_flat_to_2d(byte[] flat_image) {
-        int mask = 0xff;
-
-        //DEBUG
-//        System.out.println("Before converting:");
-//        for(int i = 0; i < flat_image.length; i++){
-//            System.out.print((int)(flat_image[i]&mask) + " ");
-//        }
-//        System.out.println();
+        int mask = 0xff; //j.z.: comment: this can be removed because masking is done in calculating methods.
 
         byte[][] image = new byte[totalheight][totalwidth];
         int y, x;
         for (int i = 0; i < flat_image.length; i++) {
-//            x = i % totalwidth;
-//            y = i / totalheight;
             x = i % totalwidth;
             y = i / totalwidth;
             image[y][x] = (byte) (flat_image[i] & mask);
@@ -141,6 +133,20 @@ public class ImageMoments implements FeatureExtractor
     	return calcFeatures();
     	
     }
+    
+    //get features based on byte data, with dimension information. 
+    public float[][] calcFeatures(byte[][] data, ImgDimension dim)
+    {
+        this.data = data;
+        length = data.length;
+        totalwidth = dim.width;
+        totalheight = dim.height;
+        features = new float[length][8];
+ 
+    	return calcFeatures();
+    	
+    }
+
 
     protected float[][] calcFeatures() {
         //single image
