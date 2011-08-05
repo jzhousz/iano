@@ -301,7 +301,7 @@ public class SVMClassifier implements SavableClassifier
     //training only and sets the internal model
     public Object trainingOnly(float[][] trainingpatterns, int[] trainingtargets)
     {
-    	System.out.println(trainingpatterns+":");
+    	
 	    int traininglength = trainingpatterns.length;
 	    dimension = trainingpatterns[0].length;
         svm_problem prob = new svm_problem();
