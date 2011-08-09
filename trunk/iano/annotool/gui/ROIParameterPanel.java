@@ -11,13 +11,11 @@ import javax.swing.event.ChangeListener;
 public class ROIParameterPanel extends JPanel implements ChangeListener {
 	private JLabel lbInterval, lbPadMode;
 	private JSlider slider = null;
-	private JRadioButton rbNone, rbResize, rbSymmetric, rbReplicate;
+	private JRadioButton rbNone, rbSymmetric;
 	
 	//Constants representing padding models
 	public static final int NONE = 0;
-	public static final int RESIZE = 1;
-	public static final int SYMMETRIC = 2;
-	public static final int REPLICATE = 3;
+	public static final int SYMMETRIC = 1;
 	
 	public ROIParameterPanel() {
 		this(1, 100);
@@ -33,15 +31,12 @@ public class ROIParameterPanel extends JPanel implements ChangeListener {
 		
 		//Radio buttons
 	    rbNone = new JRadioButton("None", true);
-	    rbResize = new JRadioButton("Resize");
 	    rbSymmetric = new JRadioButton("Symmetric");
-	    rbReplicate = new JRadioButton("Replicate");
+	    rbSymmetric.setEnabled(false);
 	    
 	    ButtonGroup group = new ButtonGroup();
 	    group.add(rbNone);
-	    group.add(rbResize);
 	    group.add(rbSymmetric);
-	    group.add(rbReplicate);
 	    
 	    //Labels
 		lbInterval = new JLabel("Interval Size: " + slider.getValue());
@@ -58,9 +53,7 @@ public class ROIParameterPanel extends JPanel implements ChangeListener {
 	    this.add(Box.createRigidArea(new Dimension(0, 15)));
 	    this.add(lbPadMode);
 	    this.add(rbNone);
-	    this.add(rbResize);
 	    this.add(rbSymmetric);
-	    this.add(rbReplicate);
 	    
 	    for(java.awt.Component component : this.getComponents()) {
 	    	if(component instanceof JComponent)
@@ -92,11 +85,7 @@ public class ROIParameterPanel extends JPanel implements ChangeListener {
 	 * ROIParameterPanel.RESIZE, ROIParameterPanel.REPLICATE and ROIParameterPanel.SYMMETRIC
 	 */
 	public int getSelectedMode() {
-		if(rbResize.isSelected())
-			return RESIZE;
-		else if(rbReplicate.isSelected())
-			return REPLICATE;
-		else if(rbSymmetric.isSelected())
+		if(rbSymmetric.isSelected())
 			return SYMMETRIC;
 		else
 			return NONE;

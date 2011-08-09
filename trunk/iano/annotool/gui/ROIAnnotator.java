@@ -1,17 +1,17 @@
 package annotool.gui;
 
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.process.ImageProcessor;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 
 import annotool.Annotation;
 import annotool.Annotator;
+import annotool.ImgDimension;
 import annotool.classify.SavableClassifier;
-import annotool.extract.HaarFeatureExtractor;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
 import annotool.io.ChainModel;
@@ -55,7 +55,7 @@ public class ROIAnnotator {
 		for(int i = 0; i < problem.getLength(); i++) {
 			boolean isSelected = false;
 			for(int index=0; index < selectedImages.length; index++){
-				if(index == i) {
+				if(selectedImages[index] == i) {
 					isSelected = true; 
 					break;
 				}
@@ -149,39 +149,34 @@ public class ROIAnnotator {
 		}
 		
 		
-		//TODO: The codes below need to be generic
 		String extractorName = null;
 		HashMap<String, String> params = null;
 		
-		int validExtractors = 0;	//Only HAAR valid currently
-        for(Extractor ex : extractors) {
-        	if(ex.getName().equalsIgnoreCase("HAAR"))
-        		validExtractors++;
-        }
-        float[][] exFeatures = new float[validExtractors][];
+		ImgDimension dim = new ImgDimension();
+    	dim.width = width;
+    	dim.height = height;
+    	dim.depth = 1;
+    	
+    	//Using array of bytes array since "extractGivenAMethod" needs bytes[][] instead of bytes
+    	byte[][] data = new byte[1][subImage.length];
+    	data[0] = subImage;
+    	
+		float[][] exFeatures = new float[extractors.size()][];
         
 		int dataSize = 0;
         for(int exIndex=0; exIndex < extractors.size(); exIndex++) {
 			extractorName = extractors.get(exIndex).getName();
         	params = extractors.get(exIndex).getParams();
         	
-        	if(extractorName.equalsIgnoreCase("HAAR")) {
-        		int level = 2; //default
-        		if(params != null && params.containsKey(HaarFeatureExtractor.LEVEL_KEY))
-        			level = Integer.parseInt(params.get(HaarFeatureExtractor.LEVEL_KEY));
-        		
-        		exFeatures[exIndex] = (new HaarFeatureExtractor(level, subImage, width, height)).getFeatures()[0];
-        		dataSize += exFeatures[exIndex].length;
-        	}
-        	else
-        		System.out.println("Feature Extractor Methods Not Supported for ROI Annotation");
+    		exFeatures[exIndex] = new Annotator().extractGivenAMethod(extractorName, params, data, dim)[0];
+    		dataSize += exFeatures[exIndex].length;
 		}
 		
         //Initialize array to hold extracted feature from all extractors
         float[] features = new float[dataSize];
         //Copy over features from multiple extractors into single dimension
         int destPos = 0;
-    	for(int exIndex=0; exIndex < validExtractors; exIndex++) {
+    	for(int exIndex=0; exIndex < extractors.size(); exIndex++) {
     		System.arraycopy(exFeatures[exIndex], 0, features, destPos, exFeatures[exIndex].length);
     		destPos += exFeatures[exIndex].length;
     	}
@@ -207,8 +202,9 @@ public class ROIAnnotator {
     
     //make an overlay mask on the grayed image
     public void markResultsOnImage(ImagePlus imp, int[] predictions, int roiWidth, int roiHeight)
-    {    	
-    	ImageProcessor ip = imp.getProcessor();
+    {    
+    	ImageProcessor ip = imp.getProcessor();   
+    	ImageProcessor ipOriginal = ip.duplicate();
 
     	//for color blending
     	Color c = null;
@@ -251,7 +247,10 @@ public class ROIAnnotator {
     			//ip.drawRect(i+ROISIZE/2-INCREMENT/2,j+ROISIZE/2-INCREMENT/2, INCREMENT, INCREMENT);
     			ip.fillOval(i + roiWidth/2 - interval/2, j + roiHeight/2 - interval/2, interval, interval);
     		}
-	  
+    	ImageStack st = imp.getStack();
+    	st.addSlice("Original", ipOriginal);    	
+    	imp.setStack("Stack", st);
+    	
     	//display the annotated image
     	imp.updateAndDraw();
     	imp.show();
