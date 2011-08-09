@@ -510,10 +510,18 @@ public class LDAClassifier implements SavableClassifier {
     	float[] priors = new float[res.length];
 
     	float total = 0;
-    	for(int i=0; i<priors.length; i++)
+    	try
     	{
+    	 for(int i=0; i<priors.length; i++)
+    	 {
     		priors[i] = Float.parseFloat(res[i]);
     		total += priors[i];
+    	 }
+    	}catch(NumberFormatException e)
+    	{
+    		System.err.println("parsing problem for priors");
+    		return null;
+    		
     	}
       	//check if they add up right
     	if (total > 1.0)
