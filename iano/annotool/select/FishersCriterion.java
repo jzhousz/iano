@@ -47,7 +47,7 @@ public class FishersCriterion implements FeatureSelector
     //with the arrangement [class][feature].
     //
     //The number of classes is not known in advance,
-    //and the class labels do not necessarity begin with 0,
+    //and the class labels do not necessarily begin with 0,
     //so I am using HashMaps.
     //The key is the class id.  The value is an array,
     //where each element corresponds to a feature number.
@@ -81,7 +81,7 @@ public class FishersCriterion implements FeatureSelector
     //=============IGNORE============
     public FishersCriterion(HashMap parameters) {
         if (parameters.containsKey("MULTICLASS COMPARISON METHOD")) {
-            if (parameters.get("MULTICLASS_COMPARISON_METHOD").equals("PAIRWISE")) {
+            if (parameters.get("MULTICLASS COMPARISON METHOD").equals("PAIRWISE")) {
                 this.multiclass_comparison_method = "PAIRWISE";
             }
             else {
@@ -98,16 +98,12 @@ public class FishersCriterion implements FeatureSelector
                     Integer.parseInt((String) parameters.get("NUMBER OF FEATURES"));
 
             System.out.println("NUMBER OF FEATURES = " + this.output_number_of_features);
-
+        }
+         
+        /*
             if (this.output_number_of_features > this.input_number_of_features) {
                 this.output_number_of_features = this.input_number_of_features;
                 //print a diagnostic message?
-
-                //DEBUG
-                //System.out.println("NUMBER_OF_FEATURES = " + this.output_number_of_features);
-
-
-                //this.output_number_of_features = 4;
             }
         }
         else {
@@ -118,7 +114,7 @@ public class FishersCriterion implements FeatureSelector
             if (this.output_number_of_features == 0) {
                 this.output_number_of_features = 1;
             }
-        }
+        }*/
     }
     ///////////////  IGNORE THAT CONSTRUCTOR !!!!!!!!!s
 
@@ -157,11 +153,12 @@ public class FishersCriterion implements FeatureSelector
             this.output_number_of_features =
                     Integer.parseInt((String) parameters.get("NUMBER OF FEATURES"));
 
-            if (this.output_number_of_features > this.input_number_of_features) {
+         if (this.output_number_of_features > this.input_number_of_features) {
                 this.output_number_of_features = this.input_number_of_features;
                 //print a diagnostic message?
             }
         }
+        /*
         else {
             //if unspecified
             //select top 20% percent, or at least one
@@ -170,7 +167,7 @@ public class FishersCriterion implements FeatureSelector
             if (this.output_number_of_features == 0) {
                 this.output_number_of_features = 1;
             }
-        }
+        }*/
     }
 
     private void calculate_sums_and_sumsSq() {
@@ -338,7 +335,7 @@ public class FishersCriterion implements FeatureSelector
         calculate_means_and_variances();
         //the above call is useful for each ONE class in each ONE-vs-OTHERS combination.
         //the means and variances of the other classes, combined,
-        //have to be calculated separatelly
+        //have to be calculated separately
 
         float others_sum = 0;   //OTHERS
         float others_sumSq = 0;
@@ -472,7 +469,27 @@ public class FishersCriterion implements FeatureSelector
 //        }
     }
 
-    //impelemting FeatureSelector interface
+    // 08/06/2011 implementing modified FeatureSelector interface  
+    // so the data don't need to be supplied in constructor
+    public float[][] selectFeatures(float[][] features, int[] targets)
+    {
+        this.features = features;
+        this.classes = targets;
+
+        this.input_number_of_features = features[0].length;
+        this.fisher = new double[input_number_of_features];
+
+        //check the validity of output_number_of_features againgn input
+         if (this.output_number_of_features > this.input_number_of_features) 
+         {
+           this.output_number_of_features = this.input_number_of_features;
+           //print a diagnostic message
+           System.out.println("Number of outputfeatures is set as "+output_number_of_features);
+        }
+        
+        return selectFeatures();
+    }
+    
     public float[][] selectFeatures(){
         try {    	
         	calculate_fishers_criterion();
@@ -498,6 +515,17 @@ public class FishersCriterion implements FeatureSelector
         for (int i = 0; i < this.features.length; i++) {
             for (int j = 0; j < indices.length; j++) {
                 selectedFeatures[i][j] = this.features[i][indices[j]];
+            }
+        }
+        return selectedFeatures;
+    }
+
+    public float[][] selectFeaturesGivenIndices(float[][] data, int[] indices) {
+        float[][] selectedFeatures = new float[data.length][indices.length];
+
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < indices.length; j++) {
+                selectedFeatures[i][j] = data[i][indices[j]];
             }
         }
         return selectedFeatures;

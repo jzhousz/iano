@@ -4,10 +4,6 @@ import annotool.select.FeatureSelector;
 //import weka.filters.supervised.attribute.*;
 import weka.filters.Filter;
 import weka.attributeSelection.*;
-import weka.core.Attribute;
-import weka.core.FastVector;
-import weka.core.Instance;
-import weka.core.Instances;
 import weka.core.*;
 
 
@@ -65,6 +61,17 @@ public class WeKaFeatureSelectors implements FeatureSelector {
 	private weka.attributeSelection.AttributeSelection selector = null;
 
 	java.util.ArrayList<Integer> targetList = null;
+	public final static String KEY_NUM = "Number of Features";
+    public final static String KEY_DIS_TH = "Threshold";
+	
+    public WeKaFeatureSelectors(java.util.HashMap<String, String> parameters)
+    {
+		if (parameters.containsKey(KEY_NUM))
+			this.numberofFeatures = Integer.parseInt((String)parameters.get(KEY_NUM));
+		if (parameters.containsKey(KEY_DIS_TH))
+			threshold = Integer.parseInt((String)parameters.get(KEY_DIS_TH));
+
+    }
 	
 	public WeKaFeatureSelectors(float[][] features, int[] targets, int numberofFeatures, String method, double threshold)
 	{
@@ -97,6 +104,15 @@ public class WeKaFeatureSelectors implements FeatureSelector {
 	    }catch(Exception e)
 	    { e.printStackTrace();}
 		*/
+	}
+
+	public float[][] selectFeatures(float[][] features, int[] targets)
+	{
+		this.features = features;
+		this.targets = targets;
+		this.length = features.length;
+		this.dimension = features[0].length;
+		return selectFeatures();
 	}
 
 	public float[][] selectFeatures()
@@ -178,7 +194,19 @@ public class WeKaFeatureSelectors implements FeatureSelector {
 
 		return selectedFeatures;
 	}
-	
+
+	//using passed in features, length, numberofFeatures from constructor
+	public float[][] selectFeaturesGivenIndices(float[][] data, int[] indices)
+	{  
+		float[][] selectedFeatures = new float[data.length][indices.length];
+		
+		for(int i=0; i<data.length; i++)
+			for(int j=0; j<indices.length; j++)
+				selectedFeatures[i][j] = data[i][indices[j]];
+
+		return selectedFeatures;
+	}
+
 	//may have changed after selection, caller can get from selectedFeatures[0].length
 	public int getNumOfFeatures()
 	{

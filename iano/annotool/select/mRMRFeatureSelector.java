@@ -42,12 +42,33 @@ public class mRMRFeatureSelector implements FeatureSelector
 	String method = annotool.Annotator.DEFAULT_MRMRTYPE; //Default is "mRMR-MIQ".
 	
 	//keys for parameter HashMap
-	public final static String KEY_NUM = "Number of Features";
+	public final static String KEY_NUM = "Number of features";
     public final static String KEY_DISCRETE = "Discrete Flag";
     public final static String KEY_DIS_TH = "Discretize Threshold";
+    public final static String KEY_METHOD = "Method";
     
 	//taking in the parameters in a standardized way.
-	public mRMRFeatureSelector(float[][] features, int[] targets, String methodname, java.util.HashMap<String, String> parameters)
+    public mRMRFeatureSelector(java.util.HashMap<String, String> parameters)
+    {
+		int threshold = 0;
+		boolean discreteflag = true; //default is to discretize
+
+    	if (parameters.containsKey(KEY_NUM))
+			this.numberofFeatures = Integer.parseInt((String)parameters.get(KEY_NUM));
+		if (parameters.containsKey(KEY_DISCRETE))
+			discreteflag = (Integer.parseInt((String)parameters.get(KEY_DISCRETE)) == 1) ? true : false ;
+		if (parameters.containsKey(KEY_DIS_TH))
+			threshold = Integer.parseInt((String)parameters.get(KEY_DIS_TH));
+		if (parameters.containsKey(KEY_METHOD))
+			this.method = (String)parameters.get(KEY_METHOD);
+		if(discreteflag)
+		    //discretizeV2(features, length, dimension);
+			discretize(features, length, dimension);
+		
+    }
+	
+    
+    public mRMRFeatureSelector(float[][] features, int[] targets, String methodname, java.util.HashMap<String, String> parameters)
 	{
 		int threshold = 0;
 		boolean discreteflag = true; //default is to discretize
@@ -58,7 +79,6 @@ public class mRMRFeatureSelector implements FeatureSelector
 		this.length = features.length;
 		this.dimension = features[0].length;
 		this.method = methodname;
-
 		
 		if (parameters.containsKey(KEY_NUM))
 			this.numberofFeatures = Integer.parseInt((String)parameters.get(KEY_NUM));
@@ -98,8 +118,11 @@ public class mRMRFeatureSelector implements FeatureSelector
 	}
 	
 	
-	public float[][] selectFeaturesGivenIndices(int[] indices)
+	protected float[][] selectFeaturesGivenIndices(int[] indices)
 	{
+		return selectFeaturesGivenIndices(features, indices);
+		
+		/*
 		float[][] selectedFeatures = new float[length][indices.length];
 		
 		for(int i=0; i<length; i++)
@@ -110,14 +133,37 @@ public class mRMRFeatureSelector implements FeatureSelector
 				//System.out.println(selectedFeatures[i][j]);
 			}
 
-		return selectedFeatures;
+		return selectedFeatures; */
 	}	
 	
-	
-	
-	//return the selected features in vectors
-	public float[][] selectFeatures()
+	//select based on data passed in (instead of instance variable)
+	public float[][] selectFeaturesGivenIndices(float[][] data, int [] indices)
 	{
+		System.out.println("indices+"+indices);
+		float[][] selectedFeatures = new float[data.length][indices.length];
+		
+		for(int i=0; i<data.length; i++)
+			for(int j=0; j<indices.length; j++)
+				selectedFeatures[i][j] = data[i][indices[j]];
+
+		return selectedFeatures;
+	}
+	
+	//interface method
+	public float[][] selectFeatures(float[][] data, int[] targets)
+	{
+		this.features = data;
+		this.targets = targets;
+		this.length =  data.length;
+		this.dimension = data[0].length;
+		
+		return selectFeatures();
+	}
+	
+	//return the selected features in vectors (data need to be set first)
+	protected float[][] selectFeatures()
+	{
+		
 		this.indices = mRMRSelection();
 
 		//For debugging
@@ -126,7 +172,6 @@ public class mRMRFeatureSelector implements FeatureSelector
 			System.out.print(indices[i]+" ");
 		System.out.println();
 		
-		
 		return selectFeaturesGivenIndices(indices);
 	}
 
@@ -134,6 +179,7 @@ public class mRMRFeatureSelector implements FeatureSelector
 	//return the column indices of the selected features
 	protected int[] mRMRSelection()
 	{
+		
 		//C++ mRMR takes 1D array
 		float[] OneDfeatures = new float[length*(dimension+1)];
 		for(int i=0; i< length; i++)

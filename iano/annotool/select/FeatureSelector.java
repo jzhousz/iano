@@ -1,14 +1,15 @@
 package annotool.select;
 
-/** interface for all feature selectors such as mRMRFeatureSelector **/
+/** interface for all feature selectors such as mRMRFeatureSelector 
+ Parameters can be passed to the constructor of various selectors using a HashMap **/
 
 public interface FeatureSelector
 {
 
-   public float[][] selectFeatures();
+   public float[][] selectFeatures(float[][] data, int[] targets);
    
    public int[] getIndices();
 
-   public float[][] selectFeaturesGivenIndices(int [] indices);
+   public float[][] selectFeaturesGivenIndices(float[][] data, int [] indices);
    
 }
