@@ -944,7 +944,9 @@ public class Annotator implements Runnable
         
         //check the need for combined discretize (e.g. mMRM)
         String DISCRETE_FLAG = annotool.select.mRMRFeatureSelector.KEY_DISCRETE;
-		boolean discrete = (Integer.parseInt((String)parameters.get(DISCRETE_FLAG)) == 1) ? true : false ;
+        boolean discrete = false;
+        if(parameters.get(DISCRETE_FLAG) != null)
+		  discrete = (Integer.parseInt((String)parameters.get(DISCRETE_FLAG)) == 1) ? true : false ;
         System.out.println("discrete?"+ discrete);
         
         if (discrete) //discretize data in a combined way,
