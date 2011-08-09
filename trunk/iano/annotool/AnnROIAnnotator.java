@@ -78,7 +78,7 @@ public class AnnROIAnnotator extends Annotator {
 		if (featureSelector.equalsIgnoreCase("mRMR-MIQ") || featureSelector.equalsIgnoreCase("mRMR-MID"))
 		{
 			FeatureSelector selector = (new mRMRFeatureSelector(trainingfeatures, trainingTargets[0], trainingfeatures.length, incomingDim, numoffeatures, featureSelector, discrete, th));
-			trainingfeatures = selector.selectFeatures(); //override the original features
+			trainingfeatures = selector.selectFeatures(trainingfeatures, trainingTargets[0]); //override the original features
 			annotateImage(trainingfeatures, trainingTargets, testingProblem, classifier, selector.getIndices());	
 		}
 		else
