@@ -15,15 +15,12 @@ import annotool.gui.ROIAnnotator;
 import annotool.gui.ROIParameterPanel;
 import annotool.io.ChainModel;
 import annotool.io.DataInput;
-import annotool.io.DataInputDynamic;
 
 public class ModelLoader implements Runnable {
 	AnnOutputPanel pnlStatus = null;
 	ImageReadyPanel pnlImages = null;
 	
 	ArrayList<ChainModel> chainModels = null;
-	
-	final JFileChooser fileChooser = new JFileChooser();
 	
 	private Thread thread = null;
 	
@@ -37,10 +34,6 @@ public class ModelLoader implements Runnable {
 		this.pnlStatus = pnlImages.getOutputPanel();
 		
 		chainModels = new ArrayList<ChainModel>();
-		
-		fileChooser.setMultiSelectionEnabled(true);		
-		fileChooser.addChoosableFileFilter(new ModelFilter());
-		fileChooser.setAcceptAllFileFilterUsed(false);
 	}
 	
 	/**
@@ -60,15 +53,8 @@ public class ModelLoader implements Runnable {
 	 * 
 	 * @return True if model was loaded, false if canceled
 	 */
-	public boolean loadModels() {
-		fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-		
-		int returnVal = fileChooser.showOpenDialog(pnlImages);
-		
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-            File[] files = fileChooser.getSelectedFiles();
-            
-			pnlStatus.setOutput("Loading model..");
+	public boolean loadModels(File[] files) {
+		pnlStatus.setOutput("Loading model..");
 			
 			//For each selected file or directory
 			for(int i=0; i < files.length; i++) {
@@ -118,46 +104,36 @@ public class ModelLoader implements Runnable {
 			pnlStatus.setOutput("Total models loaded: " + String.valueOf(chainModels.size()));
 			
 			return true;
-        }
-			
-		return false;
 	}
 	/**
 	 * Loads model from a single file. Not used anymore after merging annotation and classification
 	 * 
 	 * @return True if model was loaded, false if canceled or invalid model
 	 */
-	public boolean loadModel() {
-		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		
+	public boolean loadModel(File file) {
 		ChainModel chainModel = null;
-		
-		int returnVal = fileChooser.showOpenDialog(pnlImages);
-		
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
             
-			pnlStatus.setOutput("Loading model..");
-			
-			chainModel = new ChainModel();
-			try {
-				chainModel.read(file);
-            	if(!chainModel.isValid()) {
-            		chainModel = null;
-            		pnlStatus.setOutput(file.getName() + " is invalid. Discarded!");            		
-            	}
-            	else {      
-            		chainModels.add(chainModel);	//Note: it adds to the arraylist so whether there will be one model or multiple model depends on how this is called
-                	pnlStatus.setOutput(file.getName() + " loaded successfully.");
-            	}
-            }
-            catch (Exception ex) {
-            	pnlStatus.setOutput("Model loading failure. File: " + file.getName());
-            	System.out.println(ex.getMessage());
-            }
+		pnlStatus.setOutput("Loading model..");
+		
+		chainModel = new ChainModel();
+		try {
+			chainModel.read(file);
+        	if(!chainModel.isValid()) {
+        		chainModel = null;
+        		pnlStatus.setOutput(file.getName() + " is invalid. Discarded!");            		
+        	}
+        	else {      
+        		chainModels.add(chainModel);	//Note: it adds to the arraylist so whether there will be one model or multiple model depends on how this is called
+            	pnlStatus.setOutput(file.getName() + " loaded successfully.");
+        	}
         }
-		if(chainModel == null)
-			return false;
+        catch (Exception ex) {
+        	pnlStatus.setOutput("Model loading failure. File: " + file.getName());
+        	System.out.println(ex.getMessage());
+        }
+	
+        if(chainModel == null)
+        	return false;	
 	
 		return true;		
 	}
@@ -175,13 +151,14 @@ public class ModelLoader implements Runnable {
 	@Override
 	public void run() {
 		//TODO: disable buttons and enable at the end	
-		if (Annotator.output.equals(Annotator.AN))
+		if (Annotator.output.equals(Annotator.AN)) {
 			classify();
+			pnlImages.enableSaveReport(true);
+		}
 		else if (Annotator.output.equals(Annotator.ROI)) {
 			roiAnnotate();
 		}
-		thread = null;
-		pnlImages.enableSaveReport(true);
+		thread = null;		
 	}
 	
 	/**

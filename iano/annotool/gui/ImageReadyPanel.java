@@ -20,8 +20,10 @@ import annotool.AnnOutputPanel;
 import annotool.AnnTablePanel;
 import annotool.Annotation;
 import annotool.Annotator;
+import annotool.gui.model.ModelFilter;
 import annotool.gui.model.ModelHelper;
 import annotool.gui.model.ModelLoader;
+import annotool.gui.model.PDFFilter;
 import annotool.io.ReportSaver;
 
 public class ImageReadyPanel extends JPanel implements ActionListener
@@ -33,7 +35,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	
 	JLabel lbModeInfo;
 	JRadioButton rbRed, rbGreen, rbBlue;
-	JButton btnExpert, btnAutoComp,
+	JButton btnSimple, btnAutoComp,
 			btnLoadModel, btnApplyModel, btnSaveReport, btnViewModels;
 	
 	String[] channels = {  "red (channel 1)", "green (channel 2)", "blue (channel 3)" };
@@ -51,7 +53,11 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	private int openFrameCount = 0;
 	
 	private ModelLoader loader = null;
+	
+	//File chooser and context specific file filters to use with the file chooser
 	JFileChooser fileChooser = new JFileChooser();
+	private ModelFilter modelFilter = new ModelFilter();
+	private PDFFilter pdfFilter = new PDFFilter();
 	
 	ArrayList<PopUpFrame> openFrames = new ArrayList<PopUpFrame>();
 		
@@ -98,6 +104,9 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		this.add(pnlRight, BorderLayout.EAST);
 		this.add(pnlStatus, BorderLayout.SOUTH);
 		
+		//File chooser should show all files option
+		fileChooser.setAcceptAllFileFilterUsed(false);
+		
 	}
 	
 	//Creates the panel with buttons
@@ -107,8 +116,8 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		pnlButton = new JPanel();
 		
 		//Expert and Auto Comparison buttons
-		btnExpert = new JButton("Simple");
-		btnExpert.addActionListener(this);
+		btnSimple = new JButton("Simple");
+		btnSimple.addActionListener(this);
 		btnAutoComp = new JButton("Comparison");
 		btnAutoComp.addActionListener(this);
 		
@@ -153,7 +162,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		pnlChannel.add(rbBlue);
 	}
 	public void actionPerformed(ActionEvent e) {
-		if(e.getSource() == btnExpert) {
+		if(e.getSource() == btnSimple) {
 			if(rbRed.isSelected())
 				Annotator.channel = channelInputs[0];
 			else if(rbGreen.isSelected())
@@ -161,7 +170,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			else if(rbBlue.isSelected())
 				Annotator.channel = channelInputs[2];
 			
-			ExpertFrame ef = new ExpertFrame("Expert Mode", is3D, Annotator.channel);
+			ExpertFrame ef = new ExpertFrame("Simple Mode", is3D, Annotator.channel);
 			ef.setVisible(true);
 			//ef.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			ef.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -215,12 +224,38 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			frame.setLocation(x,y);
 		}
 		else if(e.getSource() == btnLoadModel) {
+			//Set file chooser behavior for this(load model) context			
+			fileChooser.resetChoosableFileFilters();
+			fileChooser.addChoosableFileFilter(modelFilter);
+			
+			if(Annotator.output.equals(Annotator.AN)) {
+				fileChooser.setMultiSelectionEnabled(true);
+				fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+			}
+			else if (Annotator.output.equals(Annotator.ROI)){	//ROI mode should only allow single model selection
+				fileChooser.setMultiSelectionEnabled(false);
+				fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			}
+				
+			
+			int returnVal = fileChooser.showOpenDialog(this);
+			if (returnVal == JFileChooser.CANCEL_OPTION)
+				return;
+			
+			//Otherwise, proceed with loading of selected file(s)			
 			gui.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			loader = new ModelLoader(this);
-			if(loader.loadModels()) {
+			
+			
+			if(Annotator.output.equals(Annotator.AN) && loader.loadModels(fileChooser.getSelectedFiles())) {
 				btnApplyModel.setEnabled(true);
 				btnViewModels.setEnabled(true);
 			}
+			else if(Annotator.output.equals(Annotator.ROI) && loader.loadModel(fileChooser.getSelectedFile())) {
+				btnApplyModel.setEnabled(true);
+				btnViewModels.setEnabled(true);
+			}
+			
 			gui.setCursor(Cursor.getDefaultCursor());
 		}
 		else if(e.getSource() == btnApplyModel) {
@@ -254,6 +289,12 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			loader.applyModel();
 		}
 		else if(e.getSource() == btnSaveReport) {
+			//Change file chooser behavior to match this context
+			fileChooser.setMultiSelectionEnabled(false);
+			fileChooser.resetChoosableFileFilters();
+			fileChooser.addChoosableFileFilter(pdfFilter);
+			fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			
 			int returnVal = fileChooser.showSaveDialog(this);
 			
 	        if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -346,7 +387,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 		}
 		else {
 			pnlButton.setLayout(new GridLayout(1, 2));
-			pnlButton.add(btnExpert);
+			pnlButton.add(btnSimple);
 			pnlButton.add(btnAutoComp);
 		}
 		

@@ -92,7 +92,6 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		pnlMain.setBorder(new EmptyBorder(10, 10, 10, 10));
 		pnlMain.setAlignmentY(TOP_ALIGNMENT);
 		pnlMain.setAlignmentX(LEFT_ALIGNMENT);
-		//this.add(pnlMain, BorderLayout.WEST);
 		tabPane = new JTabbedPane();
 		tabPane.addTab("Algorithms", pnlMain);
 		this.add(tabPane);
@@ -102,8 +101,6 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		pnlAlgo.setLayout(new BoxLayout(pnlAlgo, BoxLayout.PAGE_AXIS));
 		pnlAlgo.setBorder(new CompoundBorder(new TitledBorder(null, "Algorithms", 
 				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(5,5,5,5)));
-		//pnlAlgo.setAlignmentY(TOP_ALIGNMENT);
-		//pnlAlgo.setAlignmentX(LEFT_ALIGNMENT);
 		
 		//Parse the xml document with list of algorithms (for extractors, selectors and classifiers)
 		AlgoXMLParser parser = new AlgoXMLParser();
@@ -133,7 +130,6 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		
 		//Extractor panel
 		pnlExt = new JPanel(new BorderLayout());
-		//pnlExt.setPreferredSize(new java.awt.Dimension(350, 110)); //Supplying height so that the algorithm panels don't shrink when none selected
 		pnlExt.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 		
 		pnlExtMain = new JPanel(new GridLayout(1, 2));
@@ -436,14 +432,19 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             if(classifierObj instanceof SavableClassifier) {
             	try {
             		((SavableClassifier)classifierObj).trainingOnly(selectedFeatures, trainingTargets[i]);
-            		enableSave = false;
+            		enableSave = true;
             	}
             	catch (Exception ex) {
             		ex.printStackTrace();
+            		
+            		enableSave = false;
+            		pnlOutput.setOutput("Classification failed!");
+            		setProgress(0);
+            		return;
             	}
             }
             else
-            	enableSave = true;
+            	enableSave = false;
             
             //Save information to dump in chain file
         	chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
@@ -564,6 +565,11 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             }
             catch(Exception ex) {
             	ex.printStackTrace();
+            	
+            	enableSave = false;
+        		pnlOutput.setOutput("Classification failed!");
+        		setProgress(0);
+        		return;
             }
             
             enableSave = (classifierObj instanceof SavableClassifier)? true : false;
@@ -709,8 +715,12 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             	recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, selectedFeatures, targets[i], classifierObj, classParams, shuffle, results[i]);
             }
             catch(Exception ex) {
-            	pnlOutput.setOutput("Exception! " + ex.getMessage());
             	ex.printStackTrace();
+            	
+            	enableSave = false;
+        		pnlOutput.setOutput("Classification failed!");
+        		setProgress(0);
+        		return;
             }
             
             enableSave = (classifierObj instanceof SavableClassifier)? true : false;
@@ -929,7 +939,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	
 	//Temporary main method for testing GUI
 	public static void main(String[] args) {
-		ExpertFrame ef = new ExpertFrame("Expert Mode", false, "g");
+		ExpertFrame ef = new ExpertFrame("Simple Mode", false, "g");
 		ef.pack();
 		ef.setVisible(true);
 		ef.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

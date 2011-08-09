@@ -311,8 +311,8 @@ public class AnnMenuBar implements ActionListener {
 	{
 		String aboutString =  "BI-CAT (Biological Image Classification and Annotation Tool)\n\n" +
 		"Version: 1.0.0\n\n" +
-		"Jie Zhou, Hanchuan Peng and other contributors\n" +
-		"2008 - 2009.  All rights reserved.\n\n" +
+		"Jie Zhou, Hanchuan Peng, Santosh Lamichhane and other contributors\n" +
+		"2009 - 2011.  All rights reserved.\n\n" +
 		"This tool uses software below:\n" +
 		"mRMR -- \thttp://research.janelia.org/peng/proj/mRMR/ \n" +
 		"ImageJ -- \thttp://rsbweb.nih.gov/ij \n" +
