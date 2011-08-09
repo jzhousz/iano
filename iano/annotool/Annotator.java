@@ -742,10 +742,9 @@ public class Annotator implements Runnable
     
     /* 
      * overloaded method for applying extractor to a ROI
-     *   Need to supply float[][] as input data. 
-     *   ImgDimension is the size of the ROI, e.g. width, height, depth (maybe 2D or 3D)
+     * ImgDimension is the size of the ROI, e.g. width, height, depth (may be 2D or 3D)
      *   
-     *  8/5/2011: Current version only deals with 2DROI, and ignores depth in dimension
+     *  8/5/2011: Current version only deals with 2DROI (depth == 1)
      *  In order to handle 3D ROI, 3D feature extractors need to work with byte[] with 3D info.     
      */
      public float[][] extractGivenAMethod(String chosenExtractor, java.util.HashMap<String, String> parameters, byte[][] data, ImgDimension dim)
@@ -766,7 +765,7 @@ public class Annotator implements Runnable
             return features;
           }
             
-         //those that are not "NONE"    	    	
+        //those that are not "NONE"    	    	
      	FeatureExtractor extractor = getExtractorGivenName(chosenExtractor, parameters);
 
      	//check if it is the right type of feature extractor (2D or 3D)
@@ -797,8 +796,8 @@ public class Annotator implements Runnable
           setGUIOutput(name + "is not a supported extractor.");
 
    	   return extractor;
-    	
     }
+    
     
     /**
      * This method combines together the extraction result with multiple extractors in a single dimension (per problem)
@@ -910,39 +909,15 @@ public class Annotator implements Runnable
         	result.setIndices(null);
         }
 
-        if (chosenSelector.equalsIgnoreCase("Fisher")) {
-            FeatureSelector selector = (new FishersCriterion(features, targets, parameters));
-            try {
-            	result.setTrainingFeatures(selector.selectFeatures());
-                result.setIndices(selector.getIndices());
-            }
-            catch (Exception e) {
-                System.err.println(e.getMessage());
-            }
-        }
-        else if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || chosenSelector.equalsIgnoreCase("mRMR-MID")) 
-        {
-            FeatureSelector selector = (new mRMRFeatureSelector(features, targets, chosenSelector, parameters));	
-            try {
-                features = selector.selectFeatures();
-            } catch (Exception e) {
-                System.err.println(e.getMessage());
-            }
-            result.setTrainingFeatures(features);
+        FeatureSelector  selector = getSelectorGivenName(chosenSelector, parameters);
+        try {
+        	result.setTrainingFeatures(selector.selectFeatures(features, targets));
             result.setIndices(selector.getIndices());
         }
-        else if (chosenSelector.equalsIgnoreCase("Information Gain")) {
-            int numoffeatures = getNumberofFeatures(); // will be passed in as parameter to selector later
-            FeatureSelector selector = new WeKaFeatureSelectors(features, targets, numoffeatures, null, 0.2);
-            try {
-            	result.setTrainingFeatures(selector.selectFeatures());
-            	result.setIndices(selector.getIndices());
-                
-            }  catch (Exception e) {
-                System.err.println(e.getMessage());
-            }
+        catch (Exception e) {
+            System.err.println(e.getMessage());
         }
-
+        
         return result;
         
     }
@@ -951,90 +926,74 @@ public class Annotator implements Runnable
      *  The feature selector that takes 2 sets (training and testing)
      *  Return: two feature sets wrapped in ComboFeatures
      *  This method takes a HashMap for possible parameters.
+     *  Note: If incrementally reading the images, the flow will be different (cann't get features in one shot .. 5/3/2011)
      */
     public ComboFeatures selectGivenAMethod(String chosenSelector, java.util.HashMap<String, String> parameters, float[][] trainingFeatures, float[][] testingFeatures, int[] trainTargets, int[] testTargets) {
-        //dimension of extracted features before selection
-        int incomingDim = trainingFeatures[0].length;
-        int numoffeatures;  //will be removed after all algorithms take HashMap
-        if (chosenSelector.equalsIgnoreCase("None")) //use the original feature without selection
-            numoffeatures = incomingDim;
-        else //is also passed in through parameter argument if applicable to the algorithm 
-            numoffeatures = getNumberofFeatures();
- 
-        //Note: If incrementally reading the images, the flow will be different (cann't get features in one shot .. 5/3/2011)
-        float[][] selectedTrainingFeatures = null;
-        int[] indices = null;
-        ComboFeatures result = new ComboFeatures();
 
-        if (chosenSelector.equalsIgnoreCase("Fisher")) {
-        	//System.err.println("will call FishersCriterion class for feature selection");
-        	//System.exit(1);
-        	
-            FeatureSelector selector = (new FishersCriterion(trainingFeatures, trainTargets, parameters));
-            try {
-                selectedTrainingFeatures = selector.selectFeatures();
-                indices = selector.getIndices();
-            }
-            catch (Exception e) {
-                System.err.println(e.getMessage());
-            }
-            selector = (new FishersCriterion(testingFeatures, null, parameters));
-            float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
-            result.setTrainingFeatures(selectedTrainingFeatures);
-            result.setTestingFeatures(selectedTestingFeatures);
-            result.setIndices(indices);
-            
-        }
-        else if (chosenSelector.equalsIgnoreCase("mRMR-MIQ") || chosenSelector.equalsIgnoreCase("mRMR-MID")) {
-            //parsing algorithm parameters. Will be moved into algorithm class.
-            boolean discrete = Boolean.parseBoolean(parameters.get("DISCRETE_FLAG"));
-            if (discrete) //discretize data in a combined way,
-            	//Need a special flag that is common for all algorithms if other algorithms need to do this too.
-                annotool.Util.discretizeCombinedUnsupervised(trainingFeatures, testingFeatures, trainTargets, testTargets);
- 
-            FeatureSelector selector = (new mRMRFeatureSelector(trainingFeatures, trainTargets, chosenSelector, parameters));
-            try {
-                selectedTrainingFeatures = selector.selectFeatures();
-                indices = selector.getIndices();
-            }
-            catch (Exception e) {
-            	e.printStackTrace();
-                System.err.println(e.getMessage());
-            }
-            selector = (new mRMRFeatureSelector(testingFeatures, testTargets, chosenSelector, parameters));
-            System.out.println("indices.length = " + indices.length);
-            float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
-            result.setTrainingFeatures(selectedTrainingFeatures);
-            result.setTestingFeatures(selectedTestingFeatures);
-            result.setIndices(indices);
-        }
-        else if (chosenSelector.equalsIgnoreCase("Information Gain")) {
-            //Do selection on the training set
-            FeatureSelector selector = new WeKaFeatureSelectors(trainingFeatures, trainTargets, numoffeatures, null, 0.2);
-            try {
-                selectedTrainingFeatures = selector.selectFeatures();
-                 //apply to testing. IMPORTANT: dimension has changed by feature selector
-                indices = selector.getIndices();
-            }
-            catch (Exception e) {
-                System.err.println(e.getMessage());
-            }
-            numoffeatures = indices.length;
-            selector = new WeKaFeatureSelectors(testingFeatures, null, numoffeatures, null, 0.2);//081007
-            float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(indices);
-            result.setTrainingFeatures(selectedTrainingFeatures);
-            result.setTestingFeatures(selectedTestingFeatures);
-            result.setIndices(indices);
-        }else if (chosenSelector.equalsIgnoreCase("None")) 
+    	ComboFeatures result = new ComboFeatures();
+
+    	if (chosenSelector.equalsIgnoreCase("None")) 
         {
             result.setTrainingFeatures(trainingFeatures);
             result.setTestingFeatures(testingFeatures);
             result.setIndices(null);
         }
-
+        
+        float[][] selectedTrainingFeatures = null;
+        int[] indices = null;
+        
+        //check the need for combined discretize (e.g. mMRM)
+        String DISCRETE_FLAG = annotool.select.mRMRFeatureSelector.KEY_DISCRETE;
+		boolean discrete = (Integer.parseInt((String)parameters.get(DISCRETE_FLAG)) == 1) ? true : false ;
+        System.out.println("discrete?"+ discrete);
+        
+        if (discrete) //discretize data in a combined way,
+        {
+            annotool.Util.discretizeCombinedUnsupervised(trainingFeatures, testingFeatures, trainTargets, testTargets);
+            //already discretized, so no need to do it again individually
+            parameters.remove(DISCRETE_FLAG);
+        }
+        
+        FeatureSelector selector = getSelectorGivenName(chosenSelector, parameters);
+        try {
+          selectedTrainingFeatures = selector.selectFeatures(trainingFeatures, trainTargets);
+          //note: dimension may be different from passed in parameter now
+          indices = selector.getIndices();
+        }catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
+        //select testing features
+        float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(testingFeatures, indices);
+        result.setTrainingFeatures(selectedTrainingFeatures);
+        result.setTestingFeatures(selectedTestingFeatures);
+        result.setIndices(indices);
+     
         return result;
-
+        
     }
+
+    
+    public FeatureSelector getSelectorGivenName(String name, HashMap<String, String> parameters)
+    {
+       FeatureSelector selector = null;
+       
+       if (name.equalsIgnoreCase("Fisher")) 
+          selector = new FishersCriterion(parameters);
+       
+       else if (name.equalsIgnoreCase("mRMR-MIQ") || name.equalsIgnoreCase("mRMR-MID"))
+       {
+    	   //should be added in xml file.
+    	  parameters.put(annotool.select.mRMRFeatureSelector.KEY_METHOD,name);
+          selector = new mRMRFeatureSelector(parameters);
+       }
+       else if (name.equalsIgnoreCase("Information Gain")) 
+    	  selector = new WeKaFeatureSelectors(parameters);
+       else
+          setGUIOutput(name + "is not a supported selector.");
+   	   
+       return selector;
+    }
+
     
     /**
      * Selects the features based on pre-determined set of indices
