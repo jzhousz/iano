@@ -413,7 +413,16 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             {
                 pnlOutput.setOutput("Selecting features...");
             	//Supervised feature selectors need corresponding target data
-                ComboFeatures combo = anno.selectGivenAMethod(featureSelector, selParams, trainingFeatures, trainingTargets[i]);
+                ComboFeatures combo = null;
+                try {
+                	combo = anno.selectGivenAMethod(featureSelector, selParams, trainingFeatures, trainingTargets[i]);
+                }
+                catch (Exception ex) {
+                	enableSave = false;
+            		pnlOutput.setOutput("Feature selection failed! Selector = " + featureSelector);
+            		setProgress(0);
+            		return;
+                }
                 //selected features overrides the passed in original features
                 selectedFeatures = combo.getTrainingFeatures();
  
@@ -541,7 +550,16 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             {
                 pnlOutput.setOutput("Selecting features...");
             	//Supervised feature selectors need corresponding target data
-                ComboFeatures combo = anno.selectGivenAMethod(featureSelector, selParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i]);
+                ComboFeatures combo =  null;
+                try {
+                	combo = anno.selectGivenAMethod(featureSelector, selParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i]);
+                }
+                catch (Exception ex) {
+                	enableSave = false;
+            		pnlOutput.setOutput("Feature selection failed! Selector = " + featureSelector);
+            		setProgress(0);
+            		return;
+                }
                 //selected features overrides the passed in original features
                 selectedTrainingFeatures = combo.getTrainingFeatures();
                 selectedTestingFeatures = combo.getTestingFeatures();
@@ -699,7 +717,17 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             else {
                 pnlOutput.setOutput("Selecting features ... ");
                 //override the original features and num of features
-                ComboFeatures combo = anno.selectGivenAMethod(featureSelector, selParams, features, targets[i]);
+                ComboFeatures combo = null;
+                try {
+                	combo = anno.selectGivenAMethod(featureSelector, selParams, features, targets[i]);
+                }
+                catch (Exception ex) {
+                	enableSave = false;
+            		pnlOutput.setOutput("Feature selection failed! Selector = " + featureSelector);
+            		setProgress(0);
+            		return;
+                }
+                
                 selectedFeatures = combo.getTrainingFeatures();
                 
                 //For dump file
