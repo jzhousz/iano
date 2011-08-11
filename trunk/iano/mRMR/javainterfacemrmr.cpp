@@ -73,7 +73,7 @@ JNIEXPORT jintArray JNICALL Java_annotool_select_mRMRNative_miq
      //memory management
     //"delete myData" may also free the original array passed in.
     if(isCopyFeature) {
-      cout << "Relasing the copy." << endl;                
+      cout << "Releasing the copy." << endl;                
       if (myData)
         delete myData;
     }
