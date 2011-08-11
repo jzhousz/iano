@@ -150,15 +150,22 @@ public class ModelLoader implements Runnable {
 	
 	@Override
 	public void run() {
-		//TODO: disable buttons and enable at the end	
+		pnlImages.setButtonsEnabled(false);
+		
 		if (Annotator.output.equals(Annotator.AN)) {
+			pnlStatus.setOutput("Classification/Annotation started..");
 			classify();
+			pnlStatus.setOutput("Classification/Annotation completed.");
 			pnlImages.enableSaveReport(true);
 		}
 		else if (Annotator.output.equals(Annotator.ROI)) {
+			pnlStatus.setOutput("ROI annotation started..");
 			roiAnnotate();
+			pnlStatus.setOutput("ROI annotation completed.");
 		}
-		thread = null;		
+		thread = null;	
+		
+		pnlImages.setButtonsEnabled(true);
 	}
 	
 	/**
