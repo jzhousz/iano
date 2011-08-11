@@ -285,7 +285,6 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 					return;
 				}
 			}
-			
 			loader.applyModel();
 		}
 		else if(e.getSource() == btnSaveReport) {
@@ -504,5 +503,10 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 
 	public ROIParameterPanel getPnlROIParam() {
 		return pnlROIParam;
+	}
+	
+	public void setButtonsEnabled(boolean flag) {
+		this.btnLoadModel.setEnabled(flag);
+		this.btnApplyModel.setEnabled(flag);
 	}
 }
