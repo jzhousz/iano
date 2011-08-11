@@ -465,7 +465,7 @@ public class SVMClassifier implements SavableClassifier
 	       }
 	       prob[0] = max;
 		}
-        System.out.println(prediction+" ");
+        //System.out.println(prediction+" ");
        	return prediction;
        	
        	
