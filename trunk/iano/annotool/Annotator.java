@@ -308,11 +308,18 @@ public class Annotator implements Runnable
             else {
                 setGUIOutput("Selecting features ... ");
                 //Supervised feature selectors need corresponding target data
+                try
+                {
                 ComboFeatures combo = selectGivenAMethod(featureSelector, para, trainingfeatures, testingfeatures, trainingtargets[i], testingtargets[i]);
                 //selected features should not override the passed-in original features
                 selectedTrainingFeatures = combo.getTrainingFeatures();
                 selectedTestingFeatures = combo.getTestingFeatures();
                 //numoffeatures = trainingfeatures[0].length;
+                }catch(Exception e)
+                {
+                	 setGUIOutput(e.getMessage());
+                	 continue; //go to next i, without classifying
+                }
             }
 
             //pass the training and testing data to Validator
@@ -928,7 +935,7 @@ public class Annotator implements Runnable
      *  This method takes a HashMap for possible parameters.
      *  Note: If incrementally reading the images, the flow will be different (cann't get features in one shot .. 5/3/2011)
      */
-    public ComboFeatures selectGivenAMethod(String chosenSelector, java.util.HashMap<String, String> parameters, float[][] trainingFeatures, float[][] testingFeatures, int[] trainTargets, int[] testTargets) {
+    public ComboFeatures selectGivenAMethod(String chosenSelector, java.util.HashMap<String, String> parameters, float[][] trainingFeatures, float[][] testingFeatures, int[] trainTargets, int[] testTargets) throws Exception {
 
     	ComboFeatures result = new ComboFeatures();
 
@@ -963,7 +970,11 @@ public class Annotator implements Runnable
           indices = selector.getIndices();
         }catch (Exception e) {
             System.err.println(e.getMessage());
+            e.printStackTrace();
+            //to be caught by the caller. Don't continue.
+            throw new Exception(e.getMessage());
         }
+        
         //select testing features
         float[][] selectedTestingFeatures = selector.selectFeaturesGivenIndices(testingFeatures, indices);
         result.setTrainingFeatures(selectedTrainingFeatures);
