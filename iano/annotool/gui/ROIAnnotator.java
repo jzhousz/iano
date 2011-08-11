@@ -31,7 +31,7 @@ public class ROIAnnotator {
 	 * @param size : ROI Window Size
 	 * @param interval : Increment for sliding ROI window over the target image
 	 * @param paddingMode : Determines the mode used to pad the image for annotation near the image edges.
-	 * 						Modes - ROIParameterPanel.RESIZE, ROIParameterPanel.SYMMETRIC, ROIParameterPanel.REPLICATE
+	 * 						Modes - ROIParameterPanel.NONE, ROIParameterPanel.SYMMETRIC
 	 * @param channel : Channel information of the image
 	 * @param selectedImages: List of indices for images selected for annotations
 	 */
@@ -83,19 +83,38 @@ public class ROIAnnotator {
 		
 		byte[] subImage = new byte[roiWidth*roiHeight];
 		
-		int numSubImages = ((ip.getWidth()-roiWidth) / interval + 1) * ((ip.getHeight() - roiHeight) / interval + 1);
-		System.out.println("Number of sub-images in the image:" + numSubImages);
+		int numSubImages;
+		int startCol, startRow, endRow, endCol;
+		if(paddingMode == ROIParameterPanel.SYMMETRIC) {
+			numSubImages = (ip.getWidth() + 2 * (roiWidth/2) / interval + 1) * (ip.getHeight() + 2 * (roiHeight/2) / interval + 1);
+			startCol = -roiWidth/2;
+			startRow = -roiHeight/2;
+			endCol = ip.getWidth() + roiWidth/2;
+			endRow = ip.getHeight() + roiHeight/2;
+		}
+		else {
+			numSubImages = ((ip.getWidth()-roiWidth) / interval + 1) * ((ip.getHeight() - roiHeight) / interval + 1);
+			startCol = 0;
+			startRow = 0;
+			endCol = ip.getWidth() - roiWidth;
+			endRow = ip.getHeight() - roiHeight;
+		}
 		
-		Annotation[] annotations = new Annotation[numSubImages];
+		System.out.println("Number of sub-images in the image:" + numSubImages);		
 		
 		//Data structure to store target patterns.
-		float[][] targetROIPatterns = new float[numSubImages][];
+		float[][] targetROIPatterns = new float[1][];
+		Annotation[] annotations = new Annotation[1];
+
+		SavableClassifier classifier = (SavableClassifier)model.getClassifier();
+		Annotator anno = new Annotator();
+		int[] predictions = new int[numSubImages];
 		
 		int imageIndex = -1;
-		for(int i = 0; i < ip.getWidth() - roiWidth + 1; i = i + interval)             //or i <= ip.getWidth() - roiWidth
+		for(int i = startCol; i <= endCol; i = i + interval)
 		{	
 			//columns
-			for(int j = 0 ; j < ip.getHeight() - roiHeight + 1; j = j + interval)
+			for(int j = startRow ; j <= endRow; j = j + interval)
 			{ 
 				//rows
 				imageIndex++;
@@ -103,7 +122,8 @@ public class ROIAnnotator {
 				//(i,j) is the upperleft corner of the subimage
 				for(int m = 0; m < roiWidth; m++)//col
 					for(int n = 0; n < roiHeight; n++) //row
-						subImage[n * roiWidth + m] = data[ (n + j) * ip.getWidth() + m + i];//row major //out of bound exception?4/1/09
+						//subImage[n * roiWidth + m] = data[ (n + j) * ip.getWidth() + m + i];//row major //out of bound exception?4/1/09
+						subImage[n * roiWidth + m] = getSubImageData(data, m + i, n + j, ip.getWidth(), ip.getHeight(), i, j, m, n);
 				
 				//feature extraction on testing subimage.
 				float[] features  = getExtractedFeaturesFromROI(subImage, roiWidth, roiHeight, model.getExtractors());
@@ -111,32 +131,39 @@ public class ROIAnnotator {
 				//Selecting features
 		        for(Selector sel : model.getSelectors()) {
 			        if(sel.getSelectedIndices() != null) {
-			        	System.out.println("Selecting features with " + sel.getName());
 			        	features = this.selectGivenIndices(features, sel.getSelectedIndices());
 			        }
 		        }
 		        
-		        targetROIPatterns[imageIndex] =  features;
+		        targetROIPatterns[0] =  features;
 		        
-		        //Initialize annotation objects
-		        annotations[imageIndex] = new Annotation();
+		        //Initialize annotation object
+		        annotations[0] = new Annotation();
+		        
+		        //Annotate		        
+		        try {
+		        	predictions[imageIndex] = anno.classifyGivenAMethod(classifier, targetROIPatterns, annotations)[0];
+				} catch (Exception ex) {
+					System.out.println("Classification using model failed.");
+					ex.printStackTrace();
+				}
 			}//	end of j
 	    } //end of i
 		
-		//Annotate
-		System.out.println("Classifying with " + model.getClassifierName());
-		SavableClassifier classifier = (SavableClassifier)model.getClassifier();
-        boolean supportsProb = classifier.doesSupportProbability();
-        int[] predictions = null;
-        try {
-        	predictions = (new Annotator()).classifyGivenAMethod(classifier, targetROIPatterns, annotations);
-		} catch (Exception ex) {
-			System.out.println("Classification using model failed.");
-			ex.printStackTrace();
-		}
+		markResultsOnImage(imp, predictions, roiWidth, roiHeight, startCol, startRow, endCol, endRow);
+	}
+	
+	private byte getSubImageData(byte[] data, int col, int row, int imgWidth, int imgHeight, int i, int j, int m, int n) {
+		if(row < 0)
+			row = -row;
+		if(col < 0)
+			col = -col;
+		if(row >= imgHeight)
+			row = (imgHeight - 1) - (row - imgHeight);
+		if(col >= imgWidth)
+			col = (imgWidth - 1) - (col - imgWidth);
 		
-		System.out.println("Marking annotation results");
-		markResultsOnImage(imp, predictions, roiWidth, roiHeight);
+		return data[ row * imgWidth + col];
 	}
 	
 	protected float[] getExtractedFeaturesFromROI(byte[] subImage, int width, int height, ArrayList<Extractor> extractors)
@@ -201,10 +228,11 @@ public class ROIAnnotator {
     }
     
     //make an overlay mask on the grayed image
-    public void markResultsOnImage(ImagePlus imp, int[] predictions, int roiWidth, int roiHeight)
+    public void markResultsOnImage(ImagePlus imp, int[] predictions, int roiWidth, int roiHeight, int startCol, int startRow, int endCol, int endRow)
     {    
-    	ImageProcessor ip = imp.getProcessor();   
+    	ImageProcessor ip = imp.getProcessor();
     	ImageProcessor ipOriginal = ip.duplicate();
+    	ImageProcessor ipMaskOnly = ip.duplicate();
 
     	//for color blending
     	Color c = null;
@@ -214,11 +242,12 @@ public class ROIAnnotator {
     	int colorLabel = 0;
 
     	int index = 0;	
-    	for(int i=0; i <= ip.getWidth()-roiWidth; i = i + interval)
-    		for(int j=0 ; j <= ip.getHeight()-roiHeight; j = j + interval)
+    	for(int i=startCol; i <= endCol; i = i + interval)
+    		for(int j=startRow ; j <= endRow; j = j + interval)
     		{
     			int res = predictions[index++];
     			ip.moveTo(i+roiWidth/2, j+roiHeight/2);
+    			ipMaskOnly.moveTo(i+roiWidth/2, j+roiHeight/2);
 	    	 
     			//get the current image color
     			ip.getPixel(i+roiWidth/2, j+roiHeight/2, colors);
@@ -230,25 +259,16 @@ public class ROIAnnotator {
     			fcolors[1] = colorMasks[colorLabel][1]*alpha + fcolors[1]*(1-alpha);
     			fcolors[2] = colorMasks[colorLabel][2]*alpha + fcolors[2]*(1-alpha);
     			c = new Color(fcolors[0], fcolors[1], fcolors[2]);
-    			ip.setColor(c);
-
-    			/*
-              	draw a short cross of 10 pixel by 10 pixel
-	    	 	ip.drawLine(i+ROISIZE/2, j+ROISIZE/2-5, i+ROISIZE/2, j+ROISIZE/2+5);
-	    	 	ip.drawLine(i+ROISIZE/2-5, j+ROISIZE/2, i+ROISIZE/2+5, j+ROISIZE/2);
-	    	 	ip.drawString(String.valueOf(res));
-    			 */
-    			//how to gray the original color? 
-    			//define the bounding box of the area to fill.
-    			/*int xcor[] = {i+ROISIZE/2-INCREMENT/2,i+ROISIZE/2-INCREMENT/2,i+ROISIZE/2+INCREMENT/2, i+ROISIZE/2+INCREMENT/2 };
-	    	 	int ycor[] = {j+ROISIZE/2-INCREMENT/2,j+ROISIZE/2+INCREMENT/2,j+ROISIZE/2+INCREMENT/2, j+ROISIZE/2-INCREMENT/2 };
-	    	 	java.awt.Polygon aoi = new java.awt.Polygon(xcor, ycor, 4);
-	    	 	ip.fillPolygon(aoi);*/
-    			//ip.drawRect(i+ROISIZE/2-INCREMENT/2,j+ROISIZE/2-INCREMENT/2, INCREMENT, INCREMENT);
+    			ip.setColor(c);    			
     			ip.fillOval(i + roiWidth/2 - interval/2, j + roiHeight/2 - interval/2, interval, interval);
+    			
+    			//Draw the mask only
+    			ipMaskOnly.setColor(new Color(colorMasks[colorLabel][0], colorMasks[colorLabel][1], colorMasks[colorLabel][2]));    			
+    			ipMaskOnly.fillOval(i + roiWidth/2 - interval/2, j + roiHeight/2 - interval/2, interval, interval);
     		}
     	ImageStack st = imp.getStack();
-    	st.addSlice("Original", ipOriginal);    	
+    	st.addSlice("Original", ipOriginal);
+    	st.addSlice("Mask", ipMaskOnly);
     	imp.setStack("Stack", st);
     	
     	//display the annotated image

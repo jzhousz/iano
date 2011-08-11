@@ -241,8 +241,9 @@ public class AnnImageTable {
 			tabledata[i][0] =  getButtonCell(i); 
 			tabledata[i][1] = children[i];
 			for (int j = 0; j < numModels; j++) {
-				if(supportsProb[j])
-					tabledata[i][2+j] = predictions[j][i].prob;
+				if(supportsProb[j]) {
+					tabledata[i][2+j] = predictions[j][i].anno + String.format(" (%.2f%%)", 100 * predictions[j][i].prob);
+				}
 				else
 					tabledata[i][2+j] = predictions[j][i].anno;
 			}

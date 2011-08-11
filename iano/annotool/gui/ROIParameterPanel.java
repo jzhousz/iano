@@ -3,8 +3,6 @@ package annotool.gui;
 import java.awt.Dimension;
 
 import javax.swing.*;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -32,7 +30,6 @@ public class ROIParameterPanel extends JPanel implements ChangeListener {
 		//Radio buttons
 	    rbNone = new JRadioButton("None", true);
 	    rbSymmetric = new JRadioButton("Symmetric");
-	    rbSymmetric.setEnabled(false);
 	    
 	    ButtonGroup group = new ButtonGroup();
 	    group.add(rbNone);
