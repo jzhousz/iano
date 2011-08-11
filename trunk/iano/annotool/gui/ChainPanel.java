@@ -680,15 +680,24 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        	
 	        	ArrayList<Selector> selectors = new ArrayList<Selector>();
 	        	
-	        	ComboFeatures combo = null;
-	            if(chain.hasSelectors()) 
+	        	ComboFeatures combo = null;	            
+	        	if(chain.hasSelectors()) 
 	            {
+	        		boolean selected = true; //Set to false if selector throws exception
 	                pnlOutput.setOutput("Selecting features...");
 	                
 	                //Apply each feature selector in the chain
 	                for(Selector selector : chain.getSelectors()) {
 		            	//Supervised feature selectors need corresponding target data
-		                combo = anno.selectGivenAMethod(selector.getName(), selector.getParams(), selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i]);
+		                try {
+		                	combo = anno.selectGivenAMethod(selector.getName(), selector.getParams(), selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i]);
+		                }
+		                catch (Exception ex) {
+		            		pnlOutput.setOutput("Feature selection failed! Selector = " + selector.getName());
+		            		selected = false;
+		            		break;
+		                }
+		                	
 		                //selected features overrides the passed in original features
 		                selectedTrainingFeatures = combo.getTrainingFeatures();
 		                selectedTestingFeatures = combo.getTestingFeatures();
@@ -697,6 +706,11 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		                Selector currentSelector = new Selector(selector.getName());
 		                currentSelector.setSelectedIndices(combo.getSelectedIndices());
 		                selectors.add(currentSelector);
+	                }
+	                
+	                if(!selected) {
+	                	rates[chainCount][i] = 0;
+	                	continue;
 	                }
 	            }
 	            //pass the training and testing data to Validator
@@ -873,16 +887,29 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            ComboFeatures combo = null;
 	            if(chain.hasSelectors()) 
 	            {
+	            	boolean selected = true;
 	                pnlOutput.setOutput("Selecting features...");
 	                
 	                //Apply each feature selector in the chain
 	                for(Selector selector : chain.getSelectors()) {
 		            	//Supervised feature selectors need corresponding target data
-		                combo = anno.selectGivenAMethod(selector.getName(), selector.getParams(), selectedFeatures, targets[i]);
+		                try {
+	                	   	combo = anno.selectGivenAMethod(selector.getName(), selector.getParams(), selectedFeatures, targets[i]);
+		                }
+		                catch (Exception ex) {
+		                	pnlOutput.setOutput("Feature selection failed! Selector = " + selector.getName());
+		                	selected = false;
+		                	break;
+		                }
 		                //selected features overrides the passed in original features
 		                selectedFeatures = combo.getTrainingFeatures();
 		                
 		                selector.setSelectedIndices(combo.getSelectedIndices());
+	                }
+	                
+	                if(!selected) {
+	                	rates[chainCount][i] = 0;
+	                	continue;
 	                }
 	            }
 	
