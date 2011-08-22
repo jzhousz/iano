@@ -86,11 +86,11 @@ public class ROIAnnotator {
 		int numSubImages;
 		int startCol, startRow, endRow, endCol;
 		if(paddingMode == ROIParameterPanel.SYMMETRIC) {
-			numSubImages = (ip.getWidth() + 2 * (roiWidth/2) / interval + 1) * (ip.getHeight() + 2 * (roiHeight/2) / interval + 1);
+			numSubImages = ((roiWidth/2 + ip.getWidth() - 1) / interval + 1) * ((roiHeight/2 + ip.getHeight() - 1) / interval + 1);
 			startCol = -roiWidth/2;
 			startRow = -roiHeight/2;
-			endCol = ip.getWidth() + roiWidth/2;
-			endRow = ip.getHeight() + roiHeight/2;
+			endCol = ip.getWidth() - 1;
+			endRow = ip.getHeight() - 1;
 		}
 		else {
 			numSubImages = ((ip.getWidth()-roiWidth) / interval + 1) * ((ip.getHeight() - roiHeight) / interval + 1);
@@ -149,6 +149,7 @@ public class ROIAnnotator {
 				}
 			}//	end of j
 	    } //end of i
+		System.out.println("Image INdex: " + imageIndex);
 		
 		markResultsOnImage(imp, predictions, roiWidth, roiHeight, startCol, startRow, endCol, endRow);
 	}
