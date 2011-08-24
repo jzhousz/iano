@@ -504,8 +504,11 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         
         pnlOutput.setOutput("Extracting features...");
         
-        float[][] trainingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, trainingProblem);
-        float[][] testingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, testingProblem);
+        //float[][] trainingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, trainingProblem);
+        //float[][] testingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, testingProblem);
+        
+        float[][] trainingFeatures = anno.extractGivenAMethod(extractor.getClassName(), extractor.getExternalPath(), exParams, trainingProblem);
+        float[][] testingFeatures = anno.extractGivenAMethod(extractor.getClassName(), extractor.getExternalPath(), exParams, testingProblem);
         
         //Keep features to be dumped into chain file
         int imgWidth = trainingProblem.getWidth();
