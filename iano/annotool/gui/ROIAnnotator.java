@@ -196,7 +196,7 @@ public class ROIAnnotator {
 			extractorName = extractors.get(exIndex).getName();
         	params = extractors.get(exIndex).getParams();
         	
-    		exFeatures[exIndex] = new Annotator().extractGivenAMethod(extractorName, params, data, dim)[0];
+    		exFeatures[exIndex] = new Annotator().extractGivenAMethod(extractorName, null, params, data, dim)[0];
     		dataSize += exFeatures[exIndex].length;
 		}
 		
