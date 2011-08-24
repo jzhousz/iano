@@ -2,6 +2,7 @@
 <Algorithms>
 	<Algorithm type="Selector">
 		<Name>mRMR-MIQ</Name>
+		<ClassName>annotool.select.mRMRFeatureSelector</ClassName>
 		<Parameter type="Integer">
 			<Name>Number of features</Name>
 			<Default>8</Default>
@@ -17,6 +18,7 @@
 	</Algorithm>
 	<Algorithm type="Selector">
 		<Name>mRMR-MID</Name>
+		<ClassName>annotool.select.mRMRFeatureSelector</ClassName>
 		<Parameter type="Integer">
 			<Name>Number of features</Name>
 			<Default>8</Default>
@@ -32,6 +34,7 @@
 	</Algorithm>
 	<Algorithm type="Selector">
 		<Name>Fisher</Name>
+		<ClassName>annotool.select.FishersCriterion</ClassName>
 		<Parameter type="String">
 			<Name>MULTICLASS COMPARISON METHOD</Name>
 			<Domain>PAIRWISE,ONE VS OTHERS</Domain>
@@ -44,6 +47,7 @@
 	</Algorithm>
 	<Algorithm type="2DExtractor">
 		<Name>HAAR</Name>
+		<ClassName>annotool.extract.HaarFeatureExtractor</ClassName>
 		<Desc>HAAR wavelet transform</Desc>
 		<Parameter type="Integer">
 			<Name>Wavelet Level</Name>
@@ -52,9 +56,11 @@
 	</Algorithm>
 	<Algorithm type="2DExtractor">
 		<Name>2D Hu Moments</Name>
+		<ClassName>annotool.extract.ImageMoments</ClassName>
 	</Algorithm>
 	<Algorithm type="3DExtractor">
 		<Name>Partial3D</Name>
+		<ClassName>annotool.extract.StackSimpleHaarFeatureExtractor</ClassName>
 		<Desc>Average HAAR of middle frame</Desc>
 		<Parameter type="Integer">
 			<Name>Wavelet Level</Name>
@@ -63,6 +69,7 @@
 	</Algorithm>
 	<Algorithm type="Classifier">
 		<Name>SVM</Name>
+		<ClassName>annotool.classify.SVMClassifier</ClassName>
 		<Desc>Support Vector Machine</Desc>
 		<Parameter type="String">
 			<Name>General Parameter</Name>
@@ -71,6 +78,7 @@
 	</Algorithm>
 	<Algorithm type="Classifier">
 		<Name>LDA</Name>
+		<ClassName>annotool.classify.LDAClassifier</ClassName>
 		<Desc>Linear Discriminant Analysis</Desc>
 		<Parameter type="Real">
 			<Name>Priors</Name>
@@ -79,15 +87,19 @@
 	</Algorithm>
 	<Algorithm type="Classifier">
 		<Name>W_Tree</Name>
+		<ClassName>annotool.classify.WekaClassifiers</ClassName>
 	</Algorithm>
 	<Algorithm type="Classifier">
 		<Name>W_NaiveBayes</Name>
+		<ClassName>annotool.classify.WekaClassifiers</ClassName>
 	</Algorithm>
 	<Algorithm type="Classifier">
 		<Name>W_RandomForest</Name>
+		<ClassName>annotool.classify.WekaClassifiers</ClassName>
 	</Algorithm>
 	<Algorithm type="Classifier">
 		<Name>W_NearestNeighbor</Name>
+		<ClassName>annotool.classify.WekaClassifiers</ClassName>
 		<Parameter type="Integer">
 			<Name>K</Name>
 			<Low>1</Low>
