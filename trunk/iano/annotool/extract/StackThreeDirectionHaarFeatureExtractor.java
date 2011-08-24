@@ -17,6 +17,17 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 	int level;
 	public final static String LEVEL_KEY = "Wavelet Level";
 	  
+	
+	public StackThreeDirectionHaarFeatureExtractor()
+	{
+	}
+	
+	public void setParameters(java.util.HashMap<String, String> parameters)
+	{
+	    if (parameters != null && parameters.containsKey(LEVEL_KEY))
+	 		     level = Integer.parseInt(parameters.get(LEVEL_KEY));
+	}
+	
 	public StackThreeDirectionHaarFeatureExtractor(java.util.HashMap<String, String> parameters)
 	{
 	    if (parameters != null && parameters.containsKey(LEVEL_KEY))

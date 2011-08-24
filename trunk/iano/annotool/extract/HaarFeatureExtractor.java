@@ -24,6 +24,11 @@ public class HaarFeatureExtractor implements FeatureExtractor
    public final static String LEVEL_KEY = "Wavelet Level";
    boolean workOnRawBytes = true; //work as the first feature extractor by default
    
+   
+   //parameters will be set by calling setter
+   public HaarFeatureExtractor()
+   {}
+   
    // needed to aligning various feature extractors 
    public HaarFeatureExtractor(java.util.HashMap<String, String> parameters)
    {
@@ -82,6 +87,11 @@ public class HaarFeatureExtractor implements FeatureExtractor
 	   this.singleImage = true;
   }
    
+   public void  setParameters(java.util.HashMap<String, String> parameters)
+   {
+    if (parameters != null && parameters.containsKey(LEVEL_KEY))
+	     totallevel = Integer.parseInt(parameters.get(LEVEL_KEY));
+   }
 
    
   public float[][] calcFeatures(float[][] data, DataInput problem)

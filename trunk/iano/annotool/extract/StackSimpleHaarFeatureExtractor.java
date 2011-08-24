@@ -29,13 +29,24 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 	}
 
 	
+	public StackSimpleHaarFeatureExtractor()
+	{
+
+	}
+	
+	public void setParameters(java.util.HashMap<String, String> parameters)
+	{
+	    if (parameters != null && parameters.containsKey(LEVEL_KEY))
+			  this.level = Integer.parseInt(parameters.get(LEVEL_KEY));
+	}
+
 	public StackSimpleHaarFeatureExtractor(java.util.HashMap<String, String> parameters)
 	{
 	    if (parameters != null && parameters.containsKey(LEVEL_KEY))
 			  this.level = Integer.parseInt(parameters.get(LEVEL_KEY));
 
 	}
-	
+		
 	public float[][] calcFeatures(float[][] data, annotool.io.DataInput problem)
 	{
 	 	//this.features = data;

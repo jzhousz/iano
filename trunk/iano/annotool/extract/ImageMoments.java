@@ -25,10 +25,14 @@ public class ImageMoments implements FeatureExtractor
     //http://en.wikipedia.org/wiki/Image_moment#Rotation_invariant_moments
 
     //constructor
+    public ImageMoments() 
+    {}
+    
     public ImageMoments(java.util.HashMap<String, String> para)
-    {
-    	
-    }
+    {}
+    
+    public void  setParameters(java.util.HashMap<String, String> parameters)
+    {}
     
     public ImageMoments(annotool.io.DataInput problem) {
         data = problem.getData();
