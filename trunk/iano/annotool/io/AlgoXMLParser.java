@@ -9,6 +9,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -115,9 +116,13 @@ public class AlgoXMLParser
 		String type = el.getAttribute("type");
 		
 		String desc = getTextValue(el, "Desc");
+		String className = getTextValue(el, "ClassName");
+		String path = getTextValue(el, "Path");
 		
 		Algorithm al = new Algorithm(name, type);
 		al.setDescription(desc);
+		al.setClassName(className);
+		al.setExternalPath(PluginScanner.PLUGIN_PATH + File.pathSeparator + path);
 		
 		//Get the parameter for this algorithm
 		addParameter(el, al);

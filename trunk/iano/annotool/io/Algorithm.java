@@ -8,6 +8,8 @@ public class Algorithm
 	private String name;
 	private String type;
 	private String description = null;
+	private String className = null;
+	private String externalPath = null;
 	
 	private ArrayList<Parameter> paramList = null;
 	
@@ -37,6 +39,22 @@ public class Algorithm
 	}
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public String getClassName() {
+		return className;
+	}
+
+	public void setClassName(String className) {
+		this.className = className;
+	}
+
+	public String getExternalPath() {
+		return externalPath;
+	}
+
+	public void setExternalPath(String externalPath) {
+		this.externalPath = externalPath;
 	}
 
 	public ArrayList<Parameter> getParam() {

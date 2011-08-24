@@ -10,7 +10,7 @@ import java.util.ArrayList;
  * Each algorithm should be in a folder. Each algorithm folder should have a xml file called algorithm.xml,
  * which contains the details of the algorithm.
  * 
- * @author psyber
+ * @author santosh
  *
  */
 public class PluginScanner {
