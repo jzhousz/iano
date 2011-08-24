@@ -256,8 +256,8 @@ public class Annotator implements Runnable
         if (featureExtractor.contains("HAAR")) {
             parameters.put(annotool.extract.HaarFeatureExtractor.LEVEL_KEY, String.valueOf(getWavletLevel()));
         }
-        float[][] trainingFeatures = extractGivenAMethod(featureExtractor, parameters, trainingProblem);
-        float[][] testingFeatures = extractGivenAMethod(featureExtractor, parameters, testingProblem);
+        float[][] trainingFeatures = extractGivenAMethod(featureExtractor, null, parameters, trainingProblem);
+        float[][] testingFeatures = extractGivenAMethod(featureExtractor, null, parameters, testingProblem);
         //clear data memory
         trainingProblem.setDataNull();
         testingProblem.setDataNull();
@@ -406,7 +406,7 @@ public class Annotator implements Runnable
             return;
         }
         setGUIOutput("Extracting features ... ");
-        float[][] features = extractGivenAMethod(featureExtractor, null, problem);
+        float[][] features = extractGivenAMethod(featureExtractor, null,  null, problem);
         //raw data is not used after this point, set to null.
         problem.setDataNull();
 
@@ -711,7 +711,7 @@ public class Annotator implements Runnable
      * TBD: The "extractor" may be a class name to allow dynamic loading of algorithm classes.
      *
      */
-    public float[][] extractGivenAMethod(String chosenExtractor, java.util.HashMap<String, String> parameters, DataInput problem) {
+    public float[][] extractGivenAMethod(String chosenExtractor, String path, java.util.HashMap<String, String> parameters, DataInput problem) {
 
         float[][] features = null;
     	int stackSize = problem.getStackSize();
@@ -733,7 +733,7 @@ public class Annotator implements Runnable
         }
 
         //those that are not "NONE"    	    	
-    	FeatureExtractor extractor = getExtractorGivenName(chosenExtractor, parameters);
+    	FeatureExtractor extractor = getExtractorGivenName(chosenExtractor, path, parameters);
 
     	//check if it is the right type of feature extractor (2D or 3D)
     	if ((stackSize == 1 && extractor.is3DExtractor()) || (stackSize > 1 && (!extractor.is3DExtractor())))
@@ -754,7 +754,7 @@ public class Annotator implements Runnable
      *  8/5/2011: Current version only deals with 2DROI (depth == 1)
      *  In order to handle 3D ROI, 3D feature extractors need to work with byte[] with 3D info.     
      */
-     public float[][] extractGivenAMethod(String chosenExtractor, java.util.HashMap<String, String> parameters, byte[][] data, ImgDimension dim)
+     public float[][] extractGivenAMethod(String chosenExtractor, String path, java.util.HashMap<String, String> parameters, byte[][] data, ImgDimension dim)
      {
          float[][] features = null;
 
@@ -773,7 +773,7 @@ public class Annotator implements Runnable
           }
             
         //those that are not "NONE"    	    	
-     	FeatureExtractor extractor = getExtractorGivenName(chosenExtractor, parameters);
+     	FeatureExtractor extractor = getExtractorGivenName(chosenExtractor, path, parameters);
 
      	//check if it is the right type of feature extractor (2D or 3D)
     	if (dim.depth > 1 || extractor.is3DExtractor())
@@ -786,7 +786,7 @@ public class Annotator implements Runnable
     	return features;	
      }
      
-    
+    /*
     public FeatureExtractor getExtractorGivenName(String name, HashMap<String, String> parameters)
     {
        FeatureExtractor extractor = null;
@@ -804,6 +804,53 @@ public class Annotator implements Runnable
 
    	   return extractor;
     }
+    */
+    
+    
+    /* classname is the fully qualified name of the class with main(); 
+     classpath is the directory or the jar. It may be null if no additional classpath is needed
+     */
+    public FeatureExtractor getExtractorGivenName(String classname, String cpath, HashMap<String, String> parameters)
+    //public FeatureExtractor getExtractorGivenName(String name, HashMap<String, String> parameters)
+    {
+       FeatureExtractor extractor = null;
+       //String classname = null;
+	   //String cpath = "plugins/DummyFeatureExtractor/";//will be passed in from caller
+       //to be changed later until passing in classname
+       //if (name.equalsIgnoreCase("HAAR")) 
+       //   classname = "annotool.extract.HaarFeatureExtractor";
+       
+       try
+       {
+    	   //http://download.oracle.com/javase/tutorial/ext/basics/load.html
+    	   //http://onjava.com/pub/a/onjava/2005/01/26/classloading.html
+    	   //Next comes the Java extension class loader. We can store extension libraries, those that provide features that go beyond the core Java runtime code, in the path given by the java.ext.dirs property. The ExtClassLoader is responsible for loading all .jar files kept in the java.ext.dirs path. A developer can add his or her own application .jar files or whatever libraries he or she might need to add to the classpath to this extension directory so that they will be loaded by the extension class loader.
+    	   //The third and most important class loader from the developer perspective is the AppClassLoader. The application class loader is responsible for loading all of the classes kept in the path corresponding to the java.class.path system property. 
+
+    	   //load from classpath
+    	   String oldpath = System.getProperty("java.class.path");
+    	   String newpath = oldpath;
+    	   if (cpath != null && !oldpath.contains(cpath))
+    		   newpath = oldpath+";"+cpath;
+    	   System.setProperty("java.class.path", newpath);
+    	   System.out.println("new classpath: "+System.getProperty("java.class.path"));
+    	   //Or: can I directly load from the path by somehow pass it to the extclassloader?
+    	   
+    	   ClassLoader loader = this.getClass().getClassLoader();
+    	   Class c = Class.forName(classname,false, loader);
+    	   extractor = (FeatureExtractor) c.newInstance();
+    	   extractor.setParameters(parameters);
+       }
+       catch(Exception e)
+       {
+          setGUIOutput("Problem in loading " + classname + ". If it is a supported extractor, please check the classpath.");
+    
+       }
+
+   	   return extractor;
+    }
+    
+    
     
     
     /**
@@ -825,7 +872,7 @@ public class Annotator implements Runnable
         	extractor = extractors.get(exIndex).getName();
         	params = extractors.get(exIndex).getParams();
         	
-        	exFeatures[exIndex] = this.extractGivenAMethod(extractor, params, problem);
+        	exFeatures[exIndex] = this.extractGivenAMethod(extractor, null, params, problem);
         	
         	dataSize += exFeatures[exIndex][0].length;
         }
@@ -833,7 +880,7 @@ public class Annotator implements Runnable
         float[][] features = null;
         
         if(numExtractors < 1) {	//If no extractor, call the function by passing "None"
-        	features = this.extractGivenAMethod(extractor, params, problem);
+        	features = this.extractGivenAMethod(extractor, null, params, problem);
         }
         else {	//Else, create feature array with enough space to hold data from all extractors 
         	features = new float[problem.getLength()][dataSize];
