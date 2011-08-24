@@ -122,7 +122,7 @@ public class AlgoXMLParser
 		Algorithm al = new Algorithm(name, type);
 		al.setDescription(desc);
 		al.setClassName(className);
-		al.setExternalPath(PluginScanner.PLUGIN_PATH + File.pathSeparator + path);
+		al.setExternalPath(PluginScanner.PLUGIN_PATH + "/" + path);
 		
 		//Get the parameter for this algorithm
 		addParameter(el, al);
