@@ -7,6 +7,9 @@ import annotool.ImgDimension;
 
 public interface FeatureExtractor
 {
+   //pass parameters to the algorithm.
+   public void  setParameters(java.util.HashMap<String, String> parameter);
+   
    //get features based on raw image in the problem
    public float[][] calcFeatures(DataInput problem);
 

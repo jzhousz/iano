@@ -18,6 +18,13 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 	public SimpleFeatureExtractor(java.util.HashMap<String, String> parameters)
 	{
 	}
+
+	public SimpleFeatureExtractor()
+	{
+	}
+
+	public void setParameters(java.util.HashMap<String, String> parameters)
+	{}
 	
 	public SimpleFeatureExtractor(byte[][] data, int length, int width, int height)
 	{

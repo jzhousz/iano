@@ -13,12 +13,16 @@ import annotool.ImgDimension;
 public class StackFullHaarFeatureExtractor implements FeatureExtractor {
 
 	
-	public StackFullHaarFeatureExtractor(java.util.HashMap<String, String> parameters)
-	{
-		
+	public StackFullHaarFeatureExtractor()
+	{	
 	}
+
+	public void setParameters(java.util.HashMap<String, String> parameters)
+	{	
+	}
+
 	public float[][] calcFeatures(annotool.io.DataInput problem) {
-		// TODO Auto-generated method stub
+		System.out.println("This method is not yet supported by 3D feature extractors");
 		return null;
 	}
 

@@ -14,9 +14,15 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
     int width;
     int height;
 
-	public PrincipalComponentFeatureExtractor(java.util.HashMap<String, String> parameters) {
+    public PrincipalComponentFeatureExtractor() 
+    {}
+    
+    public void setParameters(java.util.HashMap<String, String> parameters) {
+  	  //process parameter if any	
+  	}
+  	
+    public PrincipalComponentFeatureExtractor(java.util.HashMap<String, String> parameters) {
 	  //process parameter if any	
-	
 	}
 	   
 	public PrincipalComponentFeatureExtractor(annotool.io.DataInput problem) {
