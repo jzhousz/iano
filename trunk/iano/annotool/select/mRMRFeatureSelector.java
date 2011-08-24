@@ -157,6 +157,16 @@ public class mRMRFeatureSelector implements FeatureSelector
 		this.length =  data.length;
 		this.dimension = data[0].length;
 		
+		//debug
+		/*
+		for(int i =0; i<data.length; i++)
+		{
+			for(int j=0; j<data[i].length; j++)
+				System.out.print(i+","+j+":"+data[i][j]+" ");
+			System.out.println();
+		}*/
+				
+		
 		return selectFeatures();
 	}
 	
