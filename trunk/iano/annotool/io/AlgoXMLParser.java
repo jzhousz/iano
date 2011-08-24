@@ -31,7 +31,7 @@ public class AlgoXMLParser
 	}
 	public void runParser()
 	{
-		parseXmlFile();
+		parseXmlFile("Algorithms.xml");
 		
 		//If dom is null (no algorithm file), then add default classifier
 		if (dom == null){
@@ -45,31 +45,39 @@ public class AlgoXMLParser
 		}
 		else
 			parseDocument();
+		
+		//Now, go through the plugins
+		PluginScanner pScanner = new PluginScanner();
+		pScanner.scan();
+		for(String xmlPath : pScanner.getXmlFiles()) {
+			parseXmlFile(xmlPath);
+			
+			if(dom != null)
+				parseDocument();
+		}
 	}
-	private void parseXmlFile()
-	{
+	private void parseXmlFile(String uri) {
 		//get the factory
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
-		try 
-		{
+		try  {
 			//Using factory get an instance of document builder
 			DocumentBuilder db = dbf.newDocumentBuilder();
 
 			//parse using builder to get DOM representation of the XML file
-			dom = db.parse("Algorithms.xml");
+			dom = db.parse(uri);
 		}
-		catch(ParserConfigurationException pce) 
-		{
+		catch(ParserConfigurationException pce) {
 			pce.printStackTrace();
+			dom = null;
 		}
-		catch(SAXException se) 
-		{
+		catch(SAXException se) {
 			se.printStackTrace();
+			dom = null;
 		}
-		catch(IOException ioe) 
-		{
+		catch(IOException ioe) {
 			ioe.printStackTrace();
+			dom = null;
 		}
 	}
 	private void parseDocument()
