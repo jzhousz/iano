@@ -624,8 +624,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        	extractor = chain.getExtractors().get(exIndex).getName();
 	        	params = chain.getExtractors().get(exIndex).getParams();
 	        	
-	        	exTrainFeatures[exIndex] = anno.extractGivenAMethod(extractor, params, trainingProblem);
-	        	exTestFeatures[exIndex] = anno.extractGivenAMethod(extractor, params, testingProblem);
+	        	exTrainFeatures[exIndex] = anno.extractGivenAMethod(extractor, null, params, trainingProblem);
+	        	exTestFeatures[exIndex] = anno.extractGivenAMethod(extractor, null, params, testingProblem);
 	        	
 	        	trainSize += exTrainFeatures[exIndex][0].length;
 	        	testSize += exTestFeatures[exIndex][0].length;
@@ -635,8 +635,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        float[][] testingFeatures = null;
 	        
 	        if(numExtractors < 1) {	//If no extractor, call the function by passing "None"
-	        	trainingFeatures = anno.extractGivenAMethod(extractor, params, trainingProblem);
-	        	testingFeatures = anno.extractGivenAMethod(extractor, params, testingProblem);
+	        	trainingFeatures = anno.extractGivenAMethod(extractor, null, params, trainingProblem);
+	        	testingFeatures = anno.extractGivenAMethod(extractor, null, params, testingProblem);
 	        }
 	        else {	//Else, create feature array with enough space to hold data from all extractors 
 	        	trainingFeatures = new float[trainingProblem.getLength()][trainSize];
