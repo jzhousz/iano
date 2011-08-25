@@ -79,7 +79,35 @@ public class FishersCriterion implements FeatureSelector
     //will later be added with addData() method,
     //possibly more than once.
     //=============IGNORE============
-    public FishersCriterion(HashMap parameters) {
+    
+    public FishersCriterion()
+    {
+    }
+    
+    public void setParameters(HashMap<String, String> parameters)
+    {
+        if (parameters.containsKey("MULTICLASS COMPARISON METHOD")) {
+            if (parameters.get("MULTICLASS COMPARISON METHOD").equals("PAIRWISE")) {
+                this.multiclass_comparison_method = "PAIRWISE";
+            }
+            else {
+                this.multiclass_comparison_method = "ONE VS OTHERS";
+            }
+        }
+        else {
+            this.multiclass_comparison_method = "ONE VS OTHERS";
+            //use ONE_VS_OTHERS if not specified
+        }
+
+        if (parameters.containsKey("NUMBER OF FEATURES")) {
+            this.output_number_of_features =
+                    Integer.parseInt((String) parameters.get("NUMBER OF FEATURES"));
+
+            System.out.println("NUMBER OF FEATURES = " + this.output_number_of_features);
+        }
+    }
+
+    public FishersCriterion(HashMap<String, String> parameters) {
         if (parameters.containsKey("MULTICLASS COMPARISON METHOD")) {
             if (parameters.get("MULTICLASS COMPARISON METHOD").equals("PAIRWISE")) {
                 this.multiclass_comparison_method = "PAIRWISE";

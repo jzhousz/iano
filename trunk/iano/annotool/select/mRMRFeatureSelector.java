@@ -47,6 +47,26 @@ public class mRMRFeatureSelector implements FeatureSelector
     public final static String KEY_DIS_TH = "Discretize Threshold";
     public final static String KEY_METHOD = "Method";
     
+    public mRMRFeatureSelector() {}
+    
+    public void setParameters(java.util.HashMap<String, String> parameters)
+    {
+		int threshold = 0;
+		boolean discreteflag = true; //default is to discretize
+
+    	if (parameters.containsKey(KEY_NUM))
+			this.numberofFeatures = Integer.parseInt((String)parameters.get(KEY_NUM));
+		if (parameters.containsKey(KEY_DISCRETE))
+			discreteflag = (Integer.parseInt((String)parameters.get(KEY_DISCRETE)) == 1) ? true : false ;
+		if (parameters.containsKey(KEY_DIS_TH))
+			threshold = Integer.parseInt((String)parameters.get(KEY_DIS_TH));
+		if (parameters.containsKey(KEY_METHOD))
+			this.method = (String)parameters.get(KEY_METHOD);
+		if(discreteflag)
+		    //discretizeV2(features, length, dimension);
+			discretize(features, length, dimension);
+    }
+    
 	//taking in the parameters in a standardized way.
     public mRMRFeatureSelector(java.util.HashMap<String, String> parameters)
     {

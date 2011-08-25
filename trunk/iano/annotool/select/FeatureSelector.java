@@ -6,10 +6,9 @@ package annotool.select;
 public interface FeatureSelector
 {
 
+   public void setParameters(java.util.HashMap<String, String> para);
    public float[][] selectFeatures(float[][] data, int[] targets);
-   
    public int[] getIndices();
-
    public float[][] selectFeaturesGivenIndices(float[][] data, int [] indices);
    
 }
