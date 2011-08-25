@@ -208,26 +208,34 @@ public class Annotator implements Runnable
         if (!setProgress(10)) {
             return;
         }
+        
         System.out.println("output:" + output);
-        if (output.equals(OUTPUT_CHOICES[0])) {
-            TTAnnotate();
-        }
-        else if (output.equals(OUTPUT_CHOICES[1])) {
+        try
+        {
+           if (output.equals(OUTPUT_CHOICES[0])) {
+              TTAnnotate();
+           }
+           else if (output.equals(OUTPUT_CHOICES[1])) {
             CVAnnotate();
-        }
-        else if (output.equals(OUTPUT_CHOICES[2])) {
+           }
+           else if (output.equals(OUTPUT_CHOICES[2])) {
             ROIAnnotate();
-        }
-        else {
+           }
+           else {
             System.out.println("Output mode:" + output + "is unknown");
             System.exit(0);
-        }
+           }
+           }catch(Exception e)
+           {
+             System.err.println(e.getMessage());
+             System.exit(0);
+           } 
     }
 
     /**
      *  Do the annotation in Training/Testing mode.
      */
-    public void TTAnnotate() {
+    public void TTAnnotate() throws Exception {
         //read images and wrapped into DataInput instances.
         DataInput trainingProblem = new DataInput(dir, ext, channel);
         DataInput testingProblem = new DataInput(testdir, testext, channel);
@@ -387,7 +395,7 @@ public class Annotator implements Runnable
     /**
      *  Do the annotation in Cross Validation mode.
      */
-    public void CVAnnotate() {
+    public void CVAnnotate() throws Exception {
         //------ read image data from the directory ------------//
         DataInput problem = new DataInput(dir, ext, channel);
 
@@ -711,7 +719,8 @@ public class Annotator implements Runnable
      * TBD: The "extractor" may be a class name to allow dynamic loading of algorithm classes.
      *
      */
-    public float[][] extractGivenAMethod(String chosenExtractor, String path, java.util.HashMap<String, String> parameters, DataInput problem) {
+    public float[][] extractGivenAMethod(String chosenExtractor, String path, java.util.HashMap<String, String> parameters, DataInput problem) throws Exception 
+    {
 
         float[][] features = null;
     	int stackSize = problem.getStackSize();
@@ -754,7 +763,7 @@ public class Annotator implements Runnable
      *  8/5/2011: Current version only deals with 2DROI (depth == 1)
      *  In order to handle 3D ROI, 3D feature extractors need to work with byte[] with 3D info.     
      */
-     public float[][] extractGivenAMethod(String chosenExtractor, String path, java.util.HashMap<String, String> parameters, byte[][] data, ImgDimension dim)
+     public float[][] extractGivenAMethod(String chosenExtractor, String path, java.util.HashMap<String, String> parameters, byte[][] data, ImgDimension dim) throws Exception
      {
          float[][] features = null;
 
@@ -807,44 +816,36 @@ public class Annotator implements Runnable
     */
     
     
-    /* classname is the fully qualified name of the class with main(); 
-     classpath is the directory or the jar. It may be null if no additional classpath is needed
+    /*
+     * Dynamically load an feature extractor
+     * classname is the fully qualified name of the class with main(); 
+     * cpath (classpath) is the directory or the jar.
+     * For example: 
+     *    "plugins/DummyFeatureExtractor/"
+     * or "plugins/DummyFeatureExtractor/dummy.jar"
+     * It may be null if no additional classpath is needed
      */
-    public FeatureExtractor getExtractorGivenName(String classname, String cpath, HashMap<String, String> parameters)
-    //public FeatureExtractor getExtractorGivenName(String name, HashMap<String, String> parameters)
+    public FeatureExtractor getExtractorGivenName(String classname, String cpath, HashMap<String, String> parameters) throws Exception
     {
        FeatureExtractor extractor = null;
-       //String classname = null;
-	   //String cpath = "plugins/DummyFeatureExtractor/";//will be passed in from caller
-       //to be changed later until passing in classname
-       //if (name.equalsIgnoreCase("HAAR")) 
-       //   classname = "annotool.extract.HaarFeatureExtractor";
-       
+     
        try
        {
-    	   //http://download.oracle.com/javase/tutorial/ext/basics/load.html
-    	   //http://onjava.com/pub/a/onjava/2005/01/26/classloading.html
-    	   //Next comes the Java extension class loader. We can store extension libraries, those that provide features that go beyond the core Java runtime code, in the path given by the java.ext.dirs property. The ExtClassLoader is responsible for loading all .jar files kept in the java.ext.dirs path. A developer can add his or her own application .jar files or whatever libraries he or she might need to add to the classpath to this extension directory so that they will be loaded by the extension class loader.
-    	   //The third and most important class loader from the developer perspective is the AppClassLoader. The application class loader is responsible for loading all of the classes kept in the path corresponding to the java.class.path system property. 
+    	   java.net.URL[] urls = new java.net.URL[1];
+    	   //urls[0] = new java.net.URL("file:E:/IANO/plugins/DummyFeatureExtractor/dummy.jar");
+     	   //urls[0] = new java.net.URL("file:plugins/DummyFeatureExtractor/");
+    	   urls[0] = new java.net.URL("file:"+cpath);
 
-    	   //load from classpath
-    	   String oldpath = System.getProperty("java.class.path");
-    	   String newpath = oldpath;
-    	   if (cpath != null && !oldpath.contains(cpath))
-    		   newpath = oldpath+";"+cpath;
-    	   System.setProperty("java.class.path", newpath);
-    	   System.out.println("new classpath: "+System.getProperty("java.class.path"));
-    	   //Or: can I directly load from the path by somehow pass it to the extclassloader?
-    	   
-    	   ClassLoader loader = this.getClass().getClassLoader();
-    	   Class c = Class.forName(classname,false, loader);
+    	   java.net.URLClassLoader urlloader = new java.net.URLClassLoader(urls);
+    	   Class c = Class.forName(classname,false, urlloader);
     	   extractor = (FeatureExtractor) c.newInstance();
     	   extractor.setParameters(parameters);
        }
        catch(Exception e)
        {
+    	  e.printStackTrace(); 
           setGUIOutput("Problem in loading " + classname + ". If it is a supported extractor, please check the classpath.");
-    
+          throw e;
        }
 
    	   return extractor;
@@ -860,7 +861,7 @@ public class Annotator implements Runnable
      * @param extractors
      * @return Array of extracted features for each image
      */
-    public float[][] extractWithMultipleExtractors(DataInput problem, ArrayList<Extractor> extractors) {
+    public float[][] extractWithMultipleExtractors(DataInput problem, ArrayList<Extractor> extractors) throws Exception {
     	String extractor = "None";
         HashMap<String, String> params = new HashMap<String, String>();
         
