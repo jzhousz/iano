@@ -145,7 +145,7 @@ public class Validator
    * @return overall recognition rate
    * @throws Exception
    ********************************/
-  public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] targets, String chosenClassifier, HashMap<String,String> para, boolean shuffle, Annotation[] results) throws Exception
+  public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] targets, String chosenClassifier, String path, HashMap<String,String> para, boolean shuffle, Annotation[] results) throws Exception
   {
 	  int length = data.length;
 	  int dimension = data[0].length;
@@ -211,7 +211,7 @@ public class Validator
 			    trainingTargets[i-testinglength] = targets[i];
 		     }
 
-    	 (new annotool.Annotator()).classifyGivenAMethod(chosenClassifier, para, trainingPatterns, testingPatterns, trainingTargets, testingTargets, annotedPredictions);
+    	 (new annotool.Annotator()).classifyGivenAMethod(chosenClassifier, path, para, trainingPatterns, testingPatterns, trainingTargets, testingTargets, annotedPredictions);
     	 
     	  //compare the output prediction with the real targets on the testing set
     	 int currentFoldCorrect = 0;
