@@ -4,6 +4,8 @@ package annotool.classify;
 
 public interface Classifier
 {
+   public void setParameters(java.util.HashMap<String, String> para);   
+	
    //Conform to LibSVM if possible, since that is the 1st classifier to be tested.
    public void classify(float[][] trainingpatterns, int[] trainingtargets, float[][] testingpatterns, int[] predictions, double[] prob) throws Exception;
    

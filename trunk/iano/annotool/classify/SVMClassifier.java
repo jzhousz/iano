@@ -53,6 +53,16 @@ public class SVMClassifier implements SavableClassifier
     boolean supportProbability = false;
     
    //initialize # of samples and # of dimension
+   public SVMClassifier() {}    
+    
+   public void setParameters(java.util.HashMap<String, String> parameters)
+   {
+	   if(parameters != null && parameters.containsKey(KEY_PARA))
+	          initSVMParameters(parameters.get(KEY_PARA));
+	 	  else
+	 		initSVMParameters(annotool.Annotator.DEFAULT_SVM);
+   }
+ 
    public SVMClassifier(java.util.HashMap<String,String> parameters)
    {
 	  if(parameters != null && parameters.containsKey(KEY_PARA))

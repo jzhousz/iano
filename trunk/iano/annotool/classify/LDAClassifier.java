@@ -104,15 +104,21 @@ public class LDAClassifier implements SavableClassifier {
 		*/
 	}
 
-	public LDAClassifier(java.util.HashMap<String, String> parameters)
+	public LDAClassifier() {}
+	
+	public void setParameters(java.util.HashMap<String, String> parameters)
 	{
 		//set prior if provided
 		if(parameters != null && parameters.containsKey(KEY_PRIORS))
 	          priors = parsePriors(parameters.get(KEY_PRIORS));
 	}
-
-	public LDAClassifier()
+	
+   
+	public LDAClassifier(java.util.HashMap<String, String> parameters)
 	{
+		//set prior if provided
+		if(parameters != null && parameters.containsKey(KEY_PRIORS))
+	          priors = parsePriors(parameters.get(KEY_PRIORS));
 	}
 
 	public LDAClassifier(float[] priors)

@@ -19,10 +19,33 @@ public class WekaClassifiers implements Classifier {
 	private Instances m_Data = null;
 	private weka.classifiers.Classifier m_Classifier = null;
 	java.util.ArrayList<Integer> targetList = null;
+	public static final String CLASSIFIER_TYPE = "CLASSIFIER_TYPE";
+	
+	public WekaClassifiers() {}
+
+	//How to pass in classifierType
+	public void setParameters(java.util.HashMap<String, String> parameters) 
+	{
+		String classifierType = "W_Tree"; //default
+		
+		if(parameters != null && parameters.containsKey(CLASSIFIER_TYPE))
+	          classifierType = parameters.get(CLASSIFIER_TYPE);
+  		
+		if (classifierType.equalsIgnoreCase("W_Tree"))
+				m_Classifier = new J48();
+		else if (classifierType.equalsIgnoreCase("W_NaiveBayes"))
+				m_Classifier = new NaiveBayes();
+		else if (classifierType.equalsIgnoreCase("W_RandomForest"))
+				m_Classifier = new weka.classifiers.trees.RandomForest();
+		else if (classifierType.equalsIgnoreCase("W_NearestNeighbor"))
+				m_Classifier = new weka.classifiers.lazy.IBk();
+		else
+				System.err.println("Not a classifier support by WekaClassifiers.");
+	    	
+	}
+
 	
 	public WekaClassifiers(int dimension, String classifierType) {
-	
-		
 		this.dimension = dimension;
 		if (classifierType.equalsIgnoreCase("W_Tree"))
 			m_Classifier = new J48();
@@ -36,7 +59,7 @@ public class WekaClassifiers implements Classifier {
 			System.err.println("Not a classifier support by WekaClassifiers.");
 	}
 
-public WekaClassifiers(String classifierType) {
+    public WekaClassifiers(String classifierType) {
 	
 		if (classifierType.equalsIgnoreCase("W_Tree"))
 			m_Classifier = new J48();

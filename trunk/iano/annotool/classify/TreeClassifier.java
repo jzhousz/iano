@@ -8,6 +8,7 @@ import weka.core.*;
 //Weka: http://www.cs.waikato.ac.nz/ml/weka/
 //Note: annotool.classify.Classifier is a different interface from
 //     weka.classifiers.Classifier.
+// Not used in GUI? 08/11
 public class TreeClassifier implements Classifier {
 
 	private Instances m_Data = null;
@@ -15,6 +16,12 @@ public class TreeClassifier implements Classifier {
 	private weka.classifiers.Classifier m_Classifier = new weka.classifiers.trees.RandomForest();
 	
 	int dimension = 1;
+	
+	public TreeClassifier() {}
+	
+	 
+	public void setParameters(java.util.HashMap<String, String> para) 
+	{}
 	
 	public TreeClassifier(int dimension)
 	{
@@ -26,6 +33,7 @@ public class TreeClassifier implements Classifier {
 	public void classify(float[][] trainingpatterns, int[] trainingtargets,
 			float[][] testingpatterns, int[] predictions,  double[] prob) 
 	{
+		this.dimension = trainingpatterns[0].length;
 		int traininglen = trainingpatterns.length;
 		int testinglen = testingpatterns.length;
 	    createModel(trainingpatterns, trainingtargets);
