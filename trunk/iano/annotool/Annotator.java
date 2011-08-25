@@ -46,6 +46,8 @@ A List of Todos And Thoughts (May 2011):
 -- Save project (model) (provide a better GUI with algorithm setup details), 
 -- Open project. (project explorer at the left has details of projects).
 
+Note: 08/11: algorithm loading are now dynamic. The original mapping is obselete and may fail to work.
+
  ************************************************************************************************************/
 public class Annotator implements Runnable
 {
@@ -318,7 +320,7 @@ public class Annotator implements Runnable
                 //Supervised feature selectors need corresponding target data
                 try
                 {
-                ComboFeatures combo = selectGivenAMethod(featureSelector, para, trainingfeatures, testingfeatures, trainingtargets[i], testingtargets[i]);
+                ComboFeatures combo = selectGivenAMethod(featureSelector, null, para, trainingfeatures, testingfeatures, trainingtargets[i], testingtargets[i]);
                 //selected features should not override the passed-in original features
                 selectedTrainingFeatures = combo.getTrainingFeatures();
                 selectedTestingFeatures = combo.getTestingFeatures();
@@ -341,7 +343,7 @@ public class Annotator implements Runnable
                 }
                 try
                 {
-                  rate = classifyGivenAMethod(classifierChoice, para, selectedTrainingFeatures, selectedTestingFeatures, trainingtargets[i], testingtargets[i], annotations[i]);
+                  rate = classifyGivenAMethod(classifierChoice, null, para, selectedTrainingFeatures, selectedTestingFeatures, trainingtargets[i], testingtargets[i], annotations[i]);
                   setGUIOutput("Recog Rate for " + annotationLabels.get(i) + ": " + rate);
                   if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
                     return;
@@ -375,7 +377,7 @@ public class Annotator implements Runnable
                             para.put(annotool.classify.SVMClassifier.KEY_PARA, svmpara);
                         }
                         try{
-                          rates[c] = classifyGivenAMethod(AnnControlPanel.classifierSimpleStrs[c], para, trainingfeatures, testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
+                          rates[c] = classifyGivenAMethod(AnnControlPanel.classifierSimpleStrs[c], null, para, trainingfeatures, testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
                           setGUIOutput(AnnControlPanel.classifiers[c] + ": Recog Rate for " + annotationLabels.get(i) + ": " + rates[c]);
                           if (!setProgress(50 + (c + 1) * 50 / AnnControlPanel.classifiers.length)) {
                             return;
@@ -484,19 +486,18 @@ public class Annotator implements Runnable
             int start = 50 + i * 50 / numOfAnno;
             int region = 50 / numOfAnno;
 
+            try{
             //If selector is None, use default numoffeatures. Else, call the selector.
             if (!featureSelector.equalsIgnoreCase("None")) {
                 setGUIOutput("Selecting features ... ");
                 //override the original features and num of features
-                ComboFeatures res = selectGivenAMethod(featureSelector, null, features, targets[i]);
+                ComboFeatures res = selectGivenAMethod(featureSelector, null, null, features, targets[i]);
                 features = res.getTrainingFeatures();
                 numoffeatures = features[0].length;
             }
 
             setGUIOutput("Classifying/Annotating ... ");
-            
-            try{
-              recogrates = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, null, shuffle, results[i]);
+            recogrates = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, null, null, shuffle, results[i]);
             for(int m=0; m<results[i].length; m++)
             	System.out.println(m+":"+results[i][m].anno);
             
@@ -649,9 +650,9 @@ public class Annotator implements Runnable
      *   recognition rate. 
      *    
      */
-    public float classifyGivenAMethod(String chosenClassifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) throws Exception {
+    public float classifyGivenAMethod(String chosenClassifier, String path, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) throws Exception {
  
-    	Classifier classifier = getClassifierGivenName(chosenClassifier, parameters);
+    	Classifier classifier = getClassifierGivenName(chosenClassifier, path, parameters);
 
     	float rate = 0;
     	if(classifier != null)
@@ -794,14 +795,13 @@ public class Annotator implements Runnable
     	features = extractor.calcFeatures(data, dim);	
     	return features;	
      }
-     
-    /*
+     /*
+    //the obsolete version with static mapping
     public FeatureExtractor getExtractorGivenName(String name, HashMap<String, String> parameters)
     {
        FeatureExtractor extractor = null;
        if (name.equalsIgnoreCase("HAAR")) 
           extractor = new HaarFeatureExtractor(parameters);
-       
        else if (name.equalsIgnoreCase("PARTIAL3D"))
           extractor = new StackSimpleHaarFeatureExtractor(parameters);
        else if (name.equals("LIGHT3D")) 
@@ -817,7 +817,7 @@ public class Annotator implements Runnable
     
     
     /*
-     * Dynamically load an feature extractor
+     * Dynamically load an feature extractor 08/11
      * classname is the fully qualified name of the class with main(); 
      * cpath (classpath) is the directory or the jar.
      * For example: 
@@ -828,30 +828,73 @@ public class Annotator implements Runnable
     public FeatureExtractor getExtractorGivenName(String classname, String cpath, HashMap<String, String> parameters) throws Exception
     {
        FeatureExtractor extractor = null;
-     
-       try
+       Object o = loadObjectGivenClassName(classname, cpath);
+       if (!(o instanceof FeatureExtractor))
+    	   throw new Exception("The class is not a supported feature extractor.");
+       else
        {
-    	   java.net.URL[] urls = new java.net.URL[1];
-    	   //urls[0] = new java.net.URL("file:E:/IANO/plugins/DummyFeatureExtractor/dummy.jar");
-     	   //urls[0] = new java.net.URL("file:plugins/DummyFeatureExtractor/");
-    	   urls[0] = new java.net.URL("file:"+cpath);
-
-    	   java.net.URLClassLoader urlloader = new java.net.URLClassLoader(urls);
-    	   Class c = Class.forName(classname,false, urlloader);
-    	   extractor = (FeatureExtractor) c.newInstance();
-    	   extractor.setParameters(parameters);
+    	   extractor = (FeatureExtractor) o;
+           extractor.setParameters(parameters);
+     	   return extractor;
        }
-       catch(Exception e)
-       {
-    	  e.printStackTrace(); 
-          setGUIOutput("Problem in loading " + classname + ". If it is a supported extractor, please check the classpath.");
-          throw e;
-       }
-
-   	   return extractor;
     }
     
+    public FeatureSelector getSelectorGivenName(String classname, String cpath, HashMap<String, String> parameters) throws Exception
+    {
+       FeatureSelector selector = null;
+       Object o = loadObjectGivenClassName(classname, cpath);
+       if (!(o instanceof FeatureSelector))
+    	   throw new Exception("The class is not a supported feature selector.");
+       else
+       {
+    	   selector = (FeatureSelector) o;
+           selector.setParameters(parameters);
+     	   return selector;
+       }
+    }
+
+    public Classifier getClassifierGivenName(String classname, String cpath, HashMap<String, String> parameters) throws Exception
+    {
+       Classifier classifier = null;
+       Object o = loadObjectGivenClassName(classname, cpath);
+       if (!(o instanceof Classifier))
+    	   throw new Exception("The class is not a supported classifier.");
+       else
+       {
+    	   classifier = (Classifier) o;
+           classifier.setParameters(parameters);
+     	   return classifier;
+       }
+    }
+
     
+    public Object loadObjectGivenClassName(String classname, String cpath) throws Exception
+    {
+    	ClassLoader loader;
+        try
+        {
+           if (cpath != null)
+           {   
+         	   java.net.URL[] urls = new java.net.URL[1];
+         	   //urls[0] = new java.net.URL("file:E:/IANO/plugins/DummyFeatureExtractor/dummy.jar");
+          	   //urls[0] = new java.net.URL("file:plugins/DummyFeatureExtractor/");
+        	   urls[0] = new java.net.URL("file:"+cpath);
+     	       loader = new java.net.URLClassLoader(urls);
+           }
+     	   else //if null, use the default loader
+     	       loader = this.getClass().getClassLoader();
+           
+     	   Class c = Class.forName(classname,false, loader);
+     	   Object o = (FeatureExtractor) c.newInstance();
+     	   return o;
+        }
+        catch(Exception e)
+        {
+     	   e.printStackTrace(); 
+           setGUIOutput("Problem in loading " + classname + ". If it is a supported extractor, please check the classpath.");
+           throw e;
+        }
+    }
     
     
     /**
@@ -954,7 +997,7 @@ public class Annotator implements Runnable
      * Used in cross validation mode.
      *
      */
-    public ComboFeatures selectGivenAMethod(String chosenSelector, HashMap<String,String> parameters, float[][] features, int[] targets) {
+    public ComboFeatures selectGivenAMethod(String chosenSelector, String path, HashMap<String,String> parameters, float[][] features, int[] targets) throws Exception {
   
     	ComboFeatures result = new ComboFeatures();
     	
@@ -964,7 +1007,7 @@ public class Annotator implements Runnable
         	result.setIndices(null);
         }
 
-        FeatureSelector  selector = getSelectorGivenName(chosenSelector, parameters);
+        FeatureSelector  selector = getSelectorGivenName(chosenSelector, path, parameters);
         try {
         	result.setTrainingFeatures(selector.selectFeatures(features, targets));
             result.setIndices(selector.getIndices());
@@ -983,7 +1026,7 @@ public class Annotator implements Runnable
      *  This method takes a HashMap for possible parameters.
      *  Note: If incrementally reading the images, the flow will be different (cann't get features in one shot .. 5/3/2011)
      */
-    public ComboFeatures selectGivenAMethod(String chosenSelector, java.util.HashMap<String, String> parameters, float[][] trainingFeatures, float[][] testingFeatures, int[] trainTargets, int[] testTargets) throws Exception {
+    public ComboFeatures selectGivenAMethod(String chosenSelector, String path, java.util.HashMap<String, String> parameters, float[][] trainingFeatures, float[][] testingFeatures, int[] trainTargets, int[] testTargets) throws Exception {
 
     	ComboFeatures result = new ComboFeatures();
 
@@ -1011,7 +1054,7 @@ public class Annotator implements Runnable
             parameters.remove(DISCRETE_FLAG);
         }
         
-        FeatureSelector selector = getSelectorGivenName(chosenSelector, parameters);
+        FeatureSelector selector = getSelectorGivenName(chosenSelector, path, parameters);
         try {
           selectedTrainingFeatures = selector.selectFeatures(trainingFeatures, trainTargets);
           //note: dimension may be different from passed in parameter now
@@ -1033,7 +1076,7 @@ public class Annotator implements Runnable
         
     }
 
-    
+    //obsolete 08/11
     public FeatureSelector getSelectorGivenName(String name, HashMap<String, String> parameters)
     {
        FeatureSelector selector = null;
