@@ -64,13 +64,23 @@ public class WeKaFeatureSelectors implements FeatureSelector {
 	public final static String KEY_NUM = "Number of Features";
     public final static String KEY_DIS_TH = "Threshold";
 	
+    public WeKaFeatureSelectors()
+    {}
+    
+    public void setParameters(java.util.HashMap<String, String> parameters)
+    {
+		if (parameters.containsKey(KEY_NUM))
+			this.numberofFeatures = Integer.parseInt((String)parameters.get(KEY_NUM));
+		if (parameters.containsKey(KEY_DIS_TH))
+			threshold = Integer.parseInt((String)parameters.get(KEY_DIS_TH));
+    }
+    
     public WeKaFeatureSelectors(java.util.HashMap<String, String> parameters)
     {
 		if (parameters.containsKey(KEY_NUM))
 			this.numberofFeatures = Integer.parseInt((String)parameters.get(KEY_NUM));
 		if (parameters.containsKey(KEY_DIS_TH))
 			threshold = Integer.parseInt((String)parameters.get(KEY_DIS_TH));
-
     }
 	
 	public WeKaFeatureSelectors(float[][] features, int[] targets, int numberofFeatures, String method, double threshold)
