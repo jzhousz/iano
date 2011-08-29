@@ -50,7 +50,14 @@ public class AnnROIAnnotator extends Annotator {
 		
 		int[] resArr = new int[2];
 		int[][] trainingTargets = readTargets(trainingProblem, targetFile, resArr, null);  
-		float[][] trainingfeatures = extractGivenAMethod(featureExtractor, null, null, trainingProblem); //data,length, width, height);
+		float[][] trainingfeatures = null;
+		try	{
+			trainingfeatures = extractGivenAMethod(featureExtractor, null, null, trainingProblem); //data,length, width, height);
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
+			return;
+		}
 		int numoffeatures = getNumberofFeatures();
 	    int incomingDim = trainingfeatures[0].length;
 

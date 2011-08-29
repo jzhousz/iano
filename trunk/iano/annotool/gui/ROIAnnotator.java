@@ -126,7 +126,14 @@ public class ROIAnnotator {
 						subImage[n * roiWidth + m] = getSubImageData(data, m + i, n + j, ip.getWidth(), ip.getHeight(), i, j, m, n);
 				
 				//feature extraction on testing subimage.
-				float[] features  = getExtractedFeaturesFromROI(subImage, roiWidth, roiHeight, model.getExtractors());
+				float[] features  = null;
+				try {
+					features = getExtractedFeaturesFromROI(subImage, roiWidth, roiHeight, model.getExtractors());
+				} catch (Exception e) {
+					e.printStackTrace();
+					//TODO: show error message to user
+					return;
+				}
 				
 				//Selecting features
 		        for(Selector sel : model.getSelectors()) {
@@ -167,7 +174,7 @@ public class ROIAnnotator {
 		return data[ row * imgWidth + col];
 	}
 	
-	protected float[] getExtractedFeaturesFromROI(byte[] subImage, int width, int height, ArrayList<Extractor> extractors)
+	protected float[] getExtractedFeaturesFromROI(byte[] subImage, int width, int height, ArrayList<Extractor> extractors) throws Exception
 	{
 		if(extractors.size() < 1) {
 			float[] features = new float[width * height];
@@ -179,6 +186,7 @@ public class ROIAnnotator {
 		
 		String extractorName = null;
 		HashMap<String, String> params = null;
+		String extractorPath = null;
 		
 		ImgDimension dim = new ImgDimension();
     	dim.width = width;
@@ -193,10 +201,11 @@ public class ROIAnnotator {
         
 		int dataSize = 0;
         for(int exIndex=0; exIndex < extractors.size(); exIndex++) {
-			extractorName = extractors.get(exIndex).getName();
+			extractorName = extractors.get(exIndex).getClassName();
         	params = extractors.get(exIndex).getParams();
+        	extractorPath = extractors.get(exIndex).getExternalPath();
         	
-    		exFeatures[exIndex] = new Annotator().extractGivenAMethod(extractorName, null, params, data, dim)[0];
+    		exFeatures[exIndex] = new Annotator().extractGivenAMethod(extractorName, extractorPath, params, data, dim)[0];
     		dataSize += exFeatures[exIndex].length;
 		}
 		

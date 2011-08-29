@@ -240,7 +240,14 @@ public class ModelLoader implements Runnable {
 	        pnlStatus.setOutput("Extracing features ... ");
 	        
 	        //Start of extraction
-	        float[][] features =  anno.extractWithMultipleExtractors(problem, model.getExtractors());
+	        float[][] features =  null;
+	        try {
+				features = anno.extractWithMultipleExtractors(problem, model.getExtractors());
+			} catch (Exception e) {
+				e.printStackTrace();
+				pnlStatus.setOutput("Feature extraction failure.");
+				return;	//or continue with another model?
+			}
 	        //End of extraction
 	        
 	        //raw data is not used after this point, set to null.

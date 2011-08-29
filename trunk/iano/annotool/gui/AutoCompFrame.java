@@ -175,18 +175,22 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 		if(e.getSource() == btnAddEx) {
 			Algorithm extractor = (Algorithm)cbExtractor.getSelectedItem();
 			Extractor ex = new Extractor(extractor.getName());
+			ex.setClassName(extractor.getClassName());
+			ex.setExternalPath(extractor.getExternalPath());
 			ex.setParams(getParameterList(extractor, "Extractor"));	        
 	        pnlChain.addExtractor(ex);
 		}
 		else if(e.getSource() == btnAddSel) {
 			Algorithm selector = (Algorithm)cbSelector.getSelectedItem();	
 			Selector sel = new Selector(selector.getName());
+			sel.setClassName(selector.getClassName());
+			sel.setExternalPath(selector.getExternalPath());
 			sel.setParams(getParameterList(selector, "Selector"));
 	        pnlChain.addSelector(sel);
 		}
 		else if(e.getSource() == btnAddClass) {
 			Algorithm classifier = (Algorithm)cbClassifier.getSelectedItem();	        
-	        pnlChain.addClassifier(classifier.getName(), getParameterList(classifier, "Classifier"));
+	        pnlChain.addClassifier(classifier.getName(), getParameterList(classifier, "Classifier"), classifier.getClassName(), classifier.getExternalPath());
 		}
 	}
 	private HashMap<String, String> getParameterList(Algorithm al, String type) {

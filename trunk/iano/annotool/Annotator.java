@@ -885,7 +885,7 @@ public class Annotator implements Runnable
      	       loader = this.getClass().getClassLoader();
            
      	   Class c = Class.forName(classname,false, loader);
-     	   Object o = (FeatureExtractor) c.newInstance();
+     	   Object o = c.newInstance();
      	   return o;
         }
         catch(Exception e)
@@ -907,16 +907,18 @@ public class Annotator implements Runnable
     public float[][] extractWithMultipleExtractors(DataInput problem, ArrayList<Extractor> extractors) throws Exception {
     	String extractor = "None";
         HashMap<String, String> params = new HashMap<String, String>();
+        String externalPath = null;
         
         int numExtractors = extractors.size();
         float[][][] exFeatures = new float[numExtractors][][];
         
         int dataSize = 0;	//To keep track of total size
         for(int exIndex=0; exIndex < numExtractors; exIndex++) {
-        	extractor = extractors.get(exIndex).getName();
+        	extractor = extractors.get(exIndex).getClassName();
         	params = extractors.get(exIndex).getParams();
+        	externalPath = extractors.get(exIndex).getExternalPath();
         	
-        	exFeatures[exIndex] = this.extractGivenAMethod(extractor, null, params, problem);
+        	exFeatures[exIndex] = this.extractGivenAMethod(extractor, externalPath, params, problem);
         	
         	dataSize += exFeatures[exIndex][0].length;
         }

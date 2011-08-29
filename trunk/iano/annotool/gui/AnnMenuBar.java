@@ -335,10 +335,10 @@ public class AnnMenuBar implements ActionListener {
 		"Annotation tool for multi-dimensional biological images.\n\n" +
 		"It supports Training/Testing and Cross Validation modes for selecting model. \n" + 
 		"Training only mode can also be used.\n\n" +
-		"For each of these methods, there are two modes - Expert mode and Auto-comparision mode.\n\n" +
-		"In Expert mode, the user can select a single algorithm for feature extractor, feature selector and classifier.\n" + 
+		"For each of these methods, there are two modes - Simple mode and Comparision mode.\n\n" +
+		"In Simple mode, the user can select a single algorithm for feature extractor, feature selector and classifier.\n" + 
 		"Then the selected algorithms will be applied and a model created. \n\n" + 
-		"In Auto-comparison mode, the user can create multiple chains of algorithms and run the selected chains. \n" +
+		"In Comparison mode, the user can create multiple chains of algorithms and run the selected chains. \n" +
 		"The best chain identified for a given problem will be selected.\n\n" +
 		"For image classification and annotation, there are two modes - Image Annotation and ROI(Region of Interest) Annotation.\n\n" +
 		"Both of these modes can be used by loading saved model or by using the model in memory.\n\n";
@@ -351,6 +351,7 @@ public class AnnMenuBar implements ActionListener {
 	 */
 	public void setMenuEnabled(boolean isEnabled) {
 		newWizardItem.setEnabled(isEnabled);
+		bNewWiz.setEnabled(isEnabled);
 		itemMDSelect.setEnabled(isEnabled); 
 		itemTrainOnly.setEnabled(isEnabled);		
 		annoMenu.setEnabled(isEnabled);

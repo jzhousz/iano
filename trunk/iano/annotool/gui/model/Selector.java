@@ -4,6 +4,8 @@ import java.util.HashMap;
 
 public class Selector {
 	private String name = null;
+	private String className = null;
+	private String externalPath = null;
 	private HashMap<String, String> params = null;
 	private int[] selectedIndices = null;
 	
@@ -18,6 +20,22 @@ public class Selector {
 	public void setName(String name) {
 		this.name = name;
 	}
+	public String getClassName() {
+		return className;
+	}
+
+	public void setClassName(String className) {
+		this.className = className;
+	}
+
+	public String getExternalPath() {
+		return externalPath;
+	}
+
+	public void setExternalPath(String externalPath) {
+		this.externalPath = externalPath;
+	}
+
 	public HashMap<String, String> getParams() {
 		return params;
 	}

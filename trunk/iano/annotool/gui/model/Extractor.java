@@ -4,6 +4,8 @@ import java.util.HashMap;
 
 public class Extractor {
 	private String name = null;
+	private String className = null;
+	private String externalPath = null;
 	private HashMap<String, String> params = null;
 	
 	public Extractor(String name) {
@@ -17,6 +19,22 @@ public class Extractor {
 	public void setName(String name) {
 		this.name = name;
 	}
+	public String getClassName() {
+		return className;
+	}
+
+	public void setClassName(String className) {
+		this.className = className;
+	}
+
+	public String getExternalPath() {
+		return externalPath;
+	}
+
+	public void setExternalPath(String externalPath) {
+		this.externalPath = externalPath;
+	}
+
 	public HashMap<String, String> getParams() {
 		return params;
 	}

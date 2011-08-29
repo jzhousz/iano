@@ -50,7 +50,6 @@ public class AnnOutputPanel extends JPanel implements ActionListener {
         drawingPane.scrollRectToVisible(rect);
         */
 	}
-
 	public void clearOutput()
 	{
 		  output.setText("");

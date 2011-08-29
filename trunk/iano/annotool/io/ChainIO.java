@@ -17,8 +17,8 @@ import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
 
 /*
- * Saves the list of algorithm chains from auto comaparision mode.
- * It is different than ChainModel which is for saving a single chain from expert mode
+ * Saves the list of algorithm chains from comparison mode.
+ * It is different than ChainModel which is for saving a single chain from simple mode
  */
 public class ChainIO {
 	public ChainIO() {
@@ -41,6 +41,8 @@ public class ChainIO {
 		        	//Write feature extractor
 		        	writer.write("[FEATURE_EXTRACTOR]" + newLine);
 		        	writer.write("Name=" + ex.getName() + newLine);
+		        	writer.write("ClassName=" + ex.getClassName() + newLine);
+		        	writer.write("Path=" + ex.getExternalPath() + newLine);
 		        	writer.write("[PARAMETER_START]" + newLine);
 		        	for (String parameter : ex.getParams().keySet()) {
 		        		writer.write(parameter + "=" +ex.getParams().get(parameter) + newLine);
@@ -52,6 +54,8 @@ public class ChainIO {
 		        	//Write feature selector
 		        	writer.write("[FEATURE_SELECTOR]" + newLine);
 		        	writer.write("Name=" + sel.getName() + newLine);
+		        	writer.write("ClassName=" + sel.getClassName() + newLine);
+		        	writer.write("Path=" + sel.getExternalPath() + newLine);
 		        	writer.write("[PARAMETER_START]" + newLine);
 		        	for (String parameter : sel.getParams().keySet()) {
 		        		writer.write(parameter + "=" +sel.getParams().get(parameter) + newLine);
@@ -63,6 +67,8 @@ public class ChainIO {
 		        	//Write classifier
 		        	writer.write("[CLASSIFIER]" + newLine);
 		        	writer.write("Name=" + chain.getClassifier() + newLine);
+		        	writer.write("ClassName=" + chain.getClassifierClassName() + newLine);
+		        	writer.write("Path=" + chain.getClassifierExternalPath() + newLine);
 		        	//Write classifier parameters
 		        	writer.write("[PARAMETER_START]" + newLine);
 		        	for (String parameter : chain.getClassParams().keySet()) {
@@ -135,6 +141,24 @@ public class ChainIO {
 						else
 							throw new Exception("Invalid chain file.");
 						
+						//Read class name
+						line = scanner.nextLine();
+						if(line.startsWith("ClassName=")) {
+							ex.setClassName(line.replaceFirst("ClassName=", ""));
+						}
+						else
+							throw new Exception("Invalid chain file.");
+						
+						//Read class path
+						line = scanner.nextLine();
+						if(line.startsWith("Path=")) {
+							String path = line.replaceFirst("Path=", "");
+							if(!path.equals("null"))
+								ex.setExternalPath(path);
+						}
+						else
+							throw new Exception("Invalid chain file.");
+						
 						//Read extractor parameters
 						line = scanner.nextLine();
 						if(line.equals("[PARAMETER_START]")) {
@@ -164,6 +188,24 @@ public class ChainIO {
 						else
 							throw new Exception("Invalid chain file.");
 						
+						//Read class name
+						line = scanner.nextLine();
+						if(line.startsWith("ClassName=")) {
+							sel.setClassName(line.replaceFirst("ClassName=", ""));
+						}
+						else
+							throw new Exception("Invalid chain file.");
+						
+						//Read class path
+						line = scanner.nextLine();
+						if(line.startsWith("Path=")) {
+							String path = line.replaceFirst("Path=", "");
+							if(!path.equals("null"))
+								sel.setExternalPath(path);
+						}
+						else
+							throw new Exception("Invalid chain file.");
+						
 						//Read selector parameters
 						line = scanner.nextLine();
 						if(line.equals("[PARAMETER_START]")) {
@@ -186,6 +228,24 @@ public class ChainIO {
 						//Read classifier name
 						if(line.startsWith("Name=")) {
 							chain.setClassifier(line.replaceFirst("Name=", ""));
+						}
+						else
+							throw new Exception("Invalid chain file.");
+						
+						//Read class name
+						line = scanner.nextLine();
+						if(line.startsWith("ClassName=")) {
+							chain.setClassifierClassName(line.replaceFirst("ClassName=", ""));
+						}
+						else
+							throw new Exception("Invalid chain file.");
+						
+						//Read class path
+						line = scanner.nextLine();
+						if(line.startsWith("Path=")) {
+							String path = line.replaceFirst("Path=", "");
+							if(!path.equals("null"))
+								chain.setClassifierExternalPath(path);
 						}
 						else
 							throw new Exception("Invalid chain file.");
