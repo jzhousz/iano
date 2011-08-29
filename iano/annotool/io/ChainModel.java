@@ -87,6 +87,8 @@ public class ChainModel {
         	for(Extractor ex : extractors) {
 	        	writer.write("[FEATURE_EXTRACTOR]" + newLine);
 	        	writer.write("Name=" + ex.getName() + newLine);
+	        	writer.write("ClassName=" + ex.getClassName() + newLine);
+	        	writer.write("Path=" + ex.getExternalPath() + newLine);
 	        	writer.write("[PARAMETER_START]" + newLine);
 	        	for (String parameter : ex.getParams().keySet()) {
 	        		writer.write(parameter + "=" +ex.getParams().get(parameter) + newLine);
@@ -207,8 +209,26 @@ public class ChainModel {
 					ex = new Extractor(line.replaceFirst("Name=", ""));
 				}
 				else
-					throw new Exception("Invalid chain file.");
+					throw new Exception("Invalid model file.");
 				//End extractor name
+				
+				//Read class name
+				line = scanner.nextLine();
+				if(line.startsWith("ClassName=")) {
+					ex.setClassName(line.replaceFirst("ClassName=", ""));
+				}
+				else
+					throw new Exception("Invalid model file.");
+				
+				//Read path
+				line = scanner.nextLine();
+				if(line.startsWith("Path=")) {
+					String path = line.replaceFirst("Path=", "");
+					if(!path.equals("null"))
+						ex.setExternalPath(path);
+				}
+				else
+					throw new Exception("Invalid model file.");
 				
 				//Read extractor parameters
 				line = scanner.nextLine();
@@ -237,7 +257,7 @@ public class ChainModel {
 					sel = new Selector(line.replaceFirst("Name=", ""));
 				}
 				else
-					throw new Exception("Invalid chain file.");
+					throw new Exception("Invalid model file.");
 				
 				//Read selected indices
 				line = scanner.nextLine();
@@ -265,7 +285,7 @@ public class ChainModel {
 					classifierName = line.replaceFirst("Name=", "");
 				}
 				else
-					throw new Exception("Invalid chain file.");
+					throw new Exception("Invalid model file.");
 				
 				//Read classifier parameters
 				line = scanner.nextLine();

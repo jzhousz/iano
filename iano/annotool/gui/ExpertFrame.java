@@ -341,15 +341,21 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		
 		anno = new Annotator();
 		
-		//Initiate appropriate process
-		if(Annotator.output.equals(Annotator.TT)) {				//TT Mode
-			ttRun();
+		try {
+			//Initiate appropriate process
+			if(Annotator.output.equals(Annotator.TT)) {				//TT Mode
+				ttRun();
+			}
+			else if(Annotator.output.equals(Annotator.CV)) {			//Cross validation mode
+				cvRun();			
+			}
+			else if(Annotator.output.equals(Annotator.TO)) {			//Training only
+				trainOnly();			
+			}
 		}
-		else if(Annotator.output.equals(Annotator.CV)) {			//Cross validation mode
-			cvRun();			
-		}
-		else if(Annotator.output.equals(Annotator.TO)) {			//Training only
-			trainOnly();			
+		catch (Throwable t) {
+			pnlOutput.setOutput("ERROR: " + t.getMessage());
+			t.printStackTrace();
 		}
 		
 		thread = null;
@@ -385,7 +391,16 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         pnlOutput.setOutput("Extracting features...");
         
         //float[][] trainingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, trainingProblem);
-        float[][] trainingFeatures = anno.extractGivenAMethod(extractor.getName(), extractor.getExternalPath(), exParams, trainingProblem);
+        float[][] trainingFeatures = null;
+        try {
+			trainingFeatures = anno.extractGivenAMethod(extractor.getClassName(), extractor.getExternalPath(), exParams, trainingProblem);
+		} catch (Exception e) {
+			pnlOutput.setOutput("ERROR: Feature extractor failed! Extractor = " + extractor.getName());
+			e.printStackTrace();
+			setProgress(0);
+			enableSave = false;
+			return;
+		}
         
         //Keep features to be dumped into chain file
         int imgWidth = trainingProblem.getWidth();
@@ -416,12 +431,13 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             	//Supervised feature selectors need corresponding target data
                 ComboFeatures combo = null;
                 try {
-                	combo = anno.selectGivenAMethod(featureSelector, selParams, trainingFeatures, trainingTargets[i]);
+                	combo = anno.selectGivenAMethod(selector.getClassName(), selector.getExternalPath(), selParams, trainingFeatures, trainingTargets[i]);
                 }
                 catch (Exception ex) {
-                	enableSave = false;
-            		pnlOutput.setOutput("Feature selection failed! Selector = " + featureSelector);
+            		pnlOutput.setOutput("ERROR: Feature selection failed! Selector = " + featureSelector);
+            		ex.printStackTrace();
             		setProgress(0);
+                	enableSave = false;
             		return;
                 }
                 //selected features overrides the passed in original features
@@ -437,7 +453,16 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 
             pnlOutput.setOutput("Creating training model...");
             
-            Classifier classifierObj = anno.getClassifierGivenName(classifierChoice, classParams);
+            Classifier classifierObj = null;
+            try {
+				classifierObj = anno.getClassifierGivenName(classifier.getClassName(), classifier.getExternalPath(), classParams);
+			} catch (Exception e) {
+				pnlOutput.setOutput("ERROR: Classifier failed! Classifier = " + classifier.getName());
+				e.printStackTrace();
+				setProgress(0);
+				enableSave = false;
+				return;
+			}
             
             if(classifierObj instanceof SavableClassifier) {
             	try {
@@ -445,11 +470,10 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             		enableSave = true;
             	}
             	catch (Exception ex) {
+            		pnlOutput.setOutput("ERROR: Classification failed! Classifier = " + classifier.getName());
             		ex.printStackTrace();
-            		
-            		enableSave = false;
-            		pnlOutput.setOutput("Classification failed!");
             		setProgress(0);
+            		enableSave = false;
             		return;
             	}
             }
@@ -464,6 +488,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	
         	Extractor ex = new Extractor(featureExtractor);
         	ex.setParams(exParams);
+        	ex.setClassName(extractor.getClassName());
+        	ex.setExternalPath(extractor.getExternalPath());
         	chainModels[i].addExtractor(ex);
         	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
@@ -507,8 +533,20 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         //float[][] trainingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, trainingProblem);
         //float[][] testingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, testingProblem);
         
-        float[][] trainingFeatures = anno.extractGivenAMethod(extractor.getClassName(), extractor.getExternalPath(), exParams, trainingProblem);
-        float[][] testingFeatures = anno.extractGivenAMethod(extractor.getClassName(), extractor.getExternalPath(), exParams, testingProblem);
+        float[][] trainingFeatures = null;
+        float[][] testingFeatures = null;
+        
+        try {
+        	trainingFeatures = anno.extractGivenAMethod(extractor.getClassName(), extractor.getExternalPath(), exParams, trainingProblem);
+        	testingFeatures = anno.extractGivenAMethod(extractor.getClassName(), extractor.getExternalPath(), exParams, testingProblem);
+        }
+        catch(Exception e) {
+        	pnlOutput.setOutput("ERROR: Feature extractor failed! Extractor = " + extractor.getName());
+        	e.printStackTrace();
+        	setProgress(0);
+        	enableSave = false;
+        	return;
+        }
         
         //Keep features to be dumped into chain file
         int imgWidth = trainingProblem.getWidth();
@@ -556,12 +594,13 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             	//Supervised feature selectors need corresponding target data
                 ComboFeatures combo =  null;
                 try {
-                	combo = anno.selectGivenAMethod(featureSelector, selParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i]);
+                	combo = anno.selectGivenAMethod(selector.getClassName(), selector.getExternalPath(), selParams, trainingFeatures, testingFeatures, trainingTargets[i], testingTargets[i]);
                 }
                 catch (Exception ex) {
-                	enableSave = false;
-            		pnlOutput.setOutput("Feature selection failed! Selector = " + featureSelector);
+            		pnlOutput.setOutput("ERROR: Feature selection failed! Selector = " + featureSelector);
+            		ex.printStackTrace();
             		setProgress(0);
+                	enableSave = false;
             		return;
                 }
                 //selected features overrides the passed in original features
@@ -581,16 +620,24 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             //setGUIOutput("Classifying/Annotating ... ");
             pnlOutput.setOutput("Classifying/Annotating...");
             
-            Classifier classifierObj = anno.getClassifierGivenName(classifierChoice, classParams);
+            Classifier classifierObj = null;
+            try {
+				classifierObj = anno.getClassifierGivenName(classifier.getClassName(), classifier.getExternalPath(), classParams);
+			} catch (Exception e) {
+				pnlOutput.setOutput("ERROR: Classifier failed! Classifier = " + classifier.getName());
+				e.printStackTrace();
+				setProgress(0);
+				enableSave = false;
+				return;
+			}
             try {
             	rate = anno.classifyGivenAMethod(classifierObj, classParams, selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
             }
             catch(Exception ex) {
+        		pnlOutput.setOutput("ERROR: Classification failed! Classifier = " + classifier.getName());
             	ex.printStackTrace();
-            	
-            	enableSave = false;
-        		pnlOutput.setOutput("Classification failed!");
         		setProgress(0);
+            	enableSave = false;
         		return;
             }
             
@@ -607,6 +654,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	
         	Extractor ex = new Extractor(featureExtractor);
         	ex.setParams(exParams);
+        	ex.setClassName(extractor.getClassName());
+        	ex.setExternalPath(extractor.getExternalPath());
         	chainModels[i].addExtractor(ex);
         	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
@@ -654,7 +703,16 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             return;
         }
         pnlOutput.setOutput("Extracing features ... ");
-        float[][] features = anno.extractGivenAMethod(featureExtractor, null, exParams, problem);
+        float[][] features = null;
+        try {
+			features = anno.extractGivenAMethod(extractor.getClassName(), extractor.getExternalPath(), exParams, problem);
+		} catch (Exception e) {
+			pnlOutput.setOutput("ERROR: Feature extractor failed! Extractor = " + extractor.getName());
+			e.printStackTrace();
+			setProgress(0);
+			enableSave = false;
+			return;
+		}
         
         //Keep features to be dumped into chain file
         int imgWidth = problem.getWidth();
@@ -723,12 +781,13 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
                 //override the original features and num of features
                 ComboFeatures combo = null;
                 try {
-                	combo = anno.selectGivenAMethod(featureSelector, selParams, features, targets[i]);
+                	combo = anno.selectGivenAMethod(selector.getClassName(), selector.getExternalPath(), selParams, features, targets[i]);
                 }
                 catch (Exception ex) {
-                	enableSave = false;
-            		pnlOutput.setOutput("Feature selection failed! Selector = " + featureSelector);
+            		pnlOutput.setOutput("ERROR: Feature selection failed! Selector = " + featureSelector);
+            		ex.printStackTrace();
             		setProgress(0);
+                	enableSave = false;
             		return;
                 }
                 
@@ -742,16 +801,24 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             }
 
             pnlOutput.setOutput("Classifying/Annotating ... ");
-            Classifier classifierObj = anno.getClassifierGivenName(classifierChoice, classParams);
+            Classifier classifierObj = null;
+            try {
+				classifierObj = anno.getClassifierGivenName(classifier.getClassName(), classifier.getExternalPath(), classParams);
+			} catch (Exception e) {
+				pnlOutput.setOutput("ERROR: Classifier failed! Classifier = " + classifier.getName());
+				e.printStackTrace();
+				setProgress(0);
+				enableSave = false;
+				return;
+			}
             try {
             	recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, selectedFeatures, targets[i], classifierObj, classParams, shuffle, results[i]);
             }
             catch(Exception ex) {
+        		pnlOutput.setOutput("ERROR: Classification failed! Classifier = " + classifier.getName());
             	ex.printStackTrace();
-            	
-            	enableSave = false;
-        		pnlOutput.setOutput("Classification failed!");
         		setProgress(0);
+            	enableSave = false;
         		return;
             }
             
@@ -769,6 +836,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	
         	Extractor ex = new Extractor(featureExtractor);
         	ex.setParams(exParams);
+        	ex.setClassName(extractor.getClassName());
+        	ex.setExternalPath(extractor.getExternalPath());
         	chainModels[i].addExtractor(ex);
         	
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up

@@ -81,6 +81,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	//To keep track of the best model for each genetic line
 	ChainModel[] chainModels = null;
 	
+	boolean executed = false;	//Set to true if at least one chain is successfully executed
+	
 	public ChainPanel(AutoCompFrame gui, String channel, AnnOutputPanel pnlOutput) {
 		this.channel = channel;		
 		this.gui = gui;
@@ -253,7 +255,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        	catch (IOException ex) {
 	        		System.out.println("Exception thrown while writing chain list to file.");
 	        		ex.printStackTrace();
-	        		pnlOutput.setOutput("Save failed.");
+	        		pnlOutput.setOutput("ERROR: Save failed. (I/O Exception)");
 	        	}
 	        }
 		}
@@ -279,7 +281,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            catch (Exception ex) {
 	            	System.out.println("Exception thrown while loading chain list from file.");
 	        		ex.printStackTrace();
-	        		pnlOutput.setOutput("Load failed.");
+	        		pnlOutput.setOutput("ERROR: Load failed.");
 	            }
 	            
 	            tca.adjustColumns();
@@ -411,6 +413,10 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
         	btnRun.setEnabled(hasSelectedChain());
         }
 	}
+	/**
+	 * Adds the supplied extractor to the currently selected chain.
+	 * @param ex
+	 */
 	public void addExtractor(Extractor ex) {
 		int currentRow = tblChain.getSelectedRow();
 		if(currentRow < 0)
@@ -427,6 +433,10 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		tblChain.repaint();
 		showItemDetail();
 	}
+	/**
+	 * Adds the supplied selector to the currently selected chain.
+	 * @param sel
+	 */
 	public void addSelector(Selector sel) {
 		int currentRow = tblChain.getSelectedRow();
 		if(currentRow < 0)
@@ -442,19 +452,32 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		tblChain.repaint();
 		showItemDetail();
 	}
-	public void addClassifier(String name, HashMap<String, String> params) {
+	/**
+	 * Adds the supplied classifier to the currently selected chain.
+	 * 
+	 * @param name	Name of the classifier
+	 * @param params	HashMap of parameters for the classifier
+	 * @param className	Class name to use for the classifier
+	 * @param externalPath	External path (if loaded from plugin)
+	 */
+	public void addClassifier(String name, HashMap<String, String> params, String className, String externalPath) {
 		int currentRow = tblChain.getSelectedRow();
 		if(currentRow < 0)
 			return;
 		Chain chain = (Chain)tblChain.getValueAt(currentRow, COL_CHAIN);
 		chain.setClassifier(name);
 		chain.setClassParams(params);
+		chain.setClassifierClassName(className);
+		chain.setClassifierExternalPath(externalPath);
 		
 		tca.adjustColumns();
 		
 		tblChain.repaint();
 		showItemDetail();
 	}
+	/**
+	 * Displays the details for the algorithms in the selected chain from the table
+	 */
 	private void showItemDetail() {
 		int currentRow = tblChain.getSelectedRow();
 		if(currentRow < 0)
@@ -511,12 +534,20 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		gui.setButtonsEnabled(false);
 		tblChain.setEnabled(false);
 		
-		//Initiate appropriate process
-		if(Annotator.output.equals(Annotator.TT)) {				//TT Mode
-			ttRun();
+		executed = false;
+		
+		try {
+			//Initiate appropriate process
+			if(Annotator.output.equals(Annotator.TT)) {				//TT Mode
+				ttRun();
+			}
+			else if(Annotator.output.equals(Annotator.CV)) {			//Cross validation mode
+				cvRun();			
+			}
 		}
-		else if(Annotator.output.equals(Annotator.CV)) {			//Cross validation mode
-			cvRun();			
+		catch (Throwable t) {
+			pnlOutput.setOutput("ERROR: " + t.getMessage());
+			t.printStackTrace();
 		}
 		
 		isRunning = false;
@@ -527,8 +558,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnNew.setEnabled(true);
 		btnRemove.setEnabled(true);
 		btnLoadChain.setEnabled(true);
-		btnSaveModel.setEnabled(true);
-		btnApplyModel.setEnabled(true);
+		btnSaveModel.setEnabled(executed);
+		btnApplyModel.setEnabled(executed);
 		gui.setButtonsEnabled(true);
 		tblChain.setEnabled(true);
 	}
@@ -553,18 +584,10 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	    
 	    
 	    //Initialize float array to hold rates for each annotation for each selected chain and list of selected chains to pass to result panel
-	    ArrayList<Chain> selectedChains = new ArrayList<Chain>(); 
-	    int chainCount = 0;
-	    for(int row = 0; row < tableModel.getRowCount(); row++) {
-	    	if((Boolean)tableModel.getValueAt(row, COL_CHECK)) {
-	    		chainCount++;
-	    		selectedChains.add((Chain)tableModel.getValueAt(row, COL_CHAIN));
-	    	}
-	    }
-	    float[][] rates = new float[chainCount][numOfAnno];
-	    chainCount = 0; //Reset chain count to use later to put rates for each selected chain
+	    ArrayList<Chain> selectedChains = getSelectedChains(); 
+	    float[][] rates = new float[selectedChains.size()][numOfAnno];
 	    
-	    boolean executed = false;	//Set to true if at least one chain is executed
+	    int chainCount = 0;
 	    
 	  	//Keep features to be dumped into chain file
 	    int imgWidth = trainingProblem.getWidth();
@@ -589,9 +612,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	    for(int row = 0; row < tableModel.getRowCount(); row++) {
 	    	//Only use the checked chains
 	    	if(!(Boolean)tableModel.getValueAt(row, COL_CHECK))
-	    		continue;        	
-	    
-	    	executed = true;
+	    		continue; 		
 	    	
 	    	selectRow(row);
 	    	//feature extraction.
@@ -606,7 +627,6 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	    	//Chain list loaded from file may have incomplete chain in the middle if the file has been tampered with
 	    	if(!chain.isComplete()) {
 	    		pnlOutput.setOutput("Incomplete chain encountered. Chain = " + chain.getName());
-	    		continue;
 	    	}
 	    	
 	        pnlOutput.setOutput("Extracting features...");
@@ -614,29 +634,60 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        //Start of extraction: TODO:
 	        String extractor = "None";
 	        HashMap<String, String> params = new HashMap<String, String>();
+	        String externalPath = null;
 	        
 	        int numExtractors = chain.getExtractors().size();
 	        float[][][] exTrainFeatures = new float[numExtractors][][];
 	        float[][][] exTestFeatures = new float[numExtractors][][];
 	        
 	        int trainSize = 0, testSize = 0;	//To keep track of total size
+	        boolean extracted = true;
 	        for(int exIndex=0; exIndex < numExtractors; exIndex++) {
-	        	extractor = chain.getExtractors().get(exIndex).getName();
+	        	extractor = chain.getExtractors().get(exIndex).getClassName();
 	        	params = chain.getExtractors().get(exIndex).getParams();
+	        	externalPath = chain.getExtractors().get(exIndex).getExternalPath();
 	        	
-	        	exTrainFeatures[exIndex] = anno.extractGivenAMethod(extractor, null, params, trainingProblem);
-	        	exTestFeatures[exIndex] = anno.extractGivenAMethod(extractor, null, params, testingProblem);
+	        	try {
+		        	exTrainFeatures[exIndex] = anno.extractGivenAMethod(extractor, externalPath, params, trainingProblem);
+		        	exTestFeatures[exIndex] = anno.extractGivenAMethod(extractor, externalPath, params, testingProblem);
+	        	}
+	        	catch (Exception ex) {
+	        		pnlOutput.setOutput("ERROR: Feature extractor failed! Extractor = " + chain.getExtractors().get(exIndex).getName() + " Chain = " + chain.getName());
+	        		ex.printStackTrace();
+	        		//Set rate for all annotation targets to 0 (this chain only)
+	        		for(int i = 0; i < numOfAnno; i++)
+	        			rates[chainCount][i] = 0;
+
+	        		extracted = false;
+	        		break;			//break out of the extractors loop (exIndex)
+	        	}
 	        	
 	        	trainSize += exTrainFeatures[exIndex][0].length;
 	        	testSize += exTestFeatures[exIndex][0].length;
+	        }
+	        if(!extracted) {
+	        	chainCount++;
+	        	continue; 			//Continue with next row (chain)
 	        }
 	        
 	        float[][] trainingFeatures = null;
 	        float[][] testingFeatures = null;
 	        
 	        if(numExtractors < 1) {	//If no extractor, call the function by passing "None"
-	        	trainingFeatures = anno.extractGivenAMethod(extractor, null, params, trainingProblem);
-	        	testingFeatures = anno.extractGivenAMethod(extractor, null, params, testingProblem);
+	        	try {
+		        	trainingFeatures = anno.extractGivenAMethod(extractor, null, params, trainingProblem);
+		        	testingFeatures = anno.extractGivenAMethod(extractor, null, params, testingProblem);
+	        	}
+	        	catch (Exception ex) {
+	        		pnlOutput.setOutput("ERROR: Feature extractor failed! Extractor = " + extractor + " Chain = " + chain.getName());
+	        		ex.printStackTrace();
+	        		//Set rate for all annotation targets to 0 (this chain only)
+	        		for(int i = 0; i < numOfAnno; i++)
+	        			rates[chainCount][i] = 0;
+	        		
+	        		chainCount++;
+	        		continue;	//Continue to another row (chain)
+	        	}
 	        }
 	        else {	//Else, create feature array with enough space to hold data from all extractors 
 	        	trainingFeatures = new float[trainingProblem.getLength()][trainSize];
@@ -672,6 +723,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            }
 	        }
 	        
+	        boolean selected = true; //Set to false if selector throws exception
 	        //loop for each annotation target (one image may have multiple labels)
 	        for (int i = 0; i < numOfAnno; i++) {
 	        	//Selected features for each annotation labels
@@ -682,20 +734,19 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        	
 	        	ComboFeatures combo = null;	            
 	        	if(chain.hasSelectors()) 
-	            {
-	        		boolean selected = true; //Set to false if selector throws exception
+	            {	        		
 	                pnlOutput.setOutput("Selecting features...");
 	                
 	                //Apply each feature selector in the chain
 	                for(Selector selector : chain.getSelectors()) {
 		            	//Supervised feature selectors need corresponding target data
 		                try {
-		                	combo = anno.selectGivenAMethod(selector.getName(), selector.getParams(), selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i]);
+		                	combo = anno.selectGivenAMethod(selector.getClassName(), selector.getExternalPath(), selector.getParams(), selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i]);
 		                }
 		                catch (Exception ex) {
-		            		pnlOutput.setOutput("Feature selection failed! Selector = " + selector.getName());
+		            		pnlOutput.setOutput("ERROR: Feature selection failed! Selector = " + selector.getName() + " Chain = " + chain.getName());
 		            		selected = false;
-		            		break;
+		            		break;	//Break out of selectors loop
 		                }
 		                	
 		                //selected features overrides the passed in original features
@@ -709,8 +760,10 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	                }
 	                
 	                if(!selected) {
-	                	rates[chainCount][i] = 0;
-	                	continue;
+	                	//Set rate for all annotation targets to 0 (this chain only)
+		        		for(int j = 0; j < numOfAnno; j++)
+		        			rates[chainCount][j] = 0;
+	                	break;			//Break out of annotation targets loop
 	                }
 	            }
 	            //pass the training and testing data to Validator
@@ -718,13 +771,15 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            float rate = 0;
 	            pnlOutput.setOutput("Classifying/Annotating...");
 	            
-	            Classifier classifierObj = anno.getClassifierGivenName(chain.getClassifier(), chain.getClassParams());
+	            Classifier classifierObj = null;
 	            try {
-	            	rate = anno.classifyGivenAMethod(classifierObj, chain.getClassParams(), selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
-	            }
-	            catch(Exception ex) {
-	            	ex.printStackTrace();
-	            }
+					classifierObj = anno.getClassifierGivenName(chain.getClassifierClassName(), chain.getClassifierExternalPath(), chain.getClassParams());
+					rate = anno.classifyGivenAMethod(classifierObj, chain.getClassParams(), selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
+					executed = true;
+	            } catch (Exception e) {
+					pnlOutput.setOutput("ERROR: Classifier failure! Classifier = " + chain.getClassifier() + " Chain = " + chain.getName());
+					e.printStackTrace();
+				}
 	            
 	            rates[chainCount][i] = rate;
 	            
@@ -773,18 +828,10 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
         anno.setAnnotationLabels(annoLabels);
         
         //Initialize float array to hold rates for each annotation for each selected chain and list of selected chains to pass to result panel
-        ArrayList<Chain> selectedChains = new ArrayList<Chain>(); 
-        int chainCount = 0;
-        for(int row = 0; row < tableModel.getRowCount(); row++) {
-        	if((Boolean)tableModel.getValueAt(row, COL_CHECK)) {
-        		chainCount++;
-        		selectedChains.add((Chain)tableModel.getValueAt(row, COL_CHAIN));
-        	}
-        }
-        float[][] rates = new float[chainCount][numOfAnno];
-        chainCount = 0; //Reset chain count to use later to put rates for each selected chain
+        ArrayList<Chain> selectedChains = getSelectedChains();
+        float[][] rates = new float[selectedChains.size()][numOfAnno];
         
-        boolean executed = false;	//Set to true if at least one chain is executed
+        int chainCount = 0;
         
       	//Keep features to be dumped into chain file
         int imgWidth = problem.getWidth();
@@ -808,9 +855,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
         for(int row = 0; row < tableModel.getRowCount(); row++) {
         	//Only use the checked chains
         	if(!(Boolean)tableModel.getValueAt(row, COL_CHECK))
-        		continue;        	
-        
-        	executed = true;
+        		continue;
         	
         	//Select the currently processed row in the table
         	selectRow(row);
@@ -822,7 +867,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
         	//Chain list loaded from file may have incomplete chain in the middle if the file has been tampered with
         	if(!chain.isComplete()) {
         		pnlOutput.setOutput("Incomplete chain encountered. Chain = " + chain.getName());
-        		continue;
+        		//continue;//TODO: may be not proceed?
         	}
         	
 	        //----- feature extraction -------//
@@ -832,7 +877,20 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        pnlOutput.setOutput("Extracing features ... ");
 	        
 	        //Start of extraction
-	        float[][] features =  anno.extractWithMultipleExtractors(problem, chain.getExtractors());
+	        float[][] features =  null;
+	        try {
+				features = anno.extractWithMultipleExtractors(problem, chain.getExtractors());
+			} catch (Exception e) {
+				e.printStackTrace();
+				pnlOutput.setOutput("ERROR: Feature extractor failed! Chain = " + chain.getName());
+				
+				//Set rate for all annotation targets to 0 (this chain only)
+        		for(int i = 0; i < numOfAnno; i++)
+        			rates[chainCount][i] = 0;
+        		
+        		chainCount++;
+	        	continue; 			//Continue with next row (chain)
+			}
 	        //End of extraction
 	        
 	        //raw data is not used after this point, set to null.: commented because used for subsequent loop runs
@@ -875,6 +933,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            }
 	        }
 	        
+	        boolean selected = true;
 	        //loop for each annotation target
 	        for (int i = 0; i < numOfAnno; i++) {
 	            float recograte[] = null;
@@ -882,46 +941,53 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            int region = 50 / numOfAnno;
 	            
 	            //Selected features for each annotation labels
-	            float[][] selectedFeatures = features;
+	            float[][] selectedFeatures = features;            
+	            
+	            ArrayList<Selector> selectors = new ArrayList<Selector>();
 	            
 	            ComboFeatures combo = null;
 	            if(chain.hasSelectors()) 
-	            {
-	            	boolean selected = true;
+	            {	            	
 	                pnlOutput.setOutput("Selecting features...");
 	                
 	                //Apply each feature selector in the chain
 	                for(Selector selector : chain.getSelectors()) {
 		            	//Supervised feature selectors need corresponding target data
 		                try {
-	                	   	combo = anno.selectGivenAMethod(selector.getName(), selector.getParams(), selectedFeatures, targets[i]);
+	                	   	combo = anno.selectGivenAMethod(selector.getClassName(), selector.getExternalPath(), selector.getParams(), selectedFeatures, targets[i]);
 		                }
 		                catch (Exception ex) {
-		                	pnlOutput.setOutput("Feature selection failed! Selector = " + selector.getName());
+		                	pnlOutput.setOutput("ERROR: Feature selection failed! Selector = " + selector.getName() + ", Chain = " + chain.getName());
 		                	selected = false;
-		                	break;
+		                	break; //Break out of selectors loop
 		                }
 		                //selected features overrides the passed in original features
 		                selectedFeatures = combo.getTrainingFeatures();
 		                
-		                selector.setSelectedIndices(combo.getSelectedIndices());
+		                //This is needed for saving model, each annotation label needs a new selector to be created (i.e. cannot reuse selectors in chain)
+		                Selector currentSelector = new Selector(selector.getName());
+		                currentSelector.setSelectedIndices(combo.getSelectedIndices());
+		                selectors.add(currentSelector);
 	                }
 	                
 	                if(!selected) {
-	                	rates[chainCount][i] = 0;
-	                	continue;
+	                	//Set rate for all annotation targets to 0 (this chain only)
+		        		for(int j = 0; j < numOfAnno; j++)
+		        			rates[chainCount][j] = 0;
+	                	break;			//Break out of annotation targets loop
 	                }
 	            }
 	
 	            pnlOutput.setOutput("Classifying/Annotating ... ");
-	            Classifier classifierObj = anno.getClassifierGivenName(chain.getClassifier(), chain.getClassParams());
+	            Classifier classifierObj = null;
 	            try {
-	            	recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, selectedFeatures, targets[i], classifierObj, chain.getClassParams(), shuffle, results[i]);
-	            }
-	            catch(Exception ex) {
-	            	pnlOutput.setOutput("Exception! " + ex.getMessage());
-	            	ex.printStackTrace();
-	            }
+					classifierObj = anno.getClassifierGivenName(chain.getClassifierClassName(), chain.getClassifierExternalPath(), chain.getClassParams());
+					recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, selectedFeatures, targets[i], classifierObj, chain.getClassParams(), shuffle, results[i]);
+					executed = true;
+	            } catch (Exception e) {
+					e.printStackTrace();
+					pnlOutput.setOutput("ERROR: Classifier failure! Chain = " + chain.getName());
+				}
 	            
 	            rates[chainCount][i] = recograte[K];
 	            
@@ -929,7 +995,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            //then, save this as new best model
 	            if(recograte[K] > chainModels[i].getResult()) {
 	            	chainModels[i].setExtractors(chain.getExtractors());
-	            	chainModels[i].setSelectors(chain.getSelectors());
+	            	chainModels[i].setSelectors(selectors);
 	            	
 	            	chainModels[i].setClassifierName(chain.getClassifier());
 	            	chainModels[i].setClassifier(classifierObj);
@@ -1014,5 +1080,18 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
     			return true;
     	}
     	return false;
+    }
+    
+    /**
+     * Get the list of chains that are selected in the chain table.
+     * @return
+     */
+    private ArrayList<Chain> getSelectedChains() {
+    	ArrayList<Chain> selectedChains = new ArrayList<Chain>(); 
+	    for(int row = 0; row < tableModel.getRowCount(); row++)
+	    	if((Boolean)tableModel.getValueAt(row, COL_CHECK))
+	    		selectedChains.add((Chain)tableModel.getValueAt(row, COL_CHAIN));
+	    
+	    return selectedChains;
     }
 }

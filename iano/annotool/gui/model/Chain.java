@@ -14,6 +14,8 @@ public class Chain {
 	private ArrayList<Extractor> extractors = null;
 	private ArrayList<Selector> selectors = null;
 	private String classifier = null;
+	private String classifierClassName = null;
+	private String classifierExternalPath = null;
 	private HashMap<String, String> classParams = null;
 	
 	public Chain(String name) {
@@ -52,9 +54,9 @@ public class Chain {
 	public boolean isComplete() {
 		//Chain is complete when there is at least one classifier
 		//It is valid even if there is no extractor or selector because they should default to 'None'
-		if(classifier != null)
-			return true;
-		return false;
+		if(classifier == null || classifier.equalsIgnoreCase("None"))
+			return false;
+		return true;
 	}
 	
 	@Override
@@ -125,6 +127,22 @@ public class Chain {
 
 	public void setClassParams(HashMap<String, String> classParams) {
 		this.classParams = classParams;
+	}
+
+	public String getClassifierClassName() {
+		return classifierClassName;
+	}
+
+	public void setClassifierClassName(String classifierClassName) {
+		this.classifierClassName = classifierClassName;
+	}
+
+	public String getClassifierExternalPath() {
+		return classifierExternalPath;
+	}
+
+	public void setClassifierExternalPath(String classifierExternalPath) {
+		this.classifierExternalPath = classifierExternalPath;
 	}
 	
 }
