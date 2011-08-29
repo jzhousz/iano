@@ -239,6 +239,8 @@ public class ModelLoader implements Runnable {
         	
 	        pnlStatus.setOutput("Extracing features ... ");
 	        
+	        //Test Test
+	        
 	        //Start of extraction
 	        float[][] features =  null;
 	        try {
