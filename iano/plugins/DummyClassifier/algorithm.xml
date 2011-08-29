@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Algorithms>
+	<Algorithm type="Classifier">
+		<Name>DummyClassifier</Name>
+		<Desc>SVM</Desc>
+		<ClassName>DummySVMClassifier</ClassName>
+		<Path>DummyClassifier/</Path>
+		<Parameter type="String">
+			<Name>General Parameter</Name>
+			<Default>-t 0</Default>
+		</Parameter>
+	</Algorithm>
+</Algorithms> 
