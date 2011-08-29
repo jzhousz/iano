@@ -891,7 +891,7 @@ public class Annotator implements Runnable
         catch(Exception e)
         {
      	   e.printStackTrace(); 
-           setGUIOutput("Problem in loading " + classname + ". If it is a supported extractor, please check the classpath.");
+           setGUIOutput("Problem in loading " + classname + ". If it is a supported algorithm, please check the classpath.");
            throw e;
         }
     }
