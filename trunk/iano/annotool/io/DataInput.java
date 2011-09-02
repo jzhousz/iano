@@ -10,6 +10,7 @@ import ij.process.*;
  * Add channel number  (r or g or b) as an input option for RGB images. 
  * This class can read data for CV mode or TT mode.  
  * In TT mode, directory is used as training directory.
+ * 
  */ 
 public class DataInput
 {
@@ -71,7 +72,7 @@ public class DataInput
 			return;
 		}
 
-		//get the pixel values. We only deal with the one color for RGB picture
+		//get the pixel values. We only deal with one color for RGB picture
 		if (ip instanceof ByteProcessor)
 		{
 			//should use array copy since memory was also allocated in ip, o/w values are not passed back
@@ -99,8 +100,36 @@ public class DataInput
 				//testimg.updateAndDraw();
 			}
 		}
+		else  if (ip instanceof ShortProcessor || ip instanceof FloatProcessor)
+		{
+			//get pixels return an array of int
+			 /* Returns a reference to the short array containing this image's
+	        pixel data. To avoid sign extension, the pixel values must be
+	        accessed using a mask (e.g. int i = pixels[j]&0xffff). 
+			http://www.imagingbook.com/fileadmin/goodies/ijtutorial/tutorial171.pdf sec 4.8
+			
+			*/	
+			System.out.println("convert 16 bit gray scale or 32 bit floating point images to 8-bit images.");
+			//what about the relativity in the image set?
+			ip.convertToByte(true);	 //scale to 0 and 255, if false, values are clipped.
+			byte[] returnedPixels = (byte[]) (ip.getPixels());
+			System.arraycopy(returnedPixels, 0, pixels, 0, width*height); 
+				
+			//alternative solutions without loss of precision:  09/01/2011 
+			//1. get int[] or float[], then pass to the algorithm as Object, together with an image type, so that the algorithm would do the casting
+			//   i.e.  getData() returns Object.
+			//2. pass the ip or ip[] to algorithm so it can do anything, assuming the developer knows ImageJ programming. 
+			//Or: convert to byte, but pass ArrayList of byte[] to avoid memory copy. Maybe save some memory, depending on how gc works.
+			//    or: getData() return ArrayList of Object, each item is a data array
+			//     then: add: getType() to find out the datatype to cast to.
+			//Object returnedPixels = Object (ip.getPixels()); //-- int[]
+		}
 		else
-			System.err.println("ImageProcessor: not a ByteProcessor or ColorProcessor. (Maybe Float or ShortProcessor.)");
+		{
+			System.err.println("Image type is not supported.");
+			//throw new Exception("Image type is not supported.");
+			System.exit(0);
+		}
 	}
 
 	private byte[][] readImages(String directory, String ext, String[] children, int stackIndex)
@@ -147,15 +176,14 @@ public class DataInput
 **/
 public byte[][] getData(int stackIndex)
 {
-   //if (data == null) //bug: always get the first stack with this check. 01/09/09
-   //{
-     if (data == null ||  lastStackIndex != stackIndex)
-     {
+
+	//check if need to read the data based on lastStackIndex
+	if (data == null ||  lastStackIndex != stackIndex)
+    {
  	   String[] children = getChildren();
 	   data = readImages(directory, ext, children, stackIndex);
-     }  
-   //}
-   lastStackIndex = stackIndex; //update the index of the last read stack.
+    }  
+    lastStackIndex = stackIndex; //update the index of the last read stack.
    
    return data;
 }
