@@ -4,23 +4,40 @@ import java.io.*;
 import ij.ImagePlus;
 import ij.gui.NewImage;
 import ij.process.*;
+import java.util.ArrayList;
 
 
 /* Read images from a directory using ImageJ's utilities. 
  * Add channel number  (r or g or b) as an input option for RGB images. 
  * This class can read data for CV mode or TT mode.  
  * In TT mode, directory is used as training directory.
- * 
  */ 
 public class DataInput
 {
+	// The image types are the same as those defined in ImageJ's ImagePlus.
+	//  8-bit grayscale (unsigned)  (return byte[])
+	public static final int GRAY8 = 0;  
+	    
+	//16-bit grayscale (unsigned)  (return int[])
+	public static final int GRAY16 = 1; 
+	    
+	//32-bit floating-point grayscale  (return float[])
+	public static final int GRAY32 = 2; 
+	    
+	//8-bit indexed color  (return byte[])
+	public static final int COLOR_256 = 3; 
+	    
+	//32-bit RGB color  (return byte[])
+	public static final int COLOR_RGB = 4; 
+	 
 	//problem properties
-	protected byte[][] data = null; //store all images in the dir with given ext.
+	protected ArrayList data = null; //store all images in the dir with given ext.
 	int lastStackIndex = 0; // the variable to track if the last getData() was for the same stack
 	String[] children = null; //list of image file names in the dir
 	protected int height = 0;
 	protected int width = 0;
 	protected int stackSize = 0;
+	protected int imageType = 0;
 	String directory;
 	String ext;
 
@@ -53,12 +70,13 @@ public class DataInput
 	}
 
 
-	void openOneImage(String path, byte[] pixels, byte[] tmppixels, int stackIndex)
+	Object openOneImage(String path, int stackIndex)
 	{
 		ImagePlus imgp = new ImagePlus(path); //calls the opener.openImage()
-		//ImageProcessor ip = imgp.getProcessor();
+
 		//stack from 1 to number of slices
 		ImageProcessor ip = imgp.getStack().getProcessor(stackIndex);
+		Object results = null;
 
 		if (resize)
 			ip  = ip.resize(width,height);
@@ -69,51 +87,67 @@ public class DataInput
 		if(width != this.width || height != this.height)
 		{
 			System.err.println("Image" + path + "is not the same size as the 1st one. Ignored.");
-			return;
+			return null;
 		}
 
 		//get the pixel values. We only deal with one color for RGB picture
 		if (ip instanceof ByteProcessor)
 		{
+			/*
 			//should use array copy since memory was also allocated in ip, o/w values are not passed back
 			byte[] returnedPixels = (byte[]) (ip.getPixels());
 			System.arraycopy(returnedPixels, 0, pixels, 0, width*height); //020209
+			*/
+			
+			results = ip.getPixels();
+			
 		}
 		else if (ip instanceof ColorProcessor)
 		{
 			//System.out.println("RGB image..");
 			//note: tmppixels contains the irrelevant channels.
+			byte[] pixels= new byte[width*height];
+			byte[] tmppixels= new byte[width*height];
+
 			if (channel == "r")
 				((ColorProcessor)ip).getRGB(pixels,tmppixels,tmppixels);
 			else if (channel == "g")
 				((ColorProcessor)ip).getRGB(tmppixels,pixels,tmppixels);
 			else
 				((ColorProcessor)ip).getRGB(tmppixels,tmppixels,pixels);
+			
+			results = pixels;
 
 			//debug: show the image
-			if(annotool.Annotator.debugFlag.equals("true"))
+			/* if(annotool.Annotator.debugFlag.equals("true"))
 			{
 				ImagePlus testimg = NewImage.createByteImage(path+":channel "+channel,  width, height, 1, NewImage.FILL_BLACK);
 				ImageProcessor test_ip = testimg.getProcessor();
 				test_ip.setPixels(pixels);
 				testimg.show();
 				//testimg.updateAndDraw();
-			}
+			}*/
+			
+			
 		}
 		else  if (ip instanceof ShortProcessor || ip instanceof FloatProcessor)
 		{
+			//16 bit or 32 bit grayscale
+			results =  ip.getPixels();
+			
+			
 			//get pixels return an array of int
 			 /* Returns a reference to the short array containing this image's
 	        pixel data. To avoid sign extension, the pixel values must be
 	        accessed using a mask (e.g. int i = pixels[j]&0xffff). 
 			http://www.imagingbook.com/fileadmin/goodies/ijtutorial/tutorial171.pdf sec 4.8
-			
 			*/	
-			System.out.println("convert 16 bit gray scale or 32 bit floating point images to 8-bit images.");
+			/* System.out.println("convert 16 bit gray scale or 32 bit floating point images to 8-bit images.");
 			//what about the relativity in the image set?
-			ip.convertToByte(true);	 //scale to 0 and 255, if false, values are clipped.
-			byte[] returnedPixels = (byte[]) (ip.getPixels());
-			System.arraycopy(returnedPixels, 0, pixels, 0, width*height); 
+			//ImageProcess ip2= ip.convertToByte(true);	 //scale to 0 and 255, if false, values are clipped.
+			//byte[] returnedPixels = (byte[]) (ip2.getPixels());
+			//System.arraycopy(returnedPixels, 0, pixels, 0, width*height);
+			*/
 				
 			//alternative solutions without loss of precision:  09/01/2011 
 			//1. get int[] or float[], then pass to the algorithm as Object, together with an image type, so that the algorithm would do the casting
@@ -130,14 +164,17 @@ public class DataInput
 			//throw new Exception("Image type is not supported.");
 			System.exit(0);
 		}
+		
+		return results;
 	}
 
-	private byte[][] readImages(String directory, String ext, String[] children, int stackIndex)
+	private ArrayList readImages(String directory, String ext, String[] children, int stackIndex)
 	{
 		//read the 1st one to get some properties
 		//System.out.println("The first image in dir is "+ children[0] + ". Reading total "+ children.length + " images ..");
 		//Assumption: All images are of the same size as image 1.
 		ImagePlus imgp = new ImagePlus(directory+children[0]);
+		imageType = imgp.getType();
 
 		if (!resize)
 		{
@@ -147,14 +184,11 @@ public class DataInput
 		}
 
 		//allocate the memory for the problem
-		int length = children.length;
-		data= new byte[length][width*height];
-		//used as temporary storage for irrelevant channels (color image)
-		byte[] tmppixels= new byte[width*height];
-
+		data = new ArrayList(children.length);
+		
 		//fill the data
-		for (int i=0; i<length; i++)
-			openOneImage(directory+children[i], data[i], tmppixels, stackIndex);
+		for (int i=0; i<children.length; i++)
+			data.add(openOneImage(directory+children[i],  stackIndex));
 		
 		return data;
 	}
@@ -163,7 +197,7 @@ public class DataInput
 	  		such as data[i][j]&0xff
 	  		The data is for CV mode, or training data in TT mode.
 	 **/
-	public byte[][] getData()
+	public ArrayList getData()
 	{
 		//return the first slice for normal 2D images.
 		return getData(1);
@@ -174,7 +208,7 @@ public class DataInput
 		The data is for CV mode, or training data in TT mode.
 		stackIndex:  between 1 and stackSize
 **/
-public byte[][] getData(int stackIndex)
+public ArrayList getData(int stackIndex)
 {
 
 	//check if need to read the data based on lastStackIndex
@@ -236,29 +270,28 @@ public byte[][] getData(int stackIndex)
 			ImagePlus imgp = new ImagePlus(directory+children[0]);
 			stackSize = imgp.getStackSize();
 		}
-
 		return stackSize;
 	}
 
 	/* this will be called by public interface methods depending on training/testing */
 	private String[] getChildren(String directory, final String ext)
 	{
-		    String[] children;
+	    String[] children;
 		
-			File dir = new File(directory);
-			FilenameFilter filter = new FilenameFilter()
-			{
-				public boolean accept(File dir, String name)
-				{ 
-					if (ext.equals(".*"))
-						return true;
-					else
-						return name.endsWith(ext);
+		File dir = new File(directory);
+		FilenameFilter filter = new FilenameFilter()
+		{
+			public boolean accept(File dir, String name)
+			{ 
+				if (ext.equals(".*"))
+					return true;
+				else
+					return name.endsWith(ext);
 				}
 			};
-			children = dir.list(filter);
-			if (children == null)
-				System.err.println("Problem reading files from the image directory.");
+		children = dir.list(filter);
+		if (children == null)
+			System.err.println("Problem reading files from the image directory.");
 		
 		return children;
 	}
@@ -293,17 +326,35 @@ public byte[][] getData(int stackIndex)
 	}
 	
 	
-    //reset data
+    //reset data for facilitate gc
 	public void setDataNull()
 	{
 	    data = null;	
 	}
 
-	//
 	public ImagePlus getImagePlus(int i)
 	{
 		return (new ImagePlus(directory+children[i]));
 	}
 	
+	public int getImageType()
+	{
+		return imageType;
+	}
+	
+	//get one image with all the stacks
+	//return an ArrayList of data array.
+	//each item in the ArrayList is a stack.
+	//Intended for 3D images.
+	public ArrayList getAllStacksOfOneImage(int imageindex)
+	{
+	    ArrayList data = new ArrayList(getStackSize());
+
+	    //stack from 1 to number of slices
+		for(int stackIndex = 1; stackIndex <= data.size(); stackIndex++)
+			data.add(openOneImage(directory+children[imageindex], stackIndex));
+	    
+		return data;
+	}
 	
 }
