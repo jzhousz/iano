@@ -717,70 +717,81 @@ public class Annotator implements Runnable
      * Useful for methods such as wavelet transform.
      * This method takes a HashMap for possible parameters.
      * 
-     * TBD: The "extractor" may be a class name to allow dynamic loading of algorithm classes.
+     * The "extractor" may be a class name to allow dynamic loading of algorithm classes.
      *
      */
     public float[][] extractGivenAMethod(String chosenExtractor, String path, java.util.HashMap<String, String> parameters, DataInput problem) throws Exception 
     {
-
-        float[][] features = null;
-    	int stackSize = problem.getStackSize();
-        
-    	if (chosenExtractor.equalsIgnoreCase("NONE")) 
-        {
-    		//use raw image or middle stack for 3D
-            int length = problem.getLength();
-            int height = problem.getHeight();
-            int width = problem.getWidth();
-            byte[][] data = problem.getData(stackSize / 2 + 1);
-            features = new float[length][width * height];
-            for (int i = 0; i < length; i++) {
-                for (int j = 0; j < width * height; j++) {
-                    features[i][j] = (float) (data[i][j] & 0xff);
-                }
-            }
-            return features;
-        }
+    	if (chosenExtractor == null || chosenExtractor.equalsIgnoreCase("NONE"))
+    	{  //use raw image or middle stack for 3D
+        	int stackSize = problem.getStackSize();
+            int imageSize = problem.getHeight()*problem.getWidth();
+            int imageType = problem.getImageType();
+    		return extractGivenNONE(problem.getData(stackSize / 2 + 1), imageSize, imageType);
+    	}
 
         //those that are not "NONE"    	    	
     	FeatureExtractor extractor = getExtractorGivenName(chosenExtractor, path, parameters);
 
     	//check if it is the right type of feature extractor (2D or 3D)
+    	int stackSize = problem.getStackSize();
     	if ((stackSize == 1 && extractor.is3DExtractor()) || (stackSize > 1 && (!extractor.is3DExtractor())))
     	{
             System.out.println("invalid stack size for the corresponding feature extractor");
             System.exit(1);
     	}
-
-    	features = extractor.calcFeatures(problem);	
-    	return features;	
+    	return extractor.calcFeatures(problem);	
+    		
     }
-
+	
+    /**
+     * Convert data to float[][] if there is no extractor given.
+     * @param problem
+     * @return float[][]
+     */
+    float[][] extractGivenNONE(ArrayList datain, int imageSize, int imageType) throws Exception
+    {
+  	    
+        int length = datain.size();
+        float[][] features = new float[length][imageSize];
+        for (int i = 0; i < length; i++) {
+   	      if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB)
+   	      {
+  	        byte[] data = (byte[]) datain.get(i);
+            for (int j = 0; j < imageSize; j++) 
+              features[i][j] = (float) (data[j] & 0xff);
+          }else if (imageType == DataInput.GRAY16)
+          {
+	    	int[] data = (int[]) datain.get(i);
+ 	        for(int j = 0; j< imageSize; j++)
+ 	    	  features[i][j] = (float) (data[j]&0xffff);
+	      }	
+ 	      else if(imageType == DataInput.GRAY32)
+ 	      {
+	    	float[] data = (float[]) datain.get(i);
+ 	        for(int j = 0; j< imageSize; j++)
+ 	 	      features[i][j] = (float) data[j];
+ 	      }
+ 	      else
+ 	      { 
+ 	    	throw new Exception("Unsuppored Image Type for Feature Extractor");
+ 	      }
+       } //for all images
+       return features;
+    }
     
     /* 
      * overloaded method for applying extractor to a ROI
      * ImgDimension is the size of the ROI, e.g. width, height, depth (may be 2D or 3D)
      *   
      *  8/5/2011: Current version only deals with 2DROI (depth == 1)
-     *  In order to handle 3D ROI, 3D feature extractors need to work with byte[] with 3D info.     
+     *  In order to handle 3D ROI, 3D feature extractors need to work with byte[] with 3D info.
+     *  9/2/2011: byte[][] is changed to ArrayList for other ImageProcessor types     
      */
-     public float[][] extractGivenAMethod(String chosenExtractor, String path, java.util.HashMap<String, String> parameters, byte[][] data, ImgDimension dim) throws Exception
+     public float[][] extractGivenAMethod(String chosenExtractor, String path, java.util.HashMap<String, String> parameters, ArrayList data, int imageType, ImgDimension dim) throws Exception
      {
-         float[][] features = null;
-
-    	 if (chosenExtractor.equalsIgnoreCase("NONE")) 
-         {
-            int length = data.length;
-            int height = dim.height;
-            int width = dim.width;
-            features = new float[length][width * height];
-            for (int i = 0; i < length; i++) {
-                    for (int j = 0; j < width * height; j++) {
-                        features[i][j] = (float) (data[i][j] & 0xff);
-                    }
-                }
-            return features;
-          }
+    	 if (chosenExtractor == null || chosenExtractor.equalsIgnoreCase("NONE")) 
+    		return extractGivenNONE(data, dim.height*dim.width, imageType); 
             
         //those that are not "NONE"    	    	
      	FeatureExtractor extractor = getExtractorGivenName(chosenExtractor, path, parameters);
@@ -792,8 +803,7 @@ public class Annotator implements Runnable
             System.exit(1);
     	}
 
-    	features = extractor.calcFeatures(data, dim);	
-    	return features;	
+    	return extractor.calcFeatures(data, imageType, dim);	
      }
      /*
     //the obsolete version with static mapping
