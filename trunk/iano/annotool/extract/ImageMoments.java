@@ -68,29 +68,36 @@ public class ImageMoments implements FeatureExtractor
         //not needed to new for each image. waste of memory  jz 
         //float[][] image = new float[totalheight][totalwidth];
         int y, x;
-        for (int i = 0; i < totalheight*totalwidth; i++) {
-            x = i % totalwidth;
-            y = i / totalwidth;
-            if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
-              image[y][x] = (float) (((byte[])flat_image)[i] & mask);
-            else if (imageType == DataInput.GRAY16)
-              image[y][x] = (float) (((int[])flat_image)[i] & longmask);
-            else if (imageType == DataInput.GRAY32)
-              image[y][x] = ((float[])flat_image)[i];
-            else
+        if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
+        {
+            for (int i = 0; i < totalheight*totalwidth; i++) 
             {
-              throw new Exception("Not supported image type in Moments: type "+imageType);	
+                x = i % totalwidth;
+                y = i / totalwidth;
+                image[y][x] = (float) (((byte[])flat_image)[i] & mask);
             }
         }
-
-        //DEBUG
-        //print image
-//        for (int yy = 0; yy < image.length; yy++) {
-//            for (int xx = 0; xx < image[0].length; xx++) {
-//                System.out.print((int)(image[yy][xx] &mask) + " ");
-//            }
-//            System.out.println();
-//        }
+        else if (imageType == DataInput.GRAY16)
+        {
+            for (int i = 0; i < totalheight*totalwidth; i++) 
+            {
+               x = i % totalwidth;
+               y = i / totalwidth;
+               image[y][x] = (float) (((int[])flat_image)[i] & longmask);
+            }
+        }
+        else if (imageType == DataInput.GRAY32)
+        { 	
+            for (int i = 0; i < totalheight*totalwidth; i++) 
+            {
+              x = i % totalwidth;
+              y = i / totalwidth;
+              image[y][x] = ((float[])flat_image)[i];
+            }
+        }
+        else
+              throw new Exception("Not supported image type in Moments: type "+imageType);	
+ 
     }
 
     //calculates raw image moments
@@ -109,16 +116,16 @@ public class ImageMoments implements FeatureExtractor
     //from x or y each time when I calculate the central moments,
     //(essentially doing it M*N times for every one), I pre-calculate them
     //in advance (M+N times).  Trading a little memory for a little speed...
-    protected double[] center_x(float[][] image, double x_mean) {
-        double[] centered_x = new double[image[0].length];
+    protected double[] center_x(float[][] image, double x_mean, double[] centered_x) {
+        // double[] centered_x = new double[image[0].length]; //waste
         for (int x = 0; x < image[0].length; x++) {
             centered_x[x] = x - x_mean;
         }
         return centered_x;
     }
 
-    protected static double[] center_y(float[][] image, double y_mean) {
-        double[] centered_y = new double[image.length];
+    protected static double[] center_y(float[][] image, double y_mean, double[] centered_y) {
+        //double[] centered_y = new double[image.length]; //waste
         for (int y = 0; y < image.length; y++) {
             centered_y[y] = y - y_mean;
         }
@@ -149,15 +156,14 @@ public class ImageMoments implements FeatureExtractor
     protected float[][] calcFeatures() throws Exception {
         //single image
     	//reuse to save memory 09/01/2011
-        float[][] image = new float[totalheight][totalwidth];;
-        //raw image moments
-        double m_00, m_01, m_10;
-        // mean of x and y
+        float[][] image = new float[totalheight][totalwidth];
+        //centered x and y based on mean
         double mean_x;
         double mean_y;
-        //centered x and y based on mean
-        double[] centered_x;
-        double[] centered_y;
+        double[] centered_x = new double[image[0].length];
+        double[] centered_y = new double[image.length];
+        //raw image moments
+        double m_00, m_01, m_10;
         //central moments
         double mu_00, mu_11, mu_02, mu_20, mu_21, mu_12, mu_03, mu_30;
         //scale invariant moments, (a.k.a. normalized central moments)
@@ -204,8 +210,8 @@ public class ImageMoments implements FeatureExtractor
 //            System.out.println("mean y = " + mean_y);
 
             //calculate centered x and y based on mean
-            centered_x = center_x(image, mean_x);
-            centered_y = center_y(image, mean_y);
+            center_x(image, mean_x, centered_x);
+            center_y(image, mean_y, centered_y);
 
             //calculate central moments
             mu_00 = mu_pq(image, 0, 0, centered_x, centered_y);
