@@ -1,7 +1,7 @@
 package annotool.extract;
 
 import annotool.ImgDimension;
-
+import java.util.ArrayList;
 import annotool.Util;
 import annotool.io.DataInput;
 
@@ -14,7 +14,7 @@ import annotool.io.DataInput;
 public class HaarFeatureExtractor implements FeatureExtractor
 {
    protected float[][] features = null;
-   protected byte[][] data;
+   protected ArrayList data;
    int totallevel = 1;
    int totalwidth;
    int totalheight;
@@ -23,69 +23,11 @@ public class HaarFeatureExtractor implements FeatureExtractor
    protected byte[] singleData;
    public final static String LEVEL_KEY = "Wavelet Level";
    boolean workOnRawBytes = true; //work as the first feature extractor by default
-   
+   int imageType;
    
    //parameters will be set by calling setter
    public HaarFeatureExtractor()
    {}
-   
-   // needed to aligning various feature extractors 
-   public HaarFeatureExtractor(java.util.HashMap<String, String> parameters)
-   {
- 	   if (parameters != null && parameters.containsKey(LEVEL_KEY))
- 		     totallevel = Integer.parseInt(parameters.get(LEVEL_KEY));
-   } 
-   
-   public HaarFeatureExtractor(annotool.io.DataInput problem, java.util.HashMap<String, String> parameters)
-   {
-	   data = problem.getData();
-	   length = problem.getLength();
-	   totalwidth = problem.getWidth();
-	   totalheight = problem.getHeight();
-	   //parse the parameters to set the wavelet level
-	   if (parameters != null && parameters.containsKey(LEVEL_KEY))
-	     totallevel = Integer.parseInt(parameters.get(LEVEL_KEY));
-	   
-   }
-
-   public HaarFeatureExtractor(annotool.io.DataInput problem, int level, int stackindex)
-   {
-	   data = problem.getData(stackindex);
-	   length = problem.getLength();
-	   totalwidth = problem.getWidth();
-	   totalheight = problem.getHeight();
-	   totallevel = level;
-   }
-
-   public HaarFeatureExtractor(byte[][] data, int length, int width, int height)
-   {
-	   
-	   totallevel = 2; //default wavelet level
-	   totalwidth = width;
-	   totalheight = height;
-	   this.data = data;
-	   this.length = length;
-   }
-
-   public HaarFeatureExtractor(int level, byte[][] data, int length, int width, int height)
-   {
-   	   totallevel = level;
-	   totalwidth = width;
-	   totalheight = height;
-	   this.data = data;
-	   this.length = length;
-  }
-   
-   //pass one image
-   public HaarFeatureExtractor(int level, byte[] data, int width, int height)
-   {
-   	   totallevel = level;
-	   totalwidth = width;
-	   totalheight = height;
-	   this.length = 1;
-	   this.singleData = data;
-	   this.singleImage = true;
-  }
    
    public void  setParameters(java.util.HashMap<String, String> parameters)
    {
@@ -93,35 +35,38 @@ public class HaarFeatureExtractor implements FeatureExtractor
 	     totallevel = Integer.parseInt(parameters.get(LEVEL_KEY));
    }
 
-   
-  public float[][] calcFeatures(float[][] data, DataInput problem)
+  //not used
+  public float[][] calcFeatures(float[][] data, DataInput problem) throws Exception
   {
  	  this.features = data;
 	  workOnRawBytes = false;
 	  return calcFeatures(problem);
   }
   
-  public float[][] calcFeatures(DataInput problem)
+  public float[][] calcFeatures(DataInput problem) throws Exception
   {
 	  totalwidth = problem.getWidth();
 	  totalheight = problem.getHeight();
 	  this.length = problem.getLength();
-      if(workOnRawBytes)
+      this.imageType = problem.getImageType();
+	  if(workOnRawBytes)
    	   data = problem.getData();
+      
 	  return calcFeatures();
   }
   
   
-  public float[][] calcFeatures(byte[][] data, ImgDimension dim)
+  public float[][] calcFeatures(ArrayList data, int imageType, ImgDimension dim) throws Exception
   {
  	 totalwidth = dim.width;
 	 totalheight = dim.height;
-	 this.length = data.length;
+	 this.length = data.size();
 	 this.data = data;
+	 this.imageType = imageType;
 	 return calcFeatures();
   }
   
-   public float[][] calcFeatures()
+   private float[][] calcFeatures() throws Exception
    {
 	    if(features == null)
 	       features  = new float[length][totalwidth*totalheight]; //In Matlab, an 50*100 image has 5050 features due to rounding.
@@ -131,7 +76,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
           if(!singleImage)
           {
 	       for(int i=0; i <length; i++)
-            getHaarFeatureOfOneImage(data[i], features[i]);
+            getHaarFeatureOfOneImage(data.get(i), features[i]);
           }
           else 
         	getHaarFeatureOfOneImage(singleData, features[0]);
@@ -144,12 +89,32 @@ public class HaarFeatureExtractor implements FeatureExtractor
 
    }
 
-   protected void getHaarFeatureOfOneImage(byte[] data, float[] feature)
+   protected void getHaarFeatureOfOneImage(Object datain, float[] feature) throws Exception
    {
 	    //copy data to feature,
 	    //toFloat() of ColorProcessor does the same loop
-	    for(int i = 0; i< totalwidth*totalheight; i++)
-	       feature[i] = data[i]&0xff;
+	    if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB)
+	    {
+	      byte[] data = (byte[]) datain;
+	      for(int i = 0; i< totalwidth*totalheight; i++)
+	         feature[i] = (float) (data[i]&0xff);
+	    }
+	    else if(imageType == DataInput.GRAY16)
+	    {
+	    	int[] data = (int[]) datain;
+ 	        for(int i = 0; i< totalwidth*totalheight; i++)
+ 	    	  feature[i] = (float) (data[i]&0xffff);
+	    }	
+ 	    else if(imageType == DataInput.GRAY32)
+ 	    {
+	    	float[] data = (float[]) datain;
+ 	        for(int i = 0; i< totalwidth*totalheight; i++)
+ 	 	    	  feature[i] = (float) data[i];
+ 	    }
+ 	    else
+ 	    {
+ 	    	throw new Exception("Unsuppored Image Type for Haar Feature Extractor");
+ 	    }
 
 		//added 03232010:  standardize the image first, so that discretize may be easiler
 	    //scale based on 0-255.
@@ -185,11 +150,9 @@ public class HaarFeatureExtractor implements FeatureExtractor
 
 
          //process rows (addition and subtraction of neighboring rows) and put into temp
-
          //System.out.println("height/2:"+height/2);
 		 //System.out.println("wid"+wid);
-
-		 //No risk of arrayoutofbound excpetion here but boundary may be lost. Example: height =9; i= 0-3; k+1 can be up to 7 (row 8).
+		 //No risk of arrayoutofbound exception here but boundary may be lost. Example: height =9; i= 0-3; k+1 can be up to 7 (row 8).
 
          for(i = 0; i < height/2; i++)
          {
@@ -213,7 +176,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
                 data[i*origWid+wid/2+j] =  (temp[i*wid+k]- temp[i*wid+k+1])/2;  //right half
               }
 
-         //delete[] temp;
+         temp = null;
 
          if (level > 1)
          {
@@ -225,7 +188,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
 
 
    /** get the features. If they were not calculated, calcFeatures() is called first. **/
-   public float[][] getFeatures()
+   public float[][] getFeatures() throws Exception
    {
 	  if (features == null)
 	    return calcFeatures();

@@ -2,63 +2,85 @@ package annotool.extract;
 
 import annotool.ImgDimension;
 import annotool.io.DataInput;
-
+import java.util.ArrayList;
 
 /**
  *
  * @author aleksey
+ * Modified 09/02/2011 for various data types JZ
+ *   Hu's moments (seven, plus one more)
+ *   http://en.wikipedia.org/wiki/Image_moment#Rotation_invariant_moments
  */
 
 public class ImageMoments implements FeatureExtractor
 {
-    protected byte[][] data;    //data from DataInput
+    protected ArrayList data;    //data from DataInput
     int totalwidth;             //width of images
     int totalheight;            //height of images
     int length;                 //number of images
-    //
-    //protected byte[] singleData;
-    //
-    //
+    int imageType;              //the type of image (defined in DataInput)
+
     //features to return
     protected float[][] features = null;
-    //these are Hu's moments (seven, plus one more)
-    //http://en.wikipedia.org/wiki/Image_moment#Rotation_invariant_moments
 
     //constructor
     public ImageMoments() 
     {}
     
-    public ImageMoments(java.util.HashMap<String, String> para)
-    {}
-    
     public void  setParameters(java.util.HashMap<String, String> parameters)
     {}
-    
-    public ImageMoments(annotool.io.DataInput problem) {
+
+    public float[][] calcFeatures(DataInput problem) throws Exception
+    {
         data = problem.getData();
         length = problem.getLength();
         totalwidth = problem.getWidth();
         totalheight = problem.getHeight();
-
+        imageType = problem.getImageType();
         features = new float[length][8];
-        //there are 8 because there are 7 Hu's moments,
-        //and a missing third order independent moment invariant
-        //see wikipedia article..
+ 
+    	return calcFeatures();
+    }
+    
+    //get features based on byte data, with dimension information. 
+    public float[][] calcFeatures(ArrayList data, int imageType, ImgDimension dim) throws Exception
+    {
+        this.data = data;
+        length = data.size();
+        totalwidth = dim.width;
+        totalheight = dim.height;
+        features = new float[length][8];
+        this.imageType = imageType;
+ 
+    	return calcFeatures();
     }
 
     //converts a flattened image into a 2d array.
     //yes, I'm just moving bytes around in memory,
     //but 2d arrays are a lot easier to work with...
     //a 4000x4000 image takes ~135ms to convert on my computer (2.53Ghz cpu)
-    protected byte[][] convert_flat_to_2d(byte[] flat_image) {
-        int mask = 0xff; //j.z.: comment: this can be removed because masking is done in calculating methods.
+    //09/01/11: change to convert the original Object (byte[]/int[]/float[]) to float[][]
+    protected void convert_flat_to_2d(Object flat_image, float[][] image) throws Exception 
+    {
+        int mask = 0xff; 
+        int longmask = 0xffff;
 
-        byte[][] image = new byte[totalheight][totalwidth];
+        //not needed to new for each image. waste of memory  jz 
+        //float[][] image = new float[totalheight][totalwidth];
         int y, x;
-        for (int i = 0; i < flat_image.length; i++) {
+        for (int i = 0; i < totalheight*totalwidth; i++) {
             x = i % totalwidth;
             y = i / totalwidth;
-            image[y][x] = (byte) (flat_image[i] & mask);
+            if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
+              image[y][x] = (float) (((byte[])flat_image)[i] & mask);
+            else if (imageType == DataInput.GRAY16)
+              image[y][x] = (float) (((int[])flat_image)[i] & longmask);
+            else if (imageType == DataInput.GRAY32)
+              image[y][x] = ((float[])flat_image)[i];
+            else
+            {
+              throw new Exception("Not supported image type in Moments: type "+imageType);	
+            }
         }
 
         //DEBUG
@@ -69,16 +91,14 @@ public class ImageMoments implements FeatureExtractor
 //            }
 //            System.out.println();
 //        }
-
-        return image;
     }
 
     //calculates raw image moments
-    protected double m_pq(byte[][] image, int p, int q) {
+    protected double m_pq(float[][] image, int p, int q) {
         CompSumDouble m = new CompSumDouble(); //compensated sum
         for (int y = 0; y < image.length; y++) {
             for (int x = 0; x < image[0].length; x++) {
-                m.Add(Math.pow(x, p) * Math.pow(y, q) * (image[y][x] & 0xff));
+                m.Add(Math.pow(x, p) * Math.pow(y, q) * image[y][x]);
             }
         }
         return m.getSum();
@@ -89,7 +109,7 @@ public class ImageMoments implements FeatureExtractor
     //from x or y each time when I calculate the central moments,
     //(essentially doing it M*N times for every one), I pre-calculate them
     //in advance (M+N times).  Trading a little memory for a little speed...
-    protected double[] center_x(byte[][] image, double x_mean) {
+    protected double[] center_x(float[][] image, double x_mean) {
         double[] centered_x = new double[image[0].length];
         for (int x = 0; x < image[0].length; x++) {
             centered_x[x] = x - x_mean;
@@ -97,7 +117,7 @@ public class ImageMoments implements FeatureExtractor
         return centered_x;
     }
 
-    protected static double[] center_y(byte[][] image, double y_mean) {
+    protected static double[] center_y(float[][] image, double y_mean) {
         double[] centered_y = new double[image.length];
         for (int y = 0; y < image.length; y++) {
             centered_y[y] = y - y_mean;
@@ -106,7 +126,7 @@ public class ImageMoments implements FeatureExtractor
     }
 
     //calculates central moments
-    protected double mu_pq(byte[][] image, int p, int q,
+    protected double mu_pq(float[][] image, int p, int q,
                            double[] centered_x, double[] centered_y) {
         CompSumDouble mu = new CompSumDouble();
         for (int y = 0; y < image.length; y++) {
@@ -114,7 +134,7 @@ public class ImageMoments implements FeatureExtractor
                 mu.Add(
                         Math.pow(centered_x[x], p)
                         * Math.pow(centered_y[y], q)
-                        * (image[y][x] & 0xff));
+                        * image[y][x] );
             }
         }
         return mu.getSum();
@@ -125,36 +145,11 @@ public class ImageMoments implements FeatureExtractor
         return (mu_pq / Math.pow(mu_00, ((double) (p + q) / 2) + 1));
     }
     
-    public float[][] calcFeatures(DataInput problem)
-    {
-        data = problem.getData();
-        length = problem.getLength();
-        totalwidth = problem.getWidth();
-        totalheight = problem.getHeight();
 
-        features = new float[length][8];
- 
-    	return calcFeatures();
-    	
-    }
-    
-    //get features based on byte data, with dimension information. 
-    public float[][] calcFeatures(byte[][] data, ImgDimension dim)
-    {
-        this.data = data;
-        length = data.length;
-        totalwidth = dim.width;
-        totalheight = dim.height;
-        features = new float[length][8];
- 
-    	return calcFeatures();
-    	
-    }
-
-
-    protected float[][] calcFeatures() {
+    protected float[][] calcFeatures() throws Exception {
         //single image
-        byte[][] image;
+    	//reuse to save memory 09/01/2011
+        float[][] image = new float[totalheight][totalwidth];;
         //raw image moments
         double m_00, m_01, m_10;
         // mean of x and y
@@ -173,7 +168,7 @@ public class ImageMoments implements FeatureExtractor
         //for each image in the set
         for (int image_num = 0; image_num < this.length; image_num++) {
             //convert this image from flattened to a 2d array
-            image = convert_flat_to_2d(data[image_num]);
+            convert_flat_to_2d(data.get(image_num), image);
 
 //            //DEBUG
 //            for (int i = 0; i < single_image.length; i++) {
@@ -340,12 +335,16 @@ class Tester
 
 
 
-        ImageMoments m = new ImageMoments(problem);
+        ImageMoments m = new ImageMoments();
 
 //        m.debug1();
-
-        float[][] f = m.calcFeatures();
-
+        float[][] f = null;
+        try {
+          f = m.calcFeatures(problem);
+        }catch(Exception e)
+        {
+        	e.printStackTrace();
+        }
         //print the features
         for (int i = 0; i < f.length; i++) {
             for (int j = 0; j < f[0].length; j++) {
