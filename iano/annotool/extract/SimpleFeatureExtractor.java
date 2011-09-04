@@ -48,12 +48,9 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 	
 	private float[][] calcFeatures() throws Exception {
 		// calculate simple 8 features: mean and st of 4 divisions: left, right, upper, down
-		features  = new float[length][8]; //In Matlab, an 50*100 image has 5050 features due to rounding.
+		features  = new float[length][8]; 
 		for(int i=0; i <length; i++)
-		{
-			//how does java handle 2D array with scattered storage - ArrayList[]?)
 			getSimpleFeatureOfOneImage(data.get(i), features[i]);
-		}
 
 		return features;
 
