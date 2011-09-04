@@ -20,6 +20,14 @@ public class Algorithm
 		
 		paramList = new ArrayList<Parameter>();
 	}
+	//Constructor
+	public Algorithm(String name, String type, String className) {
+		this.name = name;
+		this.type = type;
+		this.className = className;
+		
+		paramList = new ArrayList<Parameter>();
+	}
 	
 	//Access Methods
 	public String getName() {

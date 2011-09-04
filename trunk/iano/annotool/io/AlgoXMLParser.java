@@ -22,11 +22,11 @@ public class AlgoXMLParser
 	public AlgoXMLParser()
 	{
 		extractors2D = new ArrayList<Algorithm>();
-		extractors2D.add(new Algorithm("None", "2DExtractor"));
+		extractors2D.add(new Algorithm("None", "2DExtractor", "None"));
 		extractors3D = new ArrayList<Algorithm>();
-		extractors3D.add(new Algorithm("None", "3DExtractor"));
+		extractors3D.add(new Algorithm("None", "3DExtractor", "None"));
 		selectors = new ArrayList<Algorithm>();
-		selectors.add(new Algorithm("None", "Selector"));
+		selectors.add(new Algorithm("None", "Selector", "None"));
 		classifiers = new ArrayList<Algorithm>();
 		//classifiers.add(new Algorithm("Compare All", "Classifier"));
 	}
