@@ -86,7 +86,7 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		if (stacksToInclude %2 == 1) //odd number
 			righthalf = stacksToInclude/2 +1;
 
-		//get an extractor obejct
+		//get an extractor object
 		HaarFeatureExtractor haar = new HaarFeatureExtractor();
 		java.util.HashMap<String, String> para = new java.util.HashMap<String, String>();
 		para.put(HaarFeatureExtractor.LEVEL_KEY, String.valueOf(level));
@@ -100,6 +100,7 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		  {
 			  for(int stackIndex= mid-lefthalf;  stackIndex < mid + righthalf; stackIndex ++)
 			  {  
+				//stackIndex starts from 0 for ArrayList!
 		        Object oneImageData = ((ArrayList)all3DData.get(i)).get(stackIndex);
 		        //single image mode HaarFeature
 		        haar.getHaarFeatureOfOneImage(oneImageData, features4OneImage);
@@ -109,20 +110,25 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 			  }
 		  } //end for all images
 		}
-		else //DataInput is used instead of ArrayList
+		else if (problem !=null)//DataInput is used instead of ArrayList
 		{
 		  //stacks to include, for all images
-		  for (int stackIndex = mid-lefthalf;  stackIndex < mid + righthalf; stackIndex ++) 
+		  //stackIndex starts from 1 for getData()!
+		  for (int stackIndex = mid-lefthalf +1;  stackIndex <= mid + righthalf; stackIndex ++) 
 		  {
-			//certain stack of all images
+			//certain stack of all images; 
 			ArrayList data = problem.getData(stackIndex);
 			//batch mode HaarFeature
 			features4CurrentStack = haar.calcFeatures(data, imageType, dim); 
-			weight = getWeightForStack(stackIndex, stackSize);
+			weight = getWeightForStack(stackIndex-1, stackSize);
 			//add all stacks together
 			addFeatures(features,features4CurrentStack, length, dim.width*dim.height, weight);
 			} 
+		}else
+		{
+			throw new Exception("data is not passed in properly in feature extractor.");
 		}
+		
 		return features;
 	}
 
