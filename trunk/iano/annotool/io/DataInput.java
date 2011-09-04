@@ -207,8 +207,8 @@ public class DataInput
 		such as data[i][j]&0xff
 		The data is for CV mode, or training data in TT mode.
 		stackIndex:  between 1 and stackSize
-**/
-public ArrayList getData(int stackIndex)
+    **/
+	public ArrayList getData(int stackIndex)
 {
 
 	//check if need to read the data based on lastStackIndex
@@ -342,10 +342,14 @@ public ArrayList getData(int stackIndex)
 		return imageType;
 	}
 	
-	//get one image with all the stacks
-	//return an ArrayList of data array.
-	//each item in the ArrayList is a stack.
-	//Intended for 3D images.
+	 /** 
+	 *  Get one image with all the stacks
+	 *  Each item in the ArrayList is a stack.
+	 *  Intended for 3D images.
+	 *  The stack index for the returned ArrayList starts from 0.
+	 *  @param imageindex
+	 *  @return return an ArrayList of data array.
+	 */
 	public ArrayList getAllStacksOfOneImage(int imageindex)
 	{
 	    ArrayList data = new ArrayList(getStackSize());
