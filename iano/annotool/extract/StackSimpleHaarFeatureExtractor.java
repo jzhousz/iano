@@ -94,31 +94,31 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		
 		if(all3DData != null && problem == null)
 		{
+		  //process one image at a time.	
  		  float[] features4OneImage = new float[dim.width*dim.height];
   		  for(int i=0; i< this.length; i++)
 		  {
 			  for(int stackIndex= mid-lefthalf;  stackIndex < mid + righthalf; stackIndex ++)
 			  {  
-		        Object oneImageData = ((ArrayList)all3DData.get(i)).get(stackIndex);		  
+		        Object oneImageData = ((ArrayList)all3DData.get(i)).get(stackIndex);
+		        //single image mode HaarFeature
 		        haar.getHaarFeatureOfOneImage(oneImageData, features4OneImage);
 		        weight = getWeightForStack(stackIndex, stackSize); 
 		        for(int j=0; j<dim.width*dim.height; j++)
 		        	features[i][j]+=weight*features4OneImage[j];
 			  }
-		  }
+		  } //end for all images
 		}
 		else //DataInput is used instead of ArrayList
 		{
 		  //stacks to include, for all images
 		  for (int stackIndex = mid-lefthalf;  stackIndex < mid + righthalf; stackIndex ++) 
 		  {
-			//certain stack of all images  
+			//certain stack of all images
 			ArrayList data = problem.getData(stackIndex);
+			//batch mode HaarFeature
 			features4CurrentStack = haar.calcFeatures(data, imageType, dim); 
-
 			weight = getWeightForStack(stackIndex, stackSize);
-			//System.out.println("stack index: " + stackIndex + " weight: " + weight);
-
 			//add all stacks together
 			addFeatures(features,features4CurrentStack, length, dim.width*dim.height, weight);
 			} 
