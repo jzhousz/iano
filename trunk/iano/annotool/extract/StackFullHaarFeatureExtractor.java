@@ -14,22 +14,24 @@ public class StackFullHaarFeatureExtractor implements FeatureExtractor {
 
 	
 	public StackFullHaarFeatureExtractor()
-	{	
-	}
+	{}
 
 	public void setParameters(java.util.HashMap<String, String> parameters)
 	{	
 	}
 
-	public float[][] calcFeatures(annotool.io.DataInput problem) {
+	public float[][] calcFeatures(annotool.io.DataInput problem) throws Exception {
 		System.out.println("This method is not yet supported by 3D feature extractors");
-		return null;
+
+		throw new Exception("Not supported");
+
 	}
 
-	public float[][] calcFeatures(byte[][] data, ImgDimension dim)
+	public float[][] calcFeatures(java.util.ArrayList data,  int imgType, ImgDimension dim) throws Exception
 	{
 		System.out.println("This method is not yet supported by 3D feature extractors");
-		return null;
+
+		throw new Exception("Not supported");
 	}
 
 	public boolean is3DExtractor()
