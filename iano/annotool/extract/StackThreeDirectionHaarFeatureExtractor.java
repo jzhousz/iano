@@ -116,7 +116,7 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 	          currentImage = (ArrayList)all3DData.get(imgIndex);
 			
 			//xy plane:
-			for(int stackIndex = 1; stackIndex <= stackSize; stackIndex ++)
+			for(int stackIndex = 0; stackIndex < stackSize; stackIndex ++)
 			{
 				Object oneImageData = currentImage.get(stackIndex);
 		        haar.getHaarFeatureOfOneImage(oneImageData, features4OneXYImage);
@@ -269,17 +269,6 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 		return weight;
     }
 
-	
-	//similar as the one in StackSimpleHaar, but take startDim.
-    /*
-    private void addFeatures(float[][] features, float[][] features4CurrentStack, int length, int dimension, float weight, int startDim)
-	{
-		for(int i= 0; i< length; i++)
-			for (int j = 0; j<dimension; j++)
-				features[i][j+startDim] += weight*features4CurrentStack[i][j];
-	}
-	*/
-    
 	public boolean is3DExtractor()
 	{  return true;} 
 
