@@ -584,7 +584,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	float[][] selectedTrainingFeatures = null;
         	float[][] selectedTestingFeatures = null;
         	
-            if (featureSelector.equalsIgnoreCase("None")) { //use the original feature without selection
+            if (featureSelector.equalsIgnoreCase("None")) { //use the original feature without selection //TODO: handled in annotator
             	selectedTrainingFeatures = trainingFeatures;
             	selectedTestingFeatures = testingFeatures;
             }

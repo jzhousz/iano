@@ -2,6 +2,8 @@ package annotool;
 
 import ij.ImagePlus;
 import ij.process.*;
+import ij3d.Content;
+import ij3d.Image3DUniverse;
 
 import java.awt.Component;
 import java.awt.event.MouseEvent;
@@ -268,8 +270,24 @@ public class AnnImageTable {
 	//called after a button click in the table
 	private void displayImageInPanel(int index)
 	{
-		ImagePlus imgp = new ImagePlus(directory+children[index]); 
-		imgp.show();
+		if(problem.is3D(Annotator.dir+children[0])) {
+			ImagePlus imp = ij.IJ.openImage(directory+children[index]);
+			new StackConverter(imp).convertToRGB();
+			//new StackConverter(imp).convertToGray8();
+			
+			// Create a universe
+			Image3DUniverse univ = new Image3DUniverse();
+			
+			// Add the image as an isosurface
+			Content c = univ.addVoltex(imp);
+			
+			//Show
+			univ.show();
+		}
+		else {
+			ImagePlus imgp = new ImagePlus(directory+children[index]);
+			imgp.show();
+		}
 	}
 
 	//inner class to help render a button in a table
