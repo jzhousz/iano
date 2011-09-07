@@ -1,0 +1,6 @@
+genetic_line
+1:a150 2:a278 3:ato 4:a273
+1 peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a150_4-23-07_L7_Sum.lsm_1794069028_512.w.tif
+2 peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a278_8-16-07_L1_Sum.lsm_1794069028_512.w.tif
+3 peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_ato_8-30-07_L18_Sum.lsm_1794069028_512.w.tif
+4 peng_lab_data_brainaligner-Benchmark-Data_C-5_images_of_the_same_GAL4_pattern_a273_8-14-07_L8_B1_GR1_R1.lsm_1794069028_512.w.tif
