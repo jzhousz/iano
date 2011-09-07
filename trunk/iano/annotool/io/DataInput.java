@@ -352,10 +352,11 @@ public class DataInput
 	 */
 	public ArrayList getAllStacksOfOneImage(int imageindex)
 	{
-	    ArrayList data = new ArrayList(getStackSize());
+		int stackSize = getStackSize();
+	    ArrayList data = new ArrayList(stackSize);
 
 	    //stack from 1 to number of slices
-		for(int stackIndex = 1; stackIndex <= data.size(); stackIndex++)
+		for(int stackIndex = 1; stackIndex <= stackSize; stackIndex++)
 			data.add(openOneImage(directory+children[imageindex], stackIndex));
 	    
 		return data;

@@ -46,6 +46,10 @@
 	<Algorithm type="2DExtractor">
 		<Name>2D Hu Moments</Name>
 		<ClassName>annotool.extract.ImageMoments</ClassName>
+	</Algorithm>
+	<Algorithm type="3DExtractor">
+		<Name>3D Moments</Name>
+		<ClassName>annotool.extract.ImageMoments3D</ClassName>
 	</Algorithm>	
 	<Algorithm type="3DExtractor">
 		<Name>Partial3D</Name>
