@@ -132,20 +132,20 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 				{	
 				    for(int m = 0; m< dim.width; m++)
 				      for(int n = 0; n<stackSize; n++)
-				        bdata4OneXZImage[m*dim.width+n]= ((byte[])currentImage.get(n))[yIndex*dim.width+m];
+				        bdata4OneXZImage[n*dim.width+m]= ((byte[])currentImage.get(n))[yIndex*dim.width+m];
 		            haar.getHaarFeatureOfOneImage(bdata4OneXZImage, features4OneXZImage);
 				}
 				else if(imageType == DataInput.GRAY32)
 				{
 					 for(int m = 0; m< dim.width; m++)
 						  for(int n = 0; n<stackSize; n++)
-						    idata4OneXZImage[m*dim.width+n]= ((int[])currentImage.get(n))[yIndex*dim.width+m];
+						    idata4OneXZImage[n*dim.width+m]= ((int[])currentImage.get(n))[yIndex*dim.width+m];
 				     haar.getHaarFeatureOfOneImage(idata4OneXZImage, features4OneXZImage);
 				}else
 				{
 					 for(int m = 0; m< dim.width; m++)
 						  for(int n = 0; n<stackSize; n++)
-						    fdata4OneXZImage[m*dim.width+n]= ((float[])currentImage.get(n))[yIndex*dim.width+m];
+						    fdata4OneXZImage[n*dim.width+m]= ((float[])currentImage.get(n))[yIndex*dim.width+m];
 			        haar.getHaarFeatureOfOneImage(fdata4OneXZImage, features4OneXZImage);
 				}
 		        weight = getWeightForImage(yIndex, dim.height); 
@@ -160,20 +160,20 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 					{	
 					    for(int m = 0; m< dim.height; m++)
 					      for(int n = 0; n<stackSize; n++)
-					        bdata4OneYZImage[m*dim.height+n]= ((byte[])currentImage.get(n))[m*dim.width+xIndex];
+					        bdata4OneYZImage[n*dim.height+m]= ((byte[])currentImage.get(n))[m*dim.width+xIndex];
 			            haar.getHaarFeatureOfOneImage(bdata4OneYZImage, features4OneYZImage);
 					}
-					if(imageType == DataInput.GRAY16)
+					else if(imageType == DataInput.GRAY16)
 					{	
 					    for(int m = 0; m< dim.height; m++)
 					      for(int n = 0; n<stackSize; n++)
-					        idata4OneYZImage[m*dim.height+n]= ((int[])currentImage.get(n))[m*dim.width+xIndex];
+					        idata4OneYZImage[n*dim.height+m]= ((int[])currentImage.get(n))[m*dim.width+xIndex];
 			            haar.getHaarFeatureOfOneImage(idata4OneYZImage, features4OneYZImage);
 					}else
 					{
 					    for(int m = 0; m< dim.height; m++)
 						      for(int n = 0; n<stackSize; n++)
-						        fdata4OneYZImage[m*dim.height+n]= ((float[])currentImage.get(n))[m*dim.width+xIndex];
+						        fdata4OneYZImage[n*dim.height+m]= ((float[])currentImage.get(n))[m*dim.width+xIndex];
 				        haar.getHaarFeatureOfOneImage(fdata4OneYZImage, features4OneYZImage);
 					}
 			        weight = getWeightForImage(xIndex, dim.width); 
