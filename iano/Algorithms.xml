@@ -35,6 +35,47 @@
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="2DExtractor">
+		<Name>FeatureJ Statistics</Name>
+		<ClassName>annotool.extract.FeatureJStatistics</ClassName>
+		<Desc>Simple statistics using FeatureJ</Desc>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>FeatureJ Laplacian</Name>
+		<ClassName>annotool.extract.FeatureJLaplacian</ClassName>
+		<Desc>Laplacian of input images</Desc>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>FeatureJ Derivatives</Name>
+		<ClassName>annotool.extract.FeatureJDerivative</ClassName>
+		<Desc>Computes gaussian derivatives of images</Desc>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>x-order</Name>
+			<Default>0</Default>
+			<Min>0</Min>
+			<Max>10</Max>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>y-order</Name>
+			<Default>0</Default>
+			<Min>0</Min>
+			<Max>10</Max>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>z-order</Name>
+			<Default>0</Default>
+			<Min>0</Min>
+			<Max>10</Max>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
 		<Name>HAAR</Name>
 		<ClassName>annotool.extract.HaarFeatureExtractor</ClassName>
 		<Desc>HAAR wavelet transform</Desc>
@@ -46,6 +87,15 @@
 	<Algorithm type="2DExtractor">
 		<Name>2D Hu Moments</Name>
 		<ClassName>annotool.extract.ImageMoments</ClassName>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>Object Territory</Name>
+		<ClassName>annotool.extract.Territory</ClassName>
+		<Desc>Number of object pixels</Desc>
+		<Parameter type="Real">
+			<Name>Radius</Name>
+			<Default>50</Default>
+		</Parameter>
 	</Algorithm>
 	<Algorithm type="3DExtractor">
 		<Name>3D Moments</Name>
