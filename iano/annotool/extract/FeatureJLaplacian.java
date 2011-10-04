@@ -1,6 +1,9 @@
 package annotool.extract;
 
 import ij.ImagePlus;
+import ij.process.ByteProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
 import imagescience.feature.Laplacian;
 import imagescience.image.Axes;
 import imagescience.image.Coordinates;
@@ -14,8 +17,11 @@ import annotool.io.DataInput;
 
 public class FeatureJLaplacian implements FeatureExtractor {
 	protected float[][] features = null;
-	DataInput problem = null;
+	protected ArrayList data;
 	int length;
+	int width;
+	int height;
+	int imageType;
 	double scale = 1.0;
 	
 	public final static String SCALE_KEY = "Smoothing Scale";
@@ -29,54 +35,74 @@ public class FeatureJLaplacian implements FeatureExtractor {
 
 	@Override
 	public float[][] calcFeatures(DataInput problem) throws Exception {
-		this.problem = problem;
+		this.data = problem.getData();
 		this.length = problem.getLength();
-		this.features = new float[this.length][problem.getWidth() * problem.getHeight()];
+		this.width = problem.getWidth();
+		this.height = problem.getHeight();
+		this.imageType = problem.getImageType();
+		
 		return calcFeatures();
 	}
 
 	@Override
 	public float[][] calcFeatures(ArrayList data, int imageType,
-			ImgDimension dim) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+			ImgDimension dim) throws Exception {		
+		this.data = data;
+		this.length = data.size();
+		this.width = dim.width;
+		this.height = dim.height;
+		this.imageType = imageType;
+		
+		return calcFeatures();
 	}
 	
 	protected float[][] calcFeatures() throws Exception {
-		//for each image in the set
-		ImagePlus imp = null;
+		this.features = new float[this.length][this.width * this.height];
+		
+		ImageProcessor ip = null;
 		Image img = null;
 		
 		Laplacian laplacian = new Laplacian();
 		Coordinates startCO = new Coordinates(0, 0);
 		
-		int width = problem.getWidth();
-		int height = problem.getHeight();
+		double values[][] = new double[this.height][this.width];
 		
-		double values[][] = new double[height][width];
-		
-        for (int imageIndex = 0; imageIndex < this.length; imageIndex++) {
-        	imp = problem.getImagePlus(imageIndex);
-        	img = Image.wrap(imp);
-        	
-        	img = laplacian.run(img, scale);
+		for(int imageIndex = 0; imageIndex < data.size(); imageIndex++) {
+			if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
+				ip = new ByteProcessor(this.width, this.height, (byte[])data.get(imageIndex), null);
+		    }
+		    else if(imageType == DataInput.GRAY16) {
+		    	ip = new FloatProcessor(this.width, this.height, (int[])data.get(imageIndex));
+		    }	
+	 	    else if(imageType == DataInput.GRAY32) {
+		    	ip = new FloatProcessor(this.width, this.height, (float[])data.get(imageIndex), null);
+	 	    }
+	 	    else {
+	 	    	throw new Exception("Unsuppored image type");
+	 	    }
+			
+			img = Image.wrap(new ImagePlus("Image", ip));
+			
+			img = laplacian.run(img, scale);
         	img.axes(Axes.X + Axes.Y);
         	img.get(startCO, values);
         	
         	int i = 0;
-        	for(int y = 0; y < height; y++)
-        		for(int x = 0; x < width; x++) {
+        	for(int y = 0; y < this.height; y++)
+        		for(int x = 0; x < this.width; x++) {
         			features[imageIndex][i] = (float)values[y][x];
         			i++;
         		}
         	
-        }
+        	//if(imageIndex == (this.length - 1))
+        		//img.imageplus().show();
+		}
+		
 		return features;
 	}
 
 	@Override
 	public boolean is3DExtractor() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
