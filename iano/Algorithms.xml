@@ -38,6 +38,62 @@
 		<Name>FeatureJ Statistics</Name>
 		<ClassName>annotool.extract.FeatureJStatistics</ClassName>
 		<Desc>Simple statistics using FeatureJ</Desc>
+		<Parameter type="Boolean">
+			<Name>AVERAGE ABSOLUTE DEVIATION</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>ELEMENTS</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>KURTOSIS</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>L1NORM</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>L2NORM</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MASS</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MAXIMUM</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MEAN</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MEDIAN</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MINIMUM</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MODE</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>SDEVIATION</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>SKEWNESS</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>VARIANCE</Name>
+			<Default>0</Default>
+		</Parameter>
 	</Algorithm>
 	<Algorithm type="2DExtractor">
 		<Name>FeatureJ Laplacian</Name>
@@ -46,12 +102,25 @@
 		<Parameter type="Real">
 			<Name>Smoothing Scale</Name>
 			<Default>1.0</Default>
+		</Parameter>		
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>FeatureJ Edges</Name>
+		<ClassName>annotool.extract.FeatureJEdges</ClassName>
+		<Desc>Edge detection</Desc>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>Suppress Non-maximum Gradients</Name>
+			<Default>0</Default>
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="2DExtractor">
 		<Name>FeatureJ Derivatives</Name>
 		<ClassName>annotool.extract.FeatureJDerivative</ClassName>
-		<Desc>Computes gaussian derivatives of images</Desc>
+		<Desc>Computes Gaussian Derivatives of Images</Desc>
 		<Parameter type="Real">
 			<Name>Smoothing Scale</Name>
 			<Default>1.0</Default>
@@ -73,6 +142,42 @@
 			<Default>0</Default>
 			<Min>0</Min>
 			<Max>10</Max>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>FeatureJ Structure</Name>
+		<ClassName>annotool.extract.FeatureJStructure</ClassName>
+		<Desc>Computes Structure Tensor Eigen Images</Desc>
+		<Parameter type="String">
+			<Name>Eigenvalue</Name>
+			<Domain>Largest,Smallest</Domain>
+			<Default>Largest</Default>
+		</Parameter>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>
+		<Parameter type="Real">
+			<Name>Integration Scale</Name>
+			<Default>3.0</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>FeatureJ Hessian</Name>
+		<ClassName>annotool.extract.FeatureJHessian</ClassName>
+		<Desc>Computes Hessian Eigen Images</Desc>
+		<Parameter type="String">
+			<Name>Eigenvalue</Name>
+			<Domain>Largest,Smallest</Domain>
+			<Default>Largest</Default>
+		</Parameter>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>Absolute Eigen Value Comparison</Name>
+			<Default>1</Default>
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="2DExtractor">
