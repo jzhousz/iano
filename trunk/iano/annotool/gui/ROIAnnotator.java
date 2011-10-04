@@ -15,6 +15,7 @@ import annotool.classify.SavableClassifier;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
 import annotool.io.ChainModel;
+import annotool.io.DataInput;
 import annotool.io.DataInputDynamic;
 
 public class ROIAnnotator {
@@ -61,7 +62,7 @@ public class ROIAnnotator {
 				}
 			}
 			if(isSelected)
-				annotateAnImage(problem.getImagePlus(i), data.get(i), model, roiWidth, roiHeight);
+				annotateAnImage(problem.getImagePlus(i), data.get(i), model, roiWidth, roiHeight);//If we are using ImagePlus here, why have byte[] data as well?
 		}
 	}
 	
@@ -161,7 +162,7 @@ public class ROIAnnotator {
 		markResultsOnImage(imp, predictions, roiWidth, roiHeight, startCol, startRow, endCol, endRow);
 	}
 	
-	private byte getSubImageData(byte[] data, int col, int row, int imgWidth, int imgHeight, int i, int j, int m, int n) {
+	private byte getSubImageData(byte[] data, int col, int row, int imgWidth, int imgHeight, int i, int j, int m, int n) {//TODO: i, j, m, n only for debugging, to be removed later
 		if(row < 0)
 			row = -row;
 		if(col < 0)
@@ -194,8 +195,12 @@ public class ROIAnnotator {
     	dim.depth = 1;
     	
     	//Using array of bytes array since "extractGivenAMethod" needs bytes[][] instead of bytes
-    	byte[][] data = new byte[1][subImage.length];
-    	data[0] = subImage;
+    	//byte[][] data = new byte[1][subImage.length];
+    	//data[0] = subImage;
+    	
+    	//Using arraylist of array to pass to extractor
+    	ArrayList data = new ArrayList();
+    	data.add(subImage);
     	
 		float[][] exFeatures = new float[extractors.size()][];
         
@@ -205,7 +210,7 @@ public class ROIAnnotator {
         	params = extractors.get(exIndex).getParams();
         	extractorPath = extractors.get(exIndex).getExternalPath();
         	
-    		exFeatures[exIndex] = new Annotator().extractGivenAMethod(extractorName, extractorPath, params, data, dim)[0];
+    		exFeatures[exIndex] = new Annotator().extractGivenAMethod(extractorName, extractorPath, params, data, DataInput.GRAY8, dim)[0];//DataInput.GRAY8 need to fix this when DataInputDynamic is updated
     		dataSize += exFeatures[exIndex].length;
 		}
 		

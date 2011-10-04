@@ -11,6 +11,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.SoftBevelBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.event.*;
+import java.io.File;
 
 import annotool.Annotator;
 
@@ -45,6 +46,8 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 	static JFileChooser singlefc = null; //new JFileChooser (); 
 
 	boolean testingTarget = true;  //loading testingTarget is optional. 032109
+	
+	public static String TARGET = "target.txt";	//Default file to look for in the target images directory
 	
 	public AnnLoadImageDialog(JFrame frame, LandingPanel pnlLanding, String modeflag)
 	{
@@ -342,6 +345,19 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 			//display in the textfield.
 			dirfieldp.setText(fFile.getAbsolutePath());
 			//displayImageInPanel(fFile.getAbsolutePath(), 0);
+			
+			//Look for default target file
+			if(testingTarget) {
+				File targetFile = new File(fFile.getPath() + File.separator + TARGET );
+				if(targetFile.exists()) {
+					if(dirfieldp.equals(dirField)) targetField.setText(targetFile.getAbsolutePath());
+					else if(dirfieldp.equals(testdirField)) testtargetField.setText(targetFile.getAbsolutePath());
+					else
+						System.out.println("Unknown target file field.");
+				}
+				else
+					System.out.println("Can't find default target file: " + fFile.getPath() + File.separator + TARGET );
+			}
 		}    
 	}
 

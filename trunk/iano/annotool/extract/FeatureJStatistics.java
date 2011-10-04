@@ -1,7 +1,13 @@
 package annotool.extract;
 
 import ij.ImagePlus;
+import ij.process.ByteProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import imagescience.feature.Laplacian;
 import imagescience.feature.Statistics;
+import imagescience.image.Axes;
+import imagescience.image.Coordinates;
 import imagescience.image.Image;
 
 import java.util.ArrayList;
@@ -12,21 +18,75 @@ import annotool.io.DataInput;
 
 public class FeatureJStatistics implements FeatureExtractor {
 	protected float[][] features = null;
-	DataInput problem = null;
+	protected ArrayList data;
 	int length;
+	int width;
+	int height;
+	int imageType;
 	private static final int numFeatures = 14;
+	
+	public final static String[] KEYS = {"AVERAGE ABSOLUTE DEVIATION",
+											"ELEMENTS",
+											"KURTOSIS",
+											"L1NORM",
+											"L2NORM",
+											"MASS",
+											"MAXIMUM",
+											"MEAN",
+											"MEDIAN",
+											"MINIMUM",
+											"MODE",
+											"SDEVIATION",
+											"SKEWNESS",
+											"VARIANCE" };
+	
+	private int[] statKeys = {Statistics.ADEVIATION,
+								Statistics.ELEMENTS,
+								Statistics.KURTOSIS,
+								Statistics.L1NORM,
+								Statistics.L2NORM,
+								Statistics.MASS,
+								Statistics.MAXIMUM,
+								Statistics.MEAN,
+								Statistics.MEDIAN,
+								Statistics.MINIMUM,
+								Statistics.MODE,
+								Statistics.SDEVIATION,
+								Statistics.SKEWNESS,
+								Statistics.VARIANCE
+								};
+	
+	private boolean[] isSelectedFeature;
+	private int selectedCount = 0;
+	
+	public FeatureJStatistics() {
+		//Intialize with all false
+		isSelectedFeature = new boolean[numFeatures];
+		for(int i = 0; i < numFeatures; i++)
+			isSelectedFeature[i] = false;			
+	}
 	
 	@Override
 	public void setParameters(HashMap<String, String> parameter) {
-		// TODO Auto-generated method stub
-
+		selectedCount = 0;
+		if (parameter != null) {
+			for(int i = 0; i < numFeatures; i++)
+				if(parameter.containsKey(KEYS[i]) && "1".equals(parameter.get(KEYS[i]))) {
+					isSelectedFeature[i] = true;
+					selectedCount++;
+				}
+				else
+					isSelectedFeature[i] = false;
+		}
 	}
 
 	@Override
 	public float[][] calcFeatures(DataInput problem) throws Exception {
-		this.problem = problem;
+		this.data = problem.getData();
 		this.length = problem.getLength();
-		features = new float[length][numFeatures];
+		this.width = problem.getWidth();
+		this.height = problem.getHeight();
+		this.imageType = problem.getImageType();
 		
 		return calcFeatures();
 	}
@@ -34,45 +94,60 @@ public class FeatureJStatistics implements FeatureExtractor {
 	@Override
 	public float[][] calcFeatures(ArrayList data, int imageType,
 			ImgDimension dim) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		
+		this.data = data;
+		this.length = data.size();
+		this.width = dim.width;
+		this.height = dim.height;
+		this.imageType = imageType;
+		
+		return calcFeatures();
 	}
 	
 	protected float[][] calcFeatures() throws Exception {
-		//for each image in the set
+		//Initialize features array
+		features = new float[data.size()][selectedCount];
+		
+		ImageProcessor ip = null;
 		ImagePlus imp = null;
 		Image img = null;
 		Statistics stats = new Statistics();
-        for (int imageIndex = 0; imageIndex < this.length; imageIndex++) {
-        	imp = problem.getImagePlus(imageIndex);
-        	img = Image.wrap(imp);
+		
+		for(int imageIndex = 0; imageIndex < this.length; imageIndex++) {
+			if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
+				ip = new ByteProcessor(width, height, (byte[])data.get(imageIndex), null);
+		    }
+		    else if(imageType == DataInput.GRAY16) {
+		    	ip = new FloatProcessor(width, height, (int[])data.get(imageIndex));
+		    }	
+	 	    else if(imageType == DataInput.GRAY32) {
+		    	ip = new FloatProcessor(width, height, (float[])data.get(imageIndex), null);
+	 	    }
+	 	    else {
+	 	    	throw new Exception("Unsuppored image type");
+	 	    }
+			
+			imp = new ImagePlus("Image", ip);
+			img = Image.wrap(imp);
+			
+			stats.run(img);
         	
-        	stats.run(img);
-        	features[imageIndex][0] = (float)stats.get(Statistics.ADEVIATION);
-        	features[imageIndex][1] = (float)stats.get(Statistics.ELEMENTS);
-        	features[imageIndex][2] = (float)stats.get(Statistics.KURTOSIS);
-        	features[imageIndex][3] = (float)stats.get(Statistics.L1NORM);
-        	features[imageIndex][4] = (float)stats.get(Statistics.L2NORM);
-        	features[imageIndex][5] = (float)stats.get(Statistics.MASS);
-        	features[imageIndex][6] = (float)stats.get(Statistics.MAXIMUM);
-        	features[imageIndex][7] = (float)stats.get(Statistics.MEAN);
-        	features[imageIndex][8] = (float)stats.get(Statistics.MEDIAN);
-        	features[imageIndex][9] = (float)stats.get(Statistics.MINIMUM);
-        	features[imageIndex][10] = (float)stats.get(Statistics.MODE);
-        	features[imageIndex][11] = (float)stats.get(Statistics.SDEVIATION);
-        	features[imageIndex][12] = (float)stats.get(Statistics.SKEWNESS);
-        	features[imageIndex][13] = (float)stats.get(Statistics.VARIANCE);
+			System.out.println("Features for image: " + (imageIndex + 1));        	
         	
-        	System.out.println("Features for image: " + (imageIndex + 1));
-        	for(int i=0; i < numFeatures; i++)
-        		System.out.println(features[imageIndex][i]);
-        }
+			for(int i=0, j=0; i < numFeatures; i++) {
+        		if(isSelectedFeature[i]) {
+        			features[imageIndex][j] = (float)stats.get(statKeys[i]);
+        			System.out.println(KEYS[i] + ": " + features[imageIndex][j]);        			
+        			j++;
+        		}
+        	}
+		}
+		
 		return features;
 	}
 
 	@Override
 	public boolean is3DExtractor() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 

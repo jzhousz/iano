@@ -4,7 +4,7 @@ import ij.ImagePlus;
 import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
-import imagescience.feature.Differentiator;
+import imagescience.feature.Structure;
 import imagescience.image.Axes;
 import imagescience.image.Coordinates;
 import imagescience.image.Image;
@@ -15,32 +15,40 @@ import java.util.HashMap;
 import annotool.ImgDimension;
 import annotool.io.DataInput;
 
-public class FeatureJDerivative implements FeatureExtractor {
+public class FeatureJStructure implements FeatureExtractor {
 	protected float[][] features = null;
 	protected ArrayList data;
 	int length;
 	int width;
 	int height;
 	int imageType;
-	double scale = 1.0;
-	int x_order = 0, y_order = 0, z_order = 0;
 	
-	public final static String SCALE_KEY = "Smoothing Scale";
-	public final static String X_ORDER_KEY = "x-order";
-	public final static String Y_ORDER_KEY = "y-order";
-	public final static String Z_ORDER_KEY = "z-order";
+	public final static int LARGESTEIGEN = 0;
+	public final static int SMALLESTEIGEN = 1;
+	
+	double sscale = 1.0;
+	double iscale = 3.0;
+	int selectedEigenValue = LARGESTEIGEN;
+	
+	public final static String SMOOTHING_KEY = "Smoothing Scale";
+	public final static String INTEGRATION_KEY = "Integration Scale";
+	public final static String EIGENVALUE_KEY = "Eigenvalue";
 	
 	@Override
 	public void setParameters(HashMap<String, String> parameter) {
 		if (parameter != null) {
-		    if(parameter.containsKey(SCALE_KEY)) 
-		    	scale = Double.parseDouble(parameter.get(SCALE_KEY));
-		    if(parameter.containsKey(X_ORDER_KEY)) 
-		    	x_order = Integer.parseInt(parameter.get(X_ORDER_KEY));
-		    if(parameter.containsKey(Y_ORDER_KEY)) 
-		    	y_order = Integer.parseInt(parameter.get(Y_ORDER_KEY));
-		    if(parameter.containsKey(Z_ORDER_KEY)) 
-		    	z_order = Integer.parseInt(parameter.get(Z_ORDER_KEY));
+		    if(parameter.containsKey(SMOOTHING_KEY)) 
+		    	sscale = Double.parseDouble(parameter.get(SMOOTHING_KEY));
+		    
+		    if(parameter.containsKey(INTEGRATION_KEY)) 
+		    	iscale = Double.parseDouble(parameter.get(INTEGRATION_KEY));
+		    
+		    if(parameter.containsKey(EIGENVALUE_KEY)) {
+		    	if(parameter.get(EIGENVALUE_KEY).equals("Largest"))
+		    		selectedEigenValue = LARGESTEIGEN;
+		    	else if(parameter.get(EIGENVALUE_KEY).equals("Smallest"))
+		    		selectedEigenValue = SMALLESTEIGEN;
+		    }
 		}
 	}
 
@@ -73,7 +81,7 @@ public class FeatureJDerivative implements FeatureExtractor {
 		ImageProcessor ip = null;
 		Image img = null;
 		
-		Differentiator differentiator = new Differentiator();
+		Structure structure = new Structure();
 		Coordinates startCO = new Coordinates(0, 0);
 		
 		double values[][] = new double[this.height][this.width];
@@ -94,7 +102,7 @@ public class FeatureJDerivative implements FeatureExtractor {
 			
 			img = Image.wrap(new ImagePlus("Image", ip));
 			
-			img = differentiator.run(img, scale, x_order, y_order, z_order);
+			img = structure.run(img, sscale, iscale).get(selectedEigenValue);	//2D : index 1 - largest, index 2 - smallest
         	img.axes(Axes.X + Axes.Y);
         	img.get(startCO, values);
         	
@@ -104,6 +112,10 @@ public class FeatureJDerivative implements FeatureExtractor {
         			features[imageIndex][i] = (float)values[y][x];
         			i++;
         		}
+        	
+        	//Testing
+        	//if(imageIndex == (this.length - 1))
+        		//img.imageplus().show();
 		}
 		
 		return features;
