@@ -98,7 +98,9 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener, Te
     public static boolean bg_default = false;
     public static boolean bb_default = true;
     public static int overriddenPixelDepth_default = 400;
-    
+    public static boolean despeckle_default = true;
+    public static boolean smooth_default = true;
+
     int ThrVal =30;
     int ThrVal2 =30; //for 2nd channel
     int pixelDepthInNM;
@@ -121,6 +123,7 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener, Te
     int arrayLength;
     String imgtitle;
     int PixVal;
+    boolean despeckle, smooth;
 
     boolean[] thr; // true if above threshold
     int[] pict, pict2; // original pixel values
@@ -181,7 +184,7 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener, Te
         gd.addSlider("Threshold for object channel: ",ip.getMin(), ip.getMax(),ThrVal);
         gd.addSlider("Threshold for backbone channel: ",ip.getMin(), ip.getMax(),ThrVal2);
         gd.addSlider("Slice: ",1, NbSlices,(int) NbSlices/2);
-        gd.addSlider("Pixel Depth (nm): ",1, 1000, overriddenPixelDepth_default);
+        gd.addSlider("Pixel depth (nm): ",1, 1000, overriddenPixelDepth_default);
         sliders=gd.getSliders();
         ((Scrollbar)sliders.elementAt(0)).addAdjustmentListener(this);
         ((Scrollbar)sliders.elementAt(1)).addAdjustmentListener(this);
@@ -195,6 +198,15 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener, Te
  
         gd.addNumericField("Min number of voxels: ",minSize_default,0);
         gd.addNumericField("Max number of voxels: ",Math.min(maxSize_default, Height*Width*NbSlices),0);
+        gd.addCheckbox("Despeckle the image first", despeckle_default);
+        gd.addCheckbox("Smooth the image first", smooth_default);
+        //add selection for two channels. Only relevant for RGB; radiobutton will be better.
+        gd.addCheckbox("Object channel is red", or_default);
+        gd.addCheckbox("Object channel is green", og_default);
+        gd.addCheckbox("Object channel is blue", ob_default);
+        gd.addCheckbox("Backbone channel is red", br_default);
+        gd.addCheckbox("Backbone channel is green", bg_default);
+        gd.addCheckbox("Backbone channel is blue", bb_default);
         gd.addCheckbox("New_Results Table", new_results_default);
         gd.addMessage("Show:");
         gd.addCheckbox("Particles",showParticles_default);
@@ -206,20 +218,9 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener, Te
         gd.addNumericField("Font size",FontSize_default,0);
         gd.addMessage("");
         gd.addCheckbox("Summary", summary_default);
-        //add selection for two channels. Only relevant for RGB; radiobutton will be better.
-        gd.addCheckbox("Object channel is red", or_default);
-        gd.addCheckbox("Object channel is green", og_default);
-        gd.addCheckbox("Object channel is blue", ob_default);
-        gd.addCheckbox("Backbone channel is red", br_default);
-        gd.addCheckbox("Backbone channel is green", bg_default);
-        gd.addCheckbox("Backbone channel is blue", bb_default);
-        //gd.addMessage("Object Channel:");
-        //String[] colLabels = {"red","green","blue"}; 
-        //boolean[] colDefaults = {or_default,og_default, ob_default};
-        //gd.addCheckboxGroup(1, 3, colLabels, colDefaults);
-        //boolean[] colDefaults2 = {br_default, bg_default, bb_default};
-        //gd.addMessage("Backbone Channel:");
-        //gd.addCheckboxGroup(1, 3, colLabels, colDefaults2);
+
+
+        
         gd.showDialog();
         
         if (gd.wasCanceled()){
@@ -234,6 +235,14 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener, Te
         pixelDepthInNM = (int) gd.getNextNumber(); overriddenPixelDepth_default = pixelDepthInNM;
         minSize=(int) gd.getNextNumber();   minSize_default = minSize;
         maxSize=(int) gd.getNextNumber();   maxSize_default = maxSize;
+        despeckle = gd.getNextBoolean(); 		despeckle_default = despeckle;
+        smooth = gd.getNextBoolean(); 			smooth_default = smooth;
+        or =gd.getNextBoolean();            or_default = or;
+        og =gd.getNextBoolean();            og_default = og;
+        ob =gd.getNextBoolean();            ob_default = ob;
+        br =gd.getNextBoolean();            br_default = br;
+        bg =gd.getNextBoolean();            bg_default = bg;
+        bb =gd.getNextBoolean(); 			bb_default = bb;
         new_results=gd.getNextBoolean();    new_results_default = new_results;
         showParticles=gd.getNextBoolean();  showParticles_default = showParticles;
         showEdges=gd.getNextBoolean();      showEdges_default = showEdges;
@@ -243,12 +252,7 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener, Te
         showNumbers=gd.getNextBoolean();    showNumbers_default = showNumbers;
         FontSize=(int)gd.getNextNumber();   FontSize_default = FontSize;
         summary=gd.getNextBoolean();        summary_default = summary;
-        or =gd.getNextBoolean();            or_default = or;
-        og =gd.getNextBoolean();            og_default = og;
-        ob =gd.getNextBoolean();            ob_default = ob;
-        br =gd.getNextBoolean();            br_default = br;
-        bg =gd.getNextBoolean();            bg_default = bg;
-        bb =gd.getNextBoolean(); 			bb_default = bb;
+ 
         
 
         IJ.register(Object_Counter3D_2Channel.class); // static fields preserved when plugin is restarted
@@ -367,7 +371,7 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener, Te
         //overriding depth from property e.g.if the correct info is lost during de-convolution
         pixelDepth = ((double) pixelDepthInNM)/1000.0;
         cal.pixelDepth = pixelDepth;
-        IJ.log("Overriding default pixel depth.Set pixelDepth = "+ pixelDepth+ " micron 1instead!");
+        IJ.log("Overriding default pixel depth.Set pixelDepth = "+ pixelDepth+ " micron instead!");
         
         double zOrigin = cal.zOrigin;
         double yOrigin = cal.yOrigin;
@@ -377,6 +381,32 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener, Te
         IJ.log("voxelSize = " + voxelSize);
         IJ.log("unit = " + cal.getUnit());
 
+        
+        if(despeckle)
+        {
+  		  //Apply despeckle : median filter with radius 1
+          IJ.showStatus("Despeckling ...");
+		  RankFilters filter = new RankFilters();
+          ImageStack stack = img.getStack();
+          for (z=1; z<=NbSlices; z++) {
+            ip = stack.getProcessor(z);
+		    filter.rank(ip, 1, RankFilters.MEDIAN);
+	        IJ.showProgress(z,NbSlices);
+          }
+        }
+        if(smooth)
+        {
+        	//This filter replaces each pixel with the average of its 3x3 neighborhood.
+        	IJ.showStatus("Smoothing ...");
+            ImageStack stack = img.getStack();
+            for (z=1; z<=NbSlices; z++) {
+                ip = stack.getProcessor(z);
+               	ip.smooth();
+                IJ.showProgress(z,NbSlices);
+            }
+        }
+
+        
         pict=new int [Height*Width*NbSlices];
         pict2 = new int[Width*Height*NbSlices];
 
