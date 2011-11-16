@@ -1,3 +1,4 @@
+import ij.ImagePlus;
 import ij.plugin.filter.BackgroundSubtracter;
 import ij.process.ImageProcessor;
 import ij.process.ColorProcessor;
@@ -37,9 +38,13 @@ public class Territory {
 		//Subtract background
 		BackgroundSubtracter bs = new BackgroundSubtracter();
 		bs.rollingBallBackground(ip, radius, false, true, false, true, false);
+		
+		ImageProcessor tempIP = ip.duplicate();
+		tempIP.autoThreshold();
+		new ImagePlus("Territory", tempIP).show();//TODO: temp, remove
 
 		bs.rollingBallBackground(ip, radius, true, false, false, true, false);
-
+		
 		//Threshold
 		ip.autoThreshold();
 		
