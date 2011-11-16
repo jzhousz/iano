@@ -1,7 +1,7 @@
-import java.awt.Font;
-
 import ij.ImagePlus;
 import ij.process.ImageProcessor;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 
 //Based on imagej plugin 3D Object Counter
@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public class ObjectDetection {
 	int width, height;
-	int threshold = 128;		//Just so that the image does not have to be black and white
+	int threshold = 128;		//The image does not have to be black and white
 	int[] tag;
 	
 	public int[] run(ImageProcessor ip) {
@@ -137,9 +137,45 @@ public class ObjectDetection {
 	    	if (tag[i] == m) tag[i] = n;
 	}
 	
+	/**
+	 * Get the largest detected object tag
+	 * @return
+	 */
+	public int getLargestObject() {
+		int maxCount = -1;
+		int maxTag = -1;
+		HashMap<Integer, Integer> tagCount = getTagCount();
+		for(Integer key : tagCount.keySet()) {
+			int value = tagCount.get(key);
+			if(value > maxCount) {
+				maxCount = value;
+				maxTag = key;
+			}
+		}
+		
+		return maxTag;
+	}
+	
+	/**
+	 * Gives object tags and count for detected objects that are larger than "pixelThreshold" supplied
+	 * 
+	 * @param pixelThreshold
+	 * @return
+	 */
+	public ArrayList<Integer> getLargeObjects(int pixelThreshold) {
+		HashMap<Integer, Integer> tagCount = getTagCount();
+		
+		ArrayList<Integer> largeObjectTags = new java.util.ArrayList<Integer>();
+		//Get tags that are within threshold
+		for(Integer key : tagCount.keySet()) {
+			if(tagCount.get(key) >= threshold)
+				largeObjectTags.add(key);
+		}		
+		return largeObjectTags;
+	}
+	
 	//Gets the hashmap with tags as key and pixel count as values
-	//Only tags with pixels above or equal to threshold are returned
-	public HashMap<Integer, Integer> getTagCount(int threshold) {
+	private HashMap<Integer, Integer> getTagCount() {
 		//Key: ID, value: pixel count
 		HashMap<Integer, Integer> tagCount = new HashMap<Integer, Integer>();
 		
@@ -160,15 +196,6 @@ public class ObjectDetection {
 			}
 		}
 		
-		java.util.ArrayList<Integer> tagToRemove = new java.util.ArrayList<Integer>();
-		//Eliminate tags with lower pixel count
-		for(Integer key : tagCount.keySet()) {
-			if(tagCount.get(key) < threshold)
-				tagToRemove.add(key);
-		}
-		for(Integer key :tagToRemove)
-			tagCount.remove(key);
-		
 		return tagCount;
 	}
 	
@@ -180,7 +207,6 @@ public class ObjectDetection {
 		HashMap<Integer, Integer> tagCount = new HashMap<Integer, Integer>();
 		
 		int arrayIndex = 0;
-		Font font = new Font("SansSerif", Font.PLAIN, 12);
 		for(int y=0; y < height; y++) {
 			for(int x = 0; x < width; x++) {
 				if(tag[arrayIndex] != 0) {
@@ -203,9 +229,9 @@ public class ObjectDetection {
 			for(int x = 0; x < width; x++) {
 				if(tag[arrayIndex] != 0 && tagCount.containsKey(tag[arrayIndex])) {
 					int count = tagCount.get(tag[arrayIndex]);
-					if(count > 400)
+					if(count > 50)
 						//ip.drawString("" + tag[arrayIndex], x, y);
-						ip.drawPixel(x, y);
+						ip.set(x, y, 0);
 					else
 						tagCount.remove(tag[arrayIndex]);				
 				}
