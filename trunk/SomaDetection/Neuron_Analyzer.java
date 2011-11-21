@@ -27,14 +27,27 @@ public class Neuron_Analyzer implements PlugIn {
 		ImageProcessor ip = imp.getProcessor().duplicate();
 		int width = ip.getWidth();
 		int height = ip.getHeight();
-		
+				
 		//Remove noise with despeckle : median filter with radius 1
 		RankFilters filter = new RankFilters();
 		filter.rank(ip, 1, RankFilters.MEDIAN);
 		
+		
 		ImageProcessor binaryIP2 = ip.duplicate();
-		
-		
+		HistogramEq.run(new ImagePlus("EQ", binaryIP2), 63, 255, 3.00f, null, null);		
+		//Use green channel if color image
+		byte[] binpixels= new byte[width*height];
+		if (binaryIP2 instanceof ColorProcessor) {			
+			byte[] tmppixels= new byte[width*height];			
+			((ColorProcessor)binaryIP2).getRGB(tmppixels,binpixels,tmppixels);
+			binaryIP2 = new ByteProcessor(width, height, binpixels, null);
+		}
+		binaryIP2.autoThreshold();
+		binaryIP2.invert();
+		//Close - dilation followed by erosion
+		binaryIP2.dilate();
+		binaryIP2.erode();
+				
 		//Keep original image for applying territory analysis after removing soma
 		ImageProcessor somaip = ip.duplicate();		
 		//Another for extracting territory for masking
@@ -51,19 +64,13 @@ public class Neuron_Analyzer implements PlugIn {
 		HistogramEq.run(new ImagePlus("EQ", ip), 127, 256, 3.00f, null, null);
 		//HistogramEq.run(new ImagePlus("EQ", ip), 63, 255, 3.00f, null, null);
 		
-		//Use green channel if color image
 		byte[] pixels= new byte[width*height];
+		//Use green channel if color image		
 		if (ip instanceof ColorProcessor) {			
 			byte[] tmppixels= new byte[width*height];			
 			((ColorProcessor)ip).getRGB(tmppixels,pixels,tmppixels);
 			ip = new ByteProcessor(width, height, pixels, null);
-		}
-
-		//Binary image to use as guide for region growing/dilation
-		ImageProcessor binaryIP = ip.duplicate();
-		binaryIP.autoThreshold();
-		binaryIP.invert();
-		
+		}		
 
 		//Edge detection
 		final Image img = Image.wrap(new ImagePlus("Soma", ip));
@@ -80,7 +87,7 @@ public class Neuron_Analyzer implements PlugIn {
 		
 		//Hough transform
 		ip = newimg.imageplus().getProcessor().convertToByte(true);	        
-		HoughTransform ht = new HoughTransform(10, 20, 2, width, height, width, 0, 0);
+		HoughTransform ht = new HoughTransform(10, 10, 2, width, height, width, 0, 0);
 		ImageProcessor hip = ip.duplicate();
 		try {
 			hip = ht.run(hip);
@@ -111,8 +118,6 @@ public class Neuron_Analyzer implements PlugIn {
 			blobIPs.put(objTag, blobIP);
 		}
 		
-		//TODO: Instead of using separate IPs for each blob, use single IP and tag map
-		
 		//Create separate imageprocessor for each blob
 		int arrayIndex = 0;
 		for(int y=0; y < height; y++) {
@@ -139,7 +144,8 @@ public class Neuron_Analyzer implements PlugIn {
 		
 		//Dilate to edge
 		for(Integer key : blobIPs.keySet())
-			DilateToEdge.run2(ip, binaryIP, blobIPs.get(key), 35);
+			DilateToEdge.somaRun(new BinaryProcessor((ByteProcessor)binaryIP2), blobIPs.get(key));
+			//DilateToEdge.run2(ip, binaryIP, blobIPs.get(key), 35);
 
 		
 		//Mark blob area on original image
@@ -152,49 +158,31 @@ public class Neuron_Analyzer implements PlugIn {
 		}
 		
 		new ImagePlus("Soma-removed", somaip.duplicate()).show();
-				
-		//Apply the territory analysis on the image with soma removed
-		t.setRadius(50);
-		ImageProcessor tp = t.run(somaip);
 		
-		
-		
-		//Remove axon part
-		HistogramEq.run(new ImagePlus("EQ", binaryIP2), 63, 255, 3.00f, null, null);		
-		//Use green channel if color image
-		if (binaryIP2 instanceof ColorProcessor) {			
-			byte[] tmppixels= new byte[width*height];			
-			((ColorProcessor)binaryIP2).getRGB(tmppixels,pixels,tmppixels);
-			binaryIP2 = new ByteProcessor(width, height, pixels, null);
-		}
-		binaryIP2.autoThreshold();
-		binaryIP2.invert();
-		//Close - dilation followed by erosion
-		binaryIP2.dilate();
-		binaryIP2.erode();
-		
+		//Remove axon part		
 		//Remove noise with despeckle : median filter with radius 1
 		filter.rank(binaryIP2, 1, RankFilters.MEDIAN);
 		new ImagePlus("Binary2", binaryIP2).show();
 		
-		removeAxon(somaip, tp, new BinaryProcessor((ByteProcessor)binaryIP2));
-		tp = t.run(somaip);
+		removeAxon(somaip, maskIP, new BinaryProcessor((ByteProcessor)binaryIP2));
+		maskIP = t.run(somaip);
+		
 		
 		new ImagePlus("Soma", somaip).show();
-		new ImagePlus("Territory", tp).show();
-		new ImagePlus("Edge", ip).show();
-		new ImagePlus("Binary", binaryIP).show();
+		new ImagePlus("Territory", maskIP).show();
+		//new ImagePlus("Edge", ip).show();
+		//new ImagePlus("Binary", binaryIP2).show();
 
 		int count = 0, countBack = 0;		
 		for(int x = 0; x < width; x++)
 		    for(int y=0; y < height; y++)
-		    	if(tp.get(x, y) == 255)
+		    	if(maskIP.get(x, y) == 255)
 		    		countBack++;
 		    	else
 		    		count++;
 		
-		IJ.write("Object pixels: " + count);
-		IJ.write("Back pixels: " + countBack);
+		//IJ.write("Object pixels: " + count);
+		//IJ.write("Back pixels: " + countBack);
 
 		IJ.showProgress(1.0);
 	}
@@ -273,8 +261,6 @@ public class Neuron_Analyzer implements PlugIn {
 		ObjectDetection od = new ObjectDetection();
 		int[] tag = od.run(axonIP);
 		int largestObjectTag = od.getLargestObject();
-
-		//HashMap<Integer, Integer> objectTags = od.getTagCount(300);	//Gets tag and corresponding pixel count (if pixel count > 300)
 
 		//Now remove objects that are not part of largestObject
 		int arrayIndex = 0;
