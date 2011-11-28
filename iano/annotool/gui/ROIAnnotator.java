@@ -5,6 +5,10 @@ import ij.ImageStack;
 import ij.process.ImageProcessor;
 
 import java.awt.Color;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -21,11 +25,16 @@ import annotool.io.DataInputDynamic;
 public class ROIAnnotator {
 	private int interval;
 	private int paddingMode;
+	private String exportDir = "";
+	private boolean isExport = false;
 	
 	//predefined color masks: equivalent to or more than number of annotations;
 	//Otherwise some colors may be reused.
-	float colorMasks[][] = {{1.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}};
+	float colorMasks[][] = {{1.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
 	int  numOfColors = colorMasks.length;
+	
+	//Class names to use for exporting annotation result to text file
+	HashMap<String, String> classNames = null;
 	
 	/**
 	 * 
@@ -36,14 +45,20 @@ public class ROIAnnotator {
 	 * @param channel : Channel information of the image
 	 * @param selectedImages: List of indices for images selected for annotations
 	 */
-	public ROIAnnotator(int interval, int paddingMode, String channel, ArrayList<ChainModel> chainModels, int[] selectedImages) {
+	public ROIAnnotator(int interval, int paddingMode, String channel, ArrayList<ChainModel> chainModels, 
+			int[] selectedImages, String exportDir, boolean isExport) {
 		this.interval = interval;
 		this.paddingMode = paddingMode;
+		this.isExport = isExport;
+		if(!"".equals(exportDir))
+			this.exportDir = exportDir + "/";
 		
 		DataInputDynamic problem = new DataInputDynamic(Annotator.dir, Annotator.ext, channel); 
 		
-		for(ChainModel model : chainModels)
+		for(ChainModel model : chainModels) {
+			this.classNames = model.getClassNames();	//Retrieve class names to export annotated pixels
 			annotate(problem, model, selectedImages);
+		}
 	}
 	
 	private void annotate(DataInputDynamic problem, ChainModel model, int[] selectedImages) {
@@ -244,7 +259,9 @@ public class ROIAnnotator {
     
     //make an overlay mask on the grayed image
     public void markResultsOnImage(ImagePlus imp, int[] predictions, int roiWidth, int roiHeight, int startCol, int startRow, int endCol, int endRow)
-    {    
+    {  
+    	String imageName = imp.getTitle();
+    	
     	ImageProcessor ip = imp.getProcessor();
     	ImageProcessor ipOriginal = ip.duplicate();
     	ImageProcessor ipMaskOnly = ip.duplicate();
@@ -255,7 +272,7 @@ public class ROIAnnotator {
     	int[] colors = new int[3];
     	float[] fcolors = new float[3];
     	int colorLabel = 0;
-
+    	
     	int index = 0;	
     	for(int i=startCol; i <= endCol; i = i + interval)
     		for(int j=startRow ; j <= endRow; j = j + interval)
@@ -289,5 +306,46 @@ public class ROIAnnotator {
     	//display the annotated image
     	imp.updateAndDraw();
     	imp.show();
+    	
+    	//Write prediction indices to file for each class
+    	if(this.isExport) {
+	    	for(String key : classNames.keySet()) {
+	    		exportPrediction(startCol, endCol, startRow, endRow, roiWidth, roiHeight, predictions, imageName, key);
+	    	}
+    	}
+    }
+     
+    public void exportPrediction(int startCol, int endCol, int startRow, int endRow, int roiWidth, int roiHeight,
+    		int[] predictions, String baseFile, String classKey) {
+    	String newLine = System.getProperty("line.separator");
+    	
+    	//Open file for each class : the file contains list of coordinate of annotated pixel
+    	File file = new File(this.exportDir + baseFile + classKey + "-" + classNames.get(classKey));
+    	
+    	try {
+	    	BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+	    	
+	    	int index = 0, res = 0, x = 0, y = 0;	
+	    	for(int i=startCol; i <= endCol; i = i + interval) {
+	    		for(int j=startRow ; j <= endRow; j = j + interval)
+	    		{
+	    			res = predictions[index++];
+	    			if(classKey.equals(String.valueOf(res))) {
+		    			x = i+roiWidth/2;
+		    			y = j+roiHeight/2;
+	    				writer.write(x + "," + y);
+		    			writer.write(newLine);
+	    			}
+	    		}
+	    	}
+	    	
+	    	writer.flush();
+        	writer.close();
+    	}
+    	catch(IOException ex) {
+        	System.out.println("Exception occured while writing file: " + file.getName());
+        	System.out.println("Exception: " + ex.getMessage());
+        	ex.printStackTrace();
+        }
     }
 }

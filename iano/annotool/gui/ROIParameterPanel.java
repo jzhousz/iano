@@ -1,15 +1,25 @@
 package annotool.gui;
 
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.io.File;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-public class ROIParameterPanel extends JPanel implements ChangeListener {
+public class ROIParameterPanel extends JPanel implements ChangeListener, ItemListener, ActionListener {
 	private JLabel lbInterval, lbPadMode;
 	private JSlider slider = null;
 	private JRadioButton rbNone, rbSymmetric;
+	
+	private JCheckBox cbExport;
+	private JLabel lbExportDir;
+	private JButton btnSelectDir;
+	private String exportDir = ""; //Directory which user can select to export annotation result
 	
 	//Constants representing padding models
 	public static final int NONE = 0;
@@ -38,6 +48,17 @@ public class ROIParameterPanel extends JPanel implements ChangeListener {
 	    //Labels
 		lbInterval = new JLabel("Interval Size: " + slider.getValue());
 		lbPadMode = new JLabel("Padding Mode:");
+		
+		//Checkbox
+		cbExport = new JCheckBox("Export Result");
+		cbExport.addItemListener(this);
+		
+		//Other components for result export
+		lbExportDir = new JLabel("Export Dir: ");
+		lbExportDir.setEnabled(false);
+		btnSelectDir = new JButton("Select Directory");
+		btnSelectDir.addActionListener(this);
+		btnSelectDir.setEnabled(false);
 	    
 	    
 	    this.setBorder(BorderFactory.createTitledBorder(null, "ROI Parameters", 
@@ -51,6 +72,10 @@ public class ROIParameterPanel extends JPanel implements ChangeListener {
 	    this.add(lbPadMode);
 	    this.add(rbNone);
 	    this.add(rbSymmetric);
+	    this.add(Box.createRigidArea(new Dimension(0, 15)));
+	    this.add(cbExport);
+	    this.add(btnSelectDir);
+	    this.add(lbExportDir);
 	    
 	    for(java.awt.Component component : this.getComponents()) {
 	    	if(component instanceof JComponent)
@@ -58,11 +83,40 @@ public class ROIParameterPanel extends JPanel implements ChangeListener {
 	    }
 	}
 	
+	@Override
 	public void stateChanged(ChangeEvent ev) {
 		JSlider src = (JSlider)ev.getSource();
 		//if(!src.getValueIsAdjusting())
 		lbInterval.setText("Interval Size: " + slider.getValue());
 	}
+	
+	@Override
+	public void itemStateChanged(ItemEvent e) {
+		if(e.getSource() == cbExport)
+		{
+			if(cbExport.isSelected()) {
+				btnSelectDir.setEnabled(true);
+				lbExportDir.setEnabled(true);
+			}
+			else {
+				btnSelectDir.setEnabled(false);
+				lbExportDir.setEnabled(false);
+			}
+		}
+	}
+	
+	@Override
+	public void actionPerformed(ActionEvent arg0) {
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		fileChooser.setMultiSelectionEnabled(false);
+		
+		int returnVal = fileChooser.showSaveDialog(this);		
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            this.exportDir = fileChooser.getSelectedFile().getPath();
+            lbExportDir.setText(this.exportDir);
+        }
+	}	
 	
 	/**
 	 * 
@@ -96,4 +150,20 @@ public class ROIParameterPanel extends JPanel implements ChangeListener {
 		for(java.awt.Component component : this.getComponents())
 			component.setEnabled(enabled);
 	}
+	
+	/**
+	 * Whether or not to export prediction to file
+	 * 
+	 * @return
+	 */
+	public boolean isExport() {
+		return cbExport.isSelected();
+	}
+	
+	public String getExportDir() {
+		return exportDir;
+	}
+	public void setExportDir(String exportDir) {
+		this.exportDir = exportDir;
+	}	
 }
