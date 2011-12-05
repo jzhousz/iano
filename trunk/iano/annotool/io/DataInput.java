@@ -362,4 +362,9 @@ public class DataInput
 		return data;
 	}
 	
+	public ImagePlus getIP(int imageIndex) {
+		ImagePlus imgp = new ImagePlus(directory+children[imageIndex]);
+		return imgp;
+	}
+	
 }
