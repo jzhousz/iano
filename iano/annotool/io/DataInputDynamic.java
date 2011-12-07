@@ -16,6 +16,9 @@ import java.util.ArrayList;
  * Can use a superclass later to extract the common methods.
  * 
  * Useful for loading images that need ROI annotations from the same dir
+ * 
+ * Deprecated in Dec 2011 because DataInput can handle images of various sizes too.
+ * 
  */
 public class DataInputDynamic {
 
