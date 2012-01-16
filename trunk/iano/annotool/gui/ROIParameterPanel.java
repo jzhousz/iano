@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.io.File;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -24,6 +23,8 @@ public class ROIParameterPanel extends JPanel implements ChangeListener, ItemLis
 	//Constants representing padding models
 	public static final int NONE = 0;
 	public static final int SYMMETRIC = 1;
+	
+	final JFileChooser fileChooser = new JFileChooser();
 	
 	public ROIParameterPanel() {
 		this(1, 100);
@@ -107,7 +108,6 @@ public class ROIParameterPanel extends JPanel implements ChangeListener, ItemLis
 	
 	@Override
 	public void actionPerformed(ActionEvent arg0) {
-		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		fileChooser.setMultiSelectionEnabled(false);
 		
