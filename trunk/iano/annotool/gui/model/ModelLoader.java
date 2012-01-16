@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.JFileChooser;
+import javax.swing.SwingUtilities;
 
 import annotool.AnnOutputPanel;
 import annotool.Annotation;
@@ -27,7 +28,13 @@ public class ModelLoader implements Runnable {
 	private Annotation[][] annotations = null;
 	HashMap<String, String> classNames = null;
 	private String[] modelLabels = null;
-	private boolean[] supportsProb = null; 
+	private boolean[] supportsProb = null;
+	private boolean isBinary;
+	
+	//Used by thread
+	private boolean loadMode = false; 	//Determines if the thread should execute load mode or apply mode
+	private File[] files = null;		//Multiple files selected case (for image annotation/classification)
+	private File file = null;			//Single file selected case (for ROI annotation)
 	
 	public ModelLoader(ImageReadyPanel pnlImages) {
 		this.pnlImages = pnlImages;
@@ -43,6 +50,15 @@ public class ModelLoader implements Runnable {
 		chainModels.clear();
 	}
 	
+	public void load() {
+		loadMode = true;
+		
+		if (thread == null)  {
+            thread = new Thread(this);
+            thread.start();
+        }
+	}
+	
 	/** 
 	 * Method: loadModels
 	 * Loads models from multiple files and directories.
@@ -53,9 +69,9 @@ public class ModelLoader implements Runnable {
 	 * 
 	 * @return True if model was loaded, false if canceled
 	 */
-	public boolean loadModels(File[] files) {
-		pnlStatus.setOutput("Loading model..");
-			
+	public boolean loadModels() {
+		pnlStatus.setOutput("Loading model(s)...");
+		
 			//For each selected file or directory
 			for(int i=0; i < files.length; i++) {
 				if(files[i].isDirectory()) {
@@ -106,13 +122,12 @@ public class ModelLoader implements Runnable {
 			return true;
 	}
 	/**
-	 * Loads model from a single file. Not used anymore after merging annotation and classification
+	 * Loads model from a single file.
 	 * 
 	 * @return True if model was loaded, false if canceled or invalid model
 	 */
-	public boolean loadModel(File file) {
+	public boolean loadModel() {
 		ChainModel chainModel = null;
-            
 		pnlStatus.setOutput("Loading model..");
 		
 		chainModel = new ChainModel();
@@ -135,7 +150,7 @@ public class ModelLoader implements Runnable {
         if(chainModel == null)
         	return false;	
 	
-		return true;		
+        return true;		
 	}
 	
 	public boolean validate() {
@@ -150,28 +165,43 @@ public class ModelLoader implements Runnable {
 	
 	@Override
 	public void run() {
-		pnlImages.setButtonsEnabled(false);
-		
-		if (Annotator.output.equals(Annotator.AN)) {
-			pnlStatus.setOutput("Classification/Annotation started..");
-			classify();
-			pnlStatus.setOutput("Classification/Annotation completed.");
-			pnlImages.enableSaveReport(true);
+		if(loadMode) {
+			pnlImages.setButtonsEnabledOnModelLoad(false); //Re-enabled only on success
+			if(Annotator.output.equals(Annotator.AN)) {
+				if(loadModels())
+					pnlImages.setButtonsEnabledOnModelLoad(true);
+			}
+			else if(Annotator.output.equals(Annotator.ROI)) {
+				if(loadModel())
+					pnlImages.setButtonsEnabledOnModelLoad(true);
+			}
 		}
-		else if (Annotator.output.equals(Annotator.ROI)) {
-			pnlStatus.setOutput("ROI annotation started..");
-			roiAnnotate();
-			pnlStatus.setOutput("ROI annotation completed.");
+		else
+		{
+			pnlImages.setButtonsEnabled(false);
+			
+			if (Annotator.output.equals(Annotator.AN)) {
+				pnlStatus.setOutput("Classification/Annotation started..");
+				classify();
+				pnlStatus.setOutput("Classification/Annotation completed.");
+				pnlImages.enableSaveReport(true);
+			}
+			else if (Annotator.output.equals(Annotator.ROI)) {
+				pnlStatus.setOutput("ROI annotation started..");
+				roiAnnotate();
+				pnlStatus.setOutput("ROI annotation completed.");
+			}
+			pnlImages.setButtonsEnabled(true);
 		}
-		thread = null;	
 		
-		pnlImages.setButtonsEnabled(true);
+		thread = null;
 	}
 	
 	/**
 	 * Iterates through the arraylist of loaded models and applies each one to the current image set
 	 */
-	public void applyModel() {		
+	public void applyModel() {
+		loadMode = false;
 		if (thread == null)  {
             thread = new Thread(this);
             thread.start();
@@ -197,7 +227,7 @@ public class ModelLoader implements Runnable {
 		
 		int[] selectedImages = pnlImages.getTablePanel().getAnnotationTable().getSelectedRows();
 		
-		ROIAnnotator roiAnnotator = new ROIAnnotator(interval, mode, channel, chainModels, selectedImages, exportDir, isExport, this.pnlImages);
+		ROIAnnotator roiAnnotator = new ROIAnnotator(interval, mode, channel, chainModels, selectedImages, exportDir, isExport,  this.pnlImages);
 	}
 	
 	/**
@@ -228,16 +258,22 @@ public class ModelLoader implements Runnable {
         modelLabels = new String[numModels];
         supportsProb = new boolean[numModels];
         
+        isBinary = true;
+        
         for(int modelIndex = 0; modelIndex < numModels; modelIndex++) {
         	pnlStatus.setOutput("Applying model: " + (modelIndex + 1) + " of " + numModels);
         	
         	ChainModel model = chainModels.get(modelIndex);
         	
+        	isBinary = isBinary && model.isBinary();
+        	
         	modelLabels[modelIndex] = model.getLabel();
         	
         	//If image size in the model is not same as the problem size, display message
-        	if(!model.getImageSize().equals(imgWidth + "x" + imgHeight))
+        	if(!model.getImageSize().equals(imgWidth + "x" + imgHeight)) {
         		pnlStatus.setOutput("Image size mismatch between model and problem. Model: " + (modelIndex + 1));
+        		return;
+        	}
         	
 	        pnlStatus.setOutput("Extracing features ... ");
 	        
@@ -278,7 +314,7 @@ public class ModelLoader implements Runnable {
         }//End of loop for models
         
         //Display results
-		pnlImages.getTablePanel().updateAnnotationTable(annotations, modelLabels, supportsProb);
+		pnlImages.getTablePanel().updateAnnotationTable(annotations, modelLabels, supportsProb, isBinary);
 		
 		//Display statistics
 		classNames = chainModels.get(0).getClassNames();								//TODO
@@ -303,6 +339,10 @@ public class ModelLoader implements Runnable {
 		return supportsProb;
 	}
 	
+	public boolean isBinary() {
+		return isBinary;
+	}
+	
 	/*
 	 * Used for setting chainModels from array of chain models (from memory).
 	 */
@@ -314,5 +354,13 @@ public class ModelLoader implements Runnable {
 
 	public ArrayList<ChainModel> getChainModels() {
 		return chainModels;
+	}
+
+	public void setFiles(File[] files) {
+		this.files = files;
+	}
+
+	public void setFile(File file) {
+		this.file = file;
 	}
 }

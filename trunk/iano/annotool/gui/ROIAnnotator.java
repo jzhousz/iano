@@ -28,14 +28,13 @@ public class ROIAnnotator {
 	private int paddingMode;
 	private String exportDir = "";
 	private boolean isExport = false;
-	
+
 	AnnOutputPanel pnlStatus = null;
 	ImageReadyPanel pnlImages = null;
 	
 	//predefined color masks: equivalent to or more than number of annotations;
 	//Otherwise some colors may be reused.
-	float colorMasks[][] = {{1.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f},
-		{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f}};
+	float colorMasks[][] = {{1.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, 						{0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f}};
 	int  numOfColors = colorMasks.length;
 	
 	//Class names to use for exporting annotation result to text file
@@ -67,7 +66,9 @@ public class ROIAnnotator {
 		for(ChainModel model : chainModels) {
 			this.classNames = model.getClassNames();	//Retrieve class names to export annotated pixels
 			annotate(problem, model, selectedImages);
-		}
+			
+			LegendDialog ld = new LegendDialog("Legends", colorMasks, classNames);
+		}	
 	}
 	
 	private void annotate(DataInputDynamic problem, ChainModel model, int[] selectedImages) {
@@ -338,7 +339,6 @@ public class ROIAnnotator {
      
     public void exportPrediction(int startCol, int endCol, int startRow, int endRow, int roiWidth, int roiHeight,
     		int[] predictions, String baseFile, String classKey) {
-    	
     	String newLine = System.getProperty("line.separator");
     	
     	//Open file for each class : the file contains list of coordinate of annotated pixel
@@ -363,14 +363,14 @@ public class ROIAnnotator {
 	    	
 	    	writer.flush();
         	writer.close();
-        	
-        	this.pnlStatus.setOutput("Prediction file for '" + classNames.get(classKey) + "' exported to path " + file.getAbsolutePath());
+			
+			this.pnlStatus.setOutput("Prediction file for '" + classNames.get(classKey) + "' exported to path " + file.getAbsolutePath());
     	}
     	catch(IOException ex) {
         	System.out.println("Exception occured while writing file: " + file.getName());
         	System.out.println("Exception: " + ex.getMessage());
         	ex.printStackTrace();
-        	this.pnlStatus.setOutput("Failed to write export file in directory " + this.exportDir);
+			this.pnlStatus.setOutput("Failed to write export file in directory " + this.exportDir);
         }
     }
 }

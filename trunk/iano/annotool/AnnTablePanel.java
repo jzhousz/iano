@@ -159,10 +159,11 @@ public class AnnTablePanel extends JPanel  {
 		adjustFrame();
 	}
 	
-	public void updateAnnotationTable(Annotation[][] predictions, String[] modelLabels, boolean[] supportsProb)
+	public void updateAnnotationTable(Annotation[][] predictions, String[] modelLabels, boolean[] supportsProb,
+			boolean isBinary)
 	{
 		if (currentCVTable != null)
-			currentCVTable.updateTable(predictions, modelLabels, supportsProb);
+			currentCVTable.updateTable(predictions, modelLabels, supportsProb, isBinary);
 		adjustFrame();
 	}
 

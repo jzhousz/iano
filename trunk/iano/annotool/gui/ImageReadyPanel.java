@@ -243,20 +243,27 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 				return;
 			
 			//Otherwise, proceed with loading of selected file(s)			
-			gui.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+			//gui.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			loader = new ModelLoader(this);
 			
-			
-			if(Annotator.output.equals(Annotator.AN) && loader.loadModels(fileChooser.getSelectedFiles())) {
+			/*if(Annotator.output.equals(Annotator.AN) && loader.loadModels(fileChooser.getSelectedFiles())) {
 				btnApplyModel.setEnabled(true);
 				btnViewModels.setEnabled(true);
 			}
 			else if(Annotator.output.equals(Annotator.ROI) && loader.loadModel(fileChooser.getSelectedFile())) {
 				btnApplyModel.setEnabled(true);
 				btnViewModels.setEnabled(true);
+			}*/
+			if(Annotator.output.equals(Annotator.AN)) {
+				loader.setFiles(fileChooser.getSelectedFiles());
+				loader.load();
+			}
+			else if(Annotator.output.equals(Annotator.ROI)) {
+				loader.setFile(fileChooser.getSelectedFile());
+				loader.load();
 			}
 			
-			gui.setCursor(Cursor.getDefaultCursor());
+			//gui.setCursor(Cursor.getDefaultCursor());
 		}
 		else if(e.getSource() == btnApplyModel) {
 			//If ROI mode, check if at least one image is selected
@@ -305,7 +312,8 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	            
 	            ReportSaver reportSaver = new ReportSaver();
 	            boolean success = reportSaver.saveAnnotationReport(file, loader.getAnnotations(), loader.getClassNames(), loader.getModelLabels(), loader.getSupportsProb(),
-	            		pnlTable.getAnnotationTable().getChildren());
+	            		pnlTable.getAnnotationTable().getChildren(),
+	            		loader.isBinary());
 	            
 	            if(success)
 	            	pnlStatus.setOutput("Report saved: " + file.getAbsolutePath());
@@ -377,6 +385,11 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			if(loader == null || loader.getChainModels().size() < 1) {
 				btnApplyModel.setEnabled(false);
 				btnViewModels.setEnabled(false);
+			}
+			else
+			{
+				btnApplyModel.setEnabled(true);
+				btnViewModels.setEnabled(true);
 			}
 			pnlButton.add(btnApplyModel);
 			pnlButton.add(btnViewModels);
@@ -508,5 +521,10 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 	public void setButtonsEnabled(boolean flag) {
 		this.btnLoadModel.setEnabled(flag);
 		this.btnApplyModel.setEnabled(flag);
+	}
+	public void setButtonsEnabledOnModelLoad(boolean flag) {
+		btnLoadModel.setEnabled(flag);
+		btnApplyModel.setEnabled(flag);
+		btnViewModels.setEnabled(flag);
 	}
 }

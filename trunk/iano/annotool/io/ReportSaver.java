@@ -26,7 +26,8 @@ import com.itextpdf.text.pdf.PdfWriter;
 
 public class ReportSaver {
 	public boolean saveAnnotationReport(File file, Annotation[][] annotations, HashMap<String, String> classNames, 
-			String[] modelLabels, boolean[] supportsProb, String[] imageNames) {
+			String[] modelLabels, boolean[] supportsProb, String[] imageNames,
+			boolean isBinary) {
 		
 		int numModels = annotations.length;
 		int numTargets = annotations[0].length;
@@ -45,13 +46,22 @@ public class ReportSaver {
 				document.add(getStats(annotations[i], classNames, modelLabels[i]));
 			
 			//Create and display table of annotation results
-			PdfPTable table = new PdfPTable(numModels + 1);	//Extra 1 column for image names
+			PdfPTable table = null;
+			if(isBinary)
+				table = new PdfPTable(numModels + 2); //extra columns for image names and summary
+			else
+				table = new PdfPTable(numModels + 1);
 			table.setWidthPercentage(100);
 			table.setSpacingBefore(5);
 			table.setSpacingAfter(5);
 			
 			//Set relative width of columns
-			int[] colWidths = new int[numModels + 1];
+			int[] colWidths = null;
+			if(isBinary)
+				colWidths = new int[numModels + 2];
+			else
+				colWidths = new int[numModels + 1];
+			
 			colWidths[0] = 2;							//First column is for image name and it gets twice the normal width
 			for(int i=1; i < colWidths.length; i++)
 				colWidths[i] = 1;						//Rest gets normal width
@@ -60,7 +70,10 @@ public class ReportSaver {
 			
 			//First row for header
 			PdfPCell titleCell = new PdfPCell(new Phrase("Annotation Results: ", Styles.FONT_TABLE_TITLE));
-			titleCell.setColspan(numModels + 1);
+			if(isBinary)
+				titleCell.setColspan(numModels + 2);
+			else
+				titleCell.setColspan(numModels + 1);
 			titleCell.setMinimumHeight(24f);
 			titleCell.setPadding(4);
 			titleCell.setBackgroundColor(Styles.COLOR_TITLE);
@@ -86,9 +99,22 @@ public class ReportSaver {
 				
 				table.addCell(modelTitle);
 			}
+			
+			//For binary case, add summary column
+			if(isBinary) {
+				PdfPCell modelTitle = new PdfPCell(new Phrase("Summary", Styles.FONT_TABLE_TITLE2));
+				modelTitle.setBorderColor(Styles.COLOR_BORDER);
+				modelTitle.setPadding(3);
+				modelTitle.setBackgroundColor(Styles.COLOR_TITLE2);
+				
+				table.addCell(modelTitle);
+			}
+			
 			//Create all the rows
 			//Traverse annotation results in inverted way : go through all the models in one target and then next target and so on
 			for(int target=0; target < numTargets; target++) {										//Rows are targets
+				String summary = "";
+				
 				//First column in each row is the image name
 				PdfPCell nameCell = new PdfPCell(new Phrase(imageNames[target]));
 				nameCell.setBorderColor(Styles.COLOR_BORDER);
@@ -104,14 +130,18 @@ public class ReportSaver {
 					cell.setBorderColor(Styles.COLOR_BORDER);
 					cell.setPadding(3);
 					table.addCell(cell);
+					
+					if(isBinary && annotations[model][target].anno == 1)
+						summary += modelLabels[model] + " ";
+				}
+				if(isBinary) {
+					PdfPCell cell = new PdfPCell(new Phrase(summary));
+					cell.setBorderColor(Styles.COLOR_BORDER);
+					cell.setPadding(3);
+					table.addCell(cell);
 				}
 			}
 			
-			for(int model=0; model < annotations.length; model++) {				
-				for(int target=0; target < annotations[model].length; target++) {
-					
-				}
-			}
 			document.add(table);
 			document.close();		
 			System.out.println("Report saved: " + file.getAbsolutePath());

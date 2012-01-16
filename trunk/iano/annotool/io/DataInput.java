@@ -11,8 +11,6 @@ import java.util.ArrayList;
  * Add channel number  (r or g or b) as an input option for RGB images. 
  * This class can read data for CV mode or TT mode.  
  * In TT mode, directory is used as training directory.
- * 
- * Dec 2011: Can handle images of various heights and widths
  */ 
 public class DataInput
 {
@@ -36,11 +34,8 @@ public class DataInput
 	protected ArrayList data = null; //store all images in the dir with given ext.
 	int lastStackIndex = 0; // the variable to track if the last getData() was for the same stack
 	String[] children = null; //list of image file names in the dir
-	protected int height = 0; //if the images are of the same size, then this contains the common height
-	protected int width = 0; //if the images are of the same size, then this contains the common width
-	boolean variousSize = false; //indicate if the images are of various sizes
-	int[] widthList = null;  //add width, height lists 12/7/11
-	int[] heightList = null;
+	protected int height = 0;
+	protected int width = 0;
 	protected int stackSize = 0;
 	protected int imageType = 0;
 	String directory;
@@ -89,29 +84,28 @@ public class DataInput
 		int width = ip.getWidth();
 		int height = ip.getHeight();
 		//width and height should be the same for all images. -- error handling
-		//If the check is dropped, DataInput can accept images of various sizes.
 		if(width != this.width || height != this.height)
 		{
-			System.out.println("Warning: Image" + path + "is not the same size as the 1st one in the directory. ");
-			variousSize = true;
-			//return null;
+			System.err.println("Image" + path + "is not the same size as the 1st one. Ignored.");
+			return null;
 		}
 
 		//get the pixel values. We only deal with one color for RGB picture
 		if (ip instanceof ByteProcessor)
 		{
-			/* changed to avoid memory copy.
+			/*
 			//should use array copy since memory was also allocated in ip, o/w values are not passed back
 			byte[] returnedPixels = (byte[]) (ip.getPixels());
 			System.arraycopy(returnedPixels, 0, pixels, 0, width*height); //020209
 			*/
+			
 			results = ip.getPixels();
 			
 		}
 		else if (ip instanceof ColorProcessor)
 		{
 			//System.out.println("RGB image..");
-			//tmppixels contains the irrelevant channels.
+			//note: tmppixels contains the irrelevant channels.
 			byte[] pixels= new byte[width*height];
 			byte[] tmppixels= new byte[width*height];
 
@@ -141,6 +135,20 @@ public class DataInput
 			//16 bit or 32 bit grayscale
 			results =  ip.getPixels();
 			
+			
+			//get pixels return an array of int
+			 /* Returns a reference to the short array containing this image's
+	        pixel data. To avoid sign extension, the pixel values must be
+	        accessed using a mask (e.g. int i = pixels[j]&0xffff). 
+			http://www.imagingbook.com/fileadmin/goodies/ijtutorial/tutorial171.pdf sec 4.8
+			*/	
+			/* System.out.println("convert 16 bit gray scale or 32 bit floating point images to 8-bit images.");
+			//what about the relativity in the image set?
+			//ImageProcess ip2= ip.convertToByte(true);	 //scale to 0 and 255, if false, values are clipped.
+			//byte[] returnedPixels = (byte[]) (ip2.getPixels());
+			//System.arraycopy(returnedPixels, 0, pixels, 0, width*height);
+			*/
+				
 			//alternative solutions without loss of precision:  09/01/2011 
 			//1. get int[] or float[], then pass to the algorithm as Object, together with an image type, so that the algorithm would do the casting
 			//   i.e.  getData() returns Object.
@@ -201,18 +209,18 @@ public class DataInput
 		stackIndex:  between 1 and stackSize
     **/
 	public ArrayList getData(int stackIndex)
-{
-
-	//check if need to read the data based on lastStackIndex
-	if (data == null ||  lastStackIndex != stackIndex)
-    {
- 	   String[] children = getChildren();
-	   data = readImages(directory, ext, children, stackIndex);
-    }  
-    lastStackIndex = stackIndex; //update the index of the last read stack.
-   
-   return data;
-}
+	{
+	
+		//check if need to read the data based on lastStackIndex
+		if (data == null ||  lastStackIndex != stackIndex)
+	    {
+	 	   String[] children = getChildren();
+		   data = readImages(directory, ext, children, stackIndex);
+	    }  
+	    lastStackIndex = stackIndex; //update the index of the last read stack.
+	   
+	   return data;
+	}
 
 	
 	//getter should be called by images are read.
@@ -229,11 +237,6 @@ public class DataInput
 
 	public int getWidth()
 	{
-		if (ofVariousSize())
-		{
-			System.err.print("Error: You should get a list of widths because the images may be of different size");
-			return 0;
-		}
 		if(width == 0)
 		{
 			System.out.println("Read the first image to get info.");
@@ -247,11 +250,6 @@ public class DataInput
 
 	public int getHeight()
 	{
-		if (ofVariousSize())
-		{
-			System.err.print("Error: You should get a list of heights because the images may be of different size");
-			return 0;
-		}
 		if(height == 0)
 		{
 			System.out.println("Read the first image to get info.");
@@ -262,61 +260,6 @@ public class DataInput
 
 		return height;
 	}
-	
-	//indicate if the images in the directory are of the same size.
-	public boolean ofVariousSize()
-	{
-		if(widthList == null || heightList == null)
-		{
-			//check the sizes of images
-			getWidthList(); 
-			getHeightList();
-		}
-		return variousSize;
-		
-	}
-	public int[] getWidthList()
-	{
-		if (widthList == null)
-		{
-			int dirlength = getLength(); 
-			String[] children = getChildren();
-			
-			widthList = new int[dirlength];
-			ImagePlus imgp;
-			for(int i=0; i<dirlength; i++)
-			{
-			  imgp = new ImagePlus(directory+children[i]);
-			  widthList[i] = imgp.getProcessor().getWidth();
-			  if (widthList[i] !=  widthList[0]) 
-				  variousSize = true;
-		    }
-		}	
-		return widthList;
-	}
-
-	//getter should be called by images are read.
-	public int[] getHeightList()
-	{
-		if (heightList == null)
-		{
-			int dirlength = getLength(); 
-			String[] children = getChildren();
-
-			heightList = new int[dirlength];
-			ImagePlus imgp;
-			for(int i=0; i<dirlength; i++)
-			{
-			  imgp = new ImagePlus(directory+children[i]);
-			  heightList[i] = imgp.getProcessor().getHeight();
-			  if (heightList[i] !=  heightList[0]) 
-				  variousSize = true;
-
-			}
-		}
-		return heightList;
-	}
-	
 
 	public int getStackSize()
 	{

@@ -55,17 +55,17 @@ public class Annotator implements Runnable
      *  a list of default application properties
      */
     //directory for training or cross-validation images
-    public final static String DEFAULT_DIR = "k150/"; //"stage4_6/" for embryos
+    public final static String DEFAULT_DIR = "k150_train/"; //"stage4_6/" for embryos
     //image extension for training or cross-validation images
     public final static String DEFAULT_EXT = ".jpg";  //".png";
     //target file name for training or cross-validation images
-    public final static String DEFAULT_TARGET = "k150_4c_target.txt";  //"target4_6_1.txt";
+    public final static String DEFAULT_TARGET = "k150_train/target.txt";  //"target4_6_1.txt";
     //directory for testing images
-    public final static String DEFAULT_TESTDIR = "k150/"; //"stage4_6/" for embryos
+    public final static String DEFAULT_TESTDIR = "k150_test/"; //"stage4_6/" for embryos
     //image extension for testing images
     public final static String DEFAULT_TESTEXT = ".jpg";  //".png";
     //target file name for testing images
-    public final static String DEFAULT_TESTTARGET = "k150_4c_target.txt";  //"target4_6_1.txt";
+    public final static String DEFAULT_TESTTARGET = "k150_test/target.txt";  //"target4_6_1.txt";
     //feature extractor
     public final static String DEFAULT_EXTRACTOR = "HAAR";
     //feature selector

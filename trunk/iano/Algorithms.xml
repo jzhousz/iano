@@ -214,6 +214,14 @@
 			<Name>Wavelet Level</Name>
 			<Default>2</Default>
 		</Parameter>
+		<Parameter type="Integer">
+			<Name>Midstacks to Include</Name>
+			<Default>3</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>WEIGHTED</Name>
+			<Default>1</Default>
+		</Parameter>
 	</Algorithm>
 	<Algorithm type="Classifier">
 		<Name>SVM</Name>
