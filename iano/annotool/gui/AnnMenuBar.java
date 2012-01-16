@@ -32,7 +32,7 @@ public class AnnMenuBar implements ActionListener {
 	final String imageResAbout = "images/icons/information.png";
 	final String imageResExit ="images/icons/cross.png";
 	
-	final String aboutText = "About BI-CAT (Biological Image Classification and Annotation Tool)";
+	final String aboutText = "About BioCAT (Biological Image Classification and Annotation Tool)";
 	
 	JButton bNewWiz, babout, bhelp, bexit; //icons on toolbar
 	
@@ -309,7 +309,7 @@ public class AnnMenuBar implements ActionListener {
 
 	public void displayAbout()
 	{
-		String aboutString =  "BI-CAT (Biological Image Classification and Annotation Tool)\n\n" +
+		String aboutString =  "BioCAT (Biological Image Classification and Annotation Tool)\n\n" +
 		"Version: 1.0.0\n\n" +
 		"Jie Zhou, Hanchuan Peng, Santosh Lamichhane and other contributors\n" +
 		"2009 - 2011.  All rights reserved.\n\n" +
@@ -331,7 +331,7 @@ public class AnnMenuBar implements ActionListener {
 	}
 
 	public void displayHelp() {
-		String helpString =  "BI-CAT (Biological Image Classification and Annotation Tool): \n" +
+		String helpString =  "BioCAT (Biological Image Classification and Annotation Tool): \n" +
 		"Annotation tool for multi-dimensional biological images.\n\n" +
 		"It supports Training/Testing and Cross Validation modes for selecting model. \n" + 
 		"Training only mode can also be used.\n\n" +

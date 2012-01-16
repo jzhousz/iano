@@ -197,7 +197,7 @@ public class ModelLoader implements Runnable {
 		
 		int[] selectedImages = pnlImages.getTablePanel().getAnnotationTable().getSelectedRows();
 		
-		ROIAnnotator roiAnnotator = new ROIAnnotator(interval, mode, channel, chainModels, selectedImages, exportDir, isExport);
+		ROIAnnotator roiAnnotator = new ROIAnnotator(interval, mode, channel, chainModels, selectedImages, exportDir, isExport, this.pnlImages);
 	}
 	
 	/**

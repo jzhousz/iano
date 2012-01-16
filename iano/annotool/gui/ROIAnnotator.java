@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import annotool.AnnOutputPanel;
 import annotool.Annotation;
 import annotool.Annotator;
 import annotool.ImgDimension;
@@ -27,6 +28,9 @@ public class ROIAnnotator {
 	private int paddingMode;
 	private String exportDir = "";
 	private boolean isExport = false;
+	
+	AnnOutputPanel pnlStatus = null;
+	ImageReadyPanel pnlImages = null;
 	
 	//predefined color masks: equivalent to or more than number of annotations;
 	//Otherwise some colors may be reused.
@@ -47,7 +51,11 @@ public class ROIAnnotator {
 	 * @param selectedImages: List of indices for images selected for annotations
 	 */
 	public ROIAnnotator(int interval, int paddingMode, String channel, ArrayList<ChainModel> chainModels, 
-			int[] selectedImages, String exportDir, boolean isExport) {
+			int[] selectedImages, String exportDir, boolean isExport, ImageReadyPanel pnlImages) {
+		//Reference to gui
+		this.pnlImages = pnlImages;
+		this.pnlStatus = pnlImages.getOutputPanel();
+		
 		this.interval = interval;
 		this.paddingMode = paddingMode;
 		this.isExport = isExport;
@@ -148,7 +156,7 @@ public class ROIAnnotator {
 					features = getExtractedFeaturesFromROI(subImage, roiWidth, roiHeight, model.getExtractors());
 				} catch (Exception e) {
 					e.printStackTrace();
-					//TODO: show error message to user
+					this.pnlStatus.setOutput("Feature extraction failure!");
 					return;
 				}
 				
@@ -170,6 +178,7 @@ public class ROIAnnotator {
 				} catch (Exception ex) {
 					System.out.println("Classification using model failed.");
 					ex.printStackTrace();
+					this.pnlStatus.setOutput("Classification exception! Classifier=" + model.getClassifierName());
 				}
 			}//	end of j
 	    } //end of i
@@ -310,14 +319,26 @@ public class ROIAnnotator {
     	
     	//Write prediction indices to file for each class
     	if(this.isExport) {
-	    	for(String key : classNames.keySet()) {
-	    		exportPrediction(startCol, endCol, startRow, endRow, roiWidth, roiHeight, predictions, imageName, key);
-	    	}
+    		//Check if export dir exists, if not try creating it
+    		File dir = new File(this.exportDir);
+    		boolean dirExists = dir.exists();
+    		if(!dirExists)
+    			dirExists = dir.mkdirs();
+    		
+    		if(dirExists)
+    		{
+		    	for(String key : classNames.keySet()) {
+		    		exportPrediction(startCol, endCol, startRow, endRow, roiWidth, roiHeight, predictions, imageName, key);
+		    	}
+    		}
+    		else
+    			this.pnlStatus.setOutput("Failed to create export directory.");
     	}
     }
      
     public void exportPrediction(int startCol, int endCol, int startRow, int endRow, int roiWidth, int roiHeight,
     		int[] predictions, String baseFile, String classKey) {
+    	
     	String newLine = System.getProperty("line.separator");
     	
     	//Open file for each class : the file contains list of coordinate of annotated pixel
@@ -342,11 +363,14 @@ public class ROIAnnotator {
 	    	
 	    	writer.flush();
         	writer.close();
+        	
+        	this.pnlStatus.setOutput("Prediction file for '" + classNames.get(classKey) + "' exported to path " + file.getAbsolutePath());
     	}
     	catch(IOException ex) {
         	System.out.println("Exception occured while writing file: " + file.getName());
         	System.out.println("Exception: " + ex.getMessage());
         	ex.printStackTrace();
+        	this.pnlStatus.setOutput("Failed to write export file in directory " + this.exportDir);
         }
     }
 }
