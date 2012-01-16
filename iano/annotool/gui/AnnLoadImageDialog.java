@@ -30,8 +30,8 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 	JLabel  testfileL = new JLabel("File Dir");
 	JLabel  testimgextL = new JLabel("Image Extension / Filter");
 	JLabel  testtargetL = new JLabel ("Target File");
-	JTextField  testdirField = new JTextField(Annotator.DEFAULT_DIR, 30);
-	JTextField  testtargetField = new JTextField(Annotator.DEFAULT_TARGET, 30);
+	JTextField  testdirField = new JTextField(Annotator.DEFAULT_TESTDIR, 30);
+	JTextField  testtargetField = new JTextField(Annotator.DEFAULT_TESTTARGET, 30);
 	JButton testfiledir = new JButton("Browse ...");
 	JComboBox testextBox = new JComboBox(extensions);
 	JButton testtargetFile = new JButton("Browse ...");

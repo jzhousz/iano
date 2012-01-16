@@ -227,28 +227,43 @@ public class AnnImageTable {
 	}
 	
 	//Overloaded version: added July 19, 2011 : for update after applying model
-	public void updateTable(Annotation[][] predictions, String[] modelLabels, boolean[] supportsProb)
+	public void updateTable(Annotation[][] predictions, String[] modelLabels, boolean[] supportsProb,
+			boolean isBinary)
 	{
 		int numModels = predictions.length;
 		final String[] columnNames;
-		columnNames = new String[2 + numModels];
+		if(isBinary)
+			columnNames = new String[2 + numModels + 1]; //Extra summary column for binary case
+		else
+			columnNames = new String[2 + numModels];
+		
 		columnNames[0] = "image thumbnail";
 		columnNames[1]= "file name";
 		for(int i= 0; i < numModels; i++)
-			columnNames[2+i] = modelLabels[i];
-
+			columnNames[2 + i] = modelLabels[i];
+		
+		if(isBinary)
+			columnNames[2 + numModels] = "Summary";
+		
 		final Object[][] tabledata = new Object[children.length][columnNames.length];
 		for (int i = 0; i < children.length; i++)
 		{
 			tabledata[i][0] =  getButtonCell(i); 
 			tabledata[i][1] = children[i];
+			String summary = "";
 			for (int j = 0; j < numModels; j++) {
 				if(supportsProb[j]) {
 					tabledata[i][2+j] = predictions[j][i].anno + String.format(" (%.2f%%)", 100 * predictions[j][i].prob);
 				}
 				else
 					tabledata[i][2+j] = predictions[j][i].anno;
+				
+				if(isBinary && predictions[j][i].anno == 1)
+					summary += modelLabels[j] + " ";
 			}
+			
+			if(isBinary)
+				tabledata[i][2 + numModels] = summary;
 		}		
 
 		javax.swing.table.TableModel dataModel = new javax.swing.table.AbstractTableModel() { 

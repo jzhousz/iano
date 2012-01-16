@@ -23,6 +23,8 @@ public class AnnMenuBar implements ActionListener {
 	final String IMGANNO = "Image Annotation";
 	final String ROIANNO = "Region of Interest Annotation";
 	
+	final String ROITAG = "ROI Tagger";
+	
 	final String LOADEX  = "Load Examples..";
 	final String EXAMPLE1  = "Fruitfly Brain Neuronal Bundles (2D) ";
 	final String EXAMPLE2  = "Fruitfly Brain Neuronal Bundles (3D) ";
@@ -36,9 +38,9 @@ public class AnnMenuBar implements ActionListener {
 	
 	JButton bNewWiz, babout, bhelp, bexit; //icons on toolbar
 	
-	JMenuItem newWizardItem, itemMDSelect, itemTrainOnly;
+	JMenuItem newWizardItem, itemMDSelect, itemTrainOnly, itemROITag;
 	
-	JMenu annoMenu;
+	JMenu annoMenu;	
 
 	public AnnMenuBar(AnnotatorGUI frame)
 	{
@@ -59,6 +61,8 @@ public class AnnMenuBar implements ActionListener {
 		itemTrainOnly = new JMenuItem(TRAINONLY);
 		itemMDSelect.addActionListener(this);
 		itemTrainOnly.addActionListener(this);
+		itemROITag = new JMenuItem(ROITAG);
+		itemROITag.addActionListener(this);
 		
 		annoMenu = new JMenu(ANNO);
 		JMenuItem imgAnnoItem = new JMenuItem(IMGANNO);
@@ -67,6 +71,7 @@ public class AnnMenuBar implements ActionListener {
 		annoMenu.add(roiAnnoItem);
 		imgAnnoItem.addActionListener(this);
 		roiAnnoItem.addActionListener(this);
+		
 
 		//load example data sets with configuration
 		JMenu loadexMenu = new JMenu(LOADEX);
@@ -96,6 +101,7 @@ public class AnnMenuBar implements ActionListener {
 		
 		fileMenu.add(itemMDSelect);
 		fileMenu.add(itemTrainOnly);
+		fileMenu.add(itemROITag);
 		
 		fileMenu.add(annoMenu);
 		
@@ -201,6 +207,9 @@ public class AnnMenuBar implements ActionListener {
 			frame.initModelSelectWizard();
 		else if(command.equals(TRAINONLY))
 			frame.initTrainOnly();
+		else if(command.equals(ROITAG)) {
+			ROITagger tagger = new ROITagger(frame, "ROI Tagger", false);
+		}
 		else if(command.equals(IMGANNO))
 			frame.initAnnotate();
 		else if(command.equals(ROIANNO))

@@ -342,6 +342,25 @@ public class ChainModel {
 	        });
 	}
 	
+	//Checks if the particular model has binary classes
+	public boolean isBinary() {
+		if(classNames.size() != 2)
+			return false;
+		
+		boolean containsYes = false,
+				containsNo = false;
+		
+		for(String key : classNames.keySet()) {
+			if(key.equals("1") && classNames.get(key).equalsIgnoreCase("yes"))
+				containsYes = true;
+			if(key.equals("0") && classNames.get(key).equalsIgnoreCase("no"))
+				containsNo = true;
+		}
+		
+		return (containsYes && containsNo);
+			
+	}
+	
 	public void addExtractor(Extractor ex) {
 		this.extractors.add(ex);
 	}
