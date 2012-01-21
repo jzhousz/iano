@@ -34,7 +34,8 @@ public class ROIAnnotator {
 	
 	//predefined color masks: equivalent to or more than number of annotations;
 	//Otherwise some colors may be reused.
-	float colorMasks[][] = {{1.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, 						{0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f}};
+	float colorMasks[][] = {{1.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f},
+			{0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f}};
 	int  numOfColors = colorMasks.length;
 	
 	//Class names to use for exporting annotation result to text file
