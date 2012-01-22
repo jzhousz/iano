@@ -11,7 +11,6 @@ import javax.swing.border.EmptyBorder;
 public class LegendDialog extends JDialog implements ActionListener {
     public LegendDialog(String title, float[][] colorMasks, HashMap<String, String> classNames) {
         super(ij.IJ.getInstance(), title, false);
-        ij.util.Java2.setSystemLookAndFeel();
         Container container = getContentPane();
         
         int numColors = colorMasks.length;
