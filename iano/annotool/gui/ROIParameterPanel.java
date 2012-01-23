@@ -15,7 +15,7 @@ public class ROIParameterPanel extends JPanel implements ChangeListener, ItemLis
 	private JSlider slider = null;
 	private JRadioButton rbNone, rbSymmetric;
 	
-	private JCheckBox cbExport;
+	private JCheckBox cbExport, cbMaxima;
 	private JLabel lbExportDir;
 	private JButton btnSelectDir;
 	private String exportDir = ""; //Directory which user can select to export annotation result
@@ -54,6 +54,8 @@ public class ROIParameterPanel extends JPanel implements ChangeListener, ItemLis
 		cbExport = new JCheckBox("Export Result");
 		cbExport.addItemListener(this);
 		
+		cbMaxima = new JCheckBox("Local Maxima Only");
+		
 		//Other components for result export
 		lbExportDir = new JLabel("Export Dir: ");
 		lbExportDir.setEnabled(false);
@@ -73,6 +75,8 @@ public class ROIParameterPanel extends JPanel implements ChangeListener, ItemLis
 	    this.add(lbPadMode);
 	    this.add(rbNone);
 	    this.add(rbSymmetric);
+	    this.add(Box.createRigidArea(new Dimension(0, 15)));
+	    this.add(cbMaxima);
 	    this.add(Box.createRigidArea(new Dimension(0, 15)));
 	    this.add(cbExport);
 	    this.add(btnSelectDir);
@@ -165,5 +169,12 @@ public class ROIParameterPanel extends JPanel implements ChangeListener, ItemLis
 	}
 	public void setExportDir(String exportDir) {
 		this.exportDir = exportDir;
-	}	
+	}
+	
+	/**
+	 * Apply annotation to local maxima only
+	 */
+	public boolean isLocalMaximaOnly() {
+		return cbMaxima.isSelected();
+	}
 }

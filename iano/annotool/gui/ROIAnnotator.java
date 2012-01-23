@@ -2,6 +2,7 @@ package annotool.gui;
 
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
 
 import java.awt.Color;
@@ -16,6 +17,7 @@ import annotool.AnnOutputPanel;
 import annotool.Annotation;
 import annotool.Annotator;
 import annotool.ImgDimension;
+import annotool.analysis.Utility;
 import annotool.classify.SavableClassifier;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
@@ -28,14 +30,16 @@ public class ROIAnnotator {
 	private int paddingMode;
 	private String exportDir = "";
 	private boolean isExport = false;
+	private boolean isMaximaOnly = false;
 
 	AnnOutputPanel pnlStatus = null;
 	ImageReadyPanel pnlImages = null;
 	
 	//predefined color masks: equivalent to or more than number of annotations;
 	//Otherwise some colors may be reused.
-	float colorMasks[][] = {{1.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f},
-			{0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f}};
+	//float colorMasks[][] = {{1.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f},
+			//{0.0f, 1.0f, 0.0f},{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f}};
+	float colorMasks[][] = {{1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}};
 	int  numOfColors = colorMasks.length;
 	
 	//Class names to use for exporting annotation result to text file
@@ -51,7 +55,7 @@ public class ROIAnnotator {
 	 * @param selectedImages: List of indices for images selected for annotations
 	 */
 	public ROIAnnotator(int interval, int paddingMode, String channel, ArrayList<ChainModel> chainModels, 
-			int[] selectedImages, String exportDir, boolean isExport, ImageReadyPanel pnlImages) {
+			int[] selectedImages, String exportDir, boolean isExport, boolean isMaximaOnly, ImageReadyPanel pnlImages) {
 		//Reference to gui
 		this.pnlImages = pnlImages;
 		this.pnlStatus = pnlImages.getOutputPanel();
@@ -62,6 +66,8 @@ public class ROIAnnotator {
 		if(!"".equals(exportDir))
 			this.exportDir = exportDir + "/";
 		
+		this.isMaximaOnly = isMaximaOnly;
+		
 		DataInputDynamic problem = new DataInputDynamic(Annotator.dir, Annotator.ext, channel); 
 		
 		for(ChainModel model : chainModels) {
@@ -69,7 +75,7 @@ public class ROIAnnotator {
 			annotate(problem, model, selectedImages);
 			
 			LegendDialog ld = new LegendDialog("Legends", colorMasks, classNames);
-		}	
+		}
 	}
 	
 	private void annotate(DataInputDynamic problem, ChainModel model, int[] selectedImages) {
@@ -100,9 +106,23 @@ public class ROIAnnotator {
 	 * @param model : Model to use for annotation.
 	 */
 	private void annotateAnImage(ImagePlus imp, byte[] data, ChainModel model, int roiWidth, int roiHeight) {
-		//Divide the image into an array of small target images for ROI annotation
 		ImageProcessor ip = imp.getProcessor();
 		
+		//If only local maxima are to be annotated, find local maxima
+		int width = ip.getWidth();
+		int height = ip.getHeight();
+		
+		float[] floatData = null;
+		boolean[] isMaxima = null;
+		
+		if(this.isMaximaOnly) {
+			floatData = new float[width * height];
+			for(int i = 0; i < width*height; i++)
+				floatData[i] = (float) (data[i]&0xff);
+			isMaxima = Utility.getLocalMaxima(floatData, width, height, 1, 3, 3, 1);
+		}
+		
+		//Divide the image into an array of small target images for ROI annotation		
 		if(ip.getWidth() < roiWidth || ip.getHeight() < roiHeight) {
 			System.out.println("ROI cannot be greater than the image");
 			return;
@@ -143,6 +163,16 @@ public class ROIAnnotator {
 			//columns
 			for(int j = startRow ; j <= endRow; j = j + interval)
 			{ 
+				//If only local maxima are to be annotated, skip those which are not maxima
+				if(this.isMaximaOnly && isMaxima != null) {
+					int y = j + roiHeight / 2;
+					int x = i + roiWidth / 2;
+					if (!Utility.isWithinBounds(x, y, width, height))
+						continue;
+					else if(!isMaxima[y  * width + x])
+						continue;
+				}
+				
 				//rows
 				imageIndex++;
 				
@@ -186,7 +216,7 @@ public class ROIAnnotator {
 	    } //end of i
 		System.out.println("Image INdex: " + imageIndex);
 		
-		markResultsOnImage(imp, predictions, roiWidth, roiHeight, startCol, startRow, endCol, endRow);
+		markResultsOnImage(imp, predictions, roiWidth, roiHeight, isMaxima, startCol, startRow, endCol, endRow);
 	}
 	
 	private byte getSubImageData(byte[] data, int col, int row, int imgWidth, int imgHeight, int i, int j, int m, int n) {//TODO: i, j, m, n only for debugging, to be removed later
@@ -270,9 +300,16 @@ public class ROIAnnotator {
     }
     
     //make an overlay mask on the grayed image
-    public void markResultsOnImage(ImagePlus imp, int[] predictions, int roiWidth, int roiHeight, int startCol, int startRow, int endCol, int endRow)
+    public void markResultsOnImage(ImagePlus imp, int[] predictions, int roiWidth, int roiHeight, boolean[] isMaxima,
+    		int startCol, int startRow, int endCol, int endRow)
     {  
     	String imageName = imp.getTitle();
+    	
+    	int imageType = imp.getType();
+    	if(imageType != ImagePlus.COLOR_RGB) {
+    		ImageConverter ic = new ImageConverter(imp);
+    		ic.convertToRGB();
+    	}
     	
     	ImageProcessor ip = imp.getProcessor();
     	ImageProcessor ipOriginal = ip.duplicate();
@@ -286,9 +323,22 @@ public class ROIAnnotator {
     	int colorLabel = 0;
     	
     	int index = 0;	
+    	int width = ip.getWidth();
+    	int height = ip.getHeight();
+    	
     	for(int i=startCol; i <= endCol; i = i + interval)
     		for(int j=startRow ; j <= endRow; j = j + interval)
     		{
+    			//Skip non-maxima if only local maxima annotated
+    			if(this.isMaximaOnly && isMaxima != null) {
+					int y = j + roiHeight / 2;
+					int x = i + roiWidth / 2;
+					if (!Utility.isWithinBounds(x, y, width, height))
+						continue;
+					else if(!isMaxima[y  * width + x])
+						continue;
+				}
+    			
     			int res = predictions[index++];
     			ip.moveTo(i+roiWidth/2, j+roiHeight/2);
     			ipMaskOnly.moveTo(i+roiWidth/2, j+roiHeight/2);
@@ -330,7 +380,8 @@ public class ROIAnnotator {
     		if(dirExists)
     		{
 		    	for(String key : classNames.keySet()) {
-		    		exportPrediction(startCol, endCol, startRow, endRow, roiWidth, roiHeight, predictions, imageName, key);
+		    		exportPrediction(startCol, endCol, startRow, endRow, roiWidth, roiHeight, predictions, imageName, key,
+		    						width, height, isMaxima);
 		    	}
     		}
     		else
@@ -339,7 +390,8 @@ public class ROIAnnotator {
     }
      
     public void exportPrediction(int startCol, int endCol, int startRow, int endRow, int roiWidth, int roiHeight,
-    		int[] predictions, String baseFile, String classKey) {
+    		int[] predictions, String baseFile, String classKey, 
+    		int width, int height, boolean[] isMaxima) {
     	String newLine = System.getProperty("line.separator");
     	
     	//Open file for each class : the file contains list of coordinate of annotated pixel
@@ -352,10 +404,19 @@ public class ROIAnnotator {
 	    	for(int i=startCol; i <= endCol; i = i + interval) {
 	    		for(int j=startRow ; j <= endRow; j = j + interval)
 	    		{
+	    			y = j + roiHeight / 2;
+					x = i + roiWidth / 2;
+					
+	    			//Skip non-maxima if only local maxima annotated
+	    			if(this.isMaximaOnly && isMaxima != null) {						
+						if (!Utility.isWithinBounds(x, y, width, height))
+							continue;
+						else if(!isMaxima[y  * width + x])
+							continue;
+					}
+	    			
 	    			res = predictions[index++];
 	    			if(classKey.equals(String.valueOf(res))) {
-		    			x = i+roiWidth/2;
-		    			y = j+roiHeight/2;
 	    				writer.write(x + "," + y);
 		    			writer.write(newLine);
 	    			}

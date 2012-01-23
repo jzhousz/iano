@@ -3,8 +3,11 @@ package annotool.gui;
 import ij.ImagePlus;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
+import ij.process.ImageConverter;
+import ij.process.ImageProcessor;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -17,6 +20,8 @@ import java.io.IOException;
 import javax.swing.*;
 
 import annotool.AnnOutputPanel;
+import annotool.analysis.Utility;
+import annotool.io.DataInput;
 
 public class ROITagger extends JDialog implements ActionListener {
 	private AnnOutputPanel pnlStatus = new AnnOutputPanel();
@@ -24,6 +29,7 @@ public class ROITagger extends JDialog implements ActionListener {
 	private JButton btnLoadImg = null;
 	private JButton btnLoadROI = null;
 	private JButton btnSave = null;
+	private JButton btnTemp = null;
 	
 	//File chooser and context specific file filters to use with the file chooser
 	final JFileChooser fileChooser = new JFileChooser();
@@ -44,7 +50,7 @@ public class ROITagger extends JDialog implements ActionListener {
 	
 	private JPanel createRightColumn() {
 		JPanel rightPanel = new JPanel();
-		rightPanel.setLayout(new GridLayout(3, 1, 2, 2));
+		rightPanel.setLayout(new GridLayout(4, 1, 2, 2));
 		
 		btnLoadImg = new JButton("Load Image");
 		btnLoadImg.addActionListener(this);
@@ -55,9 +61,13 @@ public class ROITagger extends JDialog implements ActionListener {
 		btnSave = new JButton("Save");
 		btnSave.addActionListener(this);
 		
+		btnTemp = new JButton("temp");
+		btnTemp.addActionListener(this);
+		
 		rightPanel.add(btnLoadImg);
 		rightPanel.add(btnLoadROI);
 		rightPanel.add(btnSave);
+		rightPanel.add(btnTemp);
 		
 		return rightPanel;
 	}
@@ -126,6 +136,77 @@ public class ROITagger extends JDialog implements ActionListener {
 	    		pnlStatus.setOutput("Exception occured while writing target file: " + file.getName());
 	        	ex.printStackTrace();
 	    	}
+		}
+		else if(ev.getSource() == btnTemp) {
+			ImageProcessor ip = imp.getProcessor();
+			Object datain = ip.getPixels();
+			
+			int totalwidth = ip.getWidth();
+			int totalheight = ip.getHeight();
+			
+			float[] feature = new float[totalwidth * totalheight];
+			
+			int imageType = imp.getType();
+			if(imageType == DataInput.GRAY8)
+		    {
+		      byte[] data = (byte[]) datain;
+		      for(int i = 0; i< totalwidth*totalheight; i++)
+		         feature[i] = (float) (data[i]&0xff);
+		    }
+		    else if(imageType == DataInput.GRAY16)
+		    {
+		    	int[] data = (int[]) datain;
+	 	        for(int i = 0; i< totalwidth*totalheight; i++)
+	 	    	  feature[i] = (float) (data[i]&0xffff);
+		    }	
+	 	    else if(imageType == DataInput.GRAY32)
+	 	    {
+		    	float[] data = (float[]) datain;
+	 	        for(int i = 0; i< totalwidth*totalheight; i++)
+	 	 	    	  feature[i] = (float) data[i];
+	 	    }
+	 	    else if (imageType == DataInput.COLOR_RGB) {
+	 	    	pnlStatus.setOutput("Only grayscale supported");
+	 	    	return;
+	 	    }
+	 	    else
+	 	    {
+	 	    	pnlStatus.setOutput("Unsuppored Image Type");
+	 	    	return;
+	 	    }
+			
+			boolean[] isMaxima = Utility.getLocalMaxima(feature, totalwidth, totalheight, 1, 3, 3, 1);
+			
+			//float alpha = 0.6f; //transparent parameter (0: transparent; 1: opaque)
+	    	//int[] colors = new int[3];
+	    	//float[] fcolors = new float[3];
+			
+			ImageConverter ic = new ImageConverter(imp);
+			ic.convertToRGB();
+			ip = imp.getChannelProcessor();
+	    	
+	    	for(int y = 0; y < totalheight; y++) {
+				for(int x = 0; x < totalwidth; x++) {
+					if(isMaxima[Utility.offset(x, y, totalwidth)]) {
+						ip.moveTo(x, y);						
+						//ip.getPixel(x, y, colors);
+						//for(int k = 0; k < colors.length; k++) fcolors[k] = (float) colors[k]/256;
+						
+						//fcolors[0] = alpha + fcolors[0]*(1-alpha);
+		    			//fcolors[1] = fcolors[1]*(1-alpha);
+		    			//fcolors[2] = fcolors[2]*(1-alpha);
+		    			
+		    			//Color c = new Color(fcolors[0], fcolors[1], fcolors[2]);
+		    			Color c = new Color(1f, 0f, 0f);
+		    			ip.setColor(c);
+		    			ip.fillOval(x - 2, y - 2, 4, 4);
+					}
+				}
+			}
+			
+			imp.updateAndDraw();
+			
+			pnlStatus.setOutput("Done");
 		}
 	}
 	
