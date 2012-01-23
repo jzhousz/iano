@@ -224,10 +224,11 @@ public class ModelLoader implements Runnable {
 		String channel = pnlImages.getSelectedChannel();
 		String exportDir = pnlROIParam.getExportDir();
 		boolean isExport = pnlROIParam.isExport();
+		boolean isMaximaOnly = pnlROIParam.isLocalMaximaOnly();
 		
 		int[] selectedImages = pnlImages.getTablePanel().getAnnotationTable().getSelectedRows();
 		
-		ROIAnnotator roiAnnotator = new ROIAnnotator(interval, mode, channel, chainModels, selectedImages, exportDir, isExport,  this.pnlImages);
+		ROIAnnotator roiAnnotator = new ROIAnnotator(interval, mode, channel, chainModels, selectedImages, exportDir, isExport, isMaximaOnly,  this.pnlImages);
 	}
 	
 	/**
