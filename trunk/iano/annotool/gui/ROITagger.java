@@ -31,6 +31,10 @@ public class ROITagger extends JDialog implements ActionListener {
 	private JButton btnSave = null;
 	private JButton btnTemp = null;
 	
+	//testing purpose for 3D 
+	private JButton btn3DROITrain = null;
+	private JButton btn3DROITest = null;
+	
 	//File chooser and context specific file filters to use with the file chooser
 	final JFileChooser fileChooser = new JFileChooser();
 	
@@ -63,11 +67,19 @@ public class ROITagger extends JDialog implements ActionListener {
 		
 		btnTemp = new JButton("temp");
 		btnTemp.addActionListener(this);
+	
+		btn3DROITrain = new JButton("3D ROI Train");
+		btn3DROITrain.addActionListener(this);
+		
+		btn3DROITest = new JButton("3D ROI Test");
+		btn3DROITest.addActionListener(this);
 		
 		rightPanel.add(btnLoadImg);
 		rightPanel.add(btnLoadROI);
 		rightPanel.add(btnSave);
 		rightPanel.add(btnTemp);
+		rightPanel.add(btn3DROITrain);
+		rightPanel.add(btn3DROITest);
 		
 		return rightPanel;
 	}
@@ -208,6 +220,18 @@ public class ROITagger extends JDialog implements ActionListener {
 			
 			pnlStatus.setOutput("Done");
 		}
+		else if(ev.getSource() == btn3DROITrain)
+		{
+			ImageProcessor ip = imp.getProcessor();
+			annotool.analysis.ThreeDROIAnnotation.train3droi(imp);
+		}
+		else if(ev.getSource() == btn3DROITest)
+		{
+			ImageProcessor ip = imp.getProcessor();
+			annotool.analysis.ThreeDROIAnnotation.test3droi(imp);
+		}
+		
 	}
+	
 	
 }
