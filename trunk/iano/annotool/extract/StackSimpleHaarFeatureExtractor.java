@@ -11,8 +11,8 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 
 	
 	public final static String LEVEL_KEY = "Wavelet Level";
-	public final static String STACKS_TO_INCLUDE = "Midstacks to Include";
-	public final static String WEIGHT_KEY = "WEIGHTED";
+	public final static String STACKS_TO_INCLUDE = "Middle Stacks to Include";
+	public final static String WEIGHT_KEY = "Weighted";
 
 	protected float[][] features = null;
 	//one of the two below will contain data to work on
@@ -21,11 +21,11 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 	int length; 
 	ImgDimension dim = new ImgDimension();
 	int stackSize;
-	int level;
+	int level = 1;
 	int imageType;
 
 	int stacksToInclude = 3; //#of center stacks considered, typically an odd num
-	boolean weighted = true; //default: stacks are weighted differently
+	boolean weighted = false; //default: stacks are weighted differently
 
 	public StackSimpleHaarFeatureExtractor()
 	{}
@@ -51,7 +51,10 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		this.stackSize  = problem.getStackSize();
 		//the uplimit of stacksToInclude is stackSize
 		if(stacksToInclude > stackSize)
+		{
+			System.err.println("the stacks to include can be maximum "+stackSize);
 			stacksToInclude = stackSize;
+		}
 		return calcFeatures();
 	}
 	
@@ -66,12 +69,17 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		this.all3DData = all3DData;
 		this.stackSize = ((ArrayList)all3DData.get(0)).size();
 		if(stacksToInclude > stackSize)
+		{
+			System.err.println("the stacks to include can be maximum "+stackSize);
 			stacksToInclude = stackSize;
-		
+		}
 		return calcFeatures();
 	}
 	
-	//the method that calculates the features based on either all3DData or problem
+	//This method calculates the features based on either all3DData or problem
+	//These two inputs will be handled differently
+	// For the all3DData, imageType needs to correspond to the data type in ArrayList, which maybe not the type of the original image, if already processed.
+	//
 	private float[][] calcFeatures() throws Exception
 	{
 		if(features == null)
@@ -94,21 +102,43 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		
 		if(all3DData != null && problem == null)
 		{
+			/*
+		}
 		  //process one image at a time.	
  		  float[] features4OneImage = new float[dim.width*dim.height];
+ 		  try{
   		  for(int i=0; i< this.length; i++)
 		  {
+  			System.out.println("image index:"+i);
 			  for(int stackIndex= mid-lefthalf;  stackIndex < mid + righthalf; stackIndex ++)
 			  {  
 				//stackIndex starts from 0 for ArrayList!
 		        Object oneImageData = ((ArrayList)all3DData.get(i)).get(stackIndex);
 		        //single image mode HaarFeature
-		        haar.getHaarFeatureOfOneImage(oneImageData, features4OneImage);
+		        System.out.println("stackIndex:"+stackIndex);
+		        //call a protected method to fill the preallocated array
+		        haar.getHaarFeatureOfOneImage(oneImageData,  features4OneImage);
 		        weight = getWeightForStack(stackIndex, stackSize); 
 		        for(int j=0; j<dim.width*dim.height; j++)
 		        	features[i][j]+=weight*features4OneImage[j];
 			  }
 		  } //end for all images
+ 		  }catch(Throwable e) {e.printStackTrace();}
+		  */
+ 		  ArrayList listforstack= new ArrayList();
+ 		  for(int stackIndex=mid-lefthalf; stackIndex < mid+righthalf; stackIndex++)
+ 		  {
+ 			  for(int i=0; i< this.length; i++)
+ 			  {
+		        Object oneImageData = ((ArrayList)all3DData.get(i)).get(stackIndex);
+				listforstack.add(oneImageData);   
+ 			  }
+ 			  
+ 			  features4CurrentStack = haar.calcFeatures(listforstack, imageType, dim);
+ 			  weight = getWeightForStack(stackIndex-1, stackSize);
+ 			  addFeatures(features,features4CurrentStack, length, dim.width*dim.height, weight);
+ 			  listforstack.clear();  
+ 		  }
 		}
 		else if (problem !=null)//DataInput is used instead of ArrayList
 		{
