@@ -1,0 +1,14 @@
+Total Length: 29461.572536303178
+Thick Length: 928.8533240769574
+Medium Length: 2664.0266705811405
+Fine Length: 25868.692541644068
+--------------------------------------------------
+Synapse Count: 1858
+Synapse on fine branches: 1300
+Synapse on medium branches: 264
+Synapse on thick branches: 91
+--------------------------------------------------
+Total synapse density: 0.06306520121118901
+Synapse density on fine branches: 0.05025379608603053
+Synapse density on medium length branches: 0.09909810698044179
+Synapse density on thickest length branches: 0.09797025821103748
