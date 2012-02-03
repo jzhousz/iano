@@ -55,7 +55,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
 	  return calcFeatures();
   }
   
-  
+  //a list of images
   public float[][] calcFeatures(ArrayList data, int imageType, ImgDimension dim) throws Exception
   {
  	 totalwidth = dim.width;
@@ -65,7 +65,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
 	 this.imageType = imageType;
 	 return calcFeatures();
   }
-  
+
    private float[][] calcFeatures() throws Exception
    {
 	    if(features == null)
@@ -89,9 +89,10 @@ public class HaarFeatureExtractor implements FeatureExtractor
 
    }
 
-   protected void getHaarFeatureOfOneImage(Object datain, float[] feature) throws Exception
+   //add ImageType on 1/24/2011, called by StackSimpleHaarFeature
+   private void getHaarFeatureOfOneImage(Object datain, float[] feature) throws Exception
    {
-	    //copy data to feature,
+	   //copy data to feature,
 	    //toFloat() of ColorProcessor does the same loop
 	    if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB)
 	    {
@@ -109,14 +110,17 @@ public class HaarFeatureExtractor implements FeatureExtractor
  	    {
 	    	float[] data = (float[]) datain;
  	        for(int i = 0; i< totalwidth*totalheight; i++)
+ 	        {
  	 	    	  feature[i] = (float) data[i];
+ 	 	    	  //System.out.println(i+":"+feature[i]);
+ 	        }
  	    }
  	    else
  	    {
  	    	throw new Exception("Unsuppored Image Type for Haar Feature Extractor");
  	    }
 
-		//added 03232010:  standardize the image first, so that discretize may be easiler
+		//added 03232010:  standardize the image first, so that discretize may be easier
 	    //scale based on 0-255.
 		Util.scaleAnImage(feature);
 		
