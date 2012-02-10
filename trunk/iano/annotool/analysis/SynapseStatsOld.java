@@ -1,12 +1,20 @@
 package annotool.analysis;
 
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+
+import java.awt.Color;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 
+import javax.swing.JFileChooser;
+
 import annotool.AnnOutputPanel;
 
-public class SynapseStats implements Runnable {
+public class SynapseStatsOld implements Runnable {
 	private File synapseFile = null;
 	private File[] neuronFiles = null;
 	
@@ -17,15 +25,15 @@ public class SynapseStats implements Runnable {
 	private AnnOutputPanel pnlStatus = null;
 	
 	static final double FINE_TH = 4.0;
-	static final double MEDIUM_TH = 24.0;
+	static final double MEDIUM_TH = 22.0;
 	
 	static final double SEARCH_TH = 25; //Radius threshold for proximity search
 	
-	static final double DENSITY_FACTOR = 1 / (2 * Math.PI);
-	
-	float[] radiusMap = null;
+	boolean[] 	fineMap = null,
+				mediumMap = null,
+				thickMap = null;	
 		
-	public SynapseStats(File synapseFile, File[] neuronFiles, AnnOutputPanel pnlStatus, 
+	public SynapseStatsOld(File synapseFile, File[] neuronFiles, AnnOutputPanel pnlStatus, 
 						int width, int height, int depth) {
 		this.synapseFile = synapseFile;
 		this.neuronFiles = neuronFiles;
@@ -35,19 +43,9 @@ public class SynapseStats implements Runnable {
 		this.depth = depth;
 		
 		int size = width * height * depth;
-		radiusMap = new float[size];
-		
-		int offset1, offset2, index;
-		for(int z = 0; z < depth; z++) {
-			offset1 = z * width * height;
-			for(int y = 0; y < height; y++) {
-				offset2 = y * width;
-				for(int x = 0; x < width; x++) {
-					index = offset1 + offset2 + x;
-					radiusMap[index] = -1;
-				}
-			}
-		}
+		fineMap = new boolean[size];
+		mediumMap = new boolean[size];
+		thickMap = new boolean[size];
 	}
 
 	@Override
@@ -65,15 +63,10 @@ public class SynapseStats implements Runnable {
 				fineLength = 0,
 				mediumLength = 0,
 				thickLength = 0;
-		
-		double 	densityFine = 0,
-				densityMedium = 0,
-				densityThick = 0;
-		
 		double x, y, z, radius;
 		double 	segmentLength;
 		
-		int intX, intY, intZ, r, rz;
+		int intX, intY, intZ, r;
 		double dx, dy, dz;
 		int num;
 		
@@ -133,18 +126,19 @@ public class SynapseStats implements Runnable {
 				r = (int) Math.round(radius);
 				
 				int zOffset, yOffset, index;
-				
-				 
-				rz = r / 3 + 1;
-				
-				for(int k = (intZ - rz); k < (intZ + rz); k++) {
+				for(int k = (intZ - r); k < (intZ + r); k++) {
 					zOffset = k * width * height;
 					for(int j = (intY - r); j < (intY + r); j++) {
 						yOffset = j * width;
 						for(int i = (intX - r); i < (intX + r); i++) {
 							index = zOffset + yOffset + i;
 							if(isWithinBounds(i, j, k)) {
-								radiusMap[index] = (float)radius;
+								if(radius > MEDIUM_TH)
+									thickMap[index] = true;
+								else if(radius > FINE_TH)
+									mediumMap[index] = true;
+								else
+									fineMap[index] = true;
 							}
 						}
 					}
@@ -183,6 +177,41 @@ public class SynapseStats implements Runnable {
 		pnlStatus.setOutput("Thick Length: " + thickLength);
 		pnlStatus.setOutput("Medium Length: " + mediumLength);
 		pnlStatus.setOutput("Fine Length: " + fineLength);
+		
+		
+		//Visualize fine branches
+		int tempzoff, tempyoff, tempindex;
+		
+		//int depth = 59; //Hardcoded depth
+		ImageStack stack = new ImageStack(width, height);
+		
+		for(int tempz = 0; tempz < depth; tempz++) {
+			tempzoff = tempz * width * height;
+			
+			ImageProcessor ip = new ColorProcessor(width, height);
+			//ip.or(255);			
+			ip.setColor(new Color(255, 0, 0));
+			
+			for(int tempy = 0; tempy < height; tempy++) {
+				tempyoff = tempy * width;
+				for(int tempx = 0; tempx < width; tempx++) {
+					tempindex = tempzoff + tempyoff + tempx;
+					if(mediumMap[tempindex])
+						ip.drawDot(tempx, tempy);
+				}
+			}
+			
+			//Add processor to stack
+			stack.addSlice("", ip);
+		}
+		
+		
+		ImagePlus imp = new ImagePlus("Fine map", stack);
+		
+		JFileChooser fileChooser = new JFileChooser();
+		if(fileChooser.showSaveDialog(pnlStatus) != JFileChooser.CANCEL_OPTION)
+			ij.IJ.save(imp, fileChooser.getSelectedFile().getPath());
+		
 		
 		int synapseTotal = 0,
 			synapseOnFine = 0,
@@ -248,8 +277,6 @@ public class SynapseStats implements Runnable {
 			
 			boolean done = false;
 			
-			float currRadius;
-			
 			while(incr < SEARCH_TH && !done) {
 				startX = intX - incr; endX = intX + incr;
 				startY = intY - incr; endY = intY + incr;
@@ -265,21 +292,18 @@ public class SynapseStats implements Runnable {
 								if(px == startX || px == endX || py == startY || py == endY || pz == startZ || pz == endZ) {
 									index = zOffset + yOffset + px;
 									
-									currRadius = radiusMap[index];
-									if(currRadius != -1) {
-										if(currRadius > MEDIUM_TH) {
-											synapseOnThick++;
-											densityThick += DENSITY_FACTOR / currRadius;
-										}
-										else if(currRadius > FINE_TH) {
-											synapseOnMedium++;
-											densityMedium += DENSITY_FACTOR / currRadius;
-										}
-										else {
-											synapseOnFine++;
-											densityFine += DENSITY_FACTOR / currRadius;
-										}	
-										
+									if(fineMap[index]) {
+										synapseOnFine++;
+										done = true;
+										break;
+									}
+									if(mediumMap[index]) {
+										synapseOnMedium++;
+										done = true;
+										break;
+									}
+									if(thickMap[index]) {
+										synapseOnThick++;
 										done = true;
 										break;
 									}
@@ -307,8 +331,7 @@ public class SynapseStats implements Runnable {
 		pnlStatus.setOutput("Synapse on thick branches: " + synapseOnThick);
 		
 		pnlStatus.setOutput("--------------------------------------------------");
-		pnlStatus.setOutput("Density over length:");
-		pnlStatus.setOutput("--------------------------------------------------");
+
 		if(totalLength != 0)
 			pnlStatus.setOutput("Total synapse density: " + synapseTotal / totalLength);
 		if(fineLength != 0)
@@ -317,19 +340,6 @@ public class SynapseStats implements Runnable {
 			pnlStatus.setOutput("Synapse density on medium length branches: " + synapseOnMedium / mediumLength);
 		if(thickLength != 0)
 			pnlStatus.setOutput("Synapse density on thickest length branches: " + synapseOnThick / thickLength);
-		
-		pnlStatus.setOutput("--------------------------------------------------");
-		pnlStatus.setOutput("Density over surface:");
-		pnlStatus.setOutput("--------------------------------------------------");
-
-		if(totalLength != 0)
-			pnlStatus.setOutput("Total synapse density: " + (densityFine + densityMedium + densityThick) / totalLength);
-		if(fineLength != 0)
-			pnlStatus.setOutput("Synapse density on fine branches: " + densityFine / fineLength);
-		if(mediumLength != 0)
-			pnlStatus.setOutput("Synapse density on medium length branches: " + densityMedium / mediumLength);
-		if(thickLength != 0)
-			pnlStatus.setOutput("Synapse density on thickest length branches: " + densityThick / thickLength);
 		
 		
 		thread = null;
