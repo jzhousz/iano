@@ -119,6 +119,38 @@ public class Tester extends JFrame implements ActionListener{
 				lbNeuron.setText("Multiple neuron files selected (if converting, only first will be used).");
 		}
 		else if(ev.getSource() == btnRun) {
+			/* Temp code to get colinergic synapses
+			ImagePlus impOne = new ImagePlus(synapseFile.getPath());
+			ImagePlus impTwo = new ImagePlus(neuronFiles[0].getPath());
+			
+			int width = impOne.getWidth();
+			int height = impOne.getHeight();
+			int depth = impOne.getStackSize();
+			
+			int value1, value2;
+			for(int i=0; i < depth; i++) {
+				impOne.setSlice(i + 1);
+				impTwo.setSlice(i + 1);
+				
+				ImageProcessor ip1 = impOne.getProcessor();
+				ImageProcessor ip2 = impTwo.getProcessor();
+				for(int y=0; y < height; y++) {
+					for(int x=0; x < width; x++) {
+						value1 = ip1.getPixel(x, y);
+						value2 = ip2.getPixel(x, y);
+						if(value1 > value2)
+							value1 -= value2;
+						else
+							value1 = 0;
+						
+						ip1.putPixel(x, y, value1);
+					}
+				}
+			}
+			
+			impOne.show();
+			ij.IJ.save(impOne, synapseFile.getParent() + "/result.tif");*/
+			
 			//Check if proper files are selected
 			if(rbCalcStats.isSelected() && (synapseFile == null || neuronFiles == null)) {
 				pnlStatus.setOutput("Both files are required.");
