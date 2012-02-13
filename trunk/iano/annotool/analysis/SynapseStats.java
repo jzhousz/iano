@@ -16,12 +16,14 @@ public class SynapseStats implements Runnable {
 	
 	private AnnOutputPanel pnlStatus = null;
 	
-	static final double FINE_TH = 4.0;
-	static final double MEDIUM_TH = 24.0;
+	static final double MIN_TH = 3.6;
+	static final double MAX_TH = 16.0;
 	
 	static final double SEARCH_TH = 25; //Radius threshold for proximity search
 	
 	static final double DENSITY_FACTOR = 1 / (2 * Math.PI);
+	
+	static final int BINS = 10;
 	
 	float[] radiusMap = null;
 		
@@ -66,9 +68,28 @@ public class SynapseStats implements Runnable {
 				mediumLength = 0,
 				thickLength = 0;
 		
+		double[] binLength = new double[BINS];
+		
 		double 	densityFine = 0,
 				densityMedium = 0,
 				densityThick = 0;
+		
+		double[] density  = new double[BINS];
+		double[] binThreshold = new double [BINS - 1];
+		double binSize = (MAX_TH - MIN_TH) / (BINS - 2);
+		
+		//Initialize BINS - 1 thresholds for BINS bins
+		binThreshold[0] = MIN_TH;
+		binThreshold[BINS - 2] = MAX_TH;
+		for(int i = 1; i < BINS - 2; i++) {
+			binThreshold[i] = binThreshold[i - 1] + binSize; 
+		}
+		
+		//Initialize length and density to zero
+		for(int i = 0; i < BINS; i++) {
+			binLength[i] = 0;
+			density[0] = 0;
+		}
 		
 		double x, y, z, radius;
 		double 	segmentLength;
@@ -157,12 +178,23 @@ public class SynapseStats implements Runnable {
 					
 					segmentLength = Math.sqrt(dx*dx + dy*dy + dz*dz);
 					
-					if(radius > MEDIUM_TH)
+					boolean isFine = true;
+					for(int i = BINS - 2; i >= 0; i--) {
+						if(radius > binThreshold[i]) {
+							binLength[i + 1] += segmentLength;
+							isFine = false;
+							break;
+						}
+					}
+					if(isFine)
+						binLength[0] += segmentLength;
+					
+					/*if(radius > MAX_TH)
 						thickLength += segmentLength;
-					else if(radius > FINE_TH)
+					else if(radius > MIN_TH)
 						mediumLength += segmentLength;
 					else
-						fineLength += segmentLength;
+						fineLength += segmentLength;*/
 					
 					totalLength += segmentLength;
 				}
@@ -180,14 +212,21 @@ public class SynapseStats implements Runnable {
 		}
 		
 		pnlStatus.setOutput("Total Length: " + totalLength);
-		pnlStatus.setOutput("Thick Length: " + thickLength);
+		/*pnlStatus.setOutput("Thick Length: " + thickLength);
 		pnlStatus.setOutput("Medium Length: " + mediumLength);
-		pnlStatus.setOutput("Fine Length: " + fineLength);
+		pnlStatus.setOutput("Fine Length: " + fineLength);*/
+		
+		for(int i = 0; i < BINS; i++)
+			pnlStatus.setOutput("Length for bin " + (i + 1) + ": " + binLength[i]);
 		
 		int synapseTotal = 0,
 			synapseOnFine = 0,
 			synapseOnMedium = 0,
 			synapseOnThick = 0;
+		
+		int[] synapseCount = new int[BINS];
+		for(int i = 0; i < BINS; i++)
+			synapseCount[i] = 0;
 		
 		//Read the synapse file
 		try {
@@ -267,18 +306,32 @@ public class SynapseStats implements Runnable {
 									
 									currRadius = radiusMap[index];
 									if(currRadius != -1) {
-										if(currRadius > MEDIUM_TH) {
+										boolean isFine = true;
+										for(int i = BINS - 2; i >= 0; i--) {
+											if(currRadius > binThreshold[i]) {
+												synapseCount[i + 1]++;
+												density[i + 1] += DENSITY_FACTOR / currRadius;
+												isFine = false;
+												break;
+											}
+										}
+										if(isFine) {
+											synapseCount[0]++;
+											density[0] += DENSITY_FACTOR / currRadius;
+										}
+										
+										/*if(currRadius > MAX_TH) {
 											synapseOnThick++;
 											densityThick += DENSITY_FACTOR / currRadius;
 										}
-										else if(currRadius > FINE_TH) {
+										else if(currRadius > MIN_TH) {
 											synapseOnMedium++;
 											densityMedium += DENSITY_FACTOR / currRadius;
 										}
 										else {
 											synapseOnFine++;
 											densityFine += DENSITY_FACTOR / currRadius;
-										}	
+										}*/	
 										
 										done = true;
 										break;
@@ -302,34 +355,51 @@ public class SynapseStats implements Runnable {
 		pnlStatus.setOutput("--------------------------------------------------");
 		
 		pnlStatus.setOutput("Synapse Count: " + synapseTotal);
-		pnlStatus.setOutput("Synapse on fine branches: " + synapseOnFine);
+		/*pnlStatus.setOutput("Synapse on fine branches: " + synapseOnFine);
 		pnlStatus.setOutput("Synapse on medium branches: " + synapseOnMedium);
-		pnlStatus.setOutput("Synapse on thick branches: " + synapseOnThick);
+		pnlStatus.setOutput("Synapse on thick branches: " + synapseOnThick);*/
+		for(int i = 0; i < BINS; i++)
+			pnlStatus.setOutput("Synapse count for bin " + (i + 1) + ": " + synapseCount[i]);
 		
 		pnlStatus.setOutput("--------------------------------------------------");
 		pnlStatus.setOutput("Density over length:");
 		pnlStatus.setOutput("--------------------------------------------------");
 		if(totalLength != 0)
 			pnlStatus.setOutput("Total synapse density: " + synapseTotal / totalLength);
-		if(fineLength != 0)
+		/*if(fineLength != 0)
 			pnlStatus.setOutput("Synapse density on fine branches: " + synapseOnFine / fineLength);
 		if(mediumLength != 0)
 			pnlStatus.setOutput("Synapse density on medium length branches: " + synapseOnMedium / mediumLength);
 		if(thickLength != 0)
-			pnlStatus.setOutput("Synapse density on thickest length branches: " + synapseOnThick / thickLength);
+			pnlStatus.setOutput("Synapse density on thickest length branches: " + synapseOnThick / thickLength);*/
+		for(int i = 0; i < BINS; i++)
+			if(binLength[i] != 0)
+				pnlStatus.setOutput("Density for bin " + (i + 1) + ": " + synapseCount[i] / binLength[i]);
+			else
+				pnlStatus.setOutput("Density for bin " + (i + 1) + ": [BIN LENGTH 0]");
 		
 		pnlStatus.setOutput("--------------------------------------------------");
 		pnlStatus.setOutput("Density over surface:");
 		pnlStatus.setOutput("--------------------------------------------------");
 
-		if(totalLength != 0)
-			pnlStatus.setOutput("Total synapse density: " + (densityFine + densityMedium + densityThick) / totalLength);
-		if(fineLength != 0)
+		if(totalLength != 0) {
+			double densitySum = 0;
+			for(int i = 0; i < BINS; i++)
+				densitySum += density[i];
+			
+			pnlStatus.setOutput("Total synapse density: " + densitySum / totalLength);
+		}
+		/*if(fineLength != 0)
 			pnlStatus.setOutput("Synapse density on fine branches: " + densityFine / fineLength);
 		if(mediumLength != 0)
 			pnlStatus.setOutput("Synapse density on medium length branches: " + densityMedium / mediumLength);
 		if(thickLength != 0)
-			pnlStatus.setOutput("Synapse density on thickest length branches: " + densityThick / thickLength);
+			pnlStatus.setOutput("Synapse density on thickest length branches: " + densityThick / thickLength);*/
+		for(int i = 0; i < BINS; i++)
+			if(binLength[i] != 0)
+				pnlStatus.setOutput("Density for bin " + (i + 1) + ": " + density[i] / binLength[i]);
+			else
+				pnlStatus.setOutput("Density for bin " + (i + 1) + ": [BIN LENGTH 0]");
 		
 		
 		thread = null;
