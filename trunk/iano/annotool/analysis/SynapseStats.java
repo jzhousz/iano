@@ -1,8 +1,20 @@
 package annotool.analysis;
 
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.gui.NewImage;
+import ij.process.ImageProcessor;
+
+import java.awt.Color;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Random;
 import java.util.Scanner;
+
+import javax.swing.JFileChooser;
 
 import annotool.AnnOutputPanel;
 
@@ -23,9 +35,14 @@ public class SynapseStats implements Runnable {
 	
 	static final double DENSITY_FACTOR = 1 / (2 * Math.PI);
 	
-	static final int BINS = 10;
+	static final int BINS = 6;
 	
 	float[] radiusMap = null;
+	
+	int colorPool[] = { 16777215, 3092479, 11730948, 15002703, 1240038,
+			15007979, 64, 8388672, 16744448, 8388863 };
+	
+	JFileChooser fileChooser = new JFileChooser();
 		
 	public SynapseStats(File synapseFile, File[] neuronFiles, AnnOutputPanel pnlStatus, 
 						int width, int height, int depth) {
@@ -63,16 +80,9 @@ public class SynapseStats implements Runnable {
 
 		Scanner scanner = null;
 		String line = null;
-		double 	totalLength = 0,
-				fineLength = 0,
-				mediumLength = 0,
-				thickLength = 0;
+		double 	totalLength = 0;
 		
 		double[] binLength = new double[BINS];
-		
-		double 	densityFine = 0,
-				densityMedium = 0,
-				densityThick = 0;
 		
 		double[] density  = new double[BINS];
 		double[] binThreshold = new double [BINS - 1];
@@ -189,18 +199,8 @@ public class SynapseStats implements Runnable {
 					if(isFine)
 						binLength[0] += segmentLength;
 					
-					/*if(radius > MAX_TH)
-						thickLength += segmentLength;
-					else if(radius > MIN_TH)
-						mediumLength += segmentLength;
-					else
-						fineLength += segmentLength;*/
-					
 					totalLength += segmentLength;
 				}
-				//else {
-					//pnlStatus.setOutput("Connection broken at node " + num);
-				//}
 				
 				xPrev = x;
 				yPrev = y;
@@ -212,17 +212,31 @@ public class SynapseStats implements Runnable {
 		}
 		
 		pnlStatus.setOutput("Total Length: " + totalLength);
-		/*pnlStatus.setOutput("Thick Length: " + thickLength);
-		pnlStatus.setOutput("Medium Length: " + mediumLength);
-		pnlStatus.setOutput("Fine Length: " + fineLength);*/
 		
 		for(int i = 0; i < BINS; i++)
 			pnlStatus.setOutput("Length for bin " + (i + 1) + ": " + binLength[i]);
 		
-		int synapseTotal = 0,
-			synapseOnFine = 0,
-			synapseOnMedium = 0,
-			synapseOnThick = 0;
+		int synapseTotal = 0;
+		
+		ImagePlus imgSynapses = NewImage.createRGBImage("Synapses", width, height, depth, NewImage.FILL_BLACK);
+		ImageStack stacks = imgSynapses.getStack();
+		ImageProcessor ip = null;
+		
+		int[] color = new int[BINS];
+		for(int i = 0; i < BINS; i++) {
+			color[i] = colorPool[i % 10];
+		}
+		/*float 	h, 
+				s, 
+				b = 0.5f;
+		Random rand = new Random();
+		for(int i = 0; i < BINS; i++) {
+			h = rand.nextFloat();
+			s = (rand.nextInt(2000) + 1000) / 10000f;
+			
+			color[i] = Color.HSBtoRGB(h, s, b);
+			System.out.println(color[i]);
+		}*/
 		
 		int[] synapseCount = new int[BINS];
 		for(int i = 0; i < BINS; i++)
@@ -238,7 +252,15 @@ public class SynapseStats implements Runnable {
 			return;
 		}
 		
+		
+		BufferedWriter writer = null;
+		if(fileChooser.showSaveDialog(pnlStatus) == JFileChooser.CANCEL_OPTION)
+			return;
+		try {
+			writer = new BufferedWriter(new FileWriter(fileChooser.getSelectedFile()));
 		while(scanner.hasNext()) {
+			
+			
 			line = scanner.nextLine();
 			line.trim();
 			if(line.isEmpty())
@@ -264,15 +286,6 @@ public class SynapseStats implements Runnable {
 			intX = (int) Math.round(x);
 			intY = (int) Math.round(y);
 			intZ = (int) Math.round(z);
-			
-			/*int index = intZ * width * height + intY * width + intX;
-			
-			if(fineMap[index])
-				synapseOnFine++;
-			if(mediumMap[index])
-				synapseOnMedium++;
-			if(thickMap[index])
-				synapseOnThick++;*/
 			
 			synapseTotal++;
 			
@@ -306,11 +319,20 @@ public class SynapseStats implements Runnable {
 									
 									currRadius = radiusMap[index];
 									if(currRadius != -1) {
+										ip = stacks.getProcessor(intZ - 1);							
+										
 										boolean isFine = true;
 										for(int i = BINS - 2; i >= 0; i--) {
 											if(currRadius > binThreshold[i]) {
 												synapseCount[i + 1]++;
 												density[i + 1] += DENSITY_FACTOR / currRadius;
+												
+												ip.setValue(color[i + 1]);
+												ip.fillOval(intX  - 1, height - intY, 6, 6);
+												
+												writer.write((intX - 1) + " " + (height - intY) + " " + (intZ - 1) + " " + (i + 2));
+												writer.newLine();
+												
 												isFine = false;
 												break;
 											}
@@ -318,20 +340,13 @@ public class SynapseStats implements Runnable {
 										if(isFine) {
 											synapseCount[0]++;
 											density[0] += DENSITY_FACTOR / currRadius;
+											
+											ip.setValue(color[0]);
+											ip.fillOval(intX - 1, height - intY, 6, 6);
+											
+											writer.write((intX - 1) + " " + (height - intY) + " " + (intZ - 1) + " 1");
+											writer.newLine();
 										}
-										
-										/*if(currRadius > MAX_TH) {
-											synapseOnThick++;
-											densityThick += DENSITY_FACTOR / currRadius;
-										}
-										else if(currRadius > MIN_TH) {
-											synapseOnMedium++;
-											densityMedium += DENSITY_FACTOR / currRadius;
-										}
-										else {
-											synapseOnFine++;
-											densityFine += DENSITY_FACTOR / currRadius;
-										}*/	
 										
 										done = true;
 										break;
@@ -349,15 +364,23 @@ public class SynapseStats implements Runnable {
 				incr++;
 			}
 		}
+
+			writer.flush();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		
 		scanner.close();
+		
+		if(fileChooser.showSaveDialog(pnlStatus) != JFileChooser.CANCEL_OPTION)
+			ij.IJ.save(imgSynapses, fileChooser.getSelectedFile().getPath());
+		
+		ColorLabel legend = new ColorLabel(color);
 		
 		pnlStatus.setOutput("--------------------------------------------------");
 		
 		pnlStatus.setOutput("Synapse Count: " + synapseTotal);
-		/*pnlStatus.setOutput("Synapse on fine branches: " + synapseOnFine);
-		pnlStatus.setOutput("Synapse on medium branches: " + synapseOnMedium);
-		pnlStatus.setOutput("Synapse on thick branches: " + synapseOnThick);*/
 		for(int i = 0; i < BINS; i++)
 			pnlStatus.setOutput("Synapse count for bin " + (i + 1) + ": " + synapseCount[i]);
 		
@@ -366,12 +389,6 @@ public class SynapseStats implements Runnable {
 		pnlStatus.setOutput("--------------------------------------------------");
 		if(totalLength != 0)
 			pnlStatus.setOutput("Total synapse density: " + synapseTotal / totalLength);
-		/*if(fineLength != 0)
-			pnlStatus.setOutput("Synapse density on fine branches: " + synapseOnFine / fineLength);
-		if(mediumLength != 0)
-			pnlStatus.setOutput("Synapse density on medium length branches: " + synapseOnMedium / mediumLength);
-		if(thickLength != 0)
-			pnlStatus.setOutput("Synapse density on thickest length branches: " + synapseOnThick / thickLength);*/
 		for(int i = 0; i < BINS; i++)
 			if(binLength[i] != 0)
 				pnlStatus.setOutput("Density for bin " + (i + 1) + ": " + synapseCount[i] / binLength[i]);
@@ -389,12 +406,6 @@ public class SynapseStats implements Runnable {
 			
 			pnlStatus.setOutput("Total synapse density: " + densitySum / totalLength);
 		}
-		/*if(fineLength != 0)
-			pnlStatus.setOutput("Synapse density on fine branches: " + densityFine / fineLength);
-		if(mediumLength != 0)
-			pnlStatus.setOutput("Synapse density on medium length branches: " + densityMedium / mediumLength);
-		if(thickLength != 0)
-			pnlStatus.setOutput("Synapse density on thickest length branches: " + densityThick / thickLength);*/
 		for(int i = 0; i < BINS; i++)
 			if(binLength[i] != 0)
 				pnlStatus.setOutput("Density for bin " + (i + 1) + ": " + density[i] / binLength[i]);
