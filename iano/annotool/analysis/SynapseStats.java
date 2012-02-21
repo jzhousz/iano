@@ -1,17 +1,10 @@
 package annotool.analysis;
 
-import ij.ImagePlus;
-import ij.ImageStack;
-import ij.gui.NewImage;
-import ij.process.ImageProcessor;
-
-import java.awt.Color;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Random;
 import java.util.Scanner;
 
 import javax.swing.JFileChooser;
@@ -218,25 +211,10 @@ public class SynapseStats implements Runnable {
 		
 		int synapseTotal = 0;
 		
-		ImagePlus imgSynapses = NewImage.createRGBImage("Synapses", width, height, depth, NewImage.FILL_BLACK);
-		ImageStack stacks = imgSynapses.getStack();
-		ImageProcessor ip = null;
-		
 		int[] color = new int[BINS];
 		for(int i = 0; i < BINS; i++) {
 			color[i] = colorPool[i % 10];
 		}
-		/*float 	h, 
-				s, 
-				b = 0.5f;
-		Random rand = new Random();
-		for(int i = 0; i < BINS; i++) {
-			h = rand.nextFloat();
-			s = (rand.nextInt(2000) + 1000) / 10000f;
-			
-			color[i] = Color.HSBtoRGB(h, s, b);
-			System.out.println(color[i]);
-		}*/
 		
 		int[] synapseCount = new int[BINS];
 		for(int i = 0; i < BINS; i++)
@@ -318,17 +296,12 @@ public class SynapseStats implements Runnable {
 									index = zOffset + yOffset + px;
 									
 									currRadius = radiusMap[index];
-									if(currRadius != -1) {
-										ip = stacks.getProcessor(intZ - 1);							
-										
+									if(currRadius != -1) {		
 										boolean isFine = true;
 										for(int i = BINS - 2; i >= 0; i--) {
 											if(currRadius > binThreshold[i]) {
 												synapseCount[i + 1]++;
 												density[i + 1] += DENSITY_FACTOR / currRadius;
-												
-												ip.setValue(color[i + 1]);
-												ip.fillOval(intX  - 1, height - intY, 6, 6);
 												
 												writer.write((intX - 1) + " " + (height - intY) + " " + (intZ - 1) + " " + (i + 2));
 												writer.newLine();
@@ -340,9 +313,6 @@ public class SynapseStats implements Runnable {
 										if(isFine) {
 											synapseCount[0]++;
 											density[0] += DENSITY_FACTOR / currRadius;
-											
-											ip.setValue(color[0]);
-											ip.fillOval(intX - 1, height - intY, 6, 6);
 											
 											writer.write((intX - 1) + " " + (height - intY) + " " + (intZ - 1) + " 1");
 											writer.newLine();
@@ -372,11 +342,8 @@ public class SynapseStats implements Runnable {
 			}
 		
 		scanner.close();
-		
-		if(fileChooser.showSaveDialog(pnlStatus) != JFileChooser.CANCEL_OPTION)
-			ij.IJ.save(imgSynapses, fileChooser.getSelectedFile().getPath());
-		
-		ColorLabel legend = new ColorLabel(color);
+				
+		//ColorLabel legend = new ColorLabel(color);
 		
 		pnlStatus.setOutput("--------------------------------------------------");
 		
