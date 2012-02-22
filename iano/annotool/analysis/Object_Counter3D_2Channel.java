@@ -171,7 +171,8 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener,
 	ImagePlus CentresInt;
 	ResultsTable rt;
 	Thread thread;
-
+	
+	//Color pool for color coded visualization 
 	int colorPool[] = { 16777215, 3092479, 11730948, 15002703, 1240038,
 			15007979, 64, 8388672, 16744448, 8388863 };
 	int[] tagColor = null;
