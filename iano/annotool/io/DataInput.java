@@ -3,6 +3,7 @@ package annotool.io;
 import java.io.*;
 import ij.ImagePlus;
 import ij.gui.NewImage;
+import ij.gui.Roi;
 import ij.process.*;
 import java.util.ArrayList;
 
@@ -11,6 +12,8 @@ import java.util.ArrayList;
  * Add channel number  (r or g or b) as an input option for RGB images. 
  * This class can read data for CV mode or TT mode.  
  * In TT mode, directory is used as training directory.
+ * 
+ * Feb. 2011: Added HeightList, WidthList, ofSameSize and getters to accommodate different image size 
  */ 
 public class DataInput
 {
@@ -34,10 +37,14 @@ public class DataInput
 	protected ArrayList data = null; //store all images in the dir with given ext.
 	int lastStackIndex = 0; // the variable to track if the last getData() was for the same stack
 	String[] children = null; //list of image file names in the dir
-	protected int height = 0;
-	protected int width = 0;
+	protected int height = 0; //height of the first image
+	protected int width = 0;  //width of the first image
+	int[] widthList = null;  //add width, height lists. Moved from DataInputDynamic 02/2012
+	int[] heightList = null;
+	int[] depthList = null;
 	protected int stackSize = 0;
 	protected int imageType = 0;
+	boolean ofSameSize = true; //added Feb 2012 to combine DataInputDynamic
 	String directory;
 	String ext;
 
@@ -49,6 +56,21 @@ public class DataInput
 		this.directory = directory;
 		this.ext = ext;
 		this.channel = channel;
+	}
+	
+	//02/27/2012  Take an image and a collection of ROIs. An alternative for ROI reading.
+	public DataInput(ImagePlus image, Roi[] rois)
+	{
+		//TBA;
+	}
+	
+	//02/27/2012 
+	//a directory hierarchy that has images of different classes in different subdirectories
+	//It will not need a target file.
+	public DataInput(String[] directory)
+	{
+		
+		
 	}
 	
 	//if the image is to be resized before processing
@@ -77,37 +99,18 @@ public class DataInput
 		//stack from 1 to number of slices
 		ImageProcessor ip = imgp.getStack().getProcessor(stackIndex);
 		Object results = null;
-
+		
 		if (resize)
 			ip  = ip.resize(width,height);
 
-		int width = ip.getWidth();
-		int height = ip.getHeight();
-		//width and height should be the same for all images. -- error handling
-		if(width != this.width || height != this.height)
-		{
-			System.err.println("Image" + path + "is not the same size as the 1st one. Ignored.");
-			return null;
-		}
-
 		//get the pixel values. We only deal with one color for RGB picture
 		if (ip instanceof ByteProcessor)
-		{
-			/*
-			//should use array copy since memory was also allocated in ip, o/w values are not passed back
-			byte[] returnedPixels = (byte[]) (ip.getPixels());
-			System.arraycopy(returnedPixels, 0, pixels, 0, width*height); //020209
-			*/
-			
 			results = ip.getPixels();
-			
-		}
 		else if (ip instanceof ColorProcessor)
 		{
 			//System.out.println("RGB image..");
-			//note: tmppixels contains the irrelevant channels.
 			byte[] pixels= new byte[width*height];
-			byte[] tmppixels= new byte[width*height];
+			byte[] tmppixels= new byte[width*height];  //for the irrelevant channels.
 
 			if (channel == "r")
 				((ColorProcessor)ip).getRGB(pixels,tmppixels,tmppixels);
@@ -134,48 +137,23 @@ public class DataInput
 		{
 			//16 bit or 32 bit grayscale
 			results =  ip.getPixels();
-			
-			
-			//get pixels return an array of int
-			 /* Returns a reference to the short array containing this image's
-	        pixel data. To avoid sign extension, the pixel values must be
-	        accessed using a mask (e.g. int i = pixels[j]&0xffff). 
-			http://www.imagingbook.com/fileadmin/goodies/ijtutorial/tutorial171.pdf sec 4.8
-			*/	
-			/* System.out.println("convert 16 bit gray scale or 32 bit floating point images to 8-bit images.");
-			//what about the relativity in the image set?
-			//ImageProcess ip2= ip.convertToByte(true);	 //scale to 0 and 255, if false, values are clipped.
-			//byte[] returnedPixels = (byte[]) (ip2.getPixels());
-			//System.arraycopy(returnedPixels, 0, pixels, 0, width*height);
-			*/
-				
-			//alternative solutions without loss of precision:  09/01/2011 
-			//1. get int[] or float[], then pass to the algorithm as Object, together with an image type, so that the algorithm would do the casting
-			//   i.e.  getData() returns Object.
-			//2. pass the ip or ip[] to algorithm so it can do anything, assuming the developer knows ImageJ programming. 
-			//Or: convert to byte, but pass ArrayList of byte[] to avoid memory copy. Maybe save some memory, depending on how gc works.
-			//    or: getData() return ArrayList of Object, each item is a data array
-			//     then: add: getType() to find out the datatype to cast to.
-			//Object returnedPixels = Object (ip.getPixels()); //-- int[]
 		}
 		else
 		{
 			System.err.println("Image type is not supported.");
-			//throw new Exception("Image type is not supported.");
 			System.exit(0);
 		}
 		
 		return results;
 	}
 
+	//return an arraylist of all images of a particular stack.
 	private ArrayList readImages(String directory, String ext, String[] children, int stackIndex)
 	{
 		//read the 1st one to get some properties
 		//System.out.println("The first image in dir is "+ children[0] + ". Reading total "+ children.length + " images ..");
-		//Assumption: All images are of the same size as image 1.
 		ImagePlus imgp = new ImagePlus(directory+children[0]);
 		imageType = imgp.getType();
-
 		if (!resize)
 		{
 			width = imgp.getProcessor().getWidth();
@@ -187,8 +165,36 @@ public class DataInput
 		data = new ArrayList(children.length);
 		
 		//fill the data
+		//added on 2/27 to allow different image size
+		if(widthList == null)
+			widthList = new int[children.length];
+		if(heightList == null)
+		    heightList = new int[children.length];
+		if(depthList == null)
+		    depthList = new int[children.length];
 		for (int i=0; i<children.length; i++)
-			data.add(openOneImage(directory+children[i],  stackIndex));
+		{
+			String path = directory+children[i];
+			if(!resize)
+			{
+			  imgp = new ImagePlus(path);
+			  widthList[i] = imgp.getProcessor().getWidth();
+			  heightList[i] = imgp.getProcessor().getHeight();
+			  depthList[i] = imgp.getStackSize();
+			  if(widthList[i] != this.width || heightList[i] != this.height || depthList[i] !=this.stackSize)
+			  {
+				System.err.println("Image" + path + "is not the same size as the 1st one. ");
+				ofSameSize = false;
+			  }
+			}
+			else //resize. What about depth?
+			{
+			  widthList[i] = this.width;
+			  heightList[i] = this.height;
+			}
+			//add data.  Resizing will be done inside if needed.	
+			data.add(openOneImage(path,  stackIndex));
+		}
 		
 		return data;
 	}
@@ -235,6 +241,11 @@ public class DataInput
 		return children.length;
 	}
 
+	/**
+	 * It is the width of the first image. 
+	 * 
+	 * @return int
+	 */
 	public int getWidth()
 	{
 		if(width == 0)
@@ -248,6 +259,11 @@ public class DataInput
 		return width;
 	}
 
+	/**
+	 * It is the height of the first image.
+	 * 
+	 * @return
+	 */
 	public int getHeight()
 	{
 		if(height == 0)
@@ -261,6 +277,11 @@ public class DataInput
 		return height;
 	}
 
+	/**
+	 * This is the stack size of the first image.
+	 * 
+	 * @return
+	 */
 	public int getStackSize()
 	{
 		if(stackSize == 0)
@@ -342,7 +363,13 @@ public class DataInput
 		return imageType;
 	}
 	
-	 /** 
+	//if all images are of the same size, return true; otherwise, return false.
+	public boolean ofSameSize()
+	{
+		return ofSameSize;
+	}
+
+	/** 
 	 *  Get one image with all the stacks
 	 *  Each item in the ArrayList is a stack.
 	 *  Intended for 3D images.
@@ -366,5 +393,41 @@ public class DataInput
 		ImagePlus imgp = new ImagePlus(directory+children[imageIndex]);
 		return imgp;
 	}
+	
+
+	//the following three getters are typically called after the images are read.
+	
+	public int[] getWidthList()
+	{
+		if (widthList == null)
+		{
+			System.out.println("Read the images to get info.");
+			getData();
+		}
+			
+		return widthList;
+	}
+
+	public int[] getHeightList()
+	{
+		if (heightList == null)
+		{
+			System.out.println("Read the images to get info.");
+			getData();
+		}
+			
+		return heightList;
+	}
+	
+	public int[] getDepthList()
+	{
+        if (depthList == null)
+        {
+			System.out.println("Read the images to get info.");
+			getData();
+        }
+        return depthList;
+	}
+	
 	
 }
