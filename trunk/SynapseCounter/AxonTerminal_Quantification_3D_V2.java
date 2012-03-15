@@ -27,8 +27,8 @@ import java.awt.*;
 import java.util.*;
 import java.awt.event.*;
 
-public class AxonTerminal_Quantification_3D_NOSWITCH implements PlugIn, AdjustmentListener, TextListener {
-    static final String pluginName = "AxonTerminal Quantification 3D NOSWITCH";
+public class AxonTerminal_Quantification_3D_V2 implements PlugIn, AdjustmentListener, TextListener {
+    static final String pluginName = "AxonTerminal Quantification 3D V2";
     boolean debug = false;
 
     Vector sliders;
@@ -91,7 +91,7 @@ public class AxonTerminal_Quantification_3D_NOSWITCH implements PlugIn, Adjustme
         img.setSlice((int)NbSlices/2);
         img.updateAndDraw();
 
-        GenericDialog gd=new GenericDialog("AxonTerminal_Quantification_3D_NOSWITCH");
+        GenericDialog gd=new GenericDialog("AxonTerminal_Quantification_3D_V2");
 	
 	gd.addSlider("Noise threshold: ",ip.getMin(), ip.getMax(),ThrVal);
         sliders=gd.getSliders();
@@ -128,7 +128,7 @@ public class AxonTerminal_Quantification_3D_NOSWITCH implements PlugIn, Adjustme
         bb =gd.getNextBoolean(); 	     bb_default = bb;
   
 
-        IJ.register(AxonTerminal_Quantification_3D_NOSWITCH.class); // static fields preserved when plugin is restarted
+        IJ.register(AxonTerminal_Quantification_3D_V2.class); // static fields preserved when plugin is restarted
         //Reset the threshold
         ip.resetThreshold();
         img.updateAndDraw();
@@ -267,7 +267,7 @@ public class AxonTerminal_Quantification_3D_NOSWITCH implements PlugIn, Adjustme
 	int terr_count = 0;
         byte[] red,gre,blue;
        	ImagePlus aySliceImgObj=null, aySliceImgNeu=null;
-	float res[] = new float[2]; 
+	float res[] = new float[4]; 
 	ColorProcessor aySlice=null;
 	int validTISliceCount = 0;
 	int validTeSliceCount = 0;
@@ -332,18 +332,20 @@ public class AxonTerminal_Quantification_3D_NOSWITCH implements PlugIn, Adjustme
 
 	  //add  
 	  res[0] += resfory[0];
-	  if(resfory[0] >0) validTISliceCount ++;
 	  res[1] += resfory[1];
-	  if(resfory[1] >0) validTeSliceCount ++; 
+	  //if(res[0] >0) validTISliceCount ++;
+	  res[2] += resfory[2];
+	  res[3] += resfory[3];
+	  //if(res[1] >0) validTeSliceCount ++; 
         }//end of all y
 
 	//normalized for y
-	IJ.log("total TI:"+res[0] + "   Valid # of slices:" + validTISliceCount);
-	res[0] /= validTISliceCount;
-	res[1] /= validTeSliceCount;
+	IJ.log("total TI:"+res[0] + "   total voxel" + res[1]);
+	//res[0] /= validTISliceCount;
+	//res[1] /= validTeSliceCount;
 	IJ.log("---- Final Result For The Neuron -----");
-	IJ.log("Topographic Index:"+res[0]);
-	IJ.log("Territory Proportion:"+res[1]);
+	IJ.log("Topographic Index:"+res[0]/res[1]);
+	IJ.log("Territory Proportion:"+res[2]/res[3]);
 
 	if(show_mask)
 	{
@@ -434,6 +436,7 @@ public class AxonTerminal_Quantification_3D_NOSWITCH implements PlugIn, Adjustme
        
 
        //output total ti for the neuron
+       /*
        float TI =0;
        if (voxelCount > 0)
          TI = tisum/voxelCount;
@@ -442,16 +445,22 @@ public class AxonTerminal_Quantification_3D_NOSWITCH implements PlugIn, Adjustme
        float terri_normalized = 0;
        if(terr_count > 0)
           terri_normalized = terr_sum /terr_count; 
+       */
+       float[] res = new float[4];
+       res[0] = tisum;
+       res[1] = voxelCount; 
+       res[2] = terr_sum;
+       res[3] = terr_count;
+       	
 
-       float[] res = new float[2];
-       res[0] = TI; res[1] = terri_normalized;
-
+       /*
        IJ.log("  -- Total number of voxels in the axon terminal: " + voxelCount);	
        IJ.log("  -- Topographic index for the given plane : " + res[0]);
        IJ.log("  -- Total territory for the given plane: " + terr_sum);
        IJ.log("  -- Total number of x for territory calculation: " + terr_count);
        IJ.log("  -- Size-Normalized territory for the given plane: " + res[1]);
-            
+       */
+
        return res;
     }
 
