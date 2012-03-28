@@ -1,6 +1,7 @@
 package annotool.io;
 
 import java.io.*;
+
 import ij.ImagePlus;
 import ij.gui.NewImage;
 import ij.gui.Roi;
@@ -59,15 +60,35 @@ public class DataInput
 	}
 	
 	//02/27/2012  Take an image and a collection of ROIs. An alternative for ROI reading.
+    //move the logic from ROITagger	
 	public DataInput(ImagePlus image, Roi[] rois)
 	{
+	    //need to fill data;widthlist;heightlist;depthlist;
+		//what about children, length, width, height, stackisze;
+		/*
+    	BufferedWriter writer = null;
+    	try {
+	    	writer = new BufferedWriter(new FileWriter(new File(file, "target.txt")));
+	    	
+	    	for(int i = 0; i < rois.length; i++) {
+				imp.setRoi(rois[i]);
+				ImagePlus roiImg = new ImagePlus("ROI", 
+						imp.getProcessor().crop());
+				ij.IJ.saveAs(roiImg, "jpeg", file.getPath() + "/" + (i + 1) + ".jpg");
+				writer.write((i + 1) + ".jpg" + newLine);
+			}
+	    	
+	    	writer.close();
+	    	pnlStatus.setOutput("DONE!!!");
+         */
+		
 		//TBA;
 	}
 	
 	//02/27/2012 
 	//a directory hierarchy that has images of different classes in different subdirectories
 	//It will not need a target file.
-	public DataInput(String[] directory)
+	public DataInput(String[] directory, String ext)
 	{
 		
 		
@@ -92,10 +113,8 @@ public class DataInput
 	}
 
 
-	Object openOneImage(String path, int stackIndex)
+	Object openOneImage(ImagePlus imgp, int stackIndex)
 	{
-		ImagePlus imgp = new ImagePlus(path); //calls the opener.openImage()
-
 		//stack from 1 to number of slices
 		ImageProcessor ip = imgp.getStack().getProcessor(stackIndex);
 		Object results = null;
@@ -148,11 +167,20 @@ public class DataInput
 	}
 
 	//return an arraylist of all images of a particular stack.
-	private ArrayList readImages(String directory, String ext, String[] children, int stackIndex)
+	private ArrayList readImages(String directory, String ext, int stackIndex)
 	{
+		String[] childrenCandidates = getChildrenCandidates(directory, ext);
+		
+		ArrayList<String> childrenList = new ArrayList<String>();
+		
 		//read the 1st one to get some properties
-		//System.out.println("The first image in dir is "+ children[0] + ". Reading total "+ children.length + " images ..");
-		ImagePlus imgp = new ImagePlus(directory+children[0]);
+		ImagePlus imgp = null;
+		imgp = new ImagePlus(directory+childrenCandidates[0]); //calls the opener.openImage()
+		if (imgp.getProcessor() == null && imgp.getStackSize() <=1)
+		{
+			System.err.println("Image type of" + (directory+childrenCandidates[0]) + " is not supported. Please select right extension.");
+			System.exit(0);
+		}
 		imageType = imgp.getType();
 		if (!resize)
 		{
@@ -161,23 +189,30 @@ public class DataInput
 			stackSize = imgp.getStackSize();
 		}
 
-		//allocate the memory for the problem
-		data = new ArrayList(children.length);
+		//allocate capacity for the problem. May need less.
+		data = new ArrayList(childrenCandidates.length);
 		
 		//fill the data
 		//added on 2/27 to allow different image size
 		if(widthList == null)
-			widthList = new int[children.length];
+			widthList = new int[childrenCandidates.length];
 		if(heightList == null)
-		    heightList = new int[children.length];
+		    heightList = new int[childrenCandidates.length];
 		if(depthList == null)
-		    depthList = new int[children.length];
-		for (int i=0; i<children.length; i++)
+		    depthList = new int[childrenCandidates.length];
+		for (int i=0; i<childrenCandidates.length; i++)
 		{
-			String path = directory+children[i];
+			String path = directory+childrenCandidates[i];
+			imgp = new ImagePlus(path); // an image type not supported by ImageJ
+			if (imgp.getProcessor() == null && imgp.getStackSize() <=1) 
+			{
+				System.out.println(path + ": not supported image type.");
+				continue;  
+			}
+			//update valid children
+			childrenList.add(childrenCandidates[i]);
 			if(!resize)
 			{
-			  imgp = new ImagePlus(path);
 			  widthList[i] = imgp.getProcessor().getWidth();
 			  heightList[i] = imgp.getProcessor().getHeight();
 			  depthList[i] = imgp.getStackSize();
@@ -193,7 +228,8 @@ public class DataInput
 			  heightList[i] = this.height;
 			}
 			//add data.  Resizing will be done inside if needed.	
-			data.add(openOneImage(path,  stackIndex));
+			data.add(openOneImage(imgp,  stackIndex));
+			children = (String[]) childrenList.toArray(new  String[childrenList.size()]);
 		}
 		
 		return data;
@@ -220,8 +256,8 @@ public class DataInput
 		//check if need to read the data based on lastStackIndex
 		if (data == null ||  lastStackIndex != stackIndex)
 	    {
-	 	   String[] children = getChildren();
-		   data = readImages(directory, ext, children, stackIndex);
+	 	   //String[] children = getChildren();
+		   data = readImages(directory, ext, stackIndex);
 	    }  
 	    lastStackIndex = stackIndex; //update the index of the last read stack.
 	   
@@ -235,7 +271,7 @@ public class DataInput
 		if (children == null)
 		{
 			System.out.println("Read the images to get info.");
-			String[] children = getChildren();
+			getChildren();
 		}
 			
 		return children.length;
@@ -295,9 +331,9 @@ public class DataInput
 	}
 
 	/* this will be called by public interface methods depending on training/testing */
-	private String[] getChildren(String directory, final String ext)
+	private String[] getChildrenCandidates(String directory, final String ext)
 	{
-	    String[] children;
+	    String[] childrenCandidates;
 		
 		File dir = new File(directory);
 		FilenameFilter filter = new FilenameFilter()
@@ -310,18 +346,19 @@ public class DataInput
 					return name.endsWith(ext);
 				}
 			};
-		children = dir.list(filter);
-		if (children == null)
+		childrenCandidates = dir.list(filter);
+		
+		if (childrenCandidates == null)
 			System.err.println("Problem reading files from the image directory.");
 		
-		return children;
+		return childrenCandidates;
 	}
 
 	//get the testing files or one set CV files
 	public String[] getChildren()
 	{
 		if (children == null)
-	   	 children = getChildren(directory, ext);
+	   	  readImages(directory, ext, 1);
 		
 		return children;
 	}
@@ -384,7 +421,7 @@ public class DataInput
 
 	    //stack from 1 to number of slices
 		for(int stackIndex = 1; stackIndex <= stackSize; stackIndex++)
-			data.add(openOneImage(directory+children[imageindex], stackIndex));
+			data.add(openOneImage(new ImagePlus(directory+children[imageindex]), stackIndex));
 	    
 		return data;
 	}
