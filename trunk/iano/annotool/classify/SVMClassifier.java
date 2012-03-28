@@ -53,7 +53,7 @@ public class SVMClassifier implements SavableClassifier
     boolean supportProbability = false;
     
    //initialize # of samples and # of dimension
-   //public SVMClassifier() {}    
+   public SVMClassifier() {}    
     
    public void setParameters(java.util.HashMap<String, String> parameters)
    {
