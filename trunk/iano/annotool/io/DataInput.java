@@ -1,12 +1,18 @@
 package annotool.io;
 
-import java.io.*;
-
 import ij.ImagePlus;
-import ij.gui.NewImage;
 import ij.gui.Roi;
-import ij.process.*;
+import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 
 /* Read images from a directory using ImageJ's utilities. 
@@ -14,23 +20,25 @@ import java.util.ArrayList;
  * This class can read data for CV mode or TT mode.  
  * In TT mode, directory is used as training directory.
  * 
- * Feb. 2011: Added HeightList, WidthList, ofSameSize and getters to accommodate different image size 
+ * Feb. 2012: Added HeightList, WidthList, ofSameSize and getters to accommodate different image size
+ * Mar. 2012: Added targets, classNames, Annotations 
+ * 
+ * It now encapsulates everything about a problem.
+ * 
+ * Important: readImages(childrenCandidates, stackIndex); is only called by getData().
+ *  
  */ 
 public class DataInput
 {
 	// The image types are the same as those defined in ImageJ's ImagePlus.
 	//  8-bit grayscale (unsigned)  (return byte[])
 	public static final int GRAY8 = 0;  
-	    
 	//16-bit grayscale (unsigned)  (return int[])
 	public static final int GRAY16 = 1; 
-	    
 	//32-bit floating-point grayscale  (return float[])
 	public static final int GRAY32 = 2; 
-	    
 	//8-bit indexed color  (return byte[])
 	public static final int COLOR_256 = 3; 
-	    
 	//32-bit RGB color  (return byte[])
 	public static final int COLOR_RGB = 4; 
 	 
@@ -52,12 +60,43 @@ public class DataInput
 	String channel = annotool.Annotator.channel;
 	boolean resize = false;
 
+	//added 03/2012 for uniform interface
+	boolean useDirStructure = false; //when not using a target file
+	String targetFile = null; 
+	int[][] targets = null;
+	HashMap<String, String> classNames = null; //key is target(int), value is target label(class name)
+	java.util.ArrayList<String> annotations = null;
+		
 	public DataInput(String directory, String ext, String channel)
 	{
 		this.directory = directory;
 		this.ext = ext;
 		this.channel = channel;
 	}
+	
+	
+	//Take the targetfile to populate the label related information
+	//This can avoid the need of calling either LabelReader or Annotator's  readTargets(..)
+	//The code in ExpertFrame will be cleaner.
+	public DataInput(String directory, String ext, String channel, String targetFile) throws Exception
+	{
+		this.directory = directory;
+		this.ext = ext;
+		this.channel = channel;
+		this.targetFile = targetFile;
+		
+		if (targetFile != null)
+		{
+		  //get children
+		  getChildren();
+		  //set targets
+		  LabelReader reader = new LabelReader(children.length,annotations);
+          targets = reader.getTargets(targetFile, children);
+          annotations = reader.getAnnotations();
+          classNames = reader.getClassnames();
+		}  
+	}
+	
 	
 	//02/27/2012  Take an image and a collection of ROIs. An alternative for ROI reading.
     //move the logic from ROITagger	
@@ -88,10 +127,35 @@ public class DataInput
 	//02/27/2012 
 	//a directory hierarchy that has images of different classes in different subdirectories
 	//It will not need a target file.
-	public DataInput(String[] directory, String ext)
+	//All the things will be done at the constructor instead of wait until later.
+	//Example: Hela 2D
+	public DataInput(String directory, String ext, boolean useDirStructureForTarget)
 	{
+		//set useDirStruture to true
+		useDirStructure = true;
 		
+		//getChildren also sets the Data and ClassNames
+		getChildren();
 		
+		//set targets based on valid children and classnames hashmap
+		//only consider one annotation when not using tagetfile
+		targets = new int[1][children.length];
+		for(int i=0; i<targets[1].length; i++)
+		{
+			String[] path = children[i].split(File.separator);
+			//find the corresponding key of the value
+			//Would be better if I have another hashMap
+			for(String key: classNames.keySet())
+			{
+				if (classNames.get(key).equals(path[0]))
+				{
+				  targets[1][i] = Integer.parseInt(key);
+				  break;
+				}
+			}
+			   
+			
+		}
 	}
 	
 	//if the image is to be resized before processing
@@ -167,10 +231,11 @@ public class DataInput
 	}
 
 	//return an arraylist of all images of a particular stack.
-	private ArrayList readImages(String directory, String ext, int stackIndex)
+	//This is the working horse for readingImages.
+	//Should just be called one for each stack
+	//private ArrayList readImages(String directory, String ext, int stackIndex)
+	private ArrayList readImages(String[] childrenCandidates, int stackIndex)
 	{
-		String[] childrenCandidates = getChildrenCandidates(directory, ext);
-		
 		ArrayList<String> childrenList = new ArrayList<String>();
 		
 		//read the 1st one to get some properties
@@ -211,6 +276,7 @@ public class DataInput
 			}
 			//update valid children
 			childrenList.add(childrenCandidates[i]);
+						
 			if(!resize)
 			{
 			  widthList[i] = imgp.getProcessor().getWidth();
@@ -226,9 +292,13 @@ public class DataInput
 			{
 			  widthList[i] = this.width;
 			  heightList[i] = this.height;
+			  depthList[i] = imgp.getStackSize();
 			}
 			//add data.  Resizing will be done inside if needed.	
 			data.add(openOneImage(imgp,  stackIndex));
+			
+			//udpate the index for current data, needed for 3D to avoid re-reading the same stack
+			lastStackIndex = stackIndex;
 			children = (String[]) childrenList.toArray(new  String[childrenList.size()]);
 		}
 		
@@ -252,12 +322,11 @@ public class DataInput
     **/
 	public ArrayList getData(int stackIndex)
 	{
-	
 		//check if need to read the data based on lastStackIndex
 		if (data == null ||  lastStackIndex != stackIndex)
 	    {
-	 	   //String[] children = getChildren();
-		   data = readImages(directory, ext, stackIndex);
+		   String[] childrenCandidates = getChildrenCandidates(directory, ext);
+		   data = readImages(childrenCandidates, stackIndex);
 	    }  
 	    lastStackIndex = stackIndex; //update the index of the last read stack.
 	   
@@ -298,7 +367,7 @@ public class DataInput
 	/**
 	 * It is the height of the first image.
 	 * 
-	 * @return
+	 * @return int
 	 */
 	public int getHeight()
 	{
@@ -330,14 +399,22 @@ public class DataInput
 		return stackSize;
 	}
 
-	/* this will be called by public interface methods depending on training/testing */
+	/* this will be called by getData() depending on training/testing 
+	 
+	   In the case of using directory structure (i.e not targetfile), it will use set the instance variable
+	     className
+	     annotations
+	*/
 	private String[] getChildrenCandidates(String directory, final String ext)
 	{
 	    String[] childrenCandidates;
-		
-		File dir = new File(directory);
-		FilenameFilter filter = new FilenameFilter()
-		{
+
+		if(useDirStructure == false)
+	    {
+
+	      File dir = new File(directory);
+		  FilenameFilter filter = new FilenameFilter()
+		  {
 			public boolean accept(File dir, String name)
 			{ 
 				if (ext.equals(".*"))
@@ -346,10 +423,18 @@ public class DataInput
 					return name.endsWith(ext);
 				}
 			};
-		childrenCandidates = dir.list(filter);
+		    childrenCandidates = dir.list(filter);
 		
-		if (childrenCandidates == null)
+		    if (childrenCandidates == null)
 			System.err.println("Problem reading files from the image directory.");
+	    }
+	    else //read subdirectory. The String has "subdirectname/filename"
+	    {
+			DirectoryReader reader = new DirectoryReader(directory, ext);
+			childrenCandidates = reader.getList();
+			classNames = reader.getClassNames();
+			annotations = reader.getAnnotations();
+	    }
 		
 		return childrenCandidates;
 	}
@@ -358,7 +443,7 @@ public class DataInput
 	public String[] getChildren()
 	{
 		if (children == null)
-	   	  readImages(directory, ext, 1);
+			getData();
 		
 		return children;
 	}
@@ -433,7 +518,6 @@ public class DataInput
 	
 
 	//the following three getters are typically called after the images are read.
-	
 	public int[] getWidthList()
 	{
 		if (widthList == null)
@@ -466,5 +550,17 @@ public class DataInput
         return depthList;
 	}
 	
-	
+    //related with labels	
+	public int[][] getTargets() {
+		return targets;
+	}
+
+	public java.util.ArrayList<String> getAnnotations() {
+		return annotations;
+	}
+
+	public HashMap<String, String> getClassNames() {
+		return classNames;
+	}
+
 }
