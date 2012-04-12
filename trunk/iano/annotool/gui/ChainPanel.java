@@ -695,10 +695,12 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        	
 	        	int destPosTrain = 0, destPosTest = 0;
 	        	for(int exIndex=0; exIndex < numExtractors; exIndex++) {
-	        		for(int item=0; item < trainingFeatures.length; item++) {
+	        		for(int item=0; item < trainingFeatures.length; item++)
 	        			System.arraycopy(exTrainFeatures[exIndex][item], 0, trainingFeatures[item], destPosTrain, exTrainFeatures[exIndex][item].length);
+
+	        		for(int item=0; item < testingFeatures.length; item++)
 		        		System.arraycopy(exTestFeatures[exIndex][item], 0, testingFeatures[item], destPosTest, exTestFeatures[exIndex][item].length);
-	        		}
+	        		
 	        		destPosTrain += exTrainFeatures[exIndex][0].length;
 	        		destPosTest += exTestFeatures[exIndex][0].length;
 	        	}
