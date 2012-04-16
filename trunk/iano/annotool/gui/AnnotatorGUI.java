@@ -108,18 +108,18 @@ public class AnnotatorGUI extends JFrame
 	public void initTT() {
 		//Load separate training and testing image sets
 		Annotator.output = Annotator.TT;
-		AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(this, pnlLanding, Annotator.TT);
+		LoadImageDialog loadDialog = new LoadImageDialog(this, pnlLanding, Annotator.TT);
 	}
 	public void initTrainOnly() {
 		Annotator.output = Annotator.TO;
-		AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(this, pnlLanding, Annotator.TO);
+		LoadImageDialog loadDialog = new LoadImageDialog(this, pnlLanding, Annotator.TO);
 	}
 	public void initAnnotate() {
 		Annotator.output = Annotator.AN;
-		AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(this, pnlLanding, Annotator.AN);
+		LoadImageDialog loadDialog = new LoadImageDialog(this, pnlLanding, Annotator.AN);
 	}
 	public void initROI() {
 		Annotator.output = Annotator.ROI;
-		AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(this, pnlLanding, Annotator.ROI);
+		LoadImageDialog loadDialog = new LoadImageDialog(this, pnlLanding, Annotator.ROI);
 	}
 }

@@ -1,7 +1,12 @@
 package annotool;
 
 import ij.ImagePlus;
-import ij.process.*;
+import ij.process.ByteProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.MedianCut;
+import ij.process.ShortProcessor;
+import ij.process.StackConverter;
 import ij3d.Content;
 import ij3d.Image3DUniverse;
 
@@ -15,12 +20,10 @@ import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
-import javax.swing.table.TableModel;
 
+import annotool.io.DirectoryReader;
 import annotool.io.LabelReader;
 
 public class AnnImageTable {
@@ -131,7 +134,7 @@ public class AnnImageTable {
 	public JScrollPane buildImageTable(String directory, String ext)
 	{
 		this.directory = directory;
-		problem = new annotool.io.DataInput(directory,ext);//(String) extBox.getSelectedItem());
+		problem = new annotool.io.DataInput(directory, ext);//(String) extBox.getSelectedItem());
 		children = problem.getChildren();
 
 		if (children == null)
@@ -144,6 +147,75 @@ public class AnnImageTable {
 			javax.swing.JOptionPane.showMessageDialog(null,"There is no image with the given extension.");
 			return null;
 		}
+		//build up the JTable
+		final String[] columnNames;
+		columnNames = new String[2];
+		columnNames[0] = "image thumbnail";
+		columnNames[1]= "file name";
+
+		final Object[][] tabledata = new Object[children.length][columnNames.length];
+		for (int i = 0; i < children.length; i++)
+		{
+			tabledata[i][0] =  getButtonCell(i);
+			tabledata[i][1] = children[i];
+
+		}		
+
+		// Create a model of the data. 
+		javax.swing.table.TableModel dataModel = new javax.swing.table.AbstractTableModel() { 
+			public int getColumnCount() { return columnNames.length; } 
+			public int getRowCount() { return tabledata.length;} 
+			public Object getValueAt(int row, int col) {return tabledata[row][col];} 
+			public String getColumnName(int column) {return columnNames[column];} 
+			public Class getColumnClass(int c) {return getValueAt(0, c).getClass();} 
+			public boolean isCellEditable(int row, int col) {return false ;} 
+			public void setValueAt(Object aValue, int row, int column) 
+			{ tabledata[row][column] = aValue; 
+			fireTableCellUpdated(row, column); //needed if data could change
+			} 
+		}; 
+
+		TableCellRenderer defaultRenderer;
+		table = new JTable(dataModel);
+		table.setRowHeight(THUMB_HEIGHT + 4); 
+		defaultRenderer = table.getDefaultRenderer(JButton.class);
+		table.setDefaultRenderer(JButton.class,
+				new JTableButtonRenderer(defaultRenderer));
+		scrollPane = new JScrollPane(table);
+		scrollPane.setOpaque(true); //content panes must be opaque
+		table.addMouseListener(new JTableButtonMouseListener(table));
+
+		return scrollPane;
+	}
+	
+	/**
+	 * For hierarchical directory structure.
+	 * 
+	 * @param directory
+	 * @param ext
+	 * @return
+	 */
+	public JScrollPane buildImageTableFromSubdirectories(String directory, String ext)
+	{
+		this.directory = directory;
+		problem = new annotool.io.DataInput(directory, ext, true);
+		children = problem.getChildren();
+
+		if (children == null)
+		{
+			javax.swing.JOptionPane.showMessageDialog(null,"Error: File path may be incorrect.");
+			return null;
+		}	
+		if (children.length == 0)
+		{
+			javax.swing.JOptionPane.showMessageDialog(null,"There is no image with the given extension.");
+			return null;
+		}
+		
+		annotations = problem.getAnnotations();
+		numOfAnno = annotations.size();
+		classNames = problem.getClassNames();
+		
 		//build up the JTable
 		final String[] columnNames;
 		columnNames = new String[2];

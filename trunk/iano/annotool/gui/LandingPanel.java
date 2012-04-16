@@ -323,7 +323,8 @@ public class LandingPanel extends JPanel implements ActionListener, ItemListener
 				}
 				//Load one image set for cross validation
 				Annotator.output = Annotator.CV;
-				AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.CV);
+				//AnnLoadImageDialog loadDialog = new AnnLoadImageDialog(gui, this, Annotator.CV);
+				LoadImageDialog loadDialog = new LoadImageDialog(gui, this, Annotator.CV);
 			}
 		}		
 	}

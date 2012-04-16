@@ -9,10 +9,10 @@ import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 
 /* Read images from a directory using ImageJ's utilities. 
@@ -133,6 +133,7 @@ public class DataInput
 	{
 		//set useDirStruture to true
 		useDirStructure = true;
+		this.directory = directory;
 		
 		//getChildren also sets the Data and ClassNames
 		getChildren();
@@ -140,16 +141,16 @@ public class DataInput
 		//set targets based on valid children and classnames hashmap
 		//only consider one annotation when not using tagetfile
 		targets = new int[1][children.length];
-		for(int i=0; i<targets[1].length; i++)
+		for(int i=0; i < children.length; i++)
 		{
-			String[] path = children[i].split(File.separator);
+			String[] path = children[i].split(Pattern.quote(File.separator));
 			//find the corresponding key of the value
 			//Would be better if I have another hashMap
 			for(String key: classNames.keySet())
 			{
 				if (classNames.get(key).equals(path[0]))
 				{
-				  targets[1][i] = Integer.parseInt(key);
+				  targets[0][i] = Integer.parseInt(key);
 				  break;
 				}
 			}
@@ -243,6 +244,9 @@ public class DataInput
 		imgp = new ImagePlus(directory+childrenCandidates[0]); //calls the opener.openImage()
 		if (imgp.getProcessor() == null && imgp.getStackSize() <=1)
 		{
+			StackTraceElement[] st = Thread.currentThread().getStackTrace();
+			for(int i=0; i < st.length; i++)
+				System.err.println(st[i]);
 			System.err.println("Image type of" + (directory+childrenCandidates[0]) + " is not supported. Please select right extension.");
 			System.exit(0);
 		}
@@ -431,7 +435,7 @@ public class DataInput
 	    else //read subdirectory. The String has "subdirectname/filename"
 	    {
 			DirectoryReader reader = new DirectoryReader(directory, ext);
-			childrenCandidates = reader.getList();
+			childrenCandidates = reader.getFileListArray();
 			classNames = reader.getClassNames();
 			annotations = reader.getAnnotations();
 	    }
@@ -464,8 +468,9 @@ public class DataInput
 		ImagePlus imgp = new ImagePlus(path);
 		int stackSize = imgp.getStackSize();
 	    if (stackSize > 1) 
-	      return true;
-	      else return false;
+	    	return true;
+	    else 
+	    	return false;
 	}
 	
 	
