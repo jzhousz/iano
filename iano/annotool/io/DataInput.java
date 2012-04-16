@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  * 
  * Feb. 2012: Added HeightList, WidthList, ofSameSize and getters to accommodate different image size
  * Mar. 2012: Added targets, classNames, Annotations 
- * 
+ *  The constructors can take targetfile, use the directory structure.
  * It now encapsulates everything about a problem.
  * 
  * Important: readImages(childrenCandidates, stackIndex); is only called by getData().
@@ -129,7 +129,7 @@ public class DataInput
 	//It will not need a target file.
 	//All the things will be done at the constructor instead of wait until later.
 	//Example: Hela 2D
-	public DataInput(String directory, String ext, boolean useDirStructureForTarget)
+	public DataInput(String directory, String ext, boolean useDirStructureForTarget) throws Exception
 	{
 		//set useDirStruture to true
 		useDirStructure = true;
@@ -313,7 +313,7 @@ public class DataInput
 	  		such as data[i][j]&0xff
 	  		The data is for CV mode, or training data in TT mode.
 	 **/
-	public ArrayList getData()
+	public ArrayList getData() throws Exception
 	{
 		//return the first slice for normal 2D images.
 		return getData(1);
@@ -324,7 +324,7 @@ public class DataInput
 		The data is for CV mode, or training data in TT mode.
 		stackIndex:  between 1 and stackSize
     **/
-	public ArrayList getData(int stackIndex)
+	public ArrayList getData(int stackIndex) throws Exception
 	{
 		//check if need to read the data based on lastStackIndex
 		if (data == null ||  lastStackIndex != stackIndex)
@@ -339,7 +339,7 @@ public class DataInput
 
 	
 	//getter should be called by images are read.
-	public int getLength()
+	public int getLength() throws Exception
 	{
 		if (children == null)
 		{
@@ -355,7 +355,7 @@ public class DataInput
 	 * 
 	 * @return int
 	 */
-	public int getWidth()
+	public int getWidth() throws Exception
 	{
 		if(width == 0)
 		{
@@ -373,7 +373,7 @@ public class DataInput
 	 * 
 	 * @return int
 	 */
-	public int getHeight()
+	public int getHeight() throws Exception
 	{
 		if(height == 0)
 		{
@@ -391,7 +391,7 @@ public class DataInput
 	 * 
 	 * @return
 	 */
-	public int getStackSize()
+	public int getStackSize() throws Exception
 	{
 		if(stackSize == 0)
 		{
@@ -409,7 +409,7 @@ public class DataInput
 	     className
 	     annotations
 	*/
-	private String[] getChildrenCandidates(String directory, final String ext)
+	private String[] getChildrenCandidates(String directory, final String ext) throws Exception
 	{
 	    String[] childrenCandidates;
 
@@ -430,12 +430,20 @@ public class DataInput
 		    childrenCandidates = dir.list(filter);
 		
 		    if (childrenCandidates == null)
-			System.err.println("Problem reading files from the image directory.");
+			    System.err.println("Problem reading files from the image directory.");
+		    //can addd some check to see if they are directories in case the user set the boolean wrong
+		       //...
+		    
 	    }
 	    else //read subdirectory. The String has "subdirectname/filename"
 	    {
 			DirectoryReader reader = new DirectoryReader(directory, ext);
 			childrenCandidates = reader.getFileListArray();
+			if(childrenCandidates.length == 0 || childrenCandidates == null)
+			{
+				System.err.println("No directories in the folder. ");
+				throw new Exception("No directory found in the directory tree mode.");
+			}
 			classNames = reader.getClassNames();
 			annotations = reader.getAnnotations();
 	    }
@@ -444,7 +452,7 @@ public class DataInput
 	}
 
 	//get the testing files or one set CV files
-	public String[] getChildren()
+	public String[] getChildren() throws Exception
 	{
 		if (children == null)
 			getData();
@@ -504,7 +512,7 @@ public class DataInput
 	 *  @param imageindex
 	 *  @return return an ArrayList of data array.
 	 */
-	public ArrayList getAllStacksOfOneImage(int imageindex)
+	public ArrayList getAllStacksOfOneImage(int imageindex) throws Exception
 	{
 		int stackSize = getStackSize();
 	    ArrayList data = new ArrayList(stackSize);
@@ -523,7 +531,7 @@ public class DataInput
 	
 
 	//the following three getters are typically called after the images are read.
-	public int[] getWidthList()
+	public int[] getWidthList() throws Exception
 	{
 		if (widthList == null)
 		{
@@ -534,7 +542,7 @@ public class DataInput
 		return widthList;
 	}
 
-	public int[] getHeightList()
+	public int[] getHeightList() throws Exception
 	{
 		if (heightList == null)
 		{
@@ -545,7 +553,7 @@ public class DataInput
 		return heightList;
 	}
 	
-	public int[] getDepthList()
+	public int[] getDepthList() throws Exception
 	{
         if (depthList == null)
         {
