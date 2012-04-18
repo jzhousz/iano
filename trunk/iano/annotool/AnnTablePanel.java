@@ -1,16 +1,17 @@
 package annotool;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.util.HashMap;
 
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+
+import annotool.io.DataInput;
 
 public class AnnTablePanel extends JPanel {
 
@@ -22,13 +23,19 @@ public class AnnTablePanel extends JPanel {
 	JFrame frame;
 
 	HashMap<String, String> classNames;
+	
+	private DataInput trainingProblem = null;
+	private DataInput testingProblem = null;
 
 	public AnnTablePanel(JFrame frame) {
 		this.frame = frame;
 	}
 
 	public boolean displayOneImageTable(String directory, String targetFile,
-			String ext) {
+			String ext) throws Exception {
+		trainingProblem = null;
+		testingProblem = null;
+		
 		// remove the old table from the table panel first, if any.
 		if (tableOne != null)
 			this.remove(tableOne);
@@ -47,6 +54,9 @@ public class AnnTablePanel extends JPanel {
 					"data set", TitledBorder.LEFT, TitledBorder.TOP),
 					new EmptyBorder(5, 5, 5, 5)));
 			currentCVTable = cvTable;
+			
+			trainingProblem = cvTable.getProblem();
+			
 			adjustFrame();
 			return true;
 		} else
@@ -54,7 +64,10 @@ public class AnnTablePanel extends JPanel {
 	}
 
 	// No target case - eg. annotate
-	public boolean displayOneImageTable(String directory, String ext) {
+	public boolean displayOneImageTable(String directory, String ext) throws Exception {
+		trainingProblem = null;
+		testingProblem = null;
+		
 		// remove the old table from the table panel first, if any.
 		if (tableOne != null)
 			this.remove(tableOne);
@@ -73,6 +86,9 @@ public class AnnTablePanel extends JPanel {
 					"data set", TitledBorder.LEFT, TitledBorder.TOP),
 					new EmptyBorder(5, 5, 5, 5)));
 			currentCVTable = cvTable;
+			
+			testingProblem = cvTable.getProblem();
+			
 			adjustFrame();
 			return true;
 		} else
@@ -81,7 +97,10 @@ public class AnnTablePanel extends JPanel {
 
 	// there is testing target file
 	public boolean displayTwoImageTables(String directory, String targetFile,
-			String ext, String testdir, String testtargetFile, String testext) {
+			String ext, String testdir, String testtargetFile, String testext) throws Exception {		
+		trainingProblem = null;
+		testingProblem = null;
+		
 		// remove the old table from the table panel first, if any.
 		if (tableOne != null)
 			this.remove(tableOne);
@@ -109,6 +128,10 @@ public class AnnTablePanel extends JPanel {
 			this.add(tableOne);
 			this.add(tableTwo);
 			currentTestImageTable = testingTable;
+			
+			trainingProblem = trainingTable.getProblem();
+			testingProblem = testingTable.getProblem();
+			
 			adjustFrame();
 			return true;
 		} else
@@ -117,7 +140,10 @@ public class AnnTablePanel extends JPanel {
 
 	// overloadded version when there is no testing targets
 	public boolean displayTwoImageTables(String directory, String targetFile,
-			String ext, String testdir, String testext) {
+			String ext, String testdir, String testext) throws Exception {
+		trainingProblem = null;
+		testingProblem = null;
+		
 		// remove the old table from the table panel first, if any.
 		if (tableOne != null)
 			this.remove(tableOne);
@@ -141,6 +167,9 @@ public class AnnTablePanel extends JPanel {
 			this.add(tableOne);
 			this.add(tableTwo);
 			currentTestImageTable = testingTable;
+			
+			testingProblem = testingTable.getProblem();
+			
 			adjustFrame();
 			return true;
 		} else
@@ -198,7 +227,10 @@ public class AnnTablePanel extends JPanel {
 	 * folder inside the top level directory is a different class.
 	 */
 	public boolean displayTwoImageTables(String directory, String ext,
-			String testdir, String testext) {
+			String testdir, String testext) throws Exception {
+		trainingProblem = null;
+		testingProblem = null;
+		
 		// remove the old table from the table panel first, if any.
 		if (tableOne != null)
 			this.remove(tableOne);
@@ -225,16 +257,23 @@ public class AnnTablePanel extends JPanel {
 			this.add(tableOne);
 			this.add(tableTwo);
 			currentTestImageTable = testingTable;
+			
+			trainingProblem = trainingTable.getProblem();
+			testingProblem = testingTable.getProblem();
+			
 			adjustFrame();
 			return true;
 		} else
 			return false;
 	}
 
-	public boolean displayOneImageTable(String directory, String ext, boolean isDirectoryStructure) {
+	public boolean displayOneImageTable(String directory, String ext, boolean isDirectoryStructure) throws Exception {
 		if (!isDirectoryStructure)
 			return displayOneImageTable(directory, ext);
 
+		trainingProblem = null;
+		testingProblem = null;
+		
 		// remove the old table from the table panel first, if any.
 		if (tableOne != null)
 			this.remove(tableOne);
@@ -253,9 +292,20 @@ public class AnnTablePanel extends JPanel {
 					"data set", TitledBorder.LEFT, TitledBorder.TOP),
 					new EmptyBorder(5, 5, 5, 5)));
 			currentCVTable = cvTable;
+			
+			trainingProblem = cvTable.getProblem();
+			
 			adjustFrame();
 			return true;
 		} else
 			return false;
+	}
+
+	public DataInput getTrainingProblem() {
+		return trainingProblem;
+	}
+
+	public DataInput getTestingProblem() {
+		return testingProblem;
 	}
 }

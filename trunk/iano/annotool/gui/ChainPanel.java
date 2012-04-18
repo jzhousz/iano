@@ -590,8 +590,17 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	    int chainCount = 0;
 	    
 	  	//Keep features to be dumped into chain file
-	    int imgWidth = trainingProblem.getWidth();
-	    int imgHeight = trainingProblem.getHeight();
+	    int imgWidth,
+	    	imgHeight;
+	    
+	    try {
+	    	imgWidth = trainingProblem.getWidth();
+	    	imgHeight = trainingProblem.getHeight();
+	    }catch (Exception ex) {
+	    	pnlOutput.setOutput("ERROR: Failed to read width/height from the problem.");
+			ex.printStackTrace();
+			return;
+	    }
 	    
 	    //Chain Models to keep track of the best model for each target
 	    chainModels = new ChainModel[numOfAnno];
@@ -690,8 +699,18 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	        	}
 	        }
 	        else {	//Else, create feature array with enough space to hold data from all extractors 
-	        	trainingFeatures = new float[trainingProblem.getLength()][trainSize];
-	        	testingFeatures = new float[testingProblem.getLength()][testSize];
+	        	int trainingLength,
+	        		testingLength;
+	        	try {
+	        		trainingLength = trainingProblem.getLength();
+	        		testingLength = testingProblem.getLength();
+	        	} catch (Exception ex) {
+	        		pnlOutput.setOutput("ERROR: Failed to get problem length.");
+	        		ex.printStackTrace();
+	        		return;
+	        	}
+	        	trainingFeatures = new float[trainingLength][trainSize];
+	        	testingFeatures = new float[testingLength][testSize];
 	        	
 	        	int destPosTrain = 0, destPosTest = 0;
 	        	for(int exIndex=0; exIndex < numExtractors; exIndex++) {
@@ -836,8 +855,17 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
         int chainCount = 0;
         
       	//Keep features to be dumped into chain file
-        int imgWidth = problem.getWidth();
-        int imgHeight = problem.getHeight();
+        int imgWidth,
+    	imgHeight;
+    
+	    try {
+	    	imgWidth = problem.getWidth();
+	    	imgHeight = problem.getHeight();
+	    }catch (Exception ex) {
+	    	pnlOutput.setOutput("ERROR: Failed to read width/height from the problem.");
+			ex.printStackTrace();
+			return;
+	    }
         
         //Chain Models to keep track of the best model for each target
         chainModels = new ChainModel[numOfAnno];

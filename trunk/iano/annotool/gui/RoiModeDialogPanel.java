@@ -235,14 +235,14 @@ public class RoiModeDialogPanel extends JPanel implements ActionListener {
 		fileChooser.resetChoosableFileFilters();
 	}
 
-	private boolean isColor() {
+	private boolean isColor() throws Exception {
 		annotool.io.DataInput problem = new annotool.io.DataInput(
 				Annotator.dir, Annotator.ext);
 		String[] children = problem.getChildren();
 		return (problem.isColor(Annotator.dir + children[0]));
 	}
 
-	private boolean is3D() {
+	private boolean is3D() throws Exception {
 		annotool.io.DataInput problem = new annotool.io.DataInput(
 				Annotator.dir, Annotator.ext);
 		String[] children = problem.getChildren();

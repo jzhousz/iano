@@ -243,12 +243,28 @@ public class ModelLoader implements Runnable {
         DataInput problem = new DataInput(Annotator.dir, Annotator.ext, channel);
         
       	//TODO: Use this to validate model file
-        int imgWidth = problem.getWidth();
-        int imgHeight = problem.getHeight();
+        int imgWidth, 
+        	imgHeight;
+        
+        try {
+        	imgWidth = problem.getWidth();
+        	imgHeight = problem.getHeight();
+        }catch(Exception ex) {
+        	pnlStatus.setOutput("ERROR: Failed to get width and height from problem.");
+        	ex.printStackTrace();
+        	return;
+        }
         
         //Initialize structure to store annotation results
         final int numModels = chainModels.size();
-        final int problemSize = problem.getLength();
+        final int problemSize;
+        try {
+        	problemSize = problem.getLength();
+        } catch (Exception ex) {
+        	pnlStatus.setOutput("ERROR: Failed to get problem size.");
+        	ex.printStackTrace();
+        	return;
+        }
         annotations = new Annotation[numModels][problemSize];
         for (int i = 0; i < numModels; i++) {
             for (int j = 0; j < problemSize; j++) {

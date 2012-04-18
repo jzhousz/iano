@@ -252,17 +252,28 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 			Annotator.ext = (String) extBox.getSelectedItem(); 
 			Annotator.targetFile =  targetField.getText().trim();
 			//display images, plus enable the go button if successful
-			boolean displayOK = true;
-			if(testingTarget)
-				displayOK = pnlImage.getTablePanel().displayOneImageTable(Annotator.dir, Annotator.targetFile, Annotator.ext);
-			else
-				displayOK = pnlImage.getTablePanel().displayOneImageTable(Annotator.dir, Annotator.ext);
+			boolean displayOK = true,
+					isColor = false,
+					is3D = false;;
+			try {
+				if(testingTarget)
+					displayOK = pnlImage.getTablePanel().displayOneImageTable(Annotator.dir, Annotator.targetFile, Annotator.ext);
+				else
+					displayOK = pnlImage.getTablePanel().displayOneImageTable(Annotator.dir, Annotator.ext);
+				
+				isColor = isColor();
+				is3D = is3D();
+				
+			} catch (Exception ex) {
+				displayOK = false;
+				ex.printStackTrace();
+			}
 				
 			//controlPanel.thingsEnabled(displayOK);
 			if (displayOK) //if display is true
 			{
-				pnlImage.setIs3D(is3D());
-				pnlImage.channelEnabled(isColor());
+				pnlImage.setIs3D(is3D);
+				pnlImage.channelEnabled(isColor);
 				
 				//write some information about the opened image in the outputpanel ...
 				pnlImage.getOutputPanel().setOutput("Images loaded from "+dirField.getText().trim()+ ".");
@@ -277,7 +288,13 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 				
 				//close the dialog
 				setVisible(false);
-			}		
+			}
+			else {
+				JOptionPane.showMessageDialog(this,
+					    "Failed to load images.",
+					    "Loading Error",
+					    JOptionPane.ERROR_MESSAGE);
+			}
 		}
 		else if (e.getSource() == testfiledir)
 			openDir(testdirField);
@@ -292,20 +309,30 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 			Annotator.testdir = testdirField.getText().trim()+"//";
 			Annotator.testext = (String) testextBox.getSelectedItem();
 			
-			boolean displayOK = true;
-			if(testingTarget)
-			{	
-			   Annotator.testtargetFile =  testtargetField.getText().trim();
-			   displayOK = pnlImage.getTablePanel().displayTwoImageTables(Annotator.dir, Annotator.targetFile, Annotator.ext, Annotator.testdir,Annotator.testtargetFile,Annotator.testext);
+			boolean displayOK = true,
+					isColor = false,
+					is3D = false;;
+			try {
+				if(testingTarget)
+				{	
+				   Annotator.testtargetFile =  testtargetField.getText().trim();
+				   displayOK = pnlImage.getTablePanel().displayTwoImageTables(Annotator.dir, Annotator.targetFile, Annotator.ext, Annotator.testdir,Annotator.testtargetFile,Annotator.testext);
+				}
+				else
+				   displayOK = pnlImage.getTablePanel().displayTwoImageTables(Annotator.dir, Annotator.targetFile, Annotator.ext, Annotator.testdir, Annotator.testext);
+				
+				isColor = isColor();
+				is3D = is3D();
+			} catch (Exception ex) {
+				displayOK = false;
+				ex.printStackTrace();
 			}
-			else
-			   displayOK = pnlImage.getTablePanel().displayTwoImageTables(Annotator.dir, Annotator.targetFile, Annotator.ext, Annotator.testdir, Annotator.testext);
 			
 			//controlPanel.thingsEnabled(displayOK);
 			if (displayOK) //if display is true
 			{
-				pnlImage.setIs3D(is3D());
-				pnlImage.channelEnabled(isColor());
+				pnlImage.setIs3D(is3D);
+				pnlImage.channelEnabled(isColor);
 				
 				//write some information about the opened image in the outputpanel ...
 				pnlImage.getOutputPanel().setOutput("Training Images loaded from "+dirField.getText().trim()+ ".");
@@ -321,6 +348,12 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 				
 				//close the dialog
 				setVisible(false);
+			}
+			else {
+				JOptionPane.showMessageDialog(this,
+					    "Failed to load images.",
+					    "Loading Error",
+					    JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
@@ -382,14 +415,14 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 		}
 	}
 
-	private boolean isColor()
+	private boolean isColor() throws Exception
 	{
 	    annotool.io.DataInput problem = new annotool.io.DataInput(Annotator.dir, Annotator.ext);
 		String[] children = problem.getChildren();
 		 return (problem.isColor(Annotator.dir+children[0]));
 	}
 
-	private boolean is3D()
+	private boolean is3D() throws Exception
 	{
 	    annotool.io.DataInput problem = new annotool.io.DataInput(Annotator.dir, Annotator.ext);
 		String[] children = problem.getChildren();
