@@ -280,7 +280,7 @@ public class SVMClassifier implements SavableClassifier
 	   return targetset.size();
 	   
     }
-    
+  
     /** 6/14/2011 add 5 methods to save model/load model and classify based on model
     *  
     *  Rewrite: 6/17/2011
