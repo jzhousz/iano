@@ -67,6 +67,7 @@ public class DataInput
 	HashMap<String, String> classNames = null; //key is target(int), value is target label(class name)
 	java.util.ArrayList<String> annotations = null;
 		
+	//used in annotation to get a list of images from a directory.
 	public DataInput(String directory, String ext, String channel)
 	{
 		this.directory = directory;
@@ -139,13 +140,13 @@ public class DataInput
 		getChildren();
 		
 		//set targets based on valid children and classnames hashmap
-		//only consider one annotation when not using tagetfile
+		//only consider one annotation when not using targetfile
 		targets = new int[1][children.length];
 		for(int i=0; i < children.length; i++)
 		{
 			String[] path = children[i].split(Pattern.quote(File.separator));
 			//find the corresponding key of the value
-			//Would be better if I have another hashMap
+			//Would be better if I have another hashMap from classname to target!!!
 			for(String key: classNames.keySet())
 			{
 				if (classNames.get(key).equals(path[0]))
@@ -154,8 +155,6 @@ public class DataInput
 				  break;
 				}
 			}
-			   
-			
 		}
 	}
 	
@@ -235,20 +234,17 @@ public class DataInput
 	//This is the working horse for readingImages.
 	//Should just be called one for each stack
 	//private ArrayList readImages(String directory, String ext, int stackIndex)
-	private ArrayList readImages(String[] childrenCandidates, int stackIndex)
+	private ArrayList readImages(String[] childrenCandidates, int stackIndex) throws Exception
 	{
-		ArrayList<String> childrenList = new ArrayList<String>();
-		
+		ImagePlus imgp = null;
+		/*
 		//read the 1st one to get some properties
 		ImagePlus imgp = null;
 		imgp = new ImagePlus(directory+childrenCandidates[0]); //calls the opener.openImage()
 		if (imgp.getProcessor() == null && imgp.getStackSize() <=1)
 		{
-			StackTraceElement[] st = Thread.currentThread().getStackTrace();
-			for(int i=0; i < st.length; i++)
-				System.err.println(st[i]);
 			System.err.println("Image type of" + (directory+childrenCandidates[0]) + " is not supported. Please select right extension.");
-			System.exit(0);
+			throw new Exception("Image type of the 1st image " + (directory+childrenCandidates[0]) + " is not supported. Please select right extension.");
 		}
 		imageType = imgp.getType();
 		if (!resize)
@@ -257,12 +253,13 @@ public class DataInput
 			height = imgp.getProcessor().getHeight();
 			stackSize = imgp.getStackSize();
 		}
-
+        */
+		
 		//allocate capacity for the problem. May need less.
+		ArrayList<String> childrenList = new ArrayList<String>();
 		data = new ArrayList(childrenCandidates.length);
 		
-		//fill the data
-		//added on 2/27 to allow different image size
+		//fill the data, //added on 2/27 to allow different image size
 		if(widthList == null)
 			widthList = new int[childrenCandidates.length];
 		if(heightList == null)
@@ -292,7 +289,7 @@ public class DataInput
 				ofSameSize = false;
 			  }
 			}
-			else //resize. What about depth?
+			else //resize. depth is not resize for now?
 			{
 			  widthList[i] = this.width;
 			  heightList[i] = this.height;
@@ -306,6 +303,19 @@ public class DataInput
 			children = (String[]) childrenList.toArray(new  String[childrenList.size()]);
 		}
 		
+		if (children.length == 0)
+			throw new Exception("There is no valid image found in the directory.");
+		
+		//set general properties to be compatible with the case when all images are of the same size
+		if (!resize)
+		{
+		   width = widthList[0];
+		   height = heightList[0];
+		}
+		stackSize = depthList[0];
+		imageType = (new ImagePlus(directory+children[0])).getType();
+		
+	
 		return data;
 	}
 
@@ -431,14 +441,21 @@ public class DataInput
 		
 		    if (childrenCandidates == null)
 			    System.err.println("Problem reading files from the image directory.");
-		    //can addd some check to see if they are directories in case the user set the boolean wrong
-		       //...
+		    
+		    //If what I get are some sub-directories instead of images, 
+		    //Maybe the user chosen the wrong directory, or the programmer set the boolean wrong
+		    //else if( file.List())
+		    //{   if foundfile.isDir() ...`	`
+		    // 	
+		    //}
+		    
 		    
 	    }
 	    else //read subdirectory. The String has "subdirectname/filename"
 	    {
 			DirectoryReader reader = new DirectoryReader(directory, ext);
 			childrenCandidates = reader.getFileListArray();
+			//if pass the  wrong directory, there may be no subdirectory at all.
 			if(childrenCandidates.length == 0 || childrenCandidates == null)
 			{
 				System.err.println("No directories in the folder. ");
