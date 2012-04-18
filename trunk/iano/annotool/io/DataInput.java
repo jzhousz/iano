@@ -236,7 +236,9 @@ public class DataInput
 	//private ArrayList readImages(String directory, String ext, int stackIndex)
 	private ArrayList readImages(String[] childrenCandidates, int stackIndex) throws Exception
 	{
-		ImagePlus imgp = null;
+		ImagePlus imgp = null; 
+		int curwidth, curheight;
+		
 		/*
 		//read the 1st one to get some properties
 		ImagePlus imgp = null;
@@ -277,19 +279,30 @@ public class DataInput
 			}
 			//update valid children
 			childrenList.add(childrenCandidates[i]);
-						
+			if(childrenList.size() == 1) //the first image
+			{  //these two properties are set once regardless of resizing
+			  	imageType = imgp.getType();
+			    stackSize = imgp.getStackSize();
+			}
 			if(!resize)
 			{
-			  widthList[i] = imgp.getProcessor().getWidth();
-			  heightList[i] = imgp.getProcessor().getHeight();
+			  curwidth =  imgp.getProcessor().getWidth();
+			  curheight = imgp.getProcessor().getHeight();;
+			  widthList[i] = curwidth; 
+			  heightList[i] = curheight;
 			  depthList[i] = imgp.getStackSize();
+			  if (childrenList.size() == 1)
+			  {   //set general property only once
+				   width = curwidth;
+				   height = curheight;
+			  }
 			  if(widthList[i] != this.width || heightList[i] != this.height || depthList[i] !=this.stackSize)
 			  {
 				System.err.println("Image" + path + "is not the same size as the 1st one. ");
 				ofSameSize = false;
 			  }
 			}
-			else //resize. depth is not resize for now?
+			else //resize. depth is not resized for now
 			{
 			  widthList[i] = this.width;
 			  heightList[i] = this.height;
@@ -307,13 +320,6 @@ public class DataInput
 			throw new Exception("There is no valid image found in the directory.");
 		
 		//set general properties to be compatible with the case when all images are of the same size
-		if (!resize)
-		{
-		   width = widthList[0];
-		   height = heightList[0];
-		}
-		stackSize = depthList[0];
-		imageType = (new ImagePlus(directory+children[0])).getType();
 		
 	
 		return data;
