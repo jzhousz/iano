@@ -1,4 +1,4 @@
-package annotool.analysis;
+package synapse.analysis;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.util.Scanner;
 
 import javax.swing.JFileChooser;
-
-import annotool.AnnOutputPanel;
 
 public class SynapseStats implements Runnable {
 	private File synapseFile = null;

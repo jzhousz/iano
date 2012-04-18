@@ -1,4 +1,4 @@
-package annotool.analysis;
+package synapse.analysis;
 /*
  10/2/2011  Jie Zhou  3D object counter using 2 channels.
  //added several more GUI elements

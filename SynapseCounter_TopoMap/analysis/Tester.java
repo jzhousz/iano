@@ -1,4 +1,4 @@
-package annotool.analysis;
+package synapse.analysis;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -16,9 +16,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
-
-import annotool.AnnOutputPanel;
-import annotool.io.FileConverter;
 
 public class Tester extends JFrame implements ActionListener{
 	private JPanel mainPanel = new JPanel();

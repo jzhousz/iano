@@ -1,4 +1,4 @@
-package annotool.analysis;
+package synapse.analysis;
 
 import java.awt.Color;
 import java.awt.Container;
