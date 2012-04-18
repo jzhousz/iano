@@ -238,42 +238,24 @@ public class DataInput
 	{
 		ImagePlus imgp = null; 
 		int curwidth, curheight;
-		
-		/*
-		//read the 1st one to get some properties
-		ImagePlus imgp = null;
-		imgp = new ImagePlus(directory+childrenCandidates[0]); //calls the opener.openImage()
-		if (imgp.getProcessor() == null && imgp.getStackSize() <=1)
-		{
-			System.err.println("Image type of" + (directory+childrenCandidates[0]) + " is not supported. Please select right extension.");
-			throw new Exception("Image type of the 1st image " + (directory+childrenCandidates[0]) + " is not supported. Please select right extension.");
-		}
-		imageType = imgp.getType();
-		if (!resize)
-		{
-			width = imgp.getProcessor().getWidth();
-			height = imgp.getProcessor().getHeight();
-			stackSize = imgp.getStackSize();
-		}
-        */
-		
-		//allocate capacity for the problem. May need less.
+		//allocate capacity for the problem. May use less.
 		ArrayList<String> childrenList = new ArrayList<String>();
 		data = new ArrayList(childrenCandidates.length);
-		
-		//fill the data, //added on 2/27 to allow different image size
+		//image dimensions. Added to allow different image size
 		if(widthList == null)
 			widthList = new int[childrenCandidates.length];
 		if(heightList == null)
 		    heightList = new int[childrenCandidates.length];
 		if(depthList == null)
 		    depthList = new int[childrenCandidates.length];
+		
+		//go through the files
 		for (int i=0; i<childrenCandidates.length; i++)
 		{
 			String path = directory+childrenCandidates[i];
-			imgp = new ImagePlus(path); // an image type not supported by ImageJ
+			imgp = new ImagePlus(path); 
 			if (imgp.getProcessor() == null && imgp.getStackSize() <=1) 
-			{
+			{   //an image type not supported by ImageJ
 				System.out.println(path + ": not supported image type.");
 				continue;  
 			}
@@ -311,7 +293,7 @@ public class DataInput
 			//add data.  Resizing will be done inside if needed.	
 			data.add(openOneImage(imgp,  stackIndex));
 			
-			//udpate the index for current data, needed for 3D to avoid re-reading the same stack
+			//update the index for current data, needed for 3D to avoid re-reading the same stack
 			lastStackIndex = stackIndex;
 			children = (String[]) childrenList.toArray(new  String[childrenList.size()]);
 		}
