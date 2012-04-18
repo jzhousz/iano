@@ -3,6 +3,7 @@ package annotool;
 import javax.swing.SwingUtilities;
 import java.util.*;
 
+import annotool.gui.AnnOutputPanel;
 import annotool.gui.model.Extractor;
 import annotool.io.*;
 import annotool.extract.*;

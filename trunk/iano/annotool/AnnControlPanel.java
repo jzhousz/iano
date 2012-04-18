@@ -5,6 +5,10 @@ import java.awt.GridLayout;
 import java.awt.BorderLayout;
 import javax.swing.border.*;
 import javax.swing.*;
+
+import annotool.gui.AnnOutputPanel;
+import annotool.gui.AnnTablePanel;
+
 import java.awt.event.*;
 
 public class AnnControlPanel extends JPanel implements ActionListener {
