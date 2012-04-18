@@ -28,7 +28,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import annotool.AnnOutputPanel;
 import annotool.analysis.Utility;
 import annotool.io.DataInput;
 

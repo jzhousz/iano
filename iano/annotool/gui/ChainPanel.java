@@ -21,7 +21,6 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
-import annotool.AnnOutputPanel;
 import annotool.Annotation;
 import annotool.Annotator;
 import annotool.ComboFeatures;

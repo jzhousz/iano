@@ -30,7 +30,6 @@ import annotool.io.Parameter;
 import annotool.Annotation;
 import annotool.Annotator;
 import annotool.ComboFeatures;
-import annotool.AnnOutputPanel;
 
 public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListener, Runnable {
 	private JTabbedPane tabPane;
