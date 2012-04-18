@@ -1,13 +1,14 @@
 package annotool.gui.model;
 
 import java.io.File;
+
+import annotool.gui.AnnOutputPanel;
 import annotool.io.ChainModel;
 
 import javax.swing.JButton;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 
-import annotool.AnnOutputPanel;
 
 public class ModelSaver implements Runnable {
 	JProgressBar bar = null;

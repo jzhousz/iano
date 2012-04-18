@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import annotool.AnnOutputPanel;
 import annotool.Annotation;
 import annotool.Annotator;
 import annotool.ImgDimension;

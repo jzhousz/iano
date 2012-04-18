@@ -21,6 +21,7 @@ import javax.swing.border.SoftBevelBorder;
 import javax.swing.border.TitledBorder;
 
 import annotool.Annotator;
+import annotool.io.DataInput;
 
 public class DirectoryTreeDialogPanel extends JPanel implements ActionListener {
 	JLabel fileL = new JLabel("Parent Dir: ");
@@ -302,19 +303,5 @@ public class DirectoryTreeDialogPanel extends JPanel implements ActionListener {
 			// display in the textfield.
 			dirfieldp.setText(fFile.getAbsolutePath());
 		}
-	}
-
-	private boolean isColor() throws Exception {
-		annotool.io.DataInput problem = new annotool.io.DataInput(
-				Annotator.dir, Annotator.ext, true);
-		String[] children = problem.getChildren();
-		return (problem.isColor(Annotator.dir + children[0]));
-	}
-
-	private boolean is3D() throws Exception {
-		annotool.io.DataInput problem = new annotool.io.DataInput(
-				Annotator.dir, Annotator.ext, true);
-		String[] children = problem.getChildren();
-		return (problem.is3D(Annotator.dir + children[0]));
 	}
 }

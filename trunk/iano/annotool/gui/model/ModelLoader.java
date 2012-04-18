@@ -7,10 +7,10 @@ import java.util.HashMap;
 import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 
-import annotool.AnnOutputPanel;
 import annotool.Annotation;
 import annotool.Annotator;
 import annotool.classify.SavableClassifier;
+import annotool.gui.AnnOutputPanel;
 import annotool.gui.ImageReadyPanel;
 import annotool.gui.ROIAnnotator;
 import annotool.gui.ROIParameterPanel;

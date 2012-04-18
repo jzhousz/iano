@@ -16,8 +16,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import annotool.AnnOutputPanel;
-import annotool.AnnTablePanel;
 import annotool.Annotation;
 import annotool.Annotator;
 import annotool.gui.model.ModelFilter;
