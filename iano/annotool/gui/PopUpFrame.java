@@ -1,9 +1,11 @@
 package annotool.gui;
 
 import java.awt.event.WindowEvent;
+
 import javax.swing.JFrame;
 
 import annotool.io.ChainModel;
+import annotool.io.DataInput;
 
 /*
  * Can bring other common features of expert frame and auto comp frame here
@@ -13,8 +15,13 @@ public class PopUpFrame extends JFrame {
 	ChainModel[] chainModels = null;
 	protected boolean applyModelFired = false;
 	
-	public PopUpFrame(String arg0) {
+	protected DataInput trainingProblem = null;
+	protected DataInput testingProblem = null;
+	
+	public PopUpFrame(String arg0, DataInput trainingProblem, DataInput testingProblem) {
 		super(arg0);
+		this.trainingProblem = trainingProblem;
+		this.testingProblem = testingProblem;
 	}
 	
 	//Close this window programmatically

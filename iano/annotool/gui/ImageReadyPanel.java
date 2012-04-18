@@ -170,7 +170,8 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			else if(rbBlue.isSelected())
 				Annotator.channel = channelInputs[2];
 			
-			ExpertFrame ef = new ExpertFrame("Simple Mode", is3D, Annotator.channel);
+			ExpertFrame ef = new ExpertFrame("Simple Mode", is3D, Annotator.channel, pnlTable.getTrainingProblem(),
+					pnlTable.getTestingProblem());
 			ef.setVisible(true);
 			//ef.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			ef.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -201,7 +202,8 @@ public class ImageReadyPanel extends JPanel implements ActionListener
 			else if(rbBlue.isSelected())
 				Annotator.channel = channelInputs[2];
 			
-			AutoCompFrame frame = new AutoCompFrame("Auto Comparison Mode", is3D, Annotator.channel);			
+			AutoCompFrame frame = new AutoCompFrame("Auto Comparison Mode", is3D, Annotator.channel, pnlTable.getTrainingProblem(),
+					pnlTable.getTestingProblem());			
 			frame.setVisible(true);
 			frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 			

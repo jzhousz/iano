@@ -55,8 +55,8 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 	
 	AnnOutputPanel pnlOutput = null;
 	
-	public AutoCompFrame(String arg0, boolean is3D, String channel) {
-		super(arg0);
+	public AutoCompFrame(String arg0, boolean is3D, String channel, DataInput trainingProblem, DataInput testingProblem) {
+		super(arg0, trainingProblem, testingProblem);
 		
 		pnlMain = new JPanel();
 		pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
@@ -387,35 +387,5 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
         //Add panel with title label and close button to the tab
         tabPane.setTabComponentAt(tabPane.getTabCount() - 1, 
                 new ButtonTabComponent(title, tabPane));
-	}
-    //Temporary main method for testing GUI
-	public static void main(String[] args) {
-		JFrame.setDefaultLookAndFeelDecorated(true);
-        SwingUtilities.invokeLater(new Runnable() {
-          public void run() 
-          {
-	          try 
-	          {
-	        	  for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) 
-	        	  {
-	    		      if ("Nimbus".equals(info.getName())) 
-	    		      {
-	    		          UIManager.setLookAndFeel(info.getClassName());
-	    		          break;
-	    		      }
-	        	  }
-	          } 
-	          catch (Exception e) 
-	          {
-	        	  System.out.println("Substance L&F failed to initialize");
-	          }
-    		
-	          AutoCompFrame frame = new AutoCompFrame("Auto Comparison Mode", false, "g");
-	  		frame.pack();
-	  		frame.setVisible(true);
-	  		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-          }
-        });
-		
 	}
 }

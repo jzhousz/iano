@@ -80,8 +80,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	
 	boolean enableSave = false;
 	
-	public ExpertFrame(String arg0, boolean is3D, String channel) {
-		super(arg0);
+	public ExpertFrame(String arg0, boolean is3D, String channel, DataInput trainingProblem, DataInput testingProblem) {
+		super(arg0, trainingProblem, testingProblem);
 		this.channel = channel;
 		
 		fileChooser = new JFileChooser();
@@ -372,8 +372,26 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	//Train Only
 	private void trainOnly() {
 		//read images and wrapped into DataInput instances.
-        DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);	        
-      
+        //DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);	        
+		if(trainingProblem == null) {
+			pnlOutput.setOutput("Training problem is not set.");
+			return;
+		}
+		
+		//Keep features to be dumped into chain file
+		int imgWidth;
+        int imgHeight;
+        
+        try {
+			imgWidth = trainingProblem.getWidth();
+			imgHeight = trainingProblem.getHeight();
+		} catch (Exception e) {
+			pnlOutput.setOutput("Failed to read width/height from the problem.");
+			e.printStackTrace();
+			return;
+		}
+        
+		
         int[] resArr = new int[2]; //place holder for misc results
         ArrayList<String> annoLabels = new ArrayList<String>();
         HashMap<String, String> classNames = new HashMap<String, String>();
@@ -401,10 +419,6 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 			enableSave = false;
 			return;
 		}
-        
-        //Keep features to be dumped into chain file
-        int imgWidth = trainingProblem.getWidth();
-        int imgHeight = trainingProblem.getHeight();
         
         //clear data memory
         trainingProblem.setDataNull();
@@ -509,9 +523,26 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	//Training/Testing
 	private void ttRun() {		
 		//read images and wrapped into DataInput instances.
-        DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);
-        DataInput testingProblem = new DataInput(Annotator.testdir, Annotator.testext, channel);	        
-      
+        //DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);
+        //DataInput testingProblem = new DataInput(Annotator.testdir, Annotator.testext, channel);	        
+		if(trainingProblem == null || testingProblem == null) {
+			pnlOutput.setOutput("Training and/or testing problem is not set.");
+			return;
+		}
+		
+		//Keep features to be dumped into chain file
+        int imgWidth;
+        int imgHeight;
+        
+        try {
+			imgWidth = trainingProblem.getWidth();
+			imgHeight = trainingProblem.getHeight();
+		} catch (Exception e) {
+			pnlOutput.setOutput("Failed to read width/height from the problem.");
+			e.printStackTrace();
+			return;
+		}
+		
         int[] resArr = new int[2]; //place holder for misc results
         ArrayList<String> annoLabels = new ArrayList<String>();
         HashMap<String, String> classNames = new HashMap<String, String>();
@@ -546,11 +577,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	setProgress(0);
         	enableSave = false;
         	return;
-        }
+        }        
         
-        //Keep features to be dumped into chain file
-        int imgWidth = trainingProblem.getWidth();
-        int imgHeight = trainingProblem.getHeight();
         
         //clear data memory
         trainingProblem.setDataNull();
@@ -685,8 +713,26 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	//Cross validation
 	private void cvRun() {
 		//------ read image data from the directory ------------//
-        DataInput problem = new DataInput(Annotator.dir, Annotator.ext, channel);
-
+        //DataInput problem = new DataInput(Annotator.dir, Annotator.ext, channel);
+		DataInput problem = testingProblem;
+		if(problem == null) {
+			pnlOutput.setOutput("Problem is not set.");
+			return;
+		}
+		
+		//Keep features to be dumped into chain file
+        int imgWidth;
+        int imgHeight;
+        
+        try {
+			imgWidth = problem.getWidth();
+			imgHeight = problem.getHeight();
+		} catch (Exception e) {
+			pnlOutput.setOutput("Failed to read width/height from the problem.");
+			e.printStackTrace();
+			return;
+		}
+		
         //-----  read targets matrix (for multiple annotations, one per column) --------//
         if (!setProgress(20)) {
             return;
@@ -714,9 +760,6 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 			return;
 		}
         
-        //Keep features to be dumped into chain file
-        int imgWidth = problem.getWidth();
-        int imgHeight = problem.getHeight();
         
         //raw data is not used after this point, set to null.
         problem.setDataNull();
@@ -1036,13 +1079,5 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		pnlContainer.add(lbDesc, BorderLayout.NORTH);
 		
 		return pnlContainer;
-	}
-	
-	//Temporary main method for testing GUI
-	public static void main(String[] args) {
-		ExpertFrame ef = new ExpertFrame("Simple Mode", false, "g");
-		ef.pack();
-		ef.setVisible(true);
-		ef.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
 }

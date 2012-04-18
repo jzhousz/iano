@@ -5,13 +5,13 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
@@ -186,14 +186,24 @@ public class DirectoryTreeDialogPanel extends JPanel implements ActionListener {
 			Annotator.ext = (String) extBox.getSelectedItem();
 			
 			// display images, plus enable the go button if successful
-			boolean displayOK = pnlImage.getTablePanel().displayOneImageTable(
-						Annotator.dir, Annotator.ext, true);
+			boolean displayOK,
+					isColor = false,
+					is3D = false;
+			try {
+				displayOK = pnlImage.getTablePanel().displayOneImageTable(
+							Annotator.dir, Annotator.ext, true);
+				isColor = isColor();
+				is3D = is3D();
+			} catch (Exception ex) {
+				displayOK = false;
+				ex.printStackTrace();
+			}
 
 			// controlPanel.thingsEnabled(displayOK);
 			if (displayOK) // if display is true
 			{
-				pnlImage.setIs3D(is3D());
-				pnlImage.channelEnabled(isColor());
+				pnlImage.setIs3D(is3D);
+				pnlImage.channelEnabled(isColor);
 
 				// write some information about the opened image in the
 				// outputpanel ...
@@ -210,6 +220,13 @@ public class DirectoryTreeDialogPanel extends JPanel implements ActionListener {
 				// close the dialog
 				dialog.dismiss();
 			}
+			else {
+				JOptionPane.showMessageDialog(this,
+					    "Failed to load images.",
+					    "Loading Error",
+					    JOptionPane.ERROR_MESSAGE);
+			}
+				
 		} else if (e.getSource() == testfiledir)
 			openDir(testdirField);
 		else if (e.getSource() == combinedLoadImageB) {
@@ -219,15 +236,26 @@ public class DirectoryTreeDialogPanel extends JPanel implements ActionListener {
 			Annotator.testdir = testdirField.getText().trim() + "//";
 			Annotator.testext = (String) testextBox.getSelectedItem();
 
-			boolean displayOK = pnlImage.getTablePanel().displayTwoImageTables(
-						Annotator.dir, Annotator.ext,
-						Annotator.testdir, Annotator.testext);
+			boolean displayOK,
+				isColor = false,
+				is3D = false;
+			try {
+				displayOK = pnlImage.getTablePanel().displayTwoImageTables(
+							Annotator.dir, Annotator.ext,
+							Annotator.testdir, Annotator.testext);
+				isColor = isColor();
+				is3D = is3D();
+				
+			} catch (Exception ex) {
+				displayOK = false;
+				ex.printStackTrace();
+			}
 
 			// controlPanel.thingsEnabled(displayOK);
 			if (displayOK) // if display is true
 			{
-				pnlImage.setIs3D(is3D());
-				pnlImage.channelEnabled(isColor());
+				pnlImage.setIs3D(is3D);
+				pnlImage.channelEnabled(isColor);
 
 				// write some information about the opened image in the
 				// outputpanel ...
@@ -246,6 +274,12 @@ public class DirectoryTreeDialogPanel extends JPanel implements ActionListener {
 
 				// close the dialog
 				dialog.dismiss();
+			}
+			else {
+				JOptionPane.showMessageDialog(this,
+					    "Failed to load images.",
+					    "Loading Error",
+					    JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
@@ -270,14 +304,14 @@ public class DirectoryTreeDialogPanel extends JPanel implements ActionListener {
 		}
 	}
 
-	private boolean isColor() {
+	private boolean isColor() throws Exception {
 		annotool.io.DataInput problem = new annotool.io.DataInput(
 				Annotator.dir, Annotator.ext, true);
 		String[] children = problem.getChildren();
 		return (problem.isColor(Annotator.dir + children[0]));
 	}
 
-	private boolean is3D() {
+	private boolean is3D() throws Exception {
 		annotool.io.DataInput problem = new annotool.io.DataInput(
 				Annotator.dir, Annotator.ext, true);
 		String[] children = problem.getChildren();

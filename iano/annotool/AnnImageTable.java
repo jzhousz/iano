@@ -47,7 +47,7 @@ public class AnnImageTable {
 	{	}
 
 	//the table with targets
-	public JScrollPane buildImageTable(String directory, String targetFile, String ext)
+	public JScrollPane buildImageTable(String directory, String targetFile, String ext) throws Exception
 	{
 		this.directory = directory;
 		problem = new annotool.io.DataInput(directory,ext);//(String) extBox.getSelectedItem());
@@ -131,7 +131,7 @@ public class AnnImageTable {
 
 
 	//overloadded version: a table without targets (i.e. no results know yet)
-	public JScrollPane buildImageTable(String directory, String ext)
+	public JScrollPane buildImageTable(String directory, String ext) throws Exception
 	{
 		this.directory = directory;
 		problem = new annotool.io.DataInput(directory, ext);//(String) extBox.getSelectedItem());
@@ -195,7 +195,7 @@ public class AnnImageTable {
 	 * @param ext
 	 * @return
 	 */
-	public JScrollPane buildImageTableFromSubdirectories(String directory, String ext)
+	public JScrollPane buildImageTableFromSubdirectories(String directory, String ext) throws Exception
 	{
 		this.directory = directory;
 		problem = new annotool.io.DataInput(directory, ext, true);
@@ -522,6 +522,11 @@ public class AnnImageTable {
 			return table.getSelectedRows();
 		
 		return null;
+	}
+	
+	//Added 4/16/2012: to use same problem for loading images and to use with algorithms
+	public annotool.io.DataInput getProblem() {
+		return problem;
 	}
 
 }
