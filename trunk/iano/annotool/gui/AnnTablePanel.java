@@ -27,6 +27,9 @@ public class AnnTablePanel extends JPanel {
 	
 	private DataInput trainingProblem = null;
 	private DataInput testingProblem = null;
+	
+	private boolean is3D,
+					isColor;
 
 	public AnnTablePanel(JFrame frame) {
 		this.frame = frame;
@@ -47,6 +50,9 @@ public class AnnTablePanel extends JPanel {
 		AnnImageTable cvTable = new AnnImageTable();
 		tableOne = cvTable.buildImageTable(directory, targetFile, ext);
 		classNames = cvTable.getClassNames();
+		
+		is3D = cvTable.is3D();
+		isColor = cvTable.isColor();
 
 		if (tableOne != null) {
 			this.setLayout(new java.awt.BorderLayout());
@@ -79,6 +85,9 @@ public class AnnTablePanel extends JPanel {
 		AnnImageTable cvTable = new AnnImageTable();
 		tableOne = cvTable.buildImageTable(directory, ext);
 		classNames = cvTable.getClassNames();
+		
+		is3D = cvTable.is3D();
+		isColor = cvTable.isColor();
 
 		if (tableOne != null) {
 			this.setLayout(new java.awt.BorderLayout());
@@ -116,6 +125,9 @@ public class AnnTablePanel extends JPanel {
 		AnnImageTable testingTable = new AnnImageTable();
 		tableTwo = testingTable.buildImageTable(testdir, testtargetFile,
 				testext);
+		
+		is3D = trainingTable.is3D();
+		isColor = trainingTable.isColor();
 
 		if (tableOne != null && tableTwo != null) {
 			tableOne.setBorder(new CompoundBorder(new TitledBorder(null,
@@ -151,7 +163,8 @@ public class AnnTablePanel extends JPanel {
 		if (tableTwo != null)
 			this.remove(tableTwo);
 
-		tableOne = new AnnImageTable().buildImageTable(directory, targetFile,
+		AnnImageTable trainingTable = new AnnImageTable();
+		tableOne = trainingTable.buildImageTable(directory, targetFile,
 				ext);
 		AnnImageTable testingTable = new AnnImageTable();
 		tableTwo = testingTable.buildImageTable(testdir, testext);
@@ -162,6 +175,9 @@ public class AnnTablePanel extends JPanel {
 		tableTwo.setBorder(new CompoundBorder(new TitledBorder(null,
 				"images to be annotated", TitledBorder.LEFT, TitledBorder.TOP),
 				new EmptyBorder(5, 5, 5, 5)));
+		
+		is3D = trainingTable.is3D();
+		isColor = trainingTable.isColor();
 
 		if (tableOne != null && tableTwo != null) {
 			this.setLayout(new java.awt.GridLayout(1, 2, 5, 5));
@@ -245,6 +261,9 @@ public class AnnTablePanel extends JPanel {
 
 		AnnImageTable testingTable = new AnnImageTable();
 		tableTwo = testingTable.buildImageTableFromSubdirectories(testdir, testext);
+		
+		is3D = trainingTable.is3D();
+		isColor = trainingTable.isColor();
 
 		if (tableOne != null && tableTwo != null) {
 			tableOne.setBorder(new CompoundBorder(new TitledBorder(null,
@@ -308,6 +327,14 @@ public class AnnTablePanel extends JPanel {
 
 	public DataInput getTestingProblem() {
 		return testingProblem;
+	}
+
+	public boolean is3D() {
+		return is3D;
+	}
+
+	public boolean isColor() {
+		return isColor;
 	}
 	
 	

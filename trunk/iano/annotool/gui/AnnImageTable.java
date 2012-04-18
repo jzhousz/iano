@@ -536,14 +536,14 @@ public class AnnImageTable {
 		if(problem == null | children == null)
 			throw new Exception("Data not read yet.");
 		
-		return (problem.isColor(Annotator.dir + children[0]));
+		return (problem.isColor(this.directory + children[0]));
 	}
 
 	public boolean is3D() throws Exception {
 		if(problem == null | children == null)
 			throw new Exception("Data not read yet.");
 		
-		return (problem.is3D(Annotator.dir + children[0]));
+		return (problem.is3D(this.directory + children[0]));
 	}
 
 }

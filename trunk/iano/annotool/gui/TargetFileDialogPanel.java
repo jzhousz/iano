@@ -247,15 +247,18 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 					isColor = false,
 					is3D = false;;
 			try {
-				if (testingTarget)
-					displayOK = pnlImage.getTablePanel().displayOneImageTable(
+				AnnTablePanel pnlTable = pnlImage.getTablePanel();
+				if (testingTarget) {
+					displayOK = pnlTable.displayOneImageTable(
 							Annotator.dir, Annotator.targetFile, Annotator.ext);
-				else
-					displayOK = pnlImage.getTablePanel().displayOneImageTable(
+				}
+				else {
+					displayOK = pnlTable.displayOneImageTable(
 							Annotator.dir, Annotator.ext);
+				}
 				
-				isColor = isColor();
-				is3D = is3D();
+				isColor = pnlTable.isColor();
+				is3D = pnlTable.is3D();
 			} catch (Exception ex) {
 				displayOK = false;
 				ex.printStackTrace();
@@ -309,19 +312,20 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 					isColor = false,
 					is3D = false;;
 			try {
+				AnnTablePanel pnlTable = pnlImage.getTablePanel();
 				if (testingTarget) {
 					Annotator.testtargetFile = testtargetField.getText().trim();
-					displayOK = pnlImage.getTablePanel().displayTwoImageTables(
+					displayOK = pnlTable.displayTwoImageTables(
 							Annotator.dir, Annotator.targetFile, Annotator.ext,
 							Annotator.testdir, Annotator.testtargetFile,
 							Annotator.testext);
 				} else
-					displayOK = pnlImage.getTablePanel().displayTwoImageTables(
+					displayOK = pnlTable.displayTwoImageTables(
 							Annotator.dir, Annotator.targetFile, Annotator.ext,
 							Annotator.testdir, Annotator.testext);
 				
-				isColor = isColor();
-				is3D = is3D();
+				isColor = pnlTable.isColor();
+				is3D = pnlTable.is3D();
 			} catch (Exception ex) {
 				displayOK = false;
 				ex.printStackTrace();
@@ -420,19 +424,5 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 			java.io.File fFile = fileChooser.getSelectedFile();
 			targetField.setText(fFile.getAbsolutePath());
 		}
-	}
-
-	private boolean isColor() throws Exception {
-		annotool.io.DataInput problem = new annotool.io.DataInput(
-				Annotator.dir, Annotator.ext);
-		String[] children = problem.getChildren();
-		return (problem.isColor(Annotator.dir + children[0]));
-	}
-
-	private boolean is3D() throws Exception {
-		annotool.io.DataInput problem = new annotool.io.DataInput(
-				Annotator.dir, Annotator.ext);
-		String[] children = problem.getChildren();
-		return (problem.is3D(Annotator.dir + children[0]));
 	}
 }

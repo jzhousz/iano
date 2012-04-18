@@ -191,10 +191,11 @@ public class DirectoryTreeDialogPanel extends JPanel implements ActionListener {
 					isColor = false,
 					is3D = false;
 			try {
-				displayOK = pnlImage.getTablePanel().displayOneImageTable(
+				AnnTablePanel tblPanel = pnlImage.getTablePanel();
+				displayOK = tblPanel.displayOneImageTable(
 							Annotator.dir, Annotator.ext, true);
-				isColor = isColor();
-				is3D = is3D();
+				isColor = tblPanel.isColor();
+				is3D = tblPanel.is3D();
 			} catch (Exception ex) {
 				displayOK = false;
 				ex.printStackTrace();
@@ -241,11 +242,12 @@ public class DirectoryTreeDialogPanel extends JPanel implements ActionListener {
 				isColor = false,
 				is3D = false;
 			try {
-				displayOK = pnlImage.getTablePanel().displayTwoImageTables(
+				AnnTablePanel tblPanel = pnlImage.getTablePanel();
+				displayOK = tblPanel.displayTwoImageTables(
 							Annotator.dir, Annotator.ext,
 							Annotator.testdir, Annotator.testext);
-				isColor = isColor();
-				is3D = is3D();
+				isColor = tblPanel.isColor();
+				is3D = tblPanel.is3D();
 				
 			} catch (Exception ex) {
 				displayOK = false;
