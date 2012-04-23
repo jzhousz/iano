@@ -135,6 +135,7 @@ public class DataInput
 		//set useDirStruture to true
 		useDirStructure = true;
 		this.directory = directory;
+		this.ext = ext;
 		
 		//getChildren also sets the Data and ClassNames
 		getChildren();
@@ -579,6 +580,15 @@ public class DataInput
 
 	public HashMap<String, String> getClassNames() {
 		return classNames;
+	}
+
+	
+	/**
+	 * To set channel for already constructed object
+	 * @param channel
+	 */
+	public void setChannel(String channel) {
+		this.channel = channel;
 	}
 
 }
