@@ -130,12 +130,13 @@ public class DataInput
 	//It will not need a target file.
 	//All the things will be done at the constructor instead of wait until later.
 	//Example: Hela 2D
-	public DataInput(String directory, String ext, boolean useDirStructureForTarget) throws Exception
+	public DataInput(String directory, String ext, String channel, boolean useDirStructureForTarget) throws Exception
 	{
 		//set useDirStruture to true
 		useDirStructure = true;
 		this.directory = directory;
 		this.ext = ext;
+		this.channel = channel;
 		
 		//getChildren also sets the Data and ClassNames
 		getChildren();
@@ -178,7 +179,7 @@ public class DataInput
 	}
 
 
-	Object openOneImage(ImagePlus imgp, int stackIndex)
+	Object openOneImage(ImagePlus imgp, int stackIndex) throws Exception
 	{
 		//stack from 1 to number of slices
 		ImageProcessor ip = imgp.getStack().getProcessor(stackIndex);
@@ -200,8 +201,10 @@ public class DataInput
 				((ColorProcessor)ip).getRGB(pixels,tmppixels,tmppixels);
 			else if (channel == "g")
 				((ColorProcessor)ip).getRGB(tmppixels,pixels,tmppixels);
-			else
+			else if (channel == "b")
 				((ColorProcessor)ip).getRGB(tmppixels,tmppixels,pixels);
+			else
+				throw new Exception("Not supported channel " + channel);
 			
 			results = pixels;
 
@@ -239,17 +242,14 @@ public class DataInput
 	{
 		ImagePlus imgp = null; 
 		int curwidth, curheight;
-		//allocate capacity for the problem. May use less.
-		ArrayList<String> childrenList = new ArrayList<String>();
-		data = new ArrayList(childrenCandidates.length);
-		//image dimensions. Added to allow different image size
-		if(widthList == null)
-			widthList = new int[childrenCandidates.length];
-		if(heightList == null)
-		    heightList = new int[childrenCandidates.length];
-		if(depthList == null)
-		    depthList = new int[childrenCandidates.length];
 		
+		//temporary lists for children and width, height, depth
+		ArrayList<String> childrenList = new ArrayList<String>(childrenCandidates.length);
+		ArrayList<Integer> tmpWList = new ArrayList<Integer>(childrenCandidates.length);
+		ArrayList<Integer> tmpHList = new ArrayList<Integer>(childrenCandidates.length);
+		ArrayList<Integer> tmpDList = new ArrayList<Integer>(childrenCandidates.length);
+		data = new ArrayList<String>(childrenCandidates.length);
+
 		//go through the files
 		for (int i=0; i<childrenCandidates.length; i++)
 		{
@@ -271,25 +271,25 @@ public class DataInput
 			{
 			  curwidth =  imgp.getProcessor().getWidth();
 			  curheight = imgp.getProcessor().getHeight();;
-			  widthList[i] = curwidth; 
-			  heightList[i] = curheight;
-			  depthList[i] = imgp.getStackSize();
+			  tmpWList.add(new Integer(curwidth));
+			  tmpHList.add(new Integer(curheight));
+			  tmpDList.add(new Integer(imgp.getStackSize()));
 			  if (childrenList.size() == 1)
 			  {   //set general property only once
 				   width = curwidth;
 				   height = curheight;
 			  }
-			  if(widthList[i] != this.width || heightList[i] != this.height || depthList[i] !=this.stackSize)
+			  if(curwidth != this.width || curheight != this.height || imgp.getStackSize() != this.stackSize)
 			  {
-				System.err.println("Image" + path + "is not the same size as the 1st one. ");
+				System.out.println("Warning: Image" + path + "is not the same size as the 1st one. ");
 				ofSameSize = false;
 			  }
 			}
 			else //resize. depth is not resized for now
 			{
-			  widthList[i] = this.width;
-			  heightList[i] = this.height;
-			  depthList[i] = imgp.getStackSize();
+			  tmpWList.add(width);
+			  tmpHList.add(height);
+			  tmpDList.add(new Integer(imgp.getStackSize()));
 			}
 			//add data.  Resizing will be done inside if needed.	
 			data.add(openOneImage(imgp,  stackIndex));
@@ -297,6 +297,9 @@ public class DataInput
 			//update the index for current data, needed for 3D to avoid re-reading the same stack
 			lastStackIndex = stackIndex;
 			children = (String[]) childrenList.toArray(new  String[childrenList.size()]);
+			widthList =  convertListTointArray(tmpWList);  
+			heightList = convertListTointArray(tmpHList);
+			depthList =  convertListTointArray(tmpDList);
 		}
 		
 		if (children.length == 0)
@@ -590,5 +593,14 @@ public class DataInput
 	public void setChannel(String channel) {
 		this.channel = channel;
 	}
-
+	
+	//a helper for conversion
+	private int[] convertListTointArray(ArrayList<Integer>  tmpList)
+	{
+		int[] res = new int[tmpList.size()];
+		int i=0;
+		for(Integer bigInt : tmpList)
+			res[i++] = bigInt.intValue();
+		return res;
+	}
 }
