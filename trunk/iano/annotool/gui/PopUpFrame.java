@@ -18,8 +18,10 @@ public class PopUpFrame extends JFrame {
 	protected DataInput trainingProblem = null;
 	protected DataInput testingProblem = null;
 	
-	public PopUpFrame(String arg0, DataInput trainingProblem, DataInput testingProblem, String channel) {
-		super(arg0 + " - using channel " + channel);
+	public PopUpFrame(String arg0, DataInput trainingProblem, DataInput testingProblem, String channel, String channelName) {
+		super(arg0 + " - channel " + channelName);
+				
+		
 		this.trainingProblem = trainingProblem;
 		this.testingProblem = testingProblem;
 		//this.trainingProblem.setChannel(channel);
