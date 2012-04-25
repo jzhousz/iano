@@ -79,8 +79,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	
 	boolean enableSave = false;
 	
-	public ExpertFrame(String arg0, boolean is3D, String channel, String channelName, DataInput trainingProblem, DataInput testingProblem) {
-		super(arg0, trainingProblem, testingProblem, channel, channelName);
+	public ExpertFrame(String arg0, boolean is3D, String channel, DataInput trainingProblem, DataInput testingProblem) {
+		super(arg0, trainingProblem, testingProblem, channel);
 		this.channel = channel;
 		
 		fileChooser = new JFileChooser();

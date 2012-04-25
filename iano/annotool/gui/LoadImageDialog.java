@@ -5,6 +5,8 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 
+import annotool.Annotator;
+
 public class LoadImageDialog extends JDialog {
 	private JTabbedPane tabbedPane;
 	
@@ -26,7 +28,8 @@ public class LoadImageDialog extends JDialog {
 		
 		tabbedPane = new JTabbedPane();
 		tabbedPane.addTab(targetTab, new TargetFileDialogPanel(this, pnlLanding, modeFlag, fileChooser));
-		tabbedPane.addTab(dirTab, new DirectoryTreeDialogPanel(this, pnlLanding, modeFlag, fileChooser));
+		if(!(Annotator.output.equals(Annotator.AN) || Annotator.output.equals(Annotator.ROI)))
+				tabbedPane.addTab(dirTab, new DirectoryTreeDialogPanel(this, pnlLanding, modeFlag, fileChooser));
 		tabbedPane.addTab(roiTab, new RoiModeDialogPanel(this, pnlLanding, modeFlag, fileChooser));
 		
 		this.add(tabbedPane);
