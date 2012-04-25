@@ -18,8 +18,9 @@ public class PopUpFrame extends JFrame {
 	protected DataInput trainingProblem = null;
 	protected DataInput testingProblem = null;
 	
-	public PopUpFrame(String arg0, DataInput trainingProblem, DataInput testingProblem, String channel, String channelName) {
-		super(arg0 + " - channel " + channelName);
+	public PopUpFrame(String arg0, DataInput trainingProblem, DataInput testingProblem, String channel) {
+		super(arg0);
+		this.setTitle(arg0 + " - channel " + getChannelNameForDisplay(channel));
 				
 		
 		this.trainingProblem = trainingProblem;
@@ -44,5 +45,15 @@ public class PopUpFrame extends JFrame {
 
 	public void setChainModels(ChainModel[] chainModels) {
 		this.chainModels = chainModels;
+	}
+	
+	private String getChannelNameForDisplay(String channel) {
+		if(channel.equals("r"))
+			return "red";
+		if(channel.equals("g"))
+			return "green";
+		if(channel.equals("b"))
+			return "blue";
+		return null;
 	}
 }

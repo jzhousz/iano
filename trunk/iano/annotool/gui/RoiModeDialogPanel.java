@@ -191,6 +191,7 @@ public class RoiModeDialogPanel extends JPanel implements ActionListener {
 			dialog.dismiss();
 
 		else if (e.getSource() == loadImageB) {
+			
 		} 
 		else if (e.getSource() == testfiledir)
 			openDir(testdirField);
