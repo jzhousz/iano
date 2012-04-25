@@ -567,19 +567,21 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		Annotator anno = new Annotator();
 		
 		//read images and wrapped into DataInput instances.
-	    DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);
-	    DataInput testingProblem = new DataInput(Annotator.testdir, Annotator.testext, channel);	        
-	
-	    int[] resArr = new int[2]; //place holder for misc results
-	    ArrayList<String> annoLabels = new ArrayList<String>();
-	    HashMap<String, String> classNames = new HashMap<String, String>();
-	    int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels, classNames);
+	    //DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);
+	    //DataInput testingProblem = new DataInput(Annotator.testdir, Annotator.testext, channel);	        
+		DataInput trainingProblem = gui.trainingProblem;
+	    DataInput testingProblem = gui.testingProblem;
+		
+	    //int[] resArr = new int[2]; //place holder for misc results
+	    ArrayList<String> annoLabels = trainingProblem.getAnnotations();
+	    HashMap<String, String> classNames = trainingProblem.getClassNames();
+	    int[][] trainingTargets = trainingProblem.getTargets();
 	    //get statistics from training set
-	    int numOfAnno = resArr[0];
-	    anno.setAnnotationLabels(annoLabels);	        
+	    int numOfAnno = annoLabels.size();
+	    anno.setAnnotationLabels(annoLabels); //why??	        
 	
 	    //testing set targets
-	    int[][] testingTargets = anno.readTargets(testingProblem, Annotator.testtargetFile, resArr, null, null);
+	    int[][] testingTargets = testingProblem.getTargets();
 	    
 	    
 	    //Initialize float array to hold rates for each annotation for each selected chain and list of selected chains to pass to result panel
@@ -834,18 +836,18 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		Annotator anno = new Annotator();
 		
 		//------ read image data from the directory ------------//
-        DataInput problem = new DataInput(Annotator.dir, Annotator.ext, channel);
+        DataInput problem = gui.trainingProblem;
 
         //-----  read targets matrix (for multiple annotations, one per column) --------//
         if (!setProgress(20)) {
             return;
         }
-        int[] resArr = new int[2]; //place holder for misc results
-        ArrayList<String> annoLabels = new ArrayList<String>();
-        HashMap<String, String> classNames = new HashMap<String, String>();
-        int[][] targets = anno.readTargets(problem, Annotator.targetFile, resArr, annoLabels, classNames);
-        int numOfAnno = resArr[0];
-        anno.setAnnotationLabels(annoLabels);
+        
+        ArrayList<String> annoLabels = problem.getAnnotations();
+        HashMap<String, String> classNames = problem.getClassNames();
+        int[][] targets = problem.getTargets();
+        int numOfAnno = annoLabels.size();
+        anno.setAnnotationLabels(annoLabels);	//why??
         
         //Initialize float array to hold rates for each annotation for each selected chain and list of selected chains to pass to result panel
         ArrayList<Chain> selectedChains = getSelectedChains();

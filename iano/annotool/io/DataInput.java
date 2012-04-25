@@ -91,7 +91,7 @@ public class DataInput
 		  //get children
 		  getChildren();
 		  //set targets
-		  LabelReader reader = new LabelReader(children.length,annotations);
+		  LabelReader reader = new LabelReader(children.length, annotations);
           targets = reader.getTargets(targetFile, children);
           annotations = reader.getAnnotations();
           classNames = reader.getClassnames();
@@ -591,7 +591,13 @@ public class DataInput
 	 * @param channel
 	 */
 	public void setChannel(String channel) {
-		this.channel = channel;
+		if(this.channel != channel) {
+			this.channel = channel;
+			this.setDataNull();
+		}
+	}
+	public String getChannel() {
+		return this.channel;
 	}
 	
 	//a helper for conversion
@@ -602,5 +608,10 @@ public class DataInput
 		for(Integer bigInt : tmpList)
 			res[i++] = bigInt.intValue();
 		return res;
+	}
+
+
+	public boolean isUseDirStructure() {
+		return useDirStructure;
 	}
 }

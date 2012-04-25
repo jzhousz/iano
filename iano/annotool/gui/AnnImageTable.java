@@ -53,7 +53,7 @@ public class AnnImageTable {
 	public JScrollPane buildImageTable(String directory, String targetFile, String ext) throws Exception
 	{
 		this.directory = directory;
-		problem = new annotool.io.DataInput(directory,ext);//(String) extBox.getSelectedItem());
+		problem = new annotool.io.DataInput(directory, ext, Annotator.channel, targetFile);//(String) extBox.getSelectedItem());
 		children = problem.getChildren();
 
 		if (children == null)
@@ -67,25 +67,12 @@ public class AnnImageTable {
 			return null;
 		}
 		//get the targets
-		try
-		{
-			annotations =  new java.util.ArrayList<String>();
-			LabelReader labelReader = new LabelReader(children.length, annotations);
-			targets = labelReader.getTargets(targetFile,children);
-			numOfAnno = labelReader.getNumOfAnnotations();
-			//annotations = labelReader.getAnnotations();
-			classNames = labelReader.getClassnames();
-		}catch(java.io.FileNotFoundException e)
-		{
-		    e.printStackTrace();
-		    javax.swing.JOptionPane.showMessageDialog(null,"Target file not found");
-		    return null;
-		}catch(Exception e)
-		{
-			e.printStackTrace();
-			javax.swing.JOptionPane.showMessageDialog(null,"Format problem in target file. Please make sure labels are int and number of lines is correct.");
-			return null;
-		}
+		
+		annotations =  problem.getAnnotations();
+		targets = problem.getTargets();
+		numOfAnno = annotations.size();
+		classNames = problem.getClassNames();
+			
 		//build up the JTable
 		final String[] columnNames;
 		columnNames = new String[numOfAnno + 2];
@@ -137,7 +124,8 @@ public class AnnImageTable {
 	public JScrollPane buildImageTable(String directory, String ext) throws Exception
 	{
 		this.directory = directory;
-		problem = new annotool.io.DataInput(directory, ext);//(String) extBox.getSelectedItem());
+		//problem = new annotool.io.DataInput(directory, ext);
+		problem = new annotool.io.DataInput(directory, ext, Annotator.channel);
 		children = problem.getChildren();
 
 		if (children == null)
@@ -196,12 +184,13 @@ public class AnnImageTable {
 	 * 
 	 * @param directory
 	 * @param ext
+	 * @param hasTarget Whether or not the targets are known (i.e. targets is known if it is problem set for training or testing and not known new problems)
 	 * @return
 	 */
-	public JScrollPane buildImageTableFromSubdirectories(String directory, String ext) throws Exception
+	public JScrollPane buildImageTableFromSubdirectories(String directory, String ext, boolean hasTarget) throws Exception
 	{
 		this.directory = directory;
-		problem = new annotool.io.DataInput(directory, ext, true);
+		problem = new annotool.io.DataInput(directory, ext, Annotator.channel, true);
 		children = problem.getChildren();
 
 		if (children == null)
@@ -221,16 +210,23 @@ public class AnnImageTable {
 		
 		//build up the JTable
 		final String[] columnNames;
-		columnNames = new String[2];
+		columnNames = new String[numOfAnno + 2];
 		columnNames[0] = "image thumbnail";
 		columnNames[1]= "file name";
+		if(hasTarget) {
+			targets = problem.getTargets();
+			for(int i= 0; i < numOfAnno; i++)
+				columnNames[2+i] = annotations.get(i);
+		}
 
 		final Object[][] tabledata = new Object[children.length][columnNames.length];
-		for (int i = 0; i < children.length; i++)
-		{
+		for (int i = 0; i < children.length; i++) {
 			tabledata[i][0] =  getButtonCell(i);
 			tabledata[i][1] = children[i];
-
+			if(hasTarget) {
+				for (int j = 0; j < numOfAnno; j++)
+					tabledata[i][2+j] = targets[j][i];
+			}
 		}		
 
 		// Create a model of the data. 

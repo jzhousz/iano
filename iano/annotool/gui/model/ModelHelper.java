@@ -1,17 +1,11 @@
 package annotool.gui.model;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.TreeMap;
 
-import javax.swing.BoxLayout;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-
 import annotool.Annotation;
 import annotool.io.ChainModel;
-import annotool.io.Parameter;
 
 public class ModelHelper {
 	/**
