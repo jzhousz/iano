@@ -67,18 +67,56 @@ public class DataInput
 	HashMap<String, String> classNames = null; //key is target(int), value is target label(class name)
 	java.util.ArrayList<String> annotations = null;
 		
+	
+	//This constructor uses the default channel setting or when the image is b/w.
+	/*
+	public DataInput(String directory, String ext)
+	{
+		this.directory = directory;
+		this.ext = ext;
+	}
+
 	//used in annotation to get a list of images from a directory.
 	public DataInput(String directory, String ext, String channel)
 	{
 		this.directory = directory;
 		this.ext = ext;
 		this.channel = channel;
+	}*/
+	
+	/**
+	 * The constructor takes the target file and resize the (2D) images based on the dimension passed in
+	 * If the images are 3D, it resizes each slice.
+	 * 
+	 */
+	//alternative: use a flag, and resize based on the size of the first image.
+	// do I need to add these for other input modes?
+	public DataInput(String directory, String ext, String channel, String targetFile, int newwidth, int newheight) throws Exception
+	{
+		resize = true;
+		this.height = newheight;
+		this.width = newwidth;
+
+		this.directory = directory;
+		this.ext = ext;
+		this.channel = channel;
+		this.targetFile = targetFile;
+		if (targetFile != null)
+		{
+		  getChildren();
+		  LabelReader reader = new LabelReader(children.length, annotations);
+          targets = reader.getTargets(targetFile, children);
+          annotations = reader.getAnnotations();
+          classNames = reader.getClassnames();
+		}  
 	}
 	
-	
-	//Take the targetfile to populate the label related information
-	//This can avoid the need of calling either LabelReader or Annotator's  readTargets(..)
-	//The code in ExpertFrame will be cleaner.
+	/**
+	 This constructor takes the target file (in addition to image dir, ext, channel) to populate the label related information.
+	 In the Annotation mode, the target file can be null. 
+	 The channel can also be set to null if it is a B/W image set.
+	 * 
+	 */
 	public DataInput(String directory, String ext, String channel, String targetFile) throws Exception
 	{
 		this.directory = directory;
@@ -88,9 +126,7 @@ public class DataInput
 		
 		if (targetFile != null)
 		{
-		  //get children
 		  getChildren();
-		  //set targets
 		  LabelReader reader = new LabelReader(children.length, annotations);
           targets = reader.getTargets(targetFile, children);
           annotations = reader.getAnnotations();
@@ -101,10 +137,23 @@ public class DataInput
 	
 	//02/27/2012  Take an image and a collection of ROIs. An alternative for ROI reading.
     //move the logic from ROITagger	
-	public DataInput(ImagePlus image, Roi[] rois)
+	// For 3D image, we need to take in one depth, which can result some invalid ROIs in some case.
+    //	
+	public DataInput(ImagePlus image, Roi[] rois, String[] cnameList, String channel, int depth)
 	{
+		
+		this.channel = channel;
+		
+		//convert cnameList to target (if not null), and classnames and annotations
+		
+		//read the ROI to populate the data, and lists of width ..
+		
+		//depth need to be passed in in the case of 3D?
+		
+		
 	    //need to fill data;widthlist;heightlist;depthlist;
-		//what about children, length, width, height, stackisze;
+		//what about children, length, width, height, stacksize;
+		//targets, classnames, annotations ...
 		/*
     	BufferedWriter writer = null;
     	try {
@@ -125,11 +174,13 @@ public class DataInput
 		//TBA;
 	}
 	
-	//02/27/2012 
-	//a directory hierarchy that has images of different classes in different subdirectories
-	//It will not need a target file.
-	//All the things will be done at the constructor instead of wait until later.
-	//Example: Hela 2D
+	/**
+	 This constructor takes a directory hierarchy that has image of different classes
+	 There is no need of the target file in this case.
+	 The subdirectory names are assumed to be the names of the classes.  
+	 The channel can be set to null if it is a B/W image set.
+	 * 
+	 */
 	public DataInput(String directory, String ext, String channel, boolean useDirStructureForTarget) throws Exception
 	{
 		//set useDirStruture to true
@@ -160,25 +211,6 @@ public class DataInput
 		}
 	}
 	
-	//if the image is to be resized before processing
-	public DataInput(String directory, String ext, String channel, int newwidth, int newheight)
-	{
-		this.directory = directory;
-		this.ext = ext;
-		this.channel = channel;
-		this.height = newheight;
-		this.width = newwidth;
-		resize = true;
-	}
-
-	//This constructor uses the default channel setting or when the image is b/w.
-	public DataInput(String directory, String ext)
-	{
-		this.directory = directory;
-		this.ext = ext;
-	}
-
-
 	Object openOneImage(ImagePlus imgp, int stackIndex) throws Exception
 	{
 		//stack from 1 to number of slices
@@ -285,7 +317,7 @@ public class DataInput
 				ofSameSize = false;
 			  }
 			}
-			else //resize. depth is not resized for now
+			else //resize. depth is not resized 
 			{
 			  tmpWList.add(width);
 			  tmpHList.add(height);

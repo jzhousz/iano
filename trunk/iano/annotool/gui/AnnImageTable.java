@@ -125,7 +125,7 @@ public class AnnImageTable {
 	{
 		this.directory = directory;
 		//problem = new annotool.io.DataInput(directory, ext);
-		problem = new annotool.io.DataInput(directory, ext, Annotator.channel);
+		problem = new annotool.io.DataInput(directory, ext, Annotator.channel, null);
 		children = problem.getChildren();
 
 		if (children == null)
