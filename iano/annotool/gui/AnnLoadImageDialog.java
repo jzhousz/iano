@@ -417,14 +417,14 @@ public class AnnLoadImageDialog extends JDialog implements ActionListener {
 
 	private boolean isColor() throws Exception
 	{
-	    annotool.io.DataInput problem = new annotool.io.DataInput(Annotator.dir, Annotator.ext);
+	    annotool.io.DataInput problem = new annotool.io.DataInput(Annotator.dir, Annotator.ext, null, null);
 		String[] children = problem.getChildren();
 		 return (problem.isColor(Annotator.dir+children[0]));
 	}
 
 	private boolean is3D() throws Exception
 	{
-	    annotool.io.DataInput problem = new annotool.io.DataInput(Annotator.dir, Annotator.ext);
+	    annotool.io.DataInput problem = new annotool.io.DataInput(Annotator.dir, Annotator.ext, null, null);
 		String[] children = problem.getChildren();
 		return (problem.is3D(Annotator.dir+children[0]));
 	}	
