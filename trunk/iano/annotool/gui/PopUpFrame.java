@@ -18,10 +18,13 @@ public class PopUpFrame extends JFrame {
 	protected DataInput trainingProblem = null;
 	protected DataInput testingProblem = null;
 	
-	public PopUpFrame(String arg0, DataInput trainingProblem, DataInput testingProblem) {
-		super(arg0);
+	public PopUpFrame(String arg0, DataInput trainingProblem, DataInput testingProblem, String channel) {
+		super(arg0 + " - using channel " + channel);
 		this.trainingProblem = trainingProblem;
 		this.testingProblem = testingProblem;
+		//this.trainingProblem.setChannel(channel);
+		//if(this.testingProblem != null)				//Testing problem can be null if it is training only or cv mode
+			//this.testingProblem.setChannel(channel);
 	}
 	
 	//Close this window programmatically

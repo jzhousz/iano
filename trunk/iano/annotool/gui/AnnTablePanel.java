@@ -16,17 +16,20 @@ import annotool.io.DataInput;
 
 public class AnnTablePanel extends JPanel {
 
-	JScrollPane tableOne = null;
-	JScrollPane tableTwo = null;
+	JScrollPane tableOneScrollPane = null;
+	JScrollPane tableTwoScrollPane = null;
 	// for putting back prediction results after annotation
 	AnnImageTable currentTestImageTable = null;
 	AnnImageTable currentCVTable = null;
+	AnnImageTable currentAnnotationTable = null;
 	JFrame frame;
 
 	HashMap<String, String> classNames;
 	
-	private DataInput trainingProblem = null;
-	private DataInput testingProblem = null;
+	private DataInput trainingProblem = null;	//used by training only, cv and training/testing modes
+	private DataInput testingProblem = null;	//used by training/testing mode
+	
+	private DataInput problem = null;	//used by new problems without target (from annotation/classification mode)
 	
 	private boolean is3D,
 					isColor;
@@ -35,29 +38,39 @@ public class AnnTablePanel extends JPanel {
 		this.frame = frame;
 	}
 
+	/**
+	 * Used for cross validation mode or training only mode.
+	 * 
+	 * @param directory
+	 * @param targetFile
+	 * @param ext
+	 * @return
+	 * @throws Exception
+	 */
 	public boolean displayOneImageTable(String directory, String targetFile,
 			String ext) throws Exception {
 		trainingProblem = null;
 		testingProblem = null;
+		problem = null;
 		
 		// remove the old table from the table panel first, if any.
-		if (tableOne != null)
-			this.remove(tableOne);
+		if (tableOneScrollPane != null)
+			this.remove(tableOneScrollPane);
 
-		if (tableTwo != null)
-			this.remove(tableTwo);
+		if (tableTwoScrollPane != null)
+			this.remove(tableTwoScrollPane);
 
 		AnnImageTable cvTable = new AnnImageTable();
-		tableOne = cvTable.buildImageTable(directory, targetFile, ext);
+		tableOneScrollPane = cvTable.buildImageTable(directory, targetFile, ext);
 		classNames = cvTable.getClassNames();
 		
 		is3D = cvTable.is3D();
 		isColor = cvTable.isColor();
 
-		if (tableOne != null) {
+		if (tableOneScrollPane != null) {
 			this.setLayout(new java.awt.BorderLayout());
-			this.add(tableOne, java.awt.BorderLayout.CENTER);
-			tableOne.setBorder(new CompoundBorder(new TitledBorder(null,
+			this.add(tableOneScrollPane, java.awt.BorderLayout.CENTER);
+			tableOneScrollPane.setBorder(new CompoundBorder(new TitledBorder(null,
 					"data set", TitledBorder.LEFT, TitledBorder.TOP),
 					new EmptyBorder(5, 5, 5, 5)));
 			currentCVTable = cvTable;
@@ -70,34 +83,42 @@ public class AnnTablePanel extends JPanel {
 			return false;
 	}
 
-	// No target case - eg. annotate
+	/**
+	 * For modes without target known - annotation/classification
+	 * 
+	 * @param directory
+	 * @param ext
+	 * @return
+	 * @throws Exception
+	 */
 	public boolean displayOneImageTable(String directory, String ext) throws Exception {
 		trainingProblem = null;
 		testingProblem = null;
+		problem = null;
 		
 		// remove the old table from the table panel first, if any.
-		if (tableOne != null)
-			this.remove(tableOne);
+		if (tableOneScrollPane != null)
+			this.remove(tableOneScrollPane);
 
-		if (tableTwo != null)
-			this.remove(tableTwo);
+		if (tableTwoScrollPane != null)
+			this.remove(tableTwoScrollPane);
 
-		AnnImageTable cvTable = new AnnImageTable();
-		tableOne = cvTable.buildImageTable(directory, ext);
-		classNames = cvTable.getClassNames();
+		AnnImageTable annotationTable = new AnnImageTable();
+		tableOneScrollPane = annotationTable.buildImageTable(directory, ext);
+		classNames = annotationTable.getClassNames();
 		
-		is3D = cvTable.is3D();
-		isColor = cvTable.isColor();
+		is3D = annotationTable.is3D();
+		isColor = annotationTable.isColor();
 
-		if (tableOne != null) {
+		if (tableOneScrollPane != null) {
 			this.setLayout(new java.awt.BorderLayout());
-			this.add(tableOne, java.awt.BorderLayout.CENTER);
-			tableOne.setBorder(new CompoundBorder(new TitledBorder(null,
+			this.add(tableOneScrollPane, java.awt.BorderLayout.CENTER);
+			tableOneScrollPane.setBorder(new CompoundBorder(new TitledBorder(null,
 					"data set", TitledBorder.LEFT, TitledBorder.TOP),
 					new EmptyBorder(5, 5, 5, 5)));
-			currentCVTable = cvTable;
+			currentAnnotationTable = annotationTable;
 			
-			testingProblem = cvTable.getProblem();
+			problem = annotationTable.getProblem();
 			
 			adjustFrame();
 			return true;
@@ -105,41 +126,53 @@ public class AnnTablePanel extends JPanel {
 			return false;
 	}
 
-	// there is testing target file
+	/**
+	 * Training/Testing mode 
+	 * 
+	 * @param directory
+	 * @param targetFile
+	 * @param ext
+	 * @param testdir
+	 * @param testtargetFile
+	 * @param testext
+	 * @return
+	 * @throws Exception
+	 */
 	public boolean displayTwoImageTables(String directory, String targetFile,
 			String ext, String testdir, String testtargetFile, String testext) throws Exception {		
 		trainingProblem = null;
 		testingProblem = null;
+		problem = null;
 		
 		// remove the old table from the table panel first, if any.
-		if (tableOne != null)
-			this.remove(tableOne);
+		if (tableOneScrollPane != null)
+			this.remove(tableOneScrollPane);
 
-		if (tableTwo != null)
-			this.remove(tableTwo);
+		if (tableTwoScrollPane != null)
+			this.remove(tableTwoScrollPane);
 
 		AnnImageTable trainingTable = new AnnImageTable();
-		tableOne = trainingTable.buildImageTable(directory, targetFile, ext);
+		tableOneScrollPane = trainingTable.buildImageTable(directory, targetFile, ext);
 		classNames = trainingTable.getClassNames();
 
 		AnnImageTable testingTable = new AnnImageTable();
-		tableTwo = testingTable.buildImageTable(testdir, testtargetFile,
+		tableTwoScrollPane = testingTable.buildImageTable(testdir, testtargetFile,
 				testext);
 		
 		is3D = trainingTable.is3D();
 		isColor = trainingTable.isColor();
 
-		if (tableOne != null && tableTwo != null) {
-			tableOne.setBorder(new CompoundBorder(new TitledBorder(null,
+		if (tableOneScrollPane != null && tableTwoScrollPane != null) {
+			tableOneScrollPane.setBorder(new CompoundBorder(new TitledBorder(null,
 					"training images", TitledBorder.LEFT, TitledBorder.TOP),
 					new EmptyBorder(5, 5, 5, 5)));
-			tableTwo.setBorder(new CompoundBorder(new TitledBorder(null,
+			tableTwoScrollPane.setBorder(new CompoundBorder(new TitledBorder(null,
 					"testing images", TitledBorder.LEFT, TitledBorder.TOP),
 					new EmptyBorder(5, 5, 5, 5)));
 
 			this.setLayout(new java.awt.GridLayout(1, 2, 5, 5));
-			this.add(tableOne);
-			this.add(tableTwo);
+			this.add(tableOneScrollPane);
+			this.add(tableTwoScrollPane);
 			currentTestImageTable = testingTable;
 			
 			trainingProblem = trainingTable.getProblem();
@@ -152,37 +185,39 @@ public class AnnTablePanel extends JPanel {
 	}
 
 	// overloadded version when there is no testing targets
+	//is this still used?
 	public boolean displayTwoImageTables(String directory, String targetFile,
 			String ext, String testdir, String testext) throws Exception {
 		trainingProblem = null;
 		testingProblem = null;
+		problem = null;
 		
 		// remove the old table from the table panel first, if any.
-		if (tableOne != null)
-			this.remove(tableOne);
-		if (tableTwo != null)
-			this.remove(tableTwo);
+		if (tableOneScrollPane != null)
+			this.remove(tableOneScrollPane);
+		if (tableTwoScrollPane != null)
+			this.remove(tableTwoScrollPane);
 
 		AnnImageTable trainingTable = new AnnImageTable();
-		tableOne = trainingTable.buildImageTable(directory, targetFile,
+		tableOneScrollPane = trainingTable.buildImageTable(directory, targetFile,
 				ext);
 		AnnImageTable testingTable = new AnnImageTable();
-		tableTwo = testingTable.buildImageTable(testdir, testext);
+		tableTwoScrollPane = testingTable.buildImageTable(testdir, testext);
 
-		tableOne.setBorder(new CompoundBorder(new TitledBorder(null,
+		tableOneScrollPane.setBorder(new CompoundBorder(new TitledBorder(null,
 				"training AOI patterns", TitledBorder.LEFT, TitledBorder.TOP),
 				new EmptyBorder(5, 5, 5, 5)));
-		tableTwo.setBorder(new CompoundBorder(new TitledBorder(null,
+		tableTwoScrollPane.setBorder(new CompoundBorder(new TitledBorder(null,
 				"images to be annotated", TitledBorder.LEFT, TitledBorder.TOP),
 				new EmptyBorder(5, 5, 5, 5)));
 		
 		is3D = trainingTable.is3D();
 		isColor = trainingTable.isColor();
 
-		if (tableOne != null && tableTwo != null) {
+		if (tableOneScrollPane != null && tableTwoScrollPane != null) {
 			this.setLayout(new java.awt.GridLayout(1, 2, 5, 5));
-			this.add(tableOne);
-			this.add(tableTwo);
+			this.add(tableOneScrollPane);
+			this.add(tableTwoScrollPane);
 			currentTestImageTable = testingTable;
 			
 			testingProblem = testingTable.getProblem();
@@ -207,8 +242,8 @@ public class AnnTablePanel extends JPanel {
 
 	public void updateAnnotationTable(Annotation[][] predictions,
 			String[] modelLabels, boolean[] supportsProb, boolean isBinary) {
-		if (currentCVTable != null)
-			currentCVTable.updateTable(predictions, modelLabels, supportsProb,
+		if (currentAnnotationTable != null)
+			currentAnnotationTable.updateTable(predictions, modelLabels, supportsProb,
 					isBinary);
 		adjustFrame();
 	}
@@ -227,11 +262,11 @@ public class AnnTablePanel extends JPanel {
 	}
 
 	public void removeTables() {
-		if (tableOne != null)
-			this.remove(tableOne);
+		if (tableOneScrollPane != null)
+			this.remove(tableOneScrollPane);
 
-		if (tableTwo != null)
-			this.remove(tableTwo);
+		if (tableTwoScrollPane != null)
+			this.remove(tableTwoScrollPane);
 	}
 
 	public HashMap<String, String> getClassNames() {
@@ -240,42 +275,45 @@ public class AnnTablePanel extends JPanel {
 
 	/**
 	 * Added: 3/29/2012 This method is used for loading from a hierarchical
-	 * directory structure and does not have a target file. Each individual
-	 * folder inside the top level directory is a different class.
+	 * directory structure and does not have a target file, instead the targets
+	 * are determined by folder structure. Each individual
+	 * folder inside the top level directory is a different class. So, files within a folder
+	 * belong to that class.
 	 */
 	public boolean displayTwoImageTables(String directory, String ext,
 			String testdir, String testext) throws Exception {
 		trainingProblem = null;
 		testingProblem = null;
+		problem = null;
 		
 		// remove the old table from the table panel first, if any.
-		if (tableOne != null)
-			this.remove(tableOne);
+		if (tableOneScrollPane != null)
+			this.remove(tableOneScrollPane);
 
-		if (tableTwo != null)
-			this.remove(tableTwo);
+		if (tableTwoScrollPane != null)
+			this.remove(tableTwoScrollPane);
 
 		AnnImageTable trainingTable = new AnnImageTable();
-		tableOne = trainingTable.buildImageTableFromSubdirectories(directory, ext);
+		tableOneScrollPane = trainingTable.buildImageTableFromSubdirectories(directory, ext, true);
 		classNames = trainingTable.getClassNames();
 
 		AnnImageTable testingTable = new AnnImageTable();
-		tableTwo = testingTable.buildImageTableFromSubdirectories(testdir, testext);
+		tableTwoScrollPane = testingTable.buildImageTableFromSubdirectories(testdir, testext, true);
 		
 		is3D = trainingTable.is3D();
 		isColor = trainingTable.isColor();
 
-		if (tableOne != null && tableTwo != null) {
-			tableOne.setBorder(new CompoundBorder(new TitledBorder(null,
+		if (tableOneScrollPane != null && tableTwoScrollPane != null) {
+			tableOneScrollPane.setBorder(new CompoundBorder(new TitledBorder(null,
 					"training images", TitledBorder.LEFT, TitledBorder.TOP),
 					new EmptyBorder(5, 5, 5, 5)));
-			tableTwo.setBorder(new CompoundBorder(new TitledBorder(null,
+			tableTwoScrollPane.setBorder(new CompoundBorder(new TitledBorder(null,
 					"testing images", TitledBorder.LEFT, TitledBorder.TOP),
 					new EmptyBorder(5, 5, 5, 5)));
 
 			this.setLayout(new java.awt.GridLayout(1, 2, 5, 5));
-			this.add(tableOne);
-			this.add(tableTwo);
+			this.add(tableOneScrollPane);
+			this.add(tableTwoScrollPane);
 			currentTestImageTable = testingTable;
 			
 			trainingProblem = trainingTable.getProblem();
@@ -287,46 +325,80 @@ public class AnnTablePanel extends JPanel {
 			return false;
 	}
 
+	/**
+	 * This method is used for displaying one image table for directory structure input mode.
+	 * So, this can be training only, cv, annotation or classificaton modes.
+	 * note: For annotation/classification it displays targets for now (TODO: decide what to do)
+	 * 
+	 * @param directory
+	 * @param ext
+	 * @param isDirectoryStructure
+	 * @return
+	 * @throws Exception
+	 */
 	public boolean displayOneImageTable(String directory, String ext, boolean isDirectoryStructure) throws Exception {
 		if (!isDirectoryStructure)
 			return displayOneImageTable(directory, ext);
 
 		trainingProblem = null;
 		testingProblem = null;
+		problem = null;
 		
 		// remove the old table from the table panel first, if any.
-		if (tableOne != null)
-			this.remove(tableOne);
+		if (tableOneScrollPane != null)
+			this.remove(tableOneScrollPane);
 
-		if (tableTwo != null)
-			this.remove(tableTwo);
+		if (tableTwoScrollPane != null)
+			this.remove(tableTwoScrollPane);
 
-		AnnImageTable cvTable = new AnnImageTable();
-		tableOne = cvTable.buildImageTableFromSubdirectories(directory, ext);
-		classNames = cvTable.getClassNames();
+		AnnImageTable singleTable = new AnnImageTable();
+		tableOneScrollPane = singleTable.buildImageTableFromSubdirectories(directory, ext, true);
+		classNames = singleTable.getClassNames();
 
-		if (tableOne != null) {
+		if (tableOneScrollPane != null) {
 			this.setLayout(new java.awt.BorderLayout());
-			this.add(tableOne, java.awt.BorderLayout.CENTER);
-			tableOne.setBorder(new CompoundBorder(new TitledBorder(null,
+			this.add(tableOneScrollPane, java.awt.BorderLayout.CENTER);
+			tableOneScrollPane.setBorder(new CompoundBorder(new TitledBorder(null,
 					"data set", TitledBorder.LEFT, TitledBorder.TOP),
 					new EmptyBorder(5, 5, 5, 5)));
-			currentCVTable = cvTable;
 			
-			trainingProblem = cvTable.getProblem();
+			
+			currentCVTable = singleTable;	//For cv mode
+			trainingProblem = singleTable.getProblem(); //For cv and training only mode
+			
+			//For annotate mode
+			currentAnnotationTable = singleTable;
+			problem = singleTable.getProblem();
 			
 			adjustFrame();
 			return true;
 		} else
 			return false;
 	}
-
+	
+	/**
+	 * Gets the problem used for training only mode, cross validation mode
+	 * and training part of training/testing mode.
+	 * @return
+	 */
 	public DataInput getTrainingProblem() {
 		return trainingProblem;
 	}
 
+	/**
+	 * Gets the problem used for testing part of training/testing mode
+	 * @return
+	 */
 	public DataInput getTestingProblem() {
 		return testingProblem;
+	}
+	
+	/**
+	 * Gets the problem used for annotation/classification mode
+	 * @return
+	 */
+	public DataInput getProblem() {
+		return problem;
 	}
 
 	public boolean is3D() {

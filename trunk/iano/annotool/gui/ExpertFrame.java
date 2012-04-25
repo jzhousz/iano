@@ -80,7 +80,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	boolean enableSave = false;
 	
 	public ExpertFrame(String arg0, boolean is3D, String channel, DataInput trainingProblem, DataInput testingProblem) {
-		super(arg0, trainingProblem, testingProblem);
+		super(arg0, trainingProblem, testingProblem, channel);
 		this.channel = channel;
 		
 		fileChooser = new JFileChooser();
@@ -391,14 +391,18 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		}
         
 		
-        int[] resArr = new int[2]; //place holder for misc results
-        ArrayList<String> annoLabels = new ArrayList<String>();
-        HashMap<String, String> classNames = new HashMap<String, String>();
+        //int[] resArr = new int[2]; //place holder for misc results
+        //ArrayList<String> annoLabels = new ArrayList<String>();
+        //HashMap<String, String> classNames = new HashMap<String, String>();
+        ArrayList<String> annoLabels = trainingProblem.getAnnotations();
+        HashMap<String, String> classNames = trainingProblem.getClassNames();
+        int[][] trainingTargets = trainingProblem.getTargets();
+        int numOfAnno = annoLabels.size();
         
-        int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels, classNames);
+        //int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels, classNames);
         //get statistics from training set
-        int numOfAnno = resArr[0];
-        anno.setAnnotationLabels(annoLabels);
+        //int numOfAnno = resArr[0];
+        anno.setAnnotationLabels(annoLabels);//why???
 
         //feature extraction.
         if (!setProgress(30))  {
@@ -420,7 +424,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		}
         
         //clear data memory
-        trainingProblem.setDataNull();
+        //trainingProblem.setDataNull();
 
         //apply feature selector and classifier
         if (!setProgress(50)) {
@@ -522,8 +526,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	//Training/Testing
 	private void ttRun() {		
 		//read images and wrapped into DataInput instances.
-        //DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);
-        //DataInput testingProblem = new DataInput(Annotator.testdir, Annotator.testext, channel);	        
+        //DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);//
+        //DataInput testingProblem = new DataInput(Annotator.testdir, Annotator.testext, channel);	//        
 		if(trainingProblem == null || testingProblem == null) {
 			pnlOutput.setOutput("Training and/or testing problem is not set.");
 			return;
@@ -542,17 +546,23 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 			return;
 		}
 		
-        int[] resArr = new int[2]; //place holder for misc results
-        ArrayList<String> annoLabels = new ArrayList<String>();
-        HashMap<String, String> classNames = new HashMap<String, String>();
-        int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels, classNames);
+        //int[] resArr = new int[2]; //place holder for misc results
+        //ArrayList<String> annoLabels = new ArrayList<String>();
+        //HashMap<String, String> classNames = new HashMap<String, String>();
+        ArrayList<String> annoLabels = trainingProblem.getAnnotations();
+        HashMap<String, String> classNames = trainingProblem.getClassNames();
+        int numOfAnno = annoLabels.size();
+        int[][] trainingTargets = trainingProblem.getTargets();
+        
+        //int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels, classNames);
         //get statistics from training set
-        int numOfAnno = resArr[0];
+        //int numOfAnno = resArr[0];
         anno.setAnnotationLabels(annoLabels);	        
 
         //testing set targets
-        int[][] testingTargets = anno.readTargets(testingProblem, Annotator.testtargetFile, resArr, null);
-
+        //int[][] testingTargets = anno.readTargets(testingProblem, Annotator.testtargetFile, resArr, null);
+        int[][] testingTargets = testingProblem.getTargets();
+        
         //feature extraction.
         if (!setProgress(30))  {
             return;
@@ -580,8 +590,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         
         
         //clear data memory
-        trainingProblem.setDataNull();
-        testingProblem.setDataNull();
+        //trainingProblem.setDataNull();
+        //testingProblem.setDataNull();
 
         //apply feature selector and classifier
         if (!setProgress(50)) {
@@ -713,7 +723,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	private void cvRun() {
 		//------ read image data from the directory ------------//
         //DataInput problem = new DataInput(Annotator.dir, Annotator.ext, channel);
-		DataInput problem = testingProblem;
+		DataInput problem = trainingProblem;
 		if(problem == null) {
 			pnlOutput.setOutput("Problem is not set.");
 			return;
@@ -736,12 +746,17 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         if (!setProgress(20)) {
             return;
         }
-        int[] resArr = new int[2]; //place holder for misc results
-        java.util.ArrayList<String> annoLabels = new java.util.ArrayList<String>();
-        HashMap<String, String> classNames = new HashMap<String, String>();
-        int[][] targets = anno.readTargets(problem, Annotator.targetFile, resArr, annoLabels, classNames);
-        int numOfAnno = resArr[0];
-        anno.setAnnotationLabels(annoLabels);
+        //int[] resArr = new int[2]; //place holder for misc results
+        //java.util.ArrayList<String> annoLabels = new java.util.ArrayList<String>();
+        //HashMap<String, String> classNames = new HashMap<String, String>();
+        //int[][] targets = anno.readTargets(problem, Annotator.targetFile, resArr, annoLabels, classNames);
+        //int numOfAnno = resArr[0];
+        ArrayList<String> annoLabels = problem.getAnnotations();
+        HashMap<String, String> classNames = problem.getClassNames();
+        int[][] targets = problem.getTargets();
+        int numOfAnno = annoLabels.size();
+        
+        anno.setAnnotationLabels(annoLabels);//why???
         
         //----- feature extraction -------//
         if (!setProgress(30)) {
@@ -761,7 +776,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         
         
         //raw data is not used after this point, set to null.
-        problem.setDataNull();
+        //problem.setDataNull();
 
         //-----  output the annotation/classification results
         if (!setProgress(50)) {

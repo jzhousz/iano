@@ -235,12 +235,15 @@ public class ModelLoader implements Runnable {
 	 * Image Classification/Annotation.
 	 */
 	private void classify() {
-		String channel = pnlImages.getSelectedChannel();
-		
 		Annotator anno = new Annotator();
 		
 		//------ read image data from the directory ------------//
-        DataInput problem = new DataInput(Annotator.dir, Annotator.ext, channel);
+        //DataInput problem = new DataInput(Annotator.dir, Annotator.ext, channel);
+        DataInput problem = pnlImages.getTablePanel().getProblem();
+        //If new channel is selected than the one already being used in problem,
+        //change problem channel
+        if(!problem.getChannel().equals(pnlImages.getSelectedChannel()))
+        	problem.setChannel(pnlImages.getSelectedChannel());
         
       	//TODO: Use this to validate model file
         int imgWidth, 
