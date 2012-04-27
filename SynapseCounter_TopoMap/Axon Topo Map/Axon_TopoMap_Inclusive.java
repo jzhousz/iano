@@ -15,6 +15,8 @@
 If there are some black slices, adjust t to lower. If there are large blobs of white pixels, adjust it to higher.  Within these two situations, typically there is a large range of possible ts.
 In this range, I suggest to set it lower (conservative), so 1) more signal are included 2) easier to set a uniform t for a set. 
  * 
+ *  4/19/2012  Add display average intensity of two channels.  
+ *
  */
 
 
@@ -101,8 +103,8 @@ public class Axon_TopoMap_Inclusive implements PlugIn, AdjustmentListener, TextL
         img.updateAndDraw();
 
         GenericDialog gd=new GenericDialog("Axon_TopoMap_Inclusive");
-	gd.addMessage("Assumed image stack direction (y-z were switched from confocal micoscope imaging): x: Anterior-Posterior;  y: Dorsal-Ventral; z: crosssection (Left-Right).");
-	
+	gd.addMessage("Assumed image stack direction: x: Anterior-Posterior;  y: Dorsal-Ventral; z: cross-section (Left-Right). The directions y and z were switched from confocal microscope imaging.");
+	gd.addMessage("");
 	gd.addSlider("Noise Threshold for Axon: ",ip.getMin(), ip.getMax(),ThrVal);
 	gd.addSlider("Noise Threshold for Neuropil: ",ip.getMin(), ip.getMax(),ThrVal2);
 	
@@ -261,7 +263,37 @@ public class Axon_TopoMap_Inclusive implements PlugIn, AdjustmentListener, TextL
 	}
     }
 
-   
+    //calcuate the total intensity of the image that are considered as foreground
+    // return  [0] total intensity
+    //         [1] # of voxel
+    int[] calIntensity(ImageProcessor originalImg, ImageProcessor maskImg)
+    {
+	 int[] res = new int[2];
+	 for(int i =0; i < res.length; i++)
+		 res[i] = 0;
+
+         byte[] original = (byte[]) originalImg.getPixels();
+         byte[] mask = (byte[]) maskImg.getPixels(); 
+         
+	 int maskVal, forVal;
+         for(int x=0; x<Width; x++)	
+	 {
+ 	  for (int y=0; y< Height; y++)
+	  {
+	     maskVal =	mask[y*Width+x]&0xff;
+	     forVal =  original[y*Width+x]&0xff;
+	     
+	     if(maskVal !=0)
+	     {
+	       res[0] += forVal;
+	       res[1] += 1;
+	     }
+	  }
+	 }
+	 return res;
+
+    }
+
     // the main calculating entrance for T.I.
     //
     float[] getTopoIndex(int index1, int index2, int ThrVal, int ThrVal2, ImageStack stack) 
@@ -281,11 +313,18 @@ public class Axon_TopoMap_Inclusive implements PlugIn, AdjustmentListener, TextL
         byte[] red,gre,blue;
        	ImagePlus aySliceImgObj=null, aySliceImgNeu=null;
 	float res[] = new float[8]; 
+	float intensAxon[] = new float[2];
+	float intensNeu[] = new float[2];
+	float intensBack[] = new float[2];
 	ColorProcessor aySlice=null;
 	int validTISliceCount = 0;
 	int validTeSliceCount = 0;
 
-	res[0] =0; res[1] =0; res[4] =0; res[5]= 0;
+	for(int i=0; i<res.length; i++) res[i] =0; 
+	for(int i=0; i<intensAxon.length; i++) intensAxon[i] =0; 
+	for(int i=0; i<intensNeu.length; i++) intensNeu[i] =0; 
+	for(int i=0; i<intensBack.length; i++) intensBack[i] =0; 
+
 	String opt = "noise="+ThrVal+" lambda=3 min=5";
 	String opt2 = "noise="+ThrVal2+" lambda=3 min=5";
 		
@@ -304,9 +343,7 @@ public class Axon_TopoMap_Inclusive implements PlugIn, AdjustmentListener, TextL
         {
 	  aySlice = (ColorProcessor) stack.getProcessor(z+1);
 
-	  //despeckle, smooth, 	
-	  //territory extraction for channel 1	  //rolling ball + binarization
-	  //territory extraction for channel 2
+	  //... despeckle, smooth, 	  //territory extraction for channel 1	  //rolling ball + binarization	  //territory extraction for channel 2
 	
 	  //segmentation
 	  //call RATS for binarization of each channel 
@@ -322,11 +359,19 @@ public class Axon_TopoMap_Inclusive implements PlugIn, AdjustmentListener, TextL
   	     aySliceImgObj = new ImagePlus("channel for obj (axon)",new ByteProcessor(Width, Height,gre, null));
 	  else if(index1==2)
   	     aySliceImgObj = new ImagePlus("channel for obj (axon)",new ByteProcessor(Width, Height,blue, null));
+
+	  // calIntensity(aySliceImgObj.getProcessor(), aySliceImgObj.getProcessor());	
+
           RATSForAxon rats = new RATSForAxon();
 	  rats.setup("",aySliceImgObj); 
 	  ImagePlus maskImageAxon = rats.run(aySliceImgObj.getProcessor(),opt);
 	  if(show_mask)
 	     maskOneStack.addSlice("axon", maskImageAxon.getProcessor());
+
+	  //calculate intensity for current slice for axon based on mask, return total, and # of voxels
+	  int avgAxonArr[] = calIntensity(aySliceImgObj.getProcessor(), maskImageAxon.getProcessor());	
+	  intensAxon[0]  += avgAxonArr[0];
+	  intensAxon[1]  += avgAxonArr[1];
 
 	  //Neuropil
 	  if(index2==0)
@@ -337,8 +382,11 @@ public class Axon_TopoMap_Inclusive implements PlugIn, AdjustmentListener, TextL
 	      aySliceImgNeu = new ImagePlus("channel for Neu",new ByteProcessor(Width, Height,blue, null));
 
 	  // enhance --  needed for red channel only
+	  ImagePlus backup = null;
 	  if(enhanceNeuropil)
-	  { //parameters are for blockRadius, bins, slope
+	  { 
+            backup = aySliceImgNeu.duplicate();
+            //parameters are for blockRadius, bins, slope
 	    HistogramEq.run(aySliceImgNeu, 20, 255, 3.00f, null, null);	
 	  }
           rats = new RATSForAxon();
@@ -348,6 +396,16 @@ public class Axon_TopoMap_Inclusive implements PlugIn, AdjustmentListener, TextL
 	  {
 	     maskTwoStack.addSlice("neuropil mask", maskImageNeu.getProcessor());
 	     if(enhanceNeuropil)  enhancedStack.addSlice("enhaned neuropil", aySliceImgNeu.getProcessor());
+	  }
+
+	  int avgNeurArr[] = calIntensity(aySliceImgNeu.getProcessor(), maskImageNeu.getProcessor());
+	  intensNeu[0] += avgNeurArr[0];
+	  intensNeu[1] += avgNeurArr[1];
+	  if(enhanceNeuropil)
+	  {
+   	    int avgBakArr[] = calIntensity(backup.getProcessor(), maskImageNeu.getProcessor());
+	    intensBack[0] += avgBakArr[0];
+	    intensBack[1] += avgBakArr[1];
 	  }
           
 	  //call calculation for TI
@@ -388,15 +446,22 @@ public class Axon_TopoMap_Inclusive implements PlugIn, AdjustmentListener, TextL
 	    IJ.log(" -- The slice is skipped for relative TI calculation (possibly a black slice)!");	  
 	  }
 
-	}//end of all y
+	}//end of all y (DV slices)
 
 	//normalized for y
         //IJ.log("total TI:"+res[0] + "   total voxel" + res[1]);
 	IJ.log("---- Final Result For The Neuron -----");
+	IJ.log("Average Intensity:" );
+	if(enhanceNeuropil)
+	   IJ.log("   Neuropil Before Enhancment:" + intensBack[0]/intensBack[1]); 
+	IJ.log("   Neuropil: " + intensNeu[0]/intensNeu[1]);
+	IJ.log("   Axon: " + intensAxon[0]/intensAxon[1]);
 	IJ.log("Topographic Index:"+res[0]/res[1]);
-	//IJ.log("Territory Proportion:"+res[2]/res[3]);
 	IJ.log("Relative Topographic Index:"+res[4]/res[5]);
+
+	//IJ.log("Territory Proportion:"+res[2]/res[3]);
 	
+
 	if(show_mask)
 	{
   	  if(enhanceNeuropil)  
