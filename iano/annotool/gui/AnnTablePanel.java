@@ -49,16 +49,7 @@ public class AnnTablePanel extends JPanel {
 	 */
 	public boolean displayOneImageTable(String directory, String targetFile,
 			String ext) throws Exception {
-		trainingProblem = null;
-		testingProblem = null;
-		problem = null;
-		
-		// remove the old table from the table panel first, if any.
-		if (tableOneScrollPane != null)
-			this.remove(tableOneScrollPane);
-
-		if (tableTwoScrollPane != null)
-			this.remove(tableTwoScrollPane);
+		resetTableBeforeBuild();
 
 		AnnImageTable cvTable = new AnnImageTable();
 		tableOneScrollPane = cvTable.buildImageTable(directory, targetFile, ext);
@@ -92,16 +83,7 @@ public class AnnTablePanel extends JPanel {
 	 * @throws Exception
 	 */
 	public boolean displayOneImageTable(String directory, String ext) throws Exception {
-		trainingProblem = null;
-		testingProblem = null;
-		problem = null;
-		
-		// remove the old table from the table panel first, if any.
-		if (tableOneScrollPane != null)
-			this.remove(tableOneScrollPane);
-
-		if (tableTwoScrollPane != null)
-			this.remove(tableTwoScrollPane);
+		resetTableBeforeBuild();
 
 		AnnImageTable annotationTable = new AnnImageTable();
 		tableOneScrollPane = annotationTable.buildImageTable(directory, ext);
@@ -140,16 +122,7 @@ public class AnnTablePanel extends JPanel {
 	 */
 	public boolean displayTwoImageTables(String directory, String targetFile,
 			String ext, String testdir, String testtargetFile, String testext) throws Exception {		
-		trainingProblem = null;
-		testingProblem = null;
-		problem = null;
-		
-		// remove the old table from the table panel first, if any.
-		if (tableOneScrollPane != null)
-			this.remove(tableOneScrollPane);
-
-		if (tableTwoScrollPane != null)
-			this.remove(tableTwoScrollPane);
+		resetTableBeforeBuild();
 
 		AnnImageTable trainingTable = new AnnImageTable();
 		tableOneScrollPane = trainingTable.buildImageTable(directory, targetFile, ext);
@@ -188,15 +161,7 @@ public class AnnTablePanel extends JPanel {
 	//is this still used?
 	public boolean displayTwoImageTables(String directory, String targetFile,
 			String ext, String testdir, String testext) throws Exception {
-		trainingProblem = null;
-		testingProblem = null;
-		problem = null;
-		
-		// remove the old table from the table panel first, if any.
-		if (tableOneScrollPane != null)
-			this.remove(tableOneScrollPane);
-		if (tableTwoScrollPane != null)
-			this.remove(tableTwoScrollPane);
+		resetTableBeforeBuild();
 
 		AnnImageTable trainingTable = new AnnImageTable();
 		tableOneScrollPane = trainingTable.buildImageTable(directory, targetFile,
@@ -282,16 +247,7 @@ public class AnnTablePanel extends JPanel {
 	 */
 	public boolean displayTwoImageTables(String directory, String ext,
 			String testdir, String testext) throws Exception {
-		trainingProblem = null;
-		testingProblem = null;
-		problem = null;
-		
-		// remove the old table from the table panel first, if any.
-		if (tableOneScrollPane != null)
-			this.remove(tableOneScrollPane);
-
-		if (tableTwoScrollPane != null)
-			this.remove(tableTwoScrollPane);
+		resetTableBeforeBuild();
 
 		AnnImageTable trainingTable = new AnnImageTable();
 		tableOneScrollPane = trainingTable.buildImageTableFromSubdirectories(directory, ext, true);
@@ -324,6 +280,52 @@ public class AnnTablePanel extends JPanel {
 		} else
 			return false;
 	}
+	
+	/**
+	 * Displays two training and testing image tables when rois sets are used as input.
+	 * 
+	 * @param imagePath
+	 * @param roiPaths
+	 * @param testImagePath
+	 * @param testRoiPaths
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean displayTwoImageTables(String imagePath, String[] roiPaths, 
+			String testImagePath, String[] testRoiPaths) throws Exception {		
+		resetTableBeforeBuild();
+
+		AnnImageTable trainingTable = new AnnImageTable();
+		tableOneScrollPane = trainingTable.buildImageTableFromROI(imagePath, roiPaths, true);
+		classNames = trainingTable.getClassNames();
+
+		AnnImageTable testingTable = new AnnImageTable();
+		tableTwoScrollPane = testingTable.buildImageTableFromROI(testImagePath, testRoiPaths, true);
+		
+		is3D = trainingTable.is3D();
+		isColor = trainingTable.isColor();
+
+		if (tableOneScrollPane != null && tableTwoScrollPane != null) {
+			tableOneScrollPane.setBorder(new CompoundBorder(new TitledBorder(null,
+					"training set", TitledBorder.LEFT, TitledBorder.TOP),
+					new EmptyBorder(5, 5, 5, 5)));
+			tableTwoScrollPane.setBorder(new CompoundBorder(new TitledBorder(null,
+					"testing set", TitledBorder.LEFT, TitledBorder.TOP),
+					new EmptyBorder(5, 5, 5, 5)));
+
+			this.setLayout(new java.awt.GridLayout(1, 2, 5, 5));
+			this.add(tableOneScrollPane);
+			this.add(tableTwoScrollPane);
+			currentTestImageTable = testingTable;
+			
+			trainingProblem = trainingTable.getProblem();
+			testingProblem = testingTable.getProblem();
+			
+			adjustFrame();
+			return true;
+		} else
+			return false;
+	}
 
 	/**
 	 * This method is used for displaying one image table for directory structure input mode.
@@ -340,16 +342,7 @@ public class AnnTablePanel extends JPanel {
 		if (!isDirectoryStructure)
 			return displayOneImageTable(directory, ext);
 
-		trainingProblem = null;
-		testingProblem = null;
-		problem = null;
-		
-		// remove the old table from the table panel first, if any.
-		if (tableOneScrollPane != null)
-			this.remove(tableOneScrollPane);
-
-		if (tableTwoScrollPane != null)
-			this.remove(tableTwoScrollPane);
+		resetTableBeforeBuild();
 
 		AnnImageTable singleTable = new AnnImageTable();
 		tableOneScrollPane = singleTable.buildImageTableFromSubdirectories(directory, ext, true);
@@ -409,5 +402,22 @@ public class AnnTablePanel extends JPanel {
 		return isColor;
 	}
 	
+	/**
+	 * Common things to do before building tables with different parameters.
+	 * Set all datainput references to null
+	 * remove tableOneScrollPane and tableTwoScrollPane
+	 */
+	private void resetTableBeforeBuild() {
+		trainingProblem = null;
+		testingProblem = null;
+		problem = null;
+		
+		// remove the old table from the table panel first, if any.
+		if (tableOneScrollPane != null)
+			this.remove(tableOneScrollPane);
+
+		if (tableTwoScrollPane != null)
+			this.remove(tableTwoScrollPane);
+	}
 	
 }

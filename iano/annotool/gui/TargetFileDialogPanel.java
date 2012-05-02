@@ -310,7 +310,7 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 
 			boolean displayOK = true,
 					isColor = false,
-					is3D = false;;
+					is3D = false;
 			try {
 				AnnTablePanel pnlTable = pnlImage.getTablePanel();
 				if (testingTarget) {
@@ -376,6 +376,7 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 
 		// Choose only directories
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		fileChooser.setMultiSelectionEnabled(false);
 		// Set filter for Java source files.
 		// fc.setFileFilter (fJavaFilter); //replace the image ext combo box?
 
@@ -412,6 +413,7 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 
 		// Choose only files, not directories
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fileChooser.setMultiSelectionEnabled(false);
 		// Set filter for Java source files.
 		// fc.setFileFilter (fJavaFilter);
 

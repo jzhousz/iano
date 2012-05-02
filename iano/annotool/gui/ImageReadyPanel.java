@@ -592,7 +592,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 	private DataInput getTrainingProblem() throws Exception {
 		// TODO: once ROI mode is added, this needs to take that into account as
 		// well
-		String mode = (pnlTable.getTrainingProblem().isUseDirStructure()) ? "DIR_STR"
+		String mode = (pnlTable.getTrainingProblem().isDirectoryMode()) ? "DIR_STR"
 				: "TARGET_FILE";
 		DataInput trainingProblem = null;
 
@@ -625,7 +625,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 	private DataInput getTestingProblem() throws Exception {
 		// TODO: once ROI mode is added, this needs to take that into account as
 		// well
-		String mode = (pnlTable.getTestingProblem().isUseDirStructure()) ? "DIR_STR"
+		String mode = (pnlTable.getTestingProblem().isDirectoryMode()) ? "DIR_STR"
 				: "TARGET_FILE";
 		DataInput testingProblem = null;
 
