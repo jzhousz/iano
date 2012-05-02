@@ -2,8 +2,9 @@ package annotool;
 
 import java.io.*;
 
+
+//This class is  a work-in-progress for saving workspace to a project.
 public class AnnSaver {
-	
 	
 	
    public void save()
@@ -62,12 +63,6 @@ public class AnnSaver {
 	   pw.println("waveletlevel="+Annotator.waveletLevel);
 	   pw.println("fold="+Annotator.fold);
 	   pw.println("output="+Annotator.output); //this is the mode!
-	   //save ROI para
-	   if(Annotator.output == "ROI")
-	   {
-		   pw.println("roidim="+AnnROIAnnotator.roidim); //this is the mode!
-		   pw.println("roiinc="+AnnROIAnnotator.roiinc); //this is the mode!
-	   }
    }
    
 }
