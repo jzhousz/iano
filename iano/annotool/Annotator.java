@@ -240,8 +240,8 @@ public class Annotator implements Runnable
      */
     public void TTAnnotate() throws Exception {
         //read images and wrapped into DataInput instances.
-        DataInput trainingProblem = new DataInput(dir, ext, channel);
-        DataInput testingProblem = new DataInput(testdir, testext, channel);
+        DataInput trainingProblem = new DataInput(dir, ext, channel, null);
+        DataInput testingProblem = new DataInput(testdir, testext, channel, null);
 
         //read targets
         if (!setProgress(20)) {
@@ -400,7 +400,7 @@ public class Annotator implements Runnable
      */
     public void CVAnnotate() throws Exception {
         //------ read image data from the directory ------------//
-        DataInput problem = new DataInput(dir, ext, channel);
+        DataInput problem = new DataInput(dir, ext, channel, null);
 
         //-----  read targets matrix (for multiple annotations, one per column) --------//
         if (!setProgress(20)) {
