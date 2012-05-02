@@ -17,7 +17,7 @@ import ij.process.*;
 
 Image Annotation Tool          Jie Zhou   
 
-This class is the entry point of the annotation algorithms. 
+This class is the original entry point of the annotation algorithms. 
 It can be called from GUI or start from command line.
 Command line Usage:
 
@@ -50,7 +50,7 @@ A List of Todos And Thoughts (May 2011):
 Note: 08/11: algorithm loading are now dynamic. The original mapping is obselete and may fail to work.
 
  ************************************************************************************************************/
-public class Annotator implements Runnable
+public class Annotator 
 {
     /*
      *  a list of default application properties
@@ -137,414 +137,11 @@ public class Annotator implements Runnable
     protected javax.swing.JProgressBar bar = null;
     protected javax.swing.JButton goButton = null;
     protected javax.swing.JButton cancelButton = null;
-    protected AnnControlPanel container = null;
     protected AnnOutputPanel outputPanel = null;
-    protected AnnotatorGUI gui = null;
 
     //default constructor for command line
     public Annotator() {
     }
-
-    //constructor used by GUI.
-    public Annotator(AnnotatorGUI gui) {
-        this.gui = gui;
-        this.bar = gui.getControlPanel().getBar();
-        this.goButton = gui.getControlPanel().getGoButton();
-        this.cancelButton = gui.getControlPanel().getCancelButton();
-        this.container = gui.getControlPanel();
-        this.outputPanel = gui.getControlPanel().getOutputPanel();
-    }
-
-    //This method can be easily replaced by an ImageJ plugin entrance method.
-    public static void main(String[] argv) {
-        if (argv.length >= 1) {
-            printUsage(); //print out default parameters in the system.
-            return;
-        }
-        (new Annotator()).annotate();
-    }
-
-    //called by GUI to start the thread of annotation
-    public boolean startAnnotation() {
-        if (thread == null) {
-            thread = new Thread(this);
-            isRunningFlag = true;
-            thread.start();
-        }
-        else {
-            return false;
-        }
-
-        return true;
-    }
-
-    //called by GUI, trying to stop the thread of annotation.
-    public boolean stopAnnotation() {
-        if (thread != null) {
-            isRunningFlag = false;
-            setGUIOutput("Annotator is trying to stop itself. May take a while.");
-            System.out.println("Annotator is trying to stop itself. May take a while.");
-            return true;
-        }
-        else {
-            System.err.println("No thread to stop.");
-            return false;
-        }
-    }
-
-    //A desperate stop. Currently not called by GUI since the stop() method is deprecated.
-    public void stopAnnotationRightNow() {
-        thread.stop();
-    }
-
-    //the working thread
-    public void run() {
-        annotate();
-        //reset cursor etc after done
-        resetGUI();
-    }
-
-    /**
-     *   This method is the main entrance. It starts one mode.
-     **/
-    public void annotate() {
-        if (!setProgress(10)) {
-            return;
-        }
-        
-        System.out.println("output:" + output);
-        try
-        {
-           if (output.equals(OUTPUT_CHOICES[0])) {
-              TTAnnotate();
-           }
-           else if (output.equals(OUTPUT_CHOICES[1])) {
-            CVAnnotate();
-           }
-           else if (output.equals(OUTPUT_CHOICES[2])) {
-            ROIAnnotate();
-           }
-           else {
-            System.out.println("Output mode:" + output + "is unknown");
-            System.exit(0);
-           }
-           }catch(Exception e)
-           {
-             System.err.println(e.getMessage());
-             System.exit(0);
-           } 
-    }
-
-    /**
-     *  Do the annotation in Training/Testing mode.
-     */
-    public void TTAnnotate() throws Exception {
-        //read images and wrapped into DataInput instances.
-        DataInput trainingProblem = new DataInput(dir, ext, channel, null);
-        DataInput testingProblem = new DataInput(testdir, testext, channel, null);
-
-        //read targets
-        if (!setProgress(20)) {
-            return;
-        }
-        int[] resArr = new int[2]; //place holder for misc results
-        java.util.ArrayList<String> annoLabels = new java.util.ArrayList<String>();
-        int[][] trainingTargets = readTargets(trainingProblem, targetFile, resArr, annoLabels);
-        //get statistics from training set
-        int numOfAnno = resArr[0];
-        annotationLabels = annoLabels;
-
-        //testing set targets
-        int[][] testingTargets = readTargets(testingProblem, testtargetFile, resArr, null);
-
-        //feature extraction.
-        if (!setProgress(30)) {
-            return;
-        }
-        setGUIOutput("Extracing features ... ");
-        //need to call extraction twice to get the features back.
-        java.util.HashMap<String, String> parameters = new java.util.HashMap<String, String>();
-        if (featureExtractor.contains("HAAR")) {
-            parameters.put(annotool.extract.HaarFeatureExtractor.LEVEL_KEY, String.valueOf(getWavletLevel()));
-        }
-        float[][] trainingFeatures = extractGivenAMethod(featureExtractor, null, parameters, trainingProblem);
-        float[][] testingFeatures = extractGivenAMethod(featureExtractor, null, parameters, testingProblem);
-        //clear data memory
-        trainingProblem.setDataNull();
-        testingProblem.setDataNull();
-
-        //apply feature selector and classifier
-        if (!setProgress(50)) {
-            return;
-        }
-        trainingTestingOutput(trainingFeatures, testingFeatures, trainingTargets, testingTargets, numOfAnno);
-    }
-
-    /*
-     *  Apply Feature Selection and Classification in TT mode.
-     *  Called by TTAnnotate().
-     */
-    private void trainingTestingOutput(float[][] trainingfeatures, float[][] testingfeatures, int[][] trainingtargets, int[][] testingtargets, int numOfAnno) {
-        int testingLength = testingfeatures.length;
-  
-        //initialize structure to store annotation results
-        Annotation[][] annotations = new Annotation[numOfAnno][testingLength];
-        for (int i = 0; i < numOfAnno; i++) {
-            for (int j = 0; j < testingLength; j++) {
-                annotations[i][j] = new Annotation();
-            }
-        }
-        //parameter hashmap for 2 mRMR selectors
-        HashMap<String, String> para = new HashMap<String, String>();
-        if (featureSelector.contains("mRMR")) {
-        	int discretef = (discreteFlag.equalsIgnoreCase("true"))? 1:0; //parameter property file use 1/0 for boolean
-            para = new HashMap<String, String>();
-            para.put(annotool.select.mRMRFeatureSelector.KEY_NUM, String.valueOf(getNumberofFeatures()));
-            para.put(annotool.select.mRMRFeatureSelector.KEY_DISCRETE, String.valueOf(discretef));
-            para.put(annotool.select.mRMRFeatureSelector.KEY_DIS_TH, threshold);
-        }
-
-        //loop for each annotation target (one image may have multiple labels)
-        for (int i = 0; i < numOfAnno; i++) {
-        	//selected features must be cleared for next annotation label
-        	float[][] selectedTrainingFeatures = null;
-        	float[][] selectedTestingFeatures = null;
-        	
-            if (featureSelector.equalsIgnoreCase("None")) //use the original feature without selection -- overwrite numoffeatures value
-            {
-                //numoffeatures = trainingfeatures[0].length;
-                selectedTrainingFeatures = trainingfeatures;
-                selectedTestingFeatures = testingfeatures;
-            }
-            else {
-                setGUIOutput("Selecting features ... ");
-                //Supervised feature selectors need corresponding target data
-                try
-                {
-                ComboFeatures combo = selectGivenAMethod(featureSelector, null, para, trainingfeatures, testingfeatures, trainingtargets[i], testingtargets[i]);
-                //selected features should not override the passed-in original features
-                selectedTrainingFeatures = combo.getTrainingFeatures();
-                selectedTestingFeatures = combo.getTestingFeatures();
-                //numoffeatures = trainingfeatures[0].length;
-                }catch(Exception e)
-                {
-                	 setGUIOutput(e.getMessage());
-                	 continue; //go to next i, without classifying
-                }
-            }
-
-            //pass the training and testing data to Validator
-            //get rate and prediction results for testing data
-            float rate = 0;
-            setGUIOutput("Classifying/Annotating ... ");
-            if (!classifierChoice.startsWith("Compare All")) {
-                para.clear();
-                if (classifierChoice.equalsIgnoreCase("SVM")) {
-                    para.put(annotool.classify.SVMClassifier.KEY_PARA, svmpara);
-                }
-                try
-                {
-                  rate = classifyGivenAMethod(classifierChoice, null, para, selectedTrainingFeatures, selectedTestingFeatures, trainingtargets[i], testingtargets[i], annotations[i]);
-                  setGUIOutput("Recog Rate for " + annotationLabels.get(i) + ": " + rate);
-                  if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
-                    return;
-                  }
-                  if (gui != null) {
-                    gui.addResultPanel(annotationLabels.get(i), rate, testingtargets[i], annotations[i]);
-                  }
-                  //put the prediction results back to GUI
-                  if (container != null) {
-                    container.getTablePanel().updateTestingTable(annotations);
-                  }
-                }catch(Exception e)
-                {
-                	 setGUIOutput(e.getMessage());
-                }
- 
-            }
-            else //compare all classifiers
-            {
-                if (numOfAnno != 1) {
-                    setGUIOutput("Classifiers are only compared when there is one target.");
-                    return;
-                }
-                setGUIOutput("Comparing all classification schedules ... ");
-                float rates[] = new float[AnnControlPanel.classifiers.length];
-                for (int c = 0; c < AnnControlPanel.classifiers.length; c++) {
-                    if (!AnnControlPanel.classifierSimpleStrs[c].startsWith("Compare")) //avoid the comparing option itself in the selection
-                    {
-                        para.clear();
-                        if (AnnControlPanel.classifierSimpleStrs[c].equalsIgnoreCase("SVM")) {
-                            para.put(annotool.classify.SVMClassifier.KEY_PARA, svmpara);
-                        }
-                        try{
-                          rates[c] = classifyGivenAMethod(AnnControlPanel.classifierSimpleStrs[c], null, para, trainingfeatures, testingfeatures, trainingtargets[i], testingtargets[i], annotations[i]);
-                          setGUIOutput(AnnControlPanel.classifiers[c] + ": Recog Rate for " + annotationLabels.get(i) + ": " + rates[c]);
-                          if (!setProgress(50 + (c + 1) * 50 / AnnControlPanel.classifiers.length)) {
-                            return;
-                          }
-                        }catch(Exception e)
-                        { setGUIOutput(e.getMessage());
-                        }
-                    }
-                }
-                if (gui != null) {
-                    gui.addCompareResultPanel(AnnControlPanel.classifiers, rates, AnnControlPanel.classifiers.length - 1);
-                }
-            }
-        }//end of loop for annotation targets
-    }
-
-    /**
-     *  Do the annotation in Cross Validation mode.
-     */
-    public void CVAnnotate() throws Exception {
-        //------ read image data from the directory ------------//
-        DataInput problem = new DataInput(dir, ext, channel, null);
-
-        //-----  read targets matrix (for multiple annotations, one per column) --------//
-        if (!setProgress(20)) {
-            return;
-        }
-        int[] resArr = new int[2]; //place holder for misc results
-        java.util.ArrayList<String> annoLabels = new java.util.ArrayList<String>();
-        int[][] targets = readTargets(problem, targetFile, resArr, annoLabels);
-        int numOfAnno = resArr[0];
-        annotationLabels = annoLabels;
-
-        //----- feature extraction -------//
-        if (!setProgress(30)) {
-            return;
-        }
-        setGUIOutput("Extracting features ... ");
-        float[][] features = extractGivenAMethod(featureExtractor, null,  null, problem);
-        //raw data is not used after this point, set to null.
-        problem.setDataNull();
-
-        //-----  output the annotation/classification results
-        if (!setProgress(50)) {
-            return;
-        }
-        cvOutput(features, targets, numOfAnno);
-    }//end of CV annotate
-
-
-    /*
-     * Apply Feature Selection and Classification in CV mode.
-     * This method uses k-fold CV.
-     * Output the recognition rate of each task (per column) to a file.
-     * Called by CVAnnotate().
-     */
-    private void cvOutput(float[][] features, int[][] targets, int numOfAnno) {
-        int incomingDim = features[0].length;
-        int length = features.length;
-        int numoffeatures = incomingDim; //original dimension before selection
-        float[] recogrates = null;
-        
-        if (fileFlag.equals("true")) {
-            try {
-                outputfile = new java.io.BufferedWriter(new java.io.FileWriter("output"));
-                ;
-                outputfile.write("Outputs:\n");
-                outputfile.flush();
-            }
-            catch (Exception e) {
-                System.out.println("Output File Cann't Be Generated.");
-            }
-        }
-
-        // parameters that are same for all target labels
-        boolean shuffle = Boolean.parseBoolean(shuffleFlag);
-        // fold number K
-        int K = 0;
-        try {
-            if (fold.equals("LOO")) {
-                K = length;
-            }
-            else {
-                K = Integer.parseInt(fold);
-            }
-        }
-        catch (NumberFormatException e) {
-            System.out.println("Number of fold is not a valid int. Set to " + length + ".");
-            K = length;
-        }
-        if (K <= 0 || K > length) {
-            System.out.println("Number of fold is not a valid int. Set to " + length + ".");
-            K = length;
-        }
-
-        //allocate space for the results.
-        Annotation[][] results = new Annotation[numOfAnno][length];
-        for (int i = 0; i < numOfAnno; i++) {
-            for (int j = 0; j < length; j++) {
-                results[i][j] = new Annotation();
-            }
-        }
-
-        //loop for each annotation target
-        for (int i = 0; i < numOfAnno; i++) {
-            int start = 50 + i * 50 / numOfAnno;
-            int region = 50 / numOfAnno;
-
-            try{
-            //If selector is None, use default numoffeatures. Else, call the selector.
-            if (!featureSelector.equalsIgnoreCase("None")) {
-                setGUIOutput("Selecting features ... ");
-                //override the original features and num of features
-                ComboFeatures res = selectGivenAMethod(featureSelector, null, null, features, targets[i]);
-                features = res.getTrainingFeatures();
-                numoffeatures = features[0].length;
-            }
-
-            setGUIOutput("Classifying/Annotating ... ");
-            recogrates = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, features, targets[i], classifierChoice, null, null, shuffle, results[i]);
-            for(int m=0; m<results[i].length; m++)
-            	System.out.println(m+":"+results[i][m].anno);
-            
-            }catch(Exception e)
-            {
-            	setGUIOutput(e.getMessage());
-            	e.printStackTrace();
-            }
-            //output results to GUI and file
-            System.out.println("rate for annotation target " + i + ": " + recogrates[K]);
-            setGUIOutput("Recog Rate for " + annotationLabels.get(i) + ": " + recogrates[K]);
-            if (gui != null) {
-                gui.addResultPanel(annotationLabels.get(i), recogrates[K], targets[i], results[i]);
-            }
-            if (outputfile != null && fileFlag.equals("true")) {
-                try {
-                    outputfile.write("Recognition Rate for annotation target " + i + ": " + recogrates[K]);
-                    outputfile.flush();
-                }
-                catch (java.io.IOException e) {
-                    System.out.println("Writing to output file failed.");
-                }
-            }
-        } //end of loop for annotation targets
-
-        if (outputfile != null && fileFlag.equals("true")) {
-            try {
-                outputfile.close();
-            }
-            catch (Exception e) {
-            }
-        }
-
-        //put the prediction results back to GUI
-        if (container != null) {
-            container.getTablePanel().updateCVTable(results);
-        }
-    }
-
-    /**
-     * A separate class handles ROI annotation mode
-     */
-    public void ROIAnnotate() {
-        new AnnROIAnnotator();
-    }
-
     /*******************************************************************************************
      *  The following public/protected methods can be called by entrance methods in this class,
      *  or other modules that mix and match different algorithms (for auto comparison).
@@ -554,6 +151,7 @@ public class Annotator implements Runnable
      * resArr: should have memory allocated in caller (2 int).
      *     resArry[0]: number of annotations (targets); resArry[1]: max class in all columns of targets
      * Other: set the annotationLabels via argument (if input is null, it won't be set).
+     *  Deprecated in May 2012. Now they are in DataInput
      */
     public int[][] readTargets(DataInput problem, String filename, int[] resArr, java.util.ArrayList<String> annotationLabels) {
         int numOfAnno = 0;
@@ -601,6 +199,7 @@ public class Annotator implements Runnable
      *     resArry[0]: number of annotations (targets); resArry[1]: max class in all columns of targets
      * Other: set the annotationLabels via argument (if input is null, it won't be set). Same with classNames
      * 
+     * Deprecated in May 2012. Now they are in DataInput
      */
     public int[][] readTargets(DataInput problem, String filename, int[] resArr, ArrayList<String> annotationLabels, HashMap<String, String> classNames) {
         int numOfAnno = 0;
@@ -693,7 +292,8 @@ public class Annotator implements Runnable
     /*
      * get an object of a classifier based on name
      */
-    public Classifier getClassifierGivenName(String chosenClassifier, HashMap<String, String> parameters)
+    /*
+    public Classifier getClassifierGivenName(String chosenClassifier, HashMap<String, String> parameters) throws Exception
     {
        Classifier classifier = null;
        if (chosenClassifier.equalsIgnoreCase("SVM")) {
@@ -706,11 +306,12 @@ public class Annotator implements Runnable
         classifier = new WekaClassifiers(chosenClassifier);
        }
        else {
-        setGUIOutput(chosenClassifier + "is not a supported classifer.");
+        System.err.println(chosenClassifier + "is not a supported classifer.");
+        throw new Exception(chosenClassifier + "is not a supported classifer.");
        }
        return classifier;
     }
-
+    */
     
     /*
      *
@@ -902,7 +503,7 @@ public class Annotator implements Runnable
         catch(Exception e)
         {
      	   e.printStackTrace(); 
-           setGUIOutput("Problem in loading " + classname + ". If it is a supported algorithm, please check the classpath.");
+           System.err.println("Problem in loading " + classname + ". If it is a supported algorithm, please check the classpath.");
            throw e;
         }
     }
@@ -1090,7 +691,8 @@ public class Annotator implements Runnable
     }
 
     //obsolete 08/11
-    public FeatureSelector getSelectorGivenName(String name, HashMap<String, String> parameters)
+    /*
+    public FeatureSelector getSelectorGivenName(String name, HashMap<String, String> parameters) throws Exception
     {
        FeatureSelector selector = null;
        
@@ -1106,10 +708,10 @@ public class Annotator implements Runnable
        else if (name.equalsIgnoreCase("Information Gain")) 
     	  selector = new WeKaFeatureSelectors(parameters);
        else
-          setGUIOutput(name + "is not a supported selector.");
+          throw new Exception(name + "is not a supported selector.");
    	   
        return selector;
-    }
+    }*/
 
     
     /**
@@ -1129,34 +731,6 @@ public class Annotator implements Runnable
         }
         return selectedFeatures;        
     }    
-
-    // ----- temporary methods for parsing algorithm parameters.	
-    //parse a parameter for feature selector.
-    protected int getNumberofFeatures() {
-        int numoffeatures;
-
-        try {
-            numoffeatures = Integer.parseInt(featureNum);
-        }
-        catch (NumberFormatException e) {
-            System.out.println("Number of features is not a valid int. Set to " + DEFAULT_FEATURENUM + ".");
-            numoffeatures = Integer.parseInt(DEFAULT_FEATURENUM);
-        }
-        return numoffeatures;
-    }
-
-    //parameter for wavelet extractor.
-    protected int getWavletLevel() {
-        int level;
-        try {
-            level = Integer.parseInt(waveletLevel);
-        }
-        catch (NumberFormatException e) {
-            System.out.println("Number of wavelet levels is not a valid int. Set to " + DEFAULT_WAVLEVEL + ".");
-            level = Integer.parseInt(DEFAULT_WAVLEVEL);
-        }
-        return level;
-    }
 
     /*************************************************************************
      *   Other supporting methods for GUI and debugging						 *
@@ -1202,82 +776,7 @@ public class Annotator implements Runnable
         }
     }
 
-    /*
-     * The method has 2 purposes:
-     * 1. update the value of the progress bar in GUI.
-     * 2. check if there is a need to stop the working thread.
-     * It is called periodically by the working thread.
-     */
-    private boolean setProgress(final int currentProgress) {
-        if (thread == null) {
-            System.out.println("thread is null");
-            return false;
-        }
-        //if	(thread.isInterrupted())
-        if (!isRunningFlag && (currentProgress > 0)) {
-            System.out.println("Interrupted at progress " + currentProgress);
-            if (bar != null) {
-                SwingUtilities.invokeLater(new Runnable()
-                {
-                    public void run() {
-                        bar.setValue(0);
-                    }
-                });
-            }
-            setGUIOutput("Annotation process cancelled by user.");
-            return false;
-        }
-
-        if (bar != null) {
-            SwingUtilities.invokeLater(new Runnable()
-            {
-                public void run() {
-                    bar.setValue(currentProgress);
-                }
-            });
-        }
-        return true;
-    }
-
-    //set the information in the output panel of the GUI.
-    private void setGUIOutput(String output) {
-        if (outputPanel != null) {
-            outputPanel.setOutput(output);
-        }
-    }
-
-    //reset the control related buttons on GUI.
-    private void resetGUI() {
-        if (bar != null) {
-            goButton.setEnabled(true);
-            cancelButton.setEnabled(false);
-
-            container.setCursor(null); //turn off the wait cursor
-            setProgress(0);
-        }
-    }
-
-    // print the usage info for command line.
-    private static void printUsage() {
-        System.out.println("Usage: java [jvmparameters] [properties] annotool.Annotator");
-        System.out.println("Example: java -Xms500M -Xmx -Dimgdir=k150/ annotool.Annotator");
-        System.out.println("You will need to set CLASSPATH to include imageJ and libSVM jar files.");
-        System.out.println("You may also need to set java.library.path to include the native mRMR library.");
-
-        System.out.println("\nDefault parameters: ");
-        System.out.println("\timgdir:" + DEFAULT_DIR);
-        System.out.println("\timgext:" + DEFAULT_EXT);
-        System.out.println("\ttarget:" + DEFAULT_TARGET);
-        System.out.println("\textractor:" + DEFAULT_EXTRACTOR);
-        System.out.println("\tselector:" + DEFAULT_SELECTOR);
-
-        System.out.println("\tchannel:" + DEFAULT_CHANNEL + "(for 3 channel color images)");
-        System.out.println("\tnumoffeature:" + DEFAULT_FEATURENUM + "(for feature selector)");
-        System.out.println("\tsvmpara:" + DEFAULT_SVM);
-        System.out.println("\twaveletlevel:" + DEFAULT_WAVLEVEL);
-        System.out.println("\tfold:" + DEFAULT_FOLD);
-    }
-
+ 
 	public java.util.ArrayList<String> getAnnotationLabels() {
 		return annotationLabels;
 	}
@@ -1285,58 +784,5 @@ public class Annotator implements Runnable
 	public void setAnnotationLabels(java.util.ArrayList<String> annotationLabels) {
 		this.annotationLabels = annotationLabels;
 	}
-
-    /*
-     *
-     * Output detailed annotation results for each image, with probability ranking.
-     * Different from classification output, this method always uses LOO (can apply to testing images too?)
-     * Revisit later when classifiers can output probabilities.
-     *
-     */
-    /*
-    private void annotationOutput(String[] children, float[][] features, int[][] targets, int length, int width, int height, int numoffeatures, int numOfAnno)
-    {
-    if (featureSelector.equalsIgnoreCase("None"))
-    //use the orignial feature without selection -- overwrite numoffeatures value
-    numoffeatures = width*height;
-
-    SVMClassifier classifier = new SVMClassifier(numoffeatures, svmpara);
-    boolean discrete = Boolean.parseBoolean(discreteFlag);
-    boolean shuffle = Boolean.parseBoolean(shuffleFlag);
-
-    //allocate space for the results.
-    Annotation[][] annotations = new Annotation[numOfAnno][length];
-    for(int i=0; i < numOfAnno; i++)
-    for (int j = 0; j<length; j++)
-    annotations[i][j] = new Annotation();
-
-    for (int i = 0; i < numOfAnno; i++)
-    {
-    int start = 50+i*50/numOfAnno;
-    int region = 50/numOfAnno;
-
-    if (featureSelector.equalsIgnoreCase("MRMR-MIQ") || featureSelector.equalsIgnoreCase("MRMR-MID"))
-    {
-    //FeatureSelector selector = (new mRMRFeatureSelector(features, targets[i], length, width*height, numoffeatures, selectorType, discrete));
-    FeatureSelector selector = (new mRMRFeatureSelector(features, targets[i], length, width*height, numoffeatures, featureSelector, discrete)); //081007, by PHC
-    float[][] selectedFeatures = selector.selectFeatures();
-    (new Validator(bar, start, region)).LOO(length, numoffeatures, selectedFeatures, targets[i],  classifier, annotations[i], shuffle);
-    }
-    else
-    {
-    (new Validator(bar, start, region)).LOO(length, numoffeatures, features, targets[i],  classifier, annotations[i], shuffle);
-    }
-    }
-
-    //Can be sorted based on probability later.
-    for(int j = 0; j < length; j++)
-    {
-    //System.out.print("\n"+ children[j]+ " ");
-    System.out.print("\n");
-    for (int i= 0; i < numOfAnno; i++)
-    //  if (annotations[i][j].anno == 1)
-    //    System.out.print("anno "+ i +": "+ annotations[i][j].anno + "("+ annotations[i][j].prob +")\t");
-    System.out.print("t:"+targets[i][j] + " p:" +annotations[i][j].anno+'\t');
-    }
-    }*/
+ 
 }
