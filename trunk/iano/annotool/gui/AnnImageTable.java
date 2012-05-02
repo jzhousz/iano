@@ -1,7 +1,9 @@
 package annotool.gui;
 
 import ij.ImagePlus;
+import ij.gui.Roi;
 import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.MedianCut;
@@ -13,10 +15,14 @@ import ij3d.Image3DUniverse;
 import java.awt.Component;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Hashtable;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
@@ -25,9 +31,8 @@ import javax.swing.table.TableColumnModel;
 
 import annotool.Annotation;
 import annotool.Annotator;
+import annotool.gui.model.Utils;
 import annotool.io.DataInput;
-import annotool.io.DirectoryReader;
-import annotool.io.LabelReader;
 
 public class AnnImageTable {
 
@@ -45,6 +50,13 @@ public class AnnImageTable {
 	int numOfAnno;
 	java.util.ArrayList<String> annotations; //labels
 	HashMap<String, String> classNames;
+	
+	boolean isRoiInput = false;
+	ImagePlus imp = null;
+	ImagePlus displayImage = null;
+	String imagePath;
+	HashMap<String, String> classMap = null;
+	HashMap<String, Roi> roiList = null;
 
 	AnnImageTable()
 	{	}
@@ -255,6 +267,91 @@ public class AnnImageTable {
 
 		return scrollPane;
 	}
+	
+	
+	/**
+	 * Builds table from list of rois loaded from one or multiple roi zip files.
+	 * 
+	 * @param imagePath
+	 * @param roiPaths
+	 * @param hasTarget
+	 * @return
+	 * @throws Exception
+	 */
+	public JScrollPane buildImageTableFromROI(String imagePath, String[] roiPaths, boolean hasTarget) throws Exception
+	{
+		isRoiInput = true;
+		imp = new ImagePlus(imagePath);
+		displayImage = new ImagePlus(imagePath);	//Once closed, the image is flushed, we don't want that for our original image because we need the data
+		displayImage.setIgnoreFlush(true);
+		this.imagePath = imagePath;					//To reconstruct display image if it has been flushed
+		
+		classMap = new HashMap<String, String>();
+		roiList = new HashMap<String, Roi>();
+		
+		for(String path : roiPaths) {
+			String className = Utils.removeExtension(path.substring(path.lastIndexOf(File.separator) + 1));
+			Utils.openRoiZip(path, roiList, classMap, className);
+		}
+		
+		if(roiList.size() < 1)
+			JOptionPane.showMessageDialog(null, "No rois loaded.");
+		
+		problem = new DataInput(imp, roiList, classMap, Annotator.channel, 1);
+		
+		children = problem.getChildren();
+		
+		annotations = problem.getAnnotations();
+		numOfAnno = annotations.size();
+		classNames = problem.getClassNames();
+		
+		//build up the JTable
+		final String[] columnNames;
+		columnNames = new String[numOfAnno + 2];
+		columnNames[0] = "image thumbnail";
+		columnNames[1]= "file name";
+		if(hasTarget) {
+			targets = problem.getTargets();
+			for(int i= 0; i < numOfAnno; i++)
+				columnNames[2+i] = annotations.get(i);
+		}
+
+		final Object[][] tabledata = new Object[children.length][columnNames.length];
+		for (int i = 0; i < children.length; i++) {
+			tabledata[i][0] =  getButtonCell(i);
+			tabledata[i][1] = children[i];
+			if(hasTarget) {
+				for (int j = 0; j < numOfAnno; j++)
+					tabledata[i][2+j] = targets[j][i];
+			}
+		}		
+
+		// Create a model of the data. 
+		javax.swing.table.TableModel dataModel = new javax.swing.table.AbstractTableModel() { 
+			public int getColumnCount() { return columnNames.length; } 
+			public int getRowCount() { return tabledata.length;} 
+			public Object getValueAt(int row, int col) {return tabledata[row][col];} 
+			public String getColumnName(int column) {return columnNames[column];} 
+			public Class getColumnClass(int c) {return getValueAt(0, c).getClass();} 
+			public boolean isCellEditable(int row, int col) {return false ;} 
+			public void setValueAt(Object aValue, int row, int column) 
+			{ tabledata[row][column] = aValue; 
+			fireTableCellUpdated(row, column); //needed if data could change
+			} 
+		}; 
+
+		TableCellRenderer defaultRenderer;
+		table = new JTable(dataModel);
+		table.setRowHeight(THUMB_HEIGHT + 4); 
+		defaultRenderer = table.getDefaultRenderer(JButton.class);
+		table.setDefaultRenderer(JButton.class,
+				new JTableButtonRenderer(defaultRenderer));
+		scrollPane = new JScrollPane(table);
+		scrollPane.setOpaque(true); //content panes must be opaque
+		table.addMouseListener(new JTableButtonMouseListener(table));
+
+		return scrollPane;
+	}
 
 	
 	
@@ -356,7 +453,16 @@ public class AnnImageTable {
 	//called after a button click in the table
 	private void displayImageInPanel(int index)
 	{
-		if(problem.is3D(Annotator.dir+children[0])) {
+		if(isRoiInput) {
+			Roi roi = getRoi(index);
+			
+			if(displayImage.getWindow() != null)	
+				displayImage.getWindow().setVisible(true);	//Needed to redisplay after it is closed once
+			
+			displayImage.setRoi(roi);
+			displayImage.show();
+		}
+		else if(problem.is3D(Annotator.dir+children[0])) {
 			ImagePlus imp = ij.IJ.openImage(directory+children[index]);
 			new StackConverter(imp).convertToRGB();
 			//new StackConverter(imp).convertToGray8();
@@ -430,10 +536,9 @@ public class AnnImageTable {
 	JButton getButtonCell(int i)
 	{
 		//return new JButton(new ImageIcon(showIcon));
-		
-		if(problem.is3D(Annotator.dir+children[0]) || children.length > 100)
+		if(isRoiInput || problem.is3D(Annotator.dir+children[0]) || children.length > 100)
 		{
-			//if image is 3D or the set is big, don't show thumbnail
+			//if input mode is roi or image is 3D or the set is big, don't show thumbnail
 			return new JButton(new ImageIcon(showIcon));
 		}
 		else
@@ -532,6 +637,9 @@ public class AnnImageTable {
 		if(problem == null | children == null)
 			throw new Exception("Data not read yet.");
 		
+		if(isRoiInput)
+			return (imp.getProcessor() instanceof ColorProcessor);
+		
 		return (problem.isColor(this.directory + children[0]));
 	}
 
@@ -539,7 +647,18 @@ public class AnnImageTable {
 		if(problem == null | children == null)
 			throw new Exception("Data not read yet.");
 		
+		if(isRoiInput)
+			return (imp.getStackSize() > 1);
+			
 		return (problem.is3D(this.directory + children[0]));
+	}
+	
+	//Gets the indexed item from namelist, and uses this name to retrieve corresponding roi from roiList
+	private Roi getRoi(int index) {
+		Roi roi = null;
+		if(roiList != null && children != null)
+			roi = roiList.get(children[index]);
+		return roi;
 	}
 
 }

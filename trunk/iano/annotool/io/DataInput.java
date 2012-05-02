@@ -11,7 +11,9 @@ import ij.process.ShortProcessor;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.regex.Pattern;
 
 
@@ -41,6 +43,10 @@ public class DataInput
 	public static final int COLOR_256 = 3; 
 	//32-bit RGB color  (return byte[])
 	public static final int COLOR_RGB = 4; 
+	
+	public static final int TARGETFILEMODE = 0;
+	public static final int DIRECTORYMODE = 1; 
+	public static final int ROIMODE = 2;
 	 
 	//problem properties
 	protected ArrayList data = null; //store all images in the dir with given ext.
@@ -61,11 +67,16 @@ public class DataInput
 	boolean resize = false;
 
 	//added 03/2012 for uniform interface
-	boolean useDirStructure = false; //when not using a target file
 	String targetFile = null; 
 	int[][] targets = null;
 	HashMap<String, String> classNames = null; //key is target(int), value is target label(class name)
 	java.util.ArrayList<String> annotations = null;
+	
+	protected int mode;
+	
+	//For roi mode
+	ImagePlus imp = null;
+	HashMap<String, Roi> roiList = null;
 		
 	
 	//This constructor uses the default channel setting or when the image is b/w.
@@ -93,6 +104,7 @@ public class DataInput
 	// do I need to add these for other input modes?
 	public DataInput(String directory, String ext, String channel, String targetFile, int newwidth, int newheight) throws Exception
 	{
+		this.mode = TARGETFILEMODE;
 		resize = true;
 		this.height = newheight;
 		this.width = newwidth;
@@ -119,6 +131,7 @@ public class DataInput
 	 */
 	public DataInput(String directory, String ext, String channel, String targetFile) throws Exception
 	{
+		this.mode = TARGETFILEMODE;
 		this.directory = directory;
 		this.ext = ext;
 		this.channel = channel;
@@ -174,6 +187,46 @@ public class DataInput
 		//TBA;
 	}
 	
+	public DataInput(ImagePlus image, HashMap<String, Roi> roiList, HashMap<String, String> classMap, String channel, int depth) throws Exception
+	{
+		this.channel = channel;
+		this.mode = ROIMODE;
+		
+		this.imp = image;
+		this.roiList = roiList;
+		
+		getChildren();
+		
+		//Create a single annotation
+		annotations = new ArrayList<String>();
+		annotations.add("Class");	//Single annotation for roi mode
+		
+		//Create classname hashmap and targets
+		targets = new int[1][children.length];
+		classNames = new HashMap<String, String>();
+		
+		int newKey = 1;
+		for(int i=0; i < children.length; i++) {
+			String className = classMap.get(children[i]);
+			int classKey = 0;
+			
+			for(String key : classNames.keySet())
+				if(classNames.get(key).equals(className)) {
+					classKey = Integer.parseInt(key);
+					break;
+				}
+			
+			if(classKey == 0) {
+				//Add the new class name encountered to the classNames with unique key
+				classNames.put(String.valueOf(newKey), className);
+				classKey = newKey;
+				newKey++;
+			}
+			
+			targets[0][i] = classKey;
+		}
+	}
+	
 	/**
 	 This constructor takes a directory hierarchy that has image of different classes
 	 There is no need of the target file in this case.
@@ -183,8 +236,7 @@ public class DataInput
 	 */
 	public DataInput(String directory, String ext, String channel, boolean useDirStructureForTarget) throws Exception
 	{
-		//set useDirStruture to true
-		useDirStructure = true;
+		this.mode = DIRECTORYMODE;
 		this.directory = directory;
 		this.ext = ext;
 		this.channel = channel;
@@ -284,12 +336,15 @@ public class DataInput
 
 		//go through the files
 		for (int i=0; i<childrenCandidates.length; i++)
-		{
-			String path = directory+childrenCandidates[i];
-			imgp = new ImagePlus(path); 
+		{			
+			//String path = directory+childrenCandidates[i];
+			imgp = getImage(childrenCandidates[i]);
+			//imgp = new ImagePlus(path); 
+			
+			
 			if (imgp.getProcessor() == null && imgp.getStackSize() <=1) 
 			{   //an image type not supported by ImageJ
-				System.out.println(path + ": not supported image type.");
+				System.out.println(childrenCandidates[i] + ": not supported image type.");
 				continue;  
 			}
 			//update valid children
@@ -313,7 +368,7 @@ public class DataInput
 			  }
 			  if(curwidth != this.width || curheight != this.height || imgp.getStackSize() != this.stackSize)
 			  {
-				System.out.println("Warning: Image" + path + "is not the same size as the 1st one. ");
+				System.out.println("Warning: Image" + childrenCandidates[i] + "is not the same size as the 1st one. ");
 				ofSameSize = false;
 			  }
 			}
@@ -445,9 +500,9 @@ public class DataInput
 	*/
 	private String[] getChildrenCandidates(String directory, final String ext) throws Exception
 	{
-	    String[] childrenCandidates;
+	    String[] childrenCandidates = null;;
 
-		if(useDirStructure == false)
+		if(this.mode == TARGETFILEMODE)
 	    {
 
 	      File dir = new File(directory);
@@ -475,7 +530,7 @@ public class DataInput
 		    
 		    
 	    }
-	    else //read subdirectory. The String has "subdirectname/filename"
+	    else if(this.mode == DIRECTORYMODE) //read subdirectory. The String has "subdirectname/filename"
 	    {
 			DirectoryReader reader = new DirectoryReader(directory, ext);
 			childrenCandidates = reader.getFileListArray();
@@ -488,6 +543,12 @@ public class DataInput
 			classNames = reader.getClassNames();
 			annotations = reader.getAnnotations();
 	    }
+	    else if(this.mode == ROIMODE) {
+	    	childrenCandidates = new String[roiList.size()];
+	    	return roiList.keySet().toArray(childrenCandidates);
+	    }
+	    else
+	    	throw new Exception("Exception: Unsuppported mode for data input.");
 		
 		return childrenCandidates;
 	}
@@ -643,7 +704,21 @@ public class DataInput
 	}
 
 
-	public boolean isUseDirStructure() {
-		return useDirStructure;
+	public boolean isDirectoryMode() {
+		return (this.mode == DIRECTORYMODE);
+	}
+	
+	private ImagePlus getImage(String childrenCandidate) {
+		if(this.mode == ROIMODE) {
+			Roi roi = roiList.get(childrenCandidate);
+			this.imp.setRoi(roi);
+			return new ImagePlus(childrenCandidate, this.imp.getProcessor().crop());//Only 1 processor so only works for 2D image for now
+		}
+		
+		String path = directory+childrenCandidate;
+		return (new ImagePlus(path)); 
+		
+		//Do different based on mode
+		//for roi, crop - build 3d when depth specified
 	}
 }

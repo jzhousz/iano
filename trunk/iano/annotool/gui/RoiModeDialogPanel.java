@@ -12,6 +12,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
@@ -22,38 +23,47 @@ import javax.swing.border.TitledBorder;
 
 import annotool.Annotator;
 import annotool.gui.model.ImageFilter;
+import annotool.gui.model.ROIFilter;
 
 public class RoiModeDialogPanel extends JPanel implements ActionListener {
-	JLabel fileL = new JLabel("ROI Dir: ");
-	JLabel targetL = new JLabel("Image File: ");
-	JTextField dirField = new JTextField("", 30);
-	JTextField targetField = new JTextField("", 30);
-	JButton filedir = new JButton("Browse ...");
-	JButton targetFile = new JButton("Browse ...");
+	private JLabel lbRoiFiles = new JLabel("ROI File(s): ");
+	private JLabel lbImageFile = new JLabel("Image File: ");
+	private JTextField txtRoiFiles = new JTextField("", 30);
+	private JTextField txtImageFile = new JTextField("", 30);
+	private JButton btnBrowseRoi = new JButton("Browse ...");
+	private JButton btnBrowseImage = new JButton("Browse ...");
 
-	JLabel testfileL = new JLabel("ROI Dir: ");
-	JLabel testtargetL = new JLabel("Image File: ");
-	JTextField testdirField = new JTextField("", 30);
-	JTextField testtargetField = new JTextField("", 30);
-	JButton testfiledir = new JButton("Browse ...");
-	JButton testtargetFile = new JButton("Browse ...");
+	private JLabel lbTestRoiFiles = new JLabel("ROI File(s): ");
+	private JLabel lbTestImageFile = new JLabel("Image File: ");
+	private JTextField txtTestRoiFiles = new JTextField("", 30);
+	private JTextField txtTestImageFile = new JTextField("", 30);
+	private JButton btnBrowseTestRoi = new JButton("Browse ...");
+	private JButton btnBrowseTestImage = new JButton("Browse ...");
 
-	JButton loadImageB = new JButton("Load");
-	JButton combinedLoadImageB = new JButton("Load");
-	JButton cancelB = new JButton("Cancel");
+	private JButton btnLoad = new JButton("Load");
+	private JButton btnLoadCombined = new JButton("Load");
+	private JButton btnCancel = new JButton("Cancel");
 
-	LandingPanel pnlLanding = null;
-	ImageReadyPanel pnlImage = null;
+	private LandingPanel pnlLanding = null;
+	private ImageReadyPanel pnlImage = null;
 
-	JFileChooser fileChooser = null; // new JFileChooser ();
+	private JFileChooser fileChooser = null; // new JFileChooser ();
 	
-	LoadImageDialog dialog;
+	private LoadImageDialog dialog;
+	
+	private String[] roiPaths = null,
+					 testRoiPaths = null;	
 
 	public RoiModeDialogPanel(LoadImageDialog dialog, LandingPanel pnlLanding, String modeflag, JFileChooser fileChooser) {
 		this.dialog = dialog;
 		this.pnlLanding = pnlLanding;
 		this.pnlImage = pnlLanding.getImageReadyPanel();
 		this.fileChooser = fileChooser;
+		
+		this.txtRoiFiles.setEnabled(false);
+		this.txtImageFile.setEnabled(false);
+		this.txtTestRoiFiles.setEnabled(false);
+		this.txtTestImageFile.setEnabled(false);
 
 		if (modeflag == Annotator.TT) // tt, can set testingTarget to false too.
 			this.add(buildTrainTestFileLoadingPanel());
@@ -74,21 +84,21 @@ public class RoiModeDialogPanel extends JPanel implements ActionListener {
 
 		JPanel lur1Panel = new JPanel();
 		lur1Panel.setLayout(new BorderLayout(5, 5));
-		lur1Panel.add(fileL, BorderLayout.WEST);
-		lur1Panel.add(dirField, BorderLayout.CENTER);
-		lur1Panel.add(filedir, BorderLayout.EAST);
+		lur1Panel.add(lbRoiFiles, BorderLayout.WEST);
+		lur1Panel.add(txtRoiFiles, BorderLayout.CENTER);
+		lur1Panel.add(btnBrowseRoi, BorderLayout.EAST);
 
 		JPanel lur3Panel = new JPanel();
 		lur3Panel.setLayout(new BorderLayout(5, 5));
-		lur3Panel.add(targetL, BorderLayout.WEST);
-		lur3Panel.add(targetField, BorderLayout.CENTER);
-		lur3Panel.add(targetFile, BorderLayout.EAST);
+		lur3Panel.add(lbImageFile, BorderLayout.WEST);
+		lur3Panel.add(txtImageFile, BorderLayout.CENTER);
+		lur3Panel.add(btnBrowseImage, BorderLayout.EAST);
 
 		JPanel lur4Panel = new JPanel();
 		lur4Panel.setLayout(new java.awt.FlowLayout());
-		lur4Panel.add(loadImageB);
+		lur4Panel.add(btnLoad);
 		lur4Panel.add(new JLabel("        "));
-		lur4Panel.add(cancelB);
+		lur4Panel.add(btnCancel);
 
 		luPanel.add(lur1Panel);
 		luPanel.add(lur3Panel);
@@ -98,10 +108,10 @@ public class RoiModeDialogPanel extends JPanel implements ActionListener {
 				"Input images", TitledBorder.LEFT, TitledBorder.TOP),
 				new EmptyBorder(5, 5, 5, 5)));
 
-		filedir.addActionListener(this); // launch dir chooser
-		targetFile.addActionListener(this); // launch file chooser
-		loadImageB.addActionListener(this);
-		cancelB.addActionListener(this);
+		btnBrowseRoi.addActionListener(this); // launch dir chooser
+		btnBrowseImage.addActionListener(this); // launch file chooser
+		btnLoad.addActionListener(this);
+		btnCancel.addActionListener(this);
 
 		return luPanel;
 	}
@@ -112,15 +122,15 @@ public class RoiModeDialogPanel extends JPanel implements ActionListener {
 		luPanel.setLayout(new GridLayout(2, 1, 5, 5));
 		JPanel lur1Panel = new JPanel();
 		lur1Panel.setLayout(new BorderLayout(5, 5));
-		lur1Panel.add(fileL, BorderLayout.WEST);
-		lur1Panel.add(dirField, BorderLayout.CENTER);
-		lur1Panel.add(filedir, BorderLayout.EAST);
+		lur1Panel.add(lbRoiFiles, BorderLayout.WEST);
+		lur1Panel.add(txtRoiFiles, BorderLayout.CENTER);
+		lur1Panel.add(btnBrowseRoi, BorderLayout.EAST);
 
 		JPanel lur3Panel = new JPanel();
 		lur3Panel.setLayout(new BorderLayout(5, 5));
-		lur3Panel.add(targetL, BorderLayout.WEST);
-		lur3Panel.add(targetField, BorderLayout.CENTER);
-		lur3Panel.add(targetFile, BorderLayout.EAST);
+		lur3Panel.add(lbImageFile, BorderLayout.WEST);
+		lur3Panel.add(txtImageFile, BorderLayout.CENTER);
+		lur3Panel.add(btnBrowseImage, BorderLayout.EAST);
 
 		luPanel.add(lur1Panel);
 		luPanel.add(lur3Panel);
@@ -129,8 +139,8 @@ public class RoiModeDialogPanel extends JPanel implements ActionListener {
 				"Training images", TitledBorder.LEFT, TitledBorder.TOP),
 				new EmptyBorder(5, 5, 5, 5)));
 
-		filedir.addActionListener(this); // launch dir chooser
-		targetFile.addActionListener(this); // launch file chooser
+		btnBrowseRoi.addActionListener(this); // launch dir chooser
+		btnBrowseImage.addActionListener(this); // launch file chooser
 
 		// build the panel for loading testing images
 		JPanel ldPanel = new JPanel();
@@ -138,15 +148,15 @@ public class RoiModeDialogPanel extends JPanel implements ActionListener {
 		
 		JPanel ldr1Panel = new JPanel();
 		ldr1Panel.setLayout(new BorderLayout(5, 5));
-		ldr1Panel.add(testfileL, BorderLayout.WEST);
-		ldr1Panel.add(testdirField, BorderLayout.CENTER);
-		ldr1Panel.add(testfiledir, BorderLayout.EAST);
+		ldr1Panel.add(lbTestRoiFiles, BorderLayout.WEST);
+		ldr1Panel.add(txtTestRoiFiles, BorderLayout.CENTER);
+		ldr1Panel.add(btnBrowseTestRoi, BorderLayout.EAST);
 
 		JPanel ldr3Panel = new JPanel();
 		ldr3Panel.setLayout(new BorderLayout(5, 5));
-		ldr3Panel.add(testtargetL, BorderLayout.WEST);
-		ldr3Panel.add(testtargetField, BorderLayout.CENTER);
-		ldr3Panel.add(testtargetFile, BorderLayout.EAST);
+		ldr3Panel.add(lbTestImageFile, BorderLayout.WEST);
+		ldr3Panel.add(txtTestImageFile, BorderLayout.CENTER);
+		ldr3Panel.add(btnBrowseTestImage, BorderLayout.EAST);
 
 		ldPanel.add(ldr1Panel);
 		ldPanel.add(ldr3Panel);
@@ -157,14 +167,14 @@ public class RoiModeDialogPanel extends JPanel implements ActionListener {
 
 		JPanel loadbuttonPanel = new JPanel();
 		loadbuttonPanel.setLayout(new java.awt.FlowLayout());
-		loadbuttonPanel.add(combinedLoadImageB);
+		loadbuttonPanel.add(btnLoadCombined);
 		loadbuttonPanel.add(new JLabel("        "));
-		loadbuttonPanel.add(cancelB);
+		loadbuttonPanel.add(btnCancel);
 
-		combinedLoadImageB.addActionListener(this);
-		cancelB.addActionListener(this);
-		testfiledir.addActionListener(this); // launch dir chooser
-		testtargetFile.addActionListener(this); // launch file chooser
+		btnLoadCombined.addActionListener(this);
+		btnCancel.addActionListener(this);
+		btnBrowseTestRoi.addActionListener(this); // launch dir chooser
+		btnBrowseTestImage.addActionListener(this); // launch file chooser
 
 		// JPanel combinedPanel = AnnotatorGUI.createVerticalPanel(true);
 		JPanel combinedPanel = new JPanel();
@@ -183,46 +193,110 @@ public class RoiModeDialogPanel extends JPanel implements ActionListener {
 	}
 
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == filedir)
-			openDir(dirField);
-		else if (e.getSource() == targetFile)
-			openFile(targetField);
-		else if (e.getSource() == cancelB)
+		if (e.getSource() == btnBrowseRoi)
+			roiPaths = openRois(txtRoiFiles);
+		else if (e.getSource() == btnBrowseImage)
+			openImage(txtImageFile);
+		else if (e.getSource() == btnCancel)
 			dialog.dismiss();
 
-		else if (e.getSource() == loadImageB) {
+		else if (e.getSource() == btnLoad) {
 			
 		} 
-		else if (e.getSource() == testfiledir)
-			openDir(testdirField);
-		else if (e.getSource() == testtargetFile)
-			openFile(testtargetField);
-		else if (e.getSource() == combinedLoadImageB) {
+		else if (e.getSource() == btnBrowseTestRoi)
+			testRoiPaths = openRois(txtTestRoiFiles);
+		else if (e.getSource() == btnBrowseTestImage)
+			openImage(txtTestImageFile);
+		else if (e.getSource() == btnLoadCombined) {
+			if(roiPaths == null || testRoiPaths == null) {
+				JOptionPane.showMessageDialog(this,
+					    "Please select roi files to use.",
+					    "Insufficient input",
+					    JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			
+			String imagePath = txtImageFile.getText().trim();
+			String testImagePath = txtTestImageFile.getText().trim();
+			
+			boolean displayOK = true,
+					isColor = false,
+					is3D = false;
+			String errorMsg = "";
+			
+			AnnTablePanel pnlTable = pnlImage.getTablePanel();
+			try {
+				displayOK = pnlTable.displayTwoImageTables(imagePath, roiPaths, testImagePath, testRoiPaths);
+				isColor = pnlTable.isColor();
+				is3D = pnlTable.is3D();
+			} catch (Exception ex) {
+				displayOK = false;
+				errorMsg = ex.getMessage();
+				ex.printStackTrace();				
+			}
+			
+			if (displayOK) {
+				pnlImage.setIs3D(is3D);
+				pnlImage.channelEnabled(isColor);
+
+				// write some information about the opened image in the
+				// outputpanel ...
+				pnlImage.getOutputPanel().setOutput("Training Image: " + imagePath);	
+				pnlImage.getOutputPanel().setOutput("Testing Image: " + testImagePath);
+
+				pnlImage.setMode();
+				pnlImage.showClassLegends();
+
+				// Display the panel with images
+				pnlLanding.displayImageReadyPanel();
+
+				// close the dialog
+				dialog.dismiss();
+			}
+			else
+				JOptionPane.showMessageDialog(this,
+					    "Error loading data. " + errorMsg,
+					    "Exception:",
+					    JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
-	// methods open dir or file can be merged into one later
-	private void openDir(JTextField dirfieldp) {
-		fileChooser.setDialogTitle("Open ROI Directory");
+	private String[] openRois(JTextField dirfieldp) {
+		fileChooser.setDialogTitle("Open ROI File(s)");
 
 		// Choose only directories
-		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fileChooser.setMultiSelectionEnabled(true);
+		fileChooser.setFileFilter(new ROIFilter());
 
 		// Now open chooser
 		int result = fileChooser.showOpenDialog(this);
 		if (result == JFileChooser.APPROVE_OPTION) {
-			File fFile = fileChooser.getSelectedFile();
+			File[] files = fileChooser.getSelectedFiles();
+			StringBuffer displayText = new StringBuffer();
+			
+			String[] roiPaths = new String[files.length];
+			
+			for(int i = 0; i < files.length; i++) {
+				displayText.append("'" + files[i].getName() + "' ");
+				roiPaths[i] = files[i].getAbsolutePath();
+			}
 			
 			// display in the textfield.
-			dirfieldp.setText(fFile.getAbsolutePath());
+			dirfieldp.setText(displayText.toString());
+			
+			return roiPaths;
 		}
+		
+		return null;
 	}
 
-	private void openFile(JTextField targetField) {
+	private void openImage(JTextField targetField) {
 		fileChooser.setDialogTitle("Open Image File");
 
 		// Choose only files, not directories
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fileChooser.setMultiSelectionEnabled(false);
 		fileChooser.setFileFilter(new ImageFilter());
 		
 		// Now open chooser

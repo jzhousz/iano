@@ -293,6 +293,7 @@ public class DirectoryTreeDialogPanel extends JPanel implements ActionListener {
 
 		// Choose only directories
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		fileChooser.setMultiSelectionEnabled(false);
 		// Set filter for Java source files.
 		// fc.setFileFilter (fJavaFilter); //replace the image ext combo box?
 
