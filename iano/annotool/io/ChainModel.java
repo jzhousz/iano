@@ -34,6 +34,8 @@ public class ChainModel {
 	private String classifierName = null;
 	private Classifier classifier = null;
 	private HashMap<String, String> classParams = null;
+	private String classifierPath = null;	//If external classifier (i.e. from plugin), path needs to be saved
+	private String classifierClass = null;
 	
 	JProgressBar bar = null;
 	
@@ -117,6 +119,8 @@ public class ChainModel {
         	//Write classifier
         	writer.write("[CLASSIFIER]" + newLine);
         	writer.write("Name=" + classifierName + newLine);
+        	writer.write("ClassName=" + classifierClass + newLine);
+        	writer.write("Path=" + classifierPath + newLine); //External classifier (i.e. plugin) or null
         	//Write classifier parameters
         	writer.write("[PARAMETER_START]" + newLine);
         	for (String parameter : classParams.keySet()) {
@@ -287,6 +291,24 @@ public class ChainModel {
 				else
 					throw new Exception("Invalid model file.");
 				
+				//Read class name
+				line = scanner.nextLine();
+				if(line.startsWith("ClassName=")) {
+					classifierClass = line.replaceFirst("ClassName=", "");
+				}
+				else
+					throw new Exception("Invalid model file.");
+				
+				//Read path
+				line = scanner.nextLine();
+				if(line.startsWith("Path=")) {
+					String path = line.replaceFirst("Path=", "");
+					if(!path.equals("null"))
+						classifierPath = path;
+				}
+				else
+					throw new Exception("Invalid model file.");
+				
 				//Read classifier parameters
 				line = scanner.nextLine();
 				if(line.equals("[PARAMETER_START]")) {
@@ -308,11 +330,9 @@ public class ChainModel {
 				if(line.startsWith("Path=")) {
 					String path = line.replaceFirst("Path=", "");
 					path = file.getParent() + File.separatorChar + path; 
-					classifier = (new Annotator()).getClassifierGivenName(classifierName, classParams);
-					if(classifier instanceof SavableClassifier) {
-						//TODO: Load model from file and set the model for the classifier (may be the loadmodel() should set as well)
+					classifier = (new Annotator()).getClassifierGivenName(classifierClass, classifierPath, classParams);
+					if(classifier instanceof SavableClassifier)
 						((SavableClassifier)classifier).setModel(((SavableClassifier)classifier).loadModel(path));
-					}
 				}
 			}
 		}
@@ -456,5 +476,12 @@ public class ChainModel {
 	}
 	public void setBar(JProgressBar bar) {
 		this.bar = bar;
+	}
+	public void setClassifierPath(String path) {
+		this.classifierPath = path;
+	}
+
+	public void setClassifierClass(String classifierClass) {
+		this.classifierClass = classifierClass;
 	}
 }

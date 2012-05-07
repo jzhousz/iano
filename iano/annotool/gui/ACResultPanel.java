@@ -1,6 +1,5 @@
 package annotool.gui;
 
-import javax.swing.*;
 import java.awt.BorderLayout;
 import java.awt.Graphics2D;
 import java.awt.Insets;
@@ -13,7 +12,10 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -31,6 +33,12 @@ import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 
+import annotool.Annotator;
+import annotool.gui.model.Chain;
+import annotool.gui.model.Extractor;
+import annotool.gui.model.Selector;
+import annotool.gui.model.Styles;
+
 import com.itextpdf.text.Chunk;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -45,12 +53,13 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfTemplate;
 import com.itextpdf.text.pdf.PdfWriter;
 
-import annotool.Annotator;
-import annotool.gui.model.Chain;
-import annotool.gui.model.Extractor;
-import annotool.gui.model.Selector;
-import annotool.gui.model.Styles;
-
+/**
+ * This class represents the result panel that is displayed after the execution of 
+ * the chains in auto comparison mode.
+ * 
+ * @author Santosh
+ *
+ */
 public class ACResultPanel extends JPanel implements ActionListener{
 	private int tabIndex; //the index of this panel in the parent tabbed pane
 	private JTabbedPane parentPane = null;

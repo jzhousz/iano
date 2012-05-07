@@ -1,5 +1,11 @@
 package annotool.io;
 
+/**
+ * Represents a single parameter for an algorithm.
+ * 
+ * @author Santosh
+ *
+ */
 public class Parameter 
 {	
 	private String paramName;

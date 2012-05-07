@@ -37,6 +37,17 @@ import annotool.gui.model.PDFFilter;
 import annotool.io.DataInput;
 import annotool.io.ReportSaver;
 
+/**
+ * This class represents the whole panel that is displayed when a problem is loaded.
+ * It contains AnnTablePanel which displays one or two AnnImageTable.
+ * This also provides channel selection, output area and the buttons to launch Simple or Auto Comparison modes.
+ * Depending upon the modes (Training Only, Training/Testing, Cross Validation, Image Annotation or ROI Annotation),
+ * there are different components displayed.
+ * 
+ * 
+ * @author Santosh
+ *
+ */
 public class ImageReadyPanel extends JPanel implements ActionListener {
 	private JPanel pnlRight, pnlRightCenter, pnlDynamic, pnlLegends,
 			pnlModeInfo, pnlChannel, pnlButton;
@@ -590,24 +601,21 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 	 * @throws Exception
 	 */
 	private DataInput getTrainingProblem() throws Exception {
-		// TODO: once ROI mode is added, this needs to take that into account as
-		// well
-		String mode = (pnlTable.getTrainingProblem().isDirectoryMode()) ? "DIR_STR"
-				: "TARGET_FILE";
+		int mode = pnlTable.getTrainingProblem().getMode();
 		DataInput trainingProblem = null;
 
 		// Check if trainig problem loaded has same channel information as
 		// currently selected channel,
 		// If not create new instance of training problem
-		if (Annotator.channel
-				.equals(pnlTable.getTrainingProblem().getChannel()))
+		if (Annotator.channel.equals(pnlTable.getTrainingProblem().getChannel()))
 			trainingProblem = pnlTable.getTrainingProblem();
-		else if (mode.equals("TARGET_FILE"))
+		else if (mode == DataInput.TARGETFILEMODE)
 			trainingProblem = new DataInput(Annotator.dir, Annotator.ext,
 					Annotator.channel, Annotator.targetFile);
-		else if (mode.equals("DIR_STR"))
-			trainingProblem = new DataInput(Annotator.dir, Annotator.ext,
-					Annotator.channel, true);
+		else if (mode == DataInput.DIRECTORYMODE)
+			trainingProblem = new DataInput(Annotator.dir, Annotator.ext, Annotator.channel, true);
+		//else if(mode == DataInput.ROIMODE)
+			//trainingProblem = new DataInput();//TODO
 
 		return trainingProblem;
 	}
@@ -623,24 +631,23 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 	 * @throws Exception
 	 */
 	private DataInput getTestingProblem() throws Exception {
-		// TODO: once ROI mode is added, this needs to take that into account as
-		// well
-		String mode = (pnlTable.getTestingProblem().isDirectoryMode()) ? "DIR_STR"
-				: "TARGET_FILE";
 		DataInput testingProblem = null;
 
 		// Same as above for testing problem if it is training/testing mode
 		if (Annotator.output.equals(Annotator.TT)) {
+			int mode = pnlTable.getTestingProblem().getMode();
 			if (Annotator.channel.equals(pnlTable.getTestingProblem()
 					.getChannel()))
 				testingProblem = pnlTable.getTestingProblem();
-			else if (mode.equals("TARGET_FILE"))
+			else if (mode == DataInput.TARGETFILEMODE)
 				testingProblem = new DataInput(Annotator.testdir,
 						Annotator.testext, Annotator.channel,
 						Annotator.testtargetFile);
-			else if (mode.equals("DIR_STR"))
+			else if (mode == DataInput.DIRECTORYMODE)
 				testingProblem = new DataInput(Annotator.testdir,
 						Annotator.testext, Annotator.channel, true);
+			//else if(mode == DataInput.ROIMODE)
+				//testingProblem = new DataInput();//TODO
 		}
 		
 		return testingProblem;

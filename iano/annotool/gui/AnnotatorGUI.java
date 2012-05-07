@@ -9,6 +9,12 @@ import annotool.Annotator;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 
+/**
+ * The main starting point of the application.
+ * 
+ * @author Santosh
+ *
+ */
 public class AnnotatorGUI extends JFrame
 {
 	AnnMenuBar menuBar;

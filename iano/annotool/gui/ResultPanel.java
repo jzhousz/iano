@@ -24,6 +24,13 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 
+/**
+ * Panel to display result from Simple Mode(ExpertFrame)
+ * This panel is displayed as a separate tab in the ExpertFrame after the execution is complete.
+ * 
+ * @author Santosh
+ *
+ */
 public class ResultPanel extends JPanel
 {
 	//Data members

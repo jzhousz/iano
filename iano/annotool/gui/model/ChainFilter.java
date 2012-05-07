@@ -4,6 +4,12 @@ import java.io.File;
 
 import javax.swing.filechooser.FileFilter;
 
+/**
+ * File filter to display only chain files in open/save dialog.
+ * 
+ * @author Santosh
+ *
+ */
 public class ChainFilter extends FileFilter {
 	public boolean accept(File f) {
         if (f.isDirectory()) {

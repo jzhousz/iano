@@ -7,6 +7,12 @@ import java.util.TreeMap;
 import annotool.Annotation;
 import annotool.io.ChainModel;
 
+/**
+ * This helper class provides methods to get html formatted strings to display in GUI.
+ *  
+ * @author Santosh
+ *
+ */
 public class ModelHelper {
 	/**
 	 * Gets the HTML formatted string including the information from the passed in ArrayList of ChainModel.

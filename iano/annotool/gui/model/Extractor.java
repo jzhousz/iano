@@ -2,6 +2,13 @@ package annotool.gui.model;
 
 import java.util.HashMap;
 
+/**
+ * Class representing properties like name, classname, external path(for plugin) and parameters
+ * of a single extractor (not to be confused with actual extractor algorithm)
+ * 
+ * @author Santosh
+ *
+ */
 public class Extractor {
 	private String name = null;
 	private String className = null;

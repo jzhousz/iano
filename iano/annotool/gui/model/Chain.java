@@ -3,6 +3,13 @@ package annotool.gui.model;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ * Represents a single chain of algorithms.
+ * It consists one classifier, 0 or more extractors and 0 or more selectors.
+ * 
+ * @author Santosh
+ *
+ */
 public class Chain {
 	private String name = null;
 	private ArrayList<Extractor> extractors = null;

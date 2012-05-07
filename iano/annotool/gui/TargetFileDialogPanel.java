@@ -23,6 +23,13 @@ import javax.swing.border.TitledBorder;
 
 import annotool.Annotator;
 
+/**
+ * This is the panel in the LoadImageDialog responsible for taking input in 
+ * target file mode. It provides interface to select image set directory and target file path.
+ * By default, it checks for file named "target.txt" inside the problem directory and selects
+ * that as target file. It can be changed using target file selection button.
+ * 
+ */
 public class TargetFileDialogPanel extends JPanel implements ActionListener {	
 	JLabel fileL = new JLabel("File Dir: ");
 	JLabel imgextL = new JLabel("Image Extension / Filter: ");

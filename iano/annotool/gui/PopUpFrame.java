@@ -7,8 +7,9 @@ import javax.swing.JFrame;
 import annotool.io.ChainModel;
 import annotool.io.DataInput;
 
-/*
- * Can bring other common features of expert frame and auto comp frame here
+/**
+ * Super class for ExpertFrame(Simple mode) and AutoCompFrame(Auto comparison mode).
+ * 
  */
 public class PopUpFrame extends JFrame {
 	//To keep track of model for each genetic line

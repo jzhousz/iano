@@ -4,6 +4,19 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ * This is equivalent to LabelReader from target file input mode but for directory structure input mode.
+ * This class scans the sub directories of the problem directory to get the candidate images to work on.
+ * 
+ * It also generates the list of class names which is basically the name of the sub directory inside the 
+ * problem directory. Each image in the sub directory belong to the class represented by that sub directory.
+ * 
+ * It also creates annotation label. In directory structure mode, there can be only one annotation label.
+ * The name of the root directory (problem directory) is used as annotation label.
+ * 
+ * @author Santosh
+ *
+ */
 public class DirectoryReader {
 	private int length;	//Number of files
 	

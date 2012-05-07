@@ -24,6 +24,11 @@ import annotool.io.ChainModel;
 import annotool.io.DataInput;
 import annotool.io.DataInputDynamic;
 
+/**
+ * ROI annotator executes the algorithms in ROI annotation mode.
+ * TODO: Rewrite to use similar technique (DataInput constructor) as in ROI input mode
+ * 
+ */
 public class ROIAnnotator {
 	private int interval;
 	private int paddingMode;

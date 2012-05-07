@@ -4,6 +4,12 @@ import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.Font.FontFamily;
 
+/**
+ * Defines constants representing styles in pdf report generated.
+ * 
+ * @author Santosh
+ *
+ */
 public class Styles {
 	//Font objects to use while writing pdf
 	public static final Font FONT_TITLE = new Font(FontFamily.HELVETICA, 18, Font.BOLD, new BaseColor(181, 0, 0));
