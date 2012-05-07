@@ -14,6 +14,11 @@ import javax.swing.border.TitledBorder;
 import annotool.Annotation;
 import annotool.io.DataInput;
 
+/**
+ * This panel contains either one or two AnnImageTable instances to display problem image/roi list.
+ * It provides multiple methods to create one or two tables depending upon different modes.
+ * 
+ */
 public class AnnTablePanel extends JPanel {
 
 	JScrollPane tableOneScrollPane = null;
@@ -67,6 +72,46 @@ public class AnnTablePanel extends JPanel {
 			currentCVTable = cvTable;
 			
 			trainingProblem = cvTable.getProblem();
+			
+			adjustFrame();
+			return true;
+		} else
+			return false;
+	}
+	
+	/**
+	 * For displaying one image table in roi input method.
+	 * For cross validation and training only modes
+	 * 
+	 * @param imagePath
+	 * @param roiPaths
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean displayOneImageTable(String imagePath, String[] roiPaths) throws Exception {		
+		resetTableBeforeBuild();
+
+		AnnImageTable singleTable = new AnnImageTable();
+		tableOneScrollPane = singleTable.buildImageTableFromROI(imagePath, roiPaths, true);
+		classNames = singleTable.getClassNames();
+		
+		is3D = singleTable.is3D();
+		isColor = singleTable.isColor();
+
+		if (tableOneScrollPane != null) {
+			tableOneScrollPane.setBorder(new CompoundBorder(new TitledBorder(null,
+					"data set", TitledBorder.LEFT, TitledBorder.TOP),
+					new EmptyBorder(5, 5, 5, 5)));
+
+			this.setLayout(new java.awt.GridLayout(1, 2, 5, 5));
+			this.add(tableOneScrollPane);
+			currentCVTable = singleTable;
+			
+			trainingProblem = singleTable.getProblem();
+			
+			//For annotate mode if used (TODO: use or not?)
+			currentAnnotationTable = singleTable;
+			problem = singleTable.getProblem();
 			
 			adjustFrame();
 			return true;

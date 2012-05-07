@@ -7,9 +7,9 @@ import java.awt.BorderLayout;
 import java.awt.event.*;
 
 
-/* 
- * The menu items and their action listeners
- * This class also sets the output mode based on file menu selection.
+/**
+ * Toolbar and main menu * 
+ *
  */
 public class AnnMenuBar implements ActionListener {
 

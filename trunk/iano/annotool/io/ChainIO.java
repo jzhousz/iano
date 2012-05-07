@@ -16,9 +16,14 @@ import annotool.gui.model.Chain;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
 
-/*
- * Saves the list of algorithm chains from comparison mode.
- * It is different than ChainModel which is for saving a single chain from simple mode
+/**
+ * Saves and loads the list of algorithm chains for comparison mode.
+ * It allows the chain to be constructed once, saved in a file and loaded later for execution.
+ * 
+ * It is different than ChainModel which is for saving a trained model.
+ * 
+ * @author Santosh
+ *
  */
 public class ChainIO {
 	public ChainIO() {

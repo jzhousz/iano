@@ -31,6 +31,19 @@ import javax.swing.JTextField;
 import annotool.analysis.Utility;
 import annotool.io.DataInput;
 
+/**
+ * This class provides an interface to load image file and corresponding ROI file and
+ * create subimages corresponding to the region of interests loaded as well as the target file
+ * for the problem.
+ * 
+ * This can be used for generating training images from a single image and roi files.
+ * 
+ * This is used if the user prefers to save subimages and use target file mode.
+ * Another alternative to creating sub images is to use ROI input mode.
+ * 
+ * @author Santosh
+ *
+ */
 public class ROITagger extends JDialog implements ActionListener {
 	private AnnOutputPanel pnlStatus = new AnnOutputPanel();
 	private ImagePlus imp = null;

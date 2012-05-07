@@ -5,6 +5,10 @@ import java.awt.Graphics;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
+/**
+ * Not used anymore (TODO: check to make sure)
+ *
+ */
 public class AnnCompareVisualPanel extends JPanel {
 	
 	JTabbedPane parentPane = null;

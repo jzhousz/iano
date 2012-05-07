@@ -2,6 +2,16 @@ package annotool.gui.model;
 
 import java.util.HashMap;
 
+/**
+ * Class representing properties of a single selector.
+ * It contains properties such as selector name, class, external path (if plugin), parameters,
+ * and selected indices (if after execution).
+ * 
+ * Not to be confused with actual algorithm to select features.
+ * 
+ * @author Santosh
+ *
+ */
 public class Selector {
 	private String name = null;
 	private String className = null;

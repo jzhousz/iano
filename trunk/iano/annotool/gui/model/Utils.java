@@ -14,6 +14,12 @@ import java.util.zip.ZipInputStream;
 
 import javax.swing.ImageIcon;
 
+/**
+ * Utility class for some helper methods.
+ * 
+ * @author Santosh
+ *
+ */
 public class Utils {
 	// Extension for model and chain files
 	public final static String MODEL_EXT = "imdl";

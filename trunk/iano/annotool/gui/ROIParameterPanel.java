@@ -10,6 +10,17 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+/**
+ * This panel displays the controls specific to ROI annotation mode.
+ * This is displayed as part of ImageReadyPanel when ROI annotation is selected.
+ * It provides slider to select window size, radio buttons to select padding type for 
+ * boundary pixels, checkbox to specify if only local maxima points are to be annotated, 
+ * and an option to specify export annotation result.
+ * 
+ * @author Santosh
+ *
+ */
 public class ROIParameterPanel extends JPanel implements ChangeListener, ItemListener, ActionListener {
 	private JLabel lbInterval, lbPadMode;
 	private JSlider slider = null;

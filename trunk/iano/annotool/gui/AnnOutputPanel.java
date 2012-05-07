@@ -8,6 +8,12 @@ import javax.swing.border.TitledBorder;
 import java.awt.BorderLayout;
 import java.awt.event.*;
 
+/**
+ * Panel with scrollable text area and clear button.
+ * Used for displaying messages.
+ * Public method setOutput() is used for adding text.
+ *
+ */
 public class AnnOutputPanel extends JPanel implements ActionListener {
 
 	JTextArea output = new JTextArea(6,30);

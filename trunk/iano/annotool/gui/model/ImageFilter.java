@@ -4,7 +4,13 @@ import java.io.File;
 
 import javax.swing.filechooser.FileFilter;
 
-
+/**
+ * FIle filter to select only images in open/save dialog.
+ * File extensions considered: jpg, jpeg, png, bmp, tif, tiff, gif
+ * 
+ * @author Santosh
+ *
+ */
 public class ImageFilter extends FileFilter {
 	private String validExtensions = "^jpg|jpeg|png|bmp|tif|tiff|gif$";
 			

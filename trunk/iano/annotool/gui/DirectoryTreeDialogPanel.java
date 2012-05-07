@@ -23,6 +23,11 @@ import javax.swing.border.TitledBorder;
 import annotool.Annotator;
 import annotool.io.DataInput;
 
+/**
+ * This is the panel of the load image dialog for selecting input problem in directory tree mode.
+ * It provides selection for the parent directory and file extension
+ * 
+ */
 public class DirectoryTreeDialogPanel extends JPanel implements ActionListener {
 	JLabel fileL = new JLabel("Parent Dir: ");
 	JLabel imgextL = new JLabel("Image Extension / Filter: ");

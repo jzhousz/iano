@@ -25,6 +25,12 @@ import annotool.Annotator;
 import annotool.gui.model.ImageFilter;
 import annotool.gui.model.ROIFilter;
 
+/**
+ * Dialog to load problem in ROI input mode.
+ * Allows selection of ROI zip files (each file representing one class)
+ * and corresponding image file.
+ *
+ */
 public class RoiModeDialogPanel extends JPanel implements ActionListener {
 	private JLabel lbRoiFiles = new JLabel("ROI File(s): ");
 	private JLabel lbImageFile = new JLabel("Image File: ");
@@ -201,8 +207,55 @@ public class RoiModeDialogPanel extends JPanel implements ActionListener {
 			dialog.dismiss();
 
 		else if (e.getSource() == btnLoad) {
+			if(roiPaths == null) {
+				JOptionPane.showMessageDialog(this,
+					    "Please select roi files to use.",
+					    "Insufficient input",
+					    JOptionPane.ERROR_MESSAGE);
+				return;
+			}
 			
-		} 
+			String imagePath = txtImageFile.getText().trim();
+			
+			boolean displayOK = true,
+					isColor = false,
+					is3D = false;
+			String errorMsg = "";
+			
+			AnnTablePanel pnlTable = pnlImage.getTablePanel();
+			try {
+				displayOK = pnlTable.displayOneImageTable(imagePath, roiPaths);
+				isColor = pnlTable.isColor();
+				is3D = pnlTable.is3D();
+			} catch (Exception ex) {
+				displayOK = false;
+				errorMsg = ex.getMessage();
+				ex.printStackTrace();				
+			}
+			
+			if (displayOK) {
+				pnlImage.setIs3D(is3D);
+				pnlImage.channelEnabled(isColor);
+
+				// write some information about the opened image in the
+				// outputpanel ...
+				pnlImage.getOutputPanel().setOutput("Image: " + imagePath);	
+
+				pnlImage.setMode();
+				pnlImage.showClassLegends();
+
+				// Display the panel with images
+				pnlLanding.displayImageReadyPanel();
+
+				// close the dialog
+				dialog.dismiss();
+			}
+			else
+				JOptionPane.showMessageDialog(this,
+					    "Error loading data. " + errorMsg,
+					    "Exception:",
+					    JOptionPane.ERROR_MESSAGE);
+		}
 		else if (e.getSource() == btnBrowseTestRoi)
 			testRoiPaths = openRois(txtTestRoiFiles);
 		else if (e.getSource() == btnBrowseTestImage)

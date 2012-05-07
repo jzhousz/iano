@@ -31,6 +31,13 @@ import annotool.Annotation;
 import annotool.Annotator;
 import annotool.ComboFeatures;
 
+/**
+ * This class is responsible for displaying different algorithm choices and executing the selected ones in Simple Mode.
+ * It provides methods that runs training only, training/testing and cross validation modes
+ * 
+ * @author Santosh
+ *
+ */
 public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListener, Runnable {
 	private JTabbedPane tabPane;
 	private JPanel pnlMain,
@@ -402,7 +409,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         //int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels, classNames);
         //get statistics from training set
         //int numOfAnno = resArr[0];
-        anno.setAnnotationLabels(annoLabels);//why???
+        anno.setAnnotationLabels(annoLabels);//why??? TODO:used when writing out model file later, can be replaced with annotation labels from problem
 
         //feature extraction.
         if (!setProgress(30))  {
@@ -513,6 +520,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
         	chainModels[i].setClassNames(classNames);
         	chainModels[i].setClassifierName(classifierChoice);
+        	chainModels[i].setClassifierClass(classifier.getClassName());
+        	chainModels[i].setClassifierPath(classifier.getExternalPath());
         	chainModels[i].setClassifier(classifierObj);
         	chainModels[i].setClassParams(classParams);            
             
@@ -700,6 +709,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	chainModels[i].setClassNames(classNames);
         	chainModels[i].setResult(rate);
         	chainModels[i].setClassifierName(classifierChoice);
+        	chainModels[i].setClassifierClass(classifier.getClassName());
+        	chainModels[i].setClassifierPath(classifier.getExternalPath());
         	chainModels[i].setClassifier(classifierObj);
         	chainModels[i].setClassParams(classParams);
             
@@ -902,6 +913,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	chainModels[i].setClassNames(classNames);
         	chainModels[i].setResult(recograte[K]);
         	chainModels[i].setClassifierName(classifierChoice);
+        	chainModels[i].setClassifierClass(classifier.getClassName());
+        	chainModels[i].setClassifierPath(classifier.getExternalPath());
         	chainModels[i].setClassifier(classifierObj);
         	chainModels[i].setClassParams(classParams);
             

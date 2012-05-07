@@ -34,6 +34,12 @@ import annotool.Annotator;
 import annotool.gui.model.Utils;
 import annotool.io.DataInput;
 
+/**
+ * This class is responsible for displaying a list of images or roi that are loaded as problem.
+ * Depending upon the mode (ROI input, target file, directory structure), 
+ * one of its several buildTable... methods are used. 
+ *
+ */
 public class AnnImageTable {
 
 	String showIcon = "images/Zoom16.gif";

@@ -1,31 +1,41 @@
 package annotool.gui;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import javax.swing.*;
-import javax.swing.border.*;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
 import annotool.Annotation;
 import annotool.Annotator;
 import annotool.ComboFeatures;
 import annotool.classify.Classifier;
-import annotool.classify.SavableClassifier;
 import annotool.classify.Validator;
 import annotool.gui.model.Chain;
 import annotool.gui.model.ChainFilter;
@@ -39,6 +49,13 @@ import annotool.io.ChainIO;
 import annotool.io.ChainModel;
 import annotool.io.DataInput;
 
+/**
+ * Right side panel of Auto Comparison Mode.
+ * It displays the chains of algorithms constructed and executes them in either TT or CV modes.
+ * 
+ * @author Santosh
+ *
+ */
 public class ChainPanel extends JPanel implements ActionListener, ListSelectionListener, TableModelListener, Runnable{
 	private JPanel pnlMain, pnlDetail,
 				   pnlTable, pnlControl,
@@ -813,6 +830,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            	
 	            	chainModels[i].setClassifierName(chain.getClassifier());
 	            	chainModels[i].setClassifier(classifierObj);
+	            	chainModels[i].setClassifierClass(chain.getClassifierClassName());
+	            	chainModels[i].setClassifierPath(chain.getClassifierExternalPath());
 	            	chainModels[i].setClassParams(chain.getClassParams());
 	            	chainModels[i].setResult(rate);
 	            }	            	
@@ -1029,6 +1048,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            	chainModels[i].setSelectors(selectors);
 	            	
 	            	chainModels[i].setClassifierName(chain.getClassifier());
+	            	chainModels[i].setClassifierClass(chain.getClassifierClassName());
+	            	chainModels[i].setClassifierPath(chain.getClassifierExternalPath());
 	            	chainModels[i].setClassifier(classifierObj);
 	            	chainModels[i].setClassParams(chain.getClassParams());
 	            	chainModels[i].setResult(recograte[K]);

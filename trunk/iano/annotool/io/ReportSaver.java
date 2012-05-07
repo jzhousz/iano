@@ -24,6 +24,12 @@ import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 
+/**
+ * This class is used for saving pdf report containing annotation results.
+ * 
+ * @author Santosh
+ *
+ */
 public class ReportSaver {
 	public boolean saveAnnotationReport(File file, Annotation[][] annotations, HashMap<String, String> classNames, 
 			String[] modelLabels, boolean[] supportsProb, String[] imageNames,

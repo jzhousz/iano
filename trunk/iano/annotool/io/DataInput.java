@@ -147,46 +147,16 @@ public class DataInput
 		}  
 	}
 	
-	
-	//02/27/2012  Take an image and a collection of ROIs. An alternative for ROI reading.
-    //move the logic from ROITagger	
-	// For 3D image, we need to take in one depth, which can result some invalid ROIs in some case.
-    //	
-	public DataInput(ImagePlus image, Roi[] rois, String[] cnameList, String channel, int depth)
-	{
-		
-		this.channel = channel;
-		
-		//convert cnameList to target (if not null), and classnames and annotations
-		
-		//read the ROI to populate the data, and lists of width ..
-		
-		//depth need to be passed in in the case of 3D?
-		
-		
-	    //need to fill data;widthlist;heightlist;depthlist;
-		//what about children, length, width, height, stacksize;
-		//targets, classnames, annotations ...
-		/*
-    	BufferedWriter writer = null;
-    	try {
-	    	writer = new BufferedWriter(new FileWriter(new File(file, "target.txt")));
-	    	
-	    	for(int i = 0; i < rois.length; i++) {
-				imp.setRoi(rois[i]);
-				ImagePlus roiImg = new ImagePlus("ROI", 
-						imp.getProcessor().crop());
-				ij.IJ.saveAs(roiImg, "jpeg", file.getPath() + "/" + (i + 1) + ".jpg");
-				writer.write((i + 1) + ".jpg" + newLine);
-			}
-	    	
-	    	writer.close();
-	    	pnlStatus.setOutput("DONE!!!");
-         */
-		
-		//TBA;
-	}
-	
+	/**
+	 * Creates DataInput object in ROI input method.
+	 * 
+	 * @param image
+	 * @param roiList HashMap with roi names for keys and Roi objects for values
+	 * @param classMap HashMap with roi names for keys and corresponding class names for values
+	 * @param channel r, g or b
+	 * @param depth	Not implemented yet
+	 * @throws Exception
+	 */
 	public DataInput(ImagePlus image, HashMap<String, Roi> roiList, HashMap<String, String> classMap, String channel, int depth) throws Exception
 	{
 		this.channel = channel;
@@ -199,7 +169,7 @@ public class DataInput
 		
 		//Create a single annotation
 		annotations = new ArrayList<String>();
-		annotations.add("Class");	//Single annotation for roi mode
+		annotations.add("Class");	//Single annotation for roi mode, arbitrarily named "Class" (shows up in target column when images are loaded)
 		
 		//Create classname hashmap and targets
 		targets = new int[1][children.length];
@@ -720,5 +690,9 @@ public class DataInput
 		
 		//Do different based on mode
 		//for roi, crop - build 3d when depth specified
+	}
+
+	public int getMode() {
+		return mode;
 	}
 }

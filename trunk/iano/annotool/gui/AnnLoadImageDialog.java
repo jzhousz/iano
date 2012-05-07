@@ -15,6 +15,10 @@ import java.io.File;
 
 import annotool.Annotator;
 
+/**
+ * Not used any more
+ *
+ */
 public class AnnLoadImageDialog extends JDialog implements ActionListener {
 
 	String[] extensions = { ".jpg", ".tif", ".tiff", ".bmp", ".png", ".gif", ".*" };

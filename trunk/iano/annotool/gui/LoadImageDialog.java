@@ -7,6 +7,11 @@ import javax.swing.JTabbedPane;
 
 import annotool.Annotator;
 
+/**
+ * Dialog to load problem. It includes panels to load problem in target file mode,
+ * directory structure mode and ROI files mode.
+ *
+ */
 public class LoadImageDialog extends JDialog {
 	private JTabbedPane tabbedPane;
 	

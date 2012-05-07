@@ -14,6 +14,10 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.CategoryItemRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
 
+/**
+ * Not used anymore (TODO: check to make sure)
+ *
+ */
 public class VisualizationPanel extends JPanel
 {
 	JTabbedPane parentPane = null;

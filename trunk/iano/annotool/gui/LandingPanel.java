@@ -16,6 +16,13 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Font;
 
+/**
+ * This is the panel that is displayed at the start when the AnnotatorGUI starts.
+ * It displays different screens of the initial wizard in card layout.
+ * 
+ * @author Santosh
+ *
+ */
 public class LandingPanel extends JPanel implements ActionListener, ItemListener
 {
 	private JPanel pnlMainScreen, pnlModeSelect,          //Main screen, Mode select screen container

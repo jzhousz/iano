@@ -12,6 +12,13 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.*;
 
+/**
+ * This panel displays the interface to select either ROI annotation or Image annotation
+ * when Annotation is selected in the main screen.
+ * 
+ * @author Santosh
+ *
+ */
 public class AnnoTypePanel extends JPanel implements ActionListener{
 	private AnnotatorGUI gui = null;
 	

@@ -7,7 +7,12 @@ import java.util.HashMap;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-/** This is modal dialog box that displays HTML formated text. */
+/**
+ * This is the dialog box that displays the legends for the resulting colors in ROI annotation.
+ * 
+ * @author Santosh
+ *
+ */
 public class LegendDialog extends JDialog implements ActionListener {
     public LegendDialog(String title, float[][] colorMasks, HashMap<String, String> classNames) {
         super(ij.IJ.getInstance(), title, false);

@@ -29,6 +29,16 @@ import annotool.Annotation;
 import annotool.Annotator;
 import annotool.ComboFeatures;
 
+/**
+ * This class is for auto comparison mode. 
+ * It contains algorithm selection screen similar to ExpertFrame(Simple mode) in the left.
+ * On the right, it contains ChainPanel which is responsible for executing the chained algorithms.
+ * 
+ * After the execution of the chains, it displays the results in the ACResultPanel 
+ * 
+ * @author Santosh
+ *
+ */
 public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemListener {
 	private JTabbedPane tabPane;
 	private JPanel pnlMainOuter,
@@ -192,6 +202,15 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 	        pnlChain.addClassifier(classifier.getName(), getParameterList(classifier, "Classifier"), classifier.getClassName(), classifier.getExternalPath());
 		}
 	}
+	
+	/**
+	 * Creates and returns a hashmap of parameters(name-value pairs) from the
+	 * corresponding components
+	 * 
+	 * @param al
+	 * @param type
+	 * @return
+	 */
 	private HashMap<String, String> getParameterList(Algorithm al, String type) {
 		HashMap<String, String> params = new HashMap<String, String>();
 		
