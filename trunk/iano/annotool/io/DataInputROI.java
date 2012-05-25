@@ -11,6 +11,7 @@ import java.util.ArrayList;
 
 import annotool.ImgDimension;
 
+@Deprecated
 public class DataInputROI {
 	protected ArrayList<Object> data = null;
 	protected String imagePath = null; //Path to the image which is divided into ROIs

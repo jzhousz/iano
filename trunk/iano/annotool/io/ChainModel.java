@@ -19,6 +19,13 @@ import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
 import annotool.gui.model.Utils;
 
+/**
+ * This class is responsible for storing trained  model from memory into file and 
+ * loading from file into the memory.
+ * 
+ * @author Santosh
+ *
+ */
 public class ChainModel {
 	//Data members
 	private String imageSet = null;

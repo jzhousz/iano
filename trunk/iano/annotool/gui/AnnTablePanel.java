@@ -268,7 +268,8 @@ public class AnnTablePanel extends JPanel {
 
 	// Added: santosh 7/25/2011
 	public AnnImageTable getAnnotationTable() {
-		return currentCVTable;
+		return currentAnnotationTable;
+		//return currentCVTable;
 	}
 
 	public void removeTables() {
