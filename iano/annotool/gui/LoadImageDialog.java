@@ -32,10 +32,19 @@ public class LoadImageDialog extends JDialog {
 		}
 		
 		tabbedPane = new JTabbedPane();
+		
+		boolean isAnnotationMode = (Annotator.output.equals(Annotator.AN) || Annotator.output.equals(Annotator.ROI));
+		
+		if(isAnnotationMode)
+			targetTab = "Images";
+		
 		tabbedPane.addTab(targetTab, new TargetFileDialogPanel(this, pnlLanding, modeFlag, fileChooser));
-		if(!(Annotator.output.equals(Annotator.AN) || Annotator.output.equals(Annotator.ROI)))
+		
+		//Don't display other tabs for annotation modes
+		if(!isAnnotationMode) {
 				tabbedPane.addTab(dirTab, new DirectoryTreeDialogPanel(this, pnlLanding, modeFlag, fileChooser));
-		tabbedPane.addTab(roiTab, new RoiModeDialogPanel(this, pnlLanding, modeFlag, fileChooser));
+				tabbedPane.addTab(roiTab, new RoiModeDialogPanel(this, pnlLanding, modeFlag, fileChooser));
+		}
 		
 		this.add(tabbedPane);
 		

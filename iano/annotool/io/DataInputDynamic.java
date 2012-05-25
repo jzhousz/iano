@@ -20,6 +20,7 @@ import java.util.ArrayList;
  * Deprecated in Dec 2011 because DataInput can handle images of various sizes too.
  * 
  */
+@Deprecated
 public class DataInputDynamic {
 
 	protected ArrayList<byte[]> data = new ArrayList<byte[]>(); //An ArrayList of (byte[])

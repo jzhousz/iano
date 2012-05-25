@@ -317,6 +317,7 @@ public class DataInput
 				System.out.println(childrenCandidates[i] + ": not supported image type.");
 				continue;  
 			}
+			
 			//update valid children
 			childrenList.add(childrenCandidates[i]);
 			if(childrenList.size() == 1) //the first image

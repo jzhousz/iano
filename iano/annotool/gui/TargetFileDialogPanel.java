@@ -29,6 +29,9 @@ import annotool.Annotator;
  * By default, it checks for file named "target.txt" inside the problem directory and selects
  * that as target file. It can be changed using target file selection button.
  * 
+ * This is also the loading panel that shows up when using annotation mode (image or ROI) which
+ * obviously won't have target file. In this case, target file selection is not displayed.
+ * 
  */
 public class TargetFileDialogPanel extends JPanel implements ActionListener {	
 	JLabel fileL = new JLabel("File Dir: ");

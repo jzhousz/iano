@@ -12,7 +12,6 @@ import annotool.Annotator;
 import annotool.classify.SavableClassifier;
 import annotool.gui.AnnOutputPanel;
 import annotool.gui.ImageReadyPanel;
-import annotool.gui.ROIAnnotator;
 import annotool.gui.ROIParameterPanel;
 import annotool.io.ChainModel;
 import annotool.io.DataInput;

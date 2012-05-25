@@ -1,4 +1,4 @@
-package annotool.gui;
+package annotool.gui.model;
 
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -18,15 +18,16 @@ import annotool.Annotator;
 import annotool.ImgDimension;
 import annotool.analysis.Utility;
 import annotool.classify.SavableClassifier;
-import annotool.gui.model.Extractor;
-import annotool.gui.model.Selector;
+import annotool.gui.AnnOutputPanel;
+import annotool.gui.ImageReadyPanel;
+import annotool.gui.LegendDialog;
+import annotool.gui.ROIParameterPanel;
 import annotool.io.ChainModel;
 import annotool.io.DataInput;
-import annotool.io.DataInputDynamic;
 
 /**
  * ROI annotator executes the algorithms in ROI annotation mode.
- * This one is not used anymore, currently using ROIAnnotator in annotool.gui.model package
+ * TODO: Rewrite to use similar technique (DataInput constructor) as in ROI input mode
  * 
  */
 public class ROIAnnotator {
@@ -72,7 +73,9 @@ public class ROIAnnotator {
 		
 		this.isMaximaOnly = isMaximaOnly;
 		
-		DataInputDynamic problem = new DataInputDynamic(Annotator.dir, Annotator.ext, channel); 
+		DataInput problem = pnlImages.getTablePanel().getProblem();	//Get the problem already loaded
+		if(!problem.getChannel().equals(channel))
+        	problem.setChannel(channel);
 		
 		for(ChainModel model : chainModels) {
 			this.classNames = model.getClassNames();	//Retrieve class names to export annotated pixels
@@ -82,14 +85,24 @@ public class ROIAnnotator {
 		}
 	}
 	
-	private void annotate(DataInputDynamic problem, ChainModel model, int[] selectedImages) {
+	private void annotate(DataInput problem, ChainModel model, int[] selectedImages) {
 		//Get size of the roi window
 		String[] roiSize = model.getImageSize().split("x");
 		int roiWidth = Integer.parseInt(roiSize[0]);
 		int roiHeight = Integer.parseInt(roiSize[1]);
 		
-		ArrayList<byte[]> data  = problem.getData();		
-		for(int i = 0; i < problem.getLength(); i++) {
+		ArrayList data  = null;
+		int totalImages = 0;
+		try {
+			data = problem.getData();
+			totalImages = problem.getLength();
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			pnlStatus.setOutput(ex.getMessage());
+			return;
+		}
+		
+		for(int i = 0; i < totalImages; i++) {
 			boolean isSelected = false;
 			for(int index=0; index < selectedImages.length; index++){
 				if(selectedImages[index] == i) {
@@ -98,7 +111,7 @@ public class ROIAnnotator {
 				}
 			}
 			if(isSelected)
-				annotateAnImage(problem.getImagePlus(i), data.get(i), model, roiWidth, roiHeight);//If we are using ImagePlus here, why have byte[] data as well?
+				annotateAnImage(problem.getImagePlus(i), data.get(i), model, roiWidth, roiHeight, problem.getImageType());
 		}
 	}
 	
@@ -109,7 +122,7 @@ public class ROIAnnotator {
 	 * @param data : Image data in single dimensional bytes array (width * height).
 	 * @param model : Model to use for annotation.
 	 */
-	private void annotateAnImage(ImagePlus imp, byte[] data, ChainModel model, int roiWidth, int roiHeight) {
+	private void annotateAnImage(ImagePlus imp, Object datain, ChainModel model, int roiWidth, int roiHeight, int imageType) {
 		ImageProcessor ip = imp.getProcessor();
 		
 		//If only local maxima are to be annotated, find local maxima
@@ -121,8 +134,23 @@ public class ROIAnnotator {
 		
 		if(this.isMaximaOnly) {
 			floatData = new float[width * height];
-			for(int i = 0; i < width*height; i++)
-				floatData[i] = (float) (data[i]&0xff);
+			
+			if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
+		      byte[] data = (byte[]) datain;
+		      for(int i = 0; i < width*height; i++)
+		    	  floatData[i] = (float) (data[i]&0xff);
+		    }
+		    else if(imageType == DataInput.GRAY16) {
+		    	int[] data = (int[]) datain;
+	 	        for(int i = 0; i < width*height; i++)
+	 	        	floatData[i] = (float) (data[i]&0xffff);
+		    }	
+	 	    else if(imageType == DataInput.GRAY32) {
+		    	float[] data = (float[]) datain;
+	 	        for(int i = 0; i < width*height; i++)
+	 	        	floatData[i] = (float) data[i];
+	 	    }
+			
 			isMaxima = Utility.getLocalMaxima(floatData, width, height, 1, 3, 3, 1);
 		}
 		
@@ -132,7 +160,14 @@ public class ROIAnnotator {
 			return;
 		}
 		
-		byte[] subImage = new byte[roiWidth*roiHeight];
+		//byte[] subImage = new byte[roiWidth*roiHeight];
+		Object subImage = null;
+		if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) 
+			subImage = new byte[roiWidth*roiHeight];
+		else if(imageType == DataInput.GRAY16)
+			subImage = new float[roiWidth*roiHeight];
+		else if(imageType == DataInput.GRAY32)
+			subImage = new int[roiWidth*roiHeight];
 		
 		int numSubImages;
 		int startCol, startRow, endRow, endCol;
@@ -183,13 +218,17 @@ public class ROIAnnotator {
 				//(i,j) is the upperleft corner of the subimage
 				for(int m = 0; m < roiWidth; m++)//col
 					for(int n = 0; n < roiHeight; n++) //row
-						//subImage[n * roiWidth + m] = data[ (n + j) * ip.getWidth() + m + i];//row major //out of bound exception?4/1/09
-						subImage[n * roiWidth + m] = getSubImageData(data, m + i, n + j, ip.getWidth(), ip.getHeight(), i, j, m, n);
+						if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) 
+							((byte[]) subImage)[n * roiWidth + m] = (Byte)getSubImageData(datain, m + i, n + j, ip.getWidth(), ip.getHeight(), imageType);
+						else if(imageType == DataInput.GRAY16)
+							((int[]) subImage)[n * roiWidth + m] = (Integer)getSubImageData(datain, m + i, n + j, ip.getWidth(), ip.getHeight(), imageType);
+						else if(imageType == DataInput.GRAY32)
+							((float[]) subImage)[n * roiWidth + m] = (Float)getSubImageData(datain, m + i, n + j, ip.getWidth(), ip.getHeight(), imageType);
 				
 				//feature extraction on testing subimage.
 				float[] features  = null;
 				try {
-					features = getExtractedFeaturesFromROI(subImage, roiWidth, roiHeight, model.getExtractors());
+					features = getExtractedFeaturesFromROI(subImage, roiWidth, roiHeight, model.getExtractors(), imageType);
 				} catch (Exception e) {
 					e.printStackTrace();
 					this.pnlStatus.setOutput("Feature extraction failure!");
@@ -223,7 +262,7 @@ public class ROIAnnotator {
 		markResultsOnImage(imp, predictions, roiWidth, roiHeight, isMaxima, startCol, startRow, endCol, endRow);
 	}
 	
-	private byte getSubImageData(byte[] data, int col, int row, int imgWidth, int imgHeight, int i, int j, int m, int n) {//TODO: i, j, m, n only for debugging, to be removed later
+	private Object getSubImageData(Object data, int col, int row, int imgWidth, int imgHeight, int imageType) {
 		if(row < 0)
 			row = -row;
 		if(col < 0)
@@ -233,17 +272,26 @@ public class ROIAnnotator {
 		if(col >= imgWidth)
 			col = (imgWidth - 1) - (col - imgWidth);
 		
-		return data[ row * imgWidth + col];
+		int index = row * imgWidth + col;
+		
+		if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) 
+			return ((byte[]) data)[index];
+		else if(imageType == DataInput.GRAY16)
+			return ((int[]) data)[index];
+		else if(imageType == DataInput.GRAY32)
+			return ((float[]) data)[index];
+		else
+			return null;
 	}
 	
-	protected float[] getExtractedFeaturesFromROI(byte[] subImage, int width, int height, ArrayList<Extractor> extractors) throws Exception
+	protected float[] getExtractedFeaturesFromROI(Object subImage, int width, int height, ArrayList<Extractor> extractors, int imageType) throws Exception
 	{
-		if(extractors.size() < 1) {
+		/*if(extractors.size() < 1) {
 			float[] features = new float[width * height];
 			for (int index = 0; index < width * height; index++)
 				features[index] = (float) (subImage[index]&0xff);
 			return features;
-		}
+		}*/
 		
 		
 		String extractorName = null;
@@ -263,6 +311,10 @@ public class ROIAnnotator {
     	ArrayList data = new ArrayList();
     	data.add(subImage);
     	
+    	if(extractors.size() < 1) {
+    		return (new Annotator().extractGivenAMethod(null, null, null, data, imageType, dim)[0]);
+    	}
+    	
 		float[][] exFeatures = new float[extractors.size()][];
         
 		int dataSize = 0;
@@ -271,7 +323,7 @@ public class ROIAnnotator {
         	params = extractors.get(exIndex).getParams();
         	extractorPath = extractors.get(exIndex).getExternalPath();
         	
-    		exFeatures[exIndex] = new Annotator().extractGivenAMethod(extractorName, extractorPath, params, data, DataInput.GRAY8, dim)[0];//DataInput.GRAY8 need to fix this when DataInputDynamic is updated
+    		exFeatures[exIndex] = new Annotator().extractGivenAMethod(extractorName, extractorPath, params, data, imageType, dim)[0];//DataInput.GRAY8 need to fix this when DataInputDynamic is updated
     		dataSize += exFeatures[exIndex].length;
 		}
 		
