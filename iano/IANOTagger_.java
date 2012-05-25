@@ -1,13 +1,13 @@
-import annotool.AnnotatorGUI;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.gui.GenericDialog;
+import ij.io.FileSaver;
+import ij.io.SaveDialog;
 import ij.plugin.filter.PlugInFilter;
-import ij.plugin.frame.PlugInFrame;
-import ij.*;
-import ij.gui.*;
-import ij.process.*;
-import ij.measure.*;
-import ij.plugin.frame.*;
-import ij.io.*;
-import java.io.*;
+import ij.process.ImageProcessor;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 
 /**
  *  Jie Zhou March 2009
