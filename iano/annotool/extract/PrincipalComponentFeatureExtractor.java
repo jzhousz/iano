@@ -1,10 +1,15 @@
 package annotool.extract;
 
+import java.util.ArrayList;
+
 import annotool.ImgDimension;
 import weka.attributeSelection.PrincipalComponents;
 import weka.core.Instances;
 
-//use Weka PCA.  Seems slow on images. 
+//use Weka PCA.  
+//It seems slow on images. 
+//This is a work in progress
+// 5/25/2012  Due to the incompatability with the updated DataInput, the methods are commented out.
 public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 
 	Instances m_Data = null; //will build it
@@ -26,7 +31,7 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 	}
 	   
 	public PrincipalComponentFeatureExtractor(annotool.io.DataInput problem) {
-		
+		/*
 		   data = problem.getData();
 		   length = problem.getLength();
 		   width = problem.getWidth();
@@ -37,10 +42,19 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 	       for(int i=0; i <length; i++)
  		     for(int j = 0; j< width*height; j++)
 			       features[i][j] = data[i][j]&0xff;
+	   */
+	}
+
+	public float[][] calcFeatures(ArrayList data, int imageType, ImgDimension dim) throws Exception
+	{ 
+		return null;
 	}
 
 	@Override
-	public float[][] calcFeatures(annotool.io.DataInput problem) {
+	public float[][] calcFeatures(annotool.io.DataInput problem) throws Exception
+	{
+		return null;
+		/*
 		   data = problem.getData();
 		   length = problem.getLength();
 		   width = problem.getWidth();
@@ -51,8 +65,10 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 	       for(int i=0; i <length; i++)
  		     for(int j = 0; j< width*height; j++)
 			       features[i][j] = data[i][j]&0xff;
-		
-	       return calcFeatures();
+		         
+		  return calcFeatures();
+		  */
+	       
 	}
 	
 	
