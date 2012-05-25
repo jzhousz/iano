@@ -29,6 +29,16 @@ In this range, I suggest to set it lower (conservative), so 1) more signal are i
  *  Denoise: When the neuropil's noise is high, it might cause the mask to be problematic.
  *  Denoise based on 2D max projection.
  *  Need to add a batch mode macro to let it work with a directory.
+ *
+ *  Need to adjust RATS parameter of leaf size (segmentation for neuropil and axon), as well as enhance target.
+ *  
+ *  5/22/2012
+ *  Q: what is the exact effect of  adjusting window, set min/max?  What happened the the original high spots???
+ *  TODO: Make leafsize a parameter?
+ *  TODO: Make target of a parpeter?
+ *  TODO: Combine for EXCLUSIVE?
+ *  TODO: TEST MORE IMAGES
+ *
  */
 
 
@@ -46,12 +56,19 @@ import java.awt.event.*;
 
 public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, AdjustmentListener, TextListener {
     static final String pluginName = "Axon_TopoMap_Inclusive_AutoEnhance_Denoise";
-    final int INCLUSIVELIMIT = 0;
+    final int INCLUSIVELIMIT = 2;   //level of allowance of axon outside neuropil
     final int EXCLUSIVELIMIT = 999; //a very big number
     final int ENHANCE_TARGET = 80;
 
     boolean debug = false;
     boolean useCLAHE = false; //test and compare with window/level adjustment
+    boolean useRATS = true;   //Is rats too adaptive for such high noise images? 
+                              //note that simple setThreshold() does not work with very dim images (largely white for some images in 2nd set)
+			      //Current conclusion: still use RATS, but with more suitable parameters, plus 2D projection ...
+   int  leafSizeAxon = 5;
+   int  leafSizeNeuropil = 5; //Should I adjust leaf size to overcome the speckly noise(up to 28?
+				//   what is the upperlimt? width or height /2 , whichever is smaller!!
+                              //What about lamda?
 
     Vector sliders;
     Vector value;
@@ -121,7 +138,7 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	gd.addMessage("Assumed image stack direction: x: Anterior-Posterior;  y: Dorsal-Ventral; z: cross-section (Left-Right). The directions y and z were switched from confocal microscope imaging.");
 	gd.addMessage("");
 	gd.addSlider("Noise Threshold for Axon: ",ip.getMin(), ip.getMax(),ThrVal);
-	gd.addSlider("Noise Threshold for Neuropil: ",ip.getMin(), ip.getMax(),ThrVal2);
+	gd.addSlider("Noise_ Threshold for Neuropil: ",ip.getMin(), ip.getMax(),ThrVal2);
 	
         sliders=gd.getSliders();
         ((Scrollbar)sliders.elementAt(0)).addAdjustmentListener(this);
@@ -132,11 +149,11 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	//gd.addCheckbox("Enhance the neuropil with CLAHE", enhanceNeuropil);
 	gd.addCheckbox("Show the segmentation mask images", show_mask_default);
     	gd.addCheckbox("Clone channel is red", or_default);
-        gd.addCheckbox("Clone channel is green", og_default);
-        gd.addCheckbox("Clone channel is blue", ob_default);
+        gd.addCheckbox("Clone_ channel is green", og_default);
+        gd.addCheckbox("Clone__ channel is blue", ob_default);
         gd.addCheckbox("Neuropil channel is red", br_default);
-        gd.addCheckbox("Neuropil channel is green", bg_default);
-        gd.addCheckbox("Neuropil channel is blue", bb_default);
+        gd.addCheckbox("Neuropil_ channel is green", bg_default);
+        gd.addCheckbox("Neuropil__ channel is blue", bb_default);
   
         gd.showDialog();
         
@@ -166,7 +183,6 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
         img.updateAndDraw();
         return true;
     }
-
 
     //get CoM
     float[] getCoM(int index1, int ThrVal, ImageStack stack)
@@ -224,7 +240,7 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
     {
 	if  (z < minz || z > maxz) //should not happen but could happen due to segmentation
 	{
-   	  //axon too far from neuropil will be considered noise.  axon close enough but out of neuropile will be set to 0 or 1 depending on which side.
+   	  //axon voxel too far from neuropil will be considered noise.  axon close enough but out of neuropile will be set to 0 or 1 depending on which side.
 	  if (z < minz)
 	     if ((minz-z) <= limit)  //small but < limit, return 0, otherwise it will be negative
 		  return 0;
@@ -351,12 +367,14 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 
 
     //Add axon (index1) into the neuropil channel (index2)
+    //05/23/2011: scale the 2 channels so that the sum is less than 255
     void combineAxonAndNeuropil(int index1, int index2, ImageStack stack)
     {
       byte[] red = new byte[Width*Height];
       byte[] gre = new byte[Width*Height];
       byte[] blue = new byte[Width*Height];
       byte[] axonChannel=null;   
+      ColorProcessor aySlice=null;
       for(int z=0; z<NbSlices; z++)
       {
 	  aySlice = (ColorProcessor) stack.getProcessor(z+1);
@@ -376,21 +394,21 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	       int[] iArray = new int[3];
 	       if (index2==0)
 	       {
-		  iArray[0] = red[j*Width+i]+axonChannel[j*Width+i];
+		  iArray[0] = (red[j*Width+i]&0xff)/2+(axonChannel[j*Width+i]&0xff)/2;
 		  iArray[1] = gre[j*Width+i];
 		  iArray[2] = blue[j*Width+i];
 	       }
 	       else if (index2==1)
 	       {
 		  iArray[0] = red[j*Width+i];
-	       	  iArray[1] = gre[j*Width+i]+axonChannel[j*Width+i];
+	       	  iArray[1] = (gre[j*Width+i]&0xff)/2+(axonChannel[j*Width+i]&0xff)/2;
 		  iArray[2] = blue[j*Width+i];
 	       }
-	       else if (index2== 2)
+	       else if (index2==2)
 	       {
 		  iArray[0] = red[j*Width+i];
 	       	  iArray[1] = gre[j*Width+i];
-		  iArray[2] = blue[j*Width+i]+axonChannel[j*Width+i];
+		  iArray[2] = (blue[j*Width+i]&0xff/2)+(axonChannel[j*Width+i]&0xff/2);
 	       }
 	       aySlice.putPixel(i,j,iArray);
 	    }
@@ -398,58 +416,77 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
     } 
    
     //denoise each stack and each channel, but setting the voxel to 0 if it is out of boundary
-    void denoiseBasedOnBoundary(int[] neuropilMinZ, int[] neuropilMaxZ, ImageStack stack)
+    //Pass in processor or a byte[]
+    void denoiseBasedOnBoundary(int[] neuropilMinZ, int[] neuropilMaxZ, ImageProcessor imp)
     {
-
-      //TBA
-
+      int x,y;	    
+      byte[] mask = (byte[]) imp.getPixels();;
+	
+      for(x=0; x<Width; x++)
+      {
+	for(y = 0; y < neuropilMinZ[x]; y++)
+		mask[y*Width+x] = 0;
+	for(y = neuropilMaxZ[x]; y < Height; y++)
+		mask[y*Width+x] = 0;
+      }
     }
 
     //  Input:  an ImagePlus object.
-    //  1. Combine axon and neuropil channel
+    //  1. Combine axon and neuropil channel (So that the noise in neuropil will be shadowed?!!!) 
     //  2. z-projectin:  max intensity projection
     //  3. Get binary mask on the 2D projection
     //  4. link the boundary to get the signal territory 
     //  5. denoise using the binary territory mask by removing axon/neuropil signal outside of the mask.
     //
-    void denoiseUsing2DProjection(ImagePlus  imgp)
+    void get2DBoundaryViaProjection(int index1, int index2, int[] neuropilMinZ, int[] neuropilMaxZ, ImagePlus  imgp)
     {
- 	combineAxonAndNeuropil(index1, index2, img.getStack());
 	
-	//do z-project (on RGB or just one channel?)
+	//For inclusive, need to combine?????!!!! (Will batchtest to compare) 
+	// The projection can be cleaner when neuropil is very noisy.   
+	// THIS IS ONLY FOR EXCLUSIVE??????????????????????????
+	// 
+	// 
+	// why there are bad spots after combined? (0xff and /2)
+	// 
+ 	//combineAxonAndNeuropil(index1, index2, imgp.getStack());
+	
+	//do z-project (on RGB)
 	ZProjector projector = new ZProjector(imgp);
 	projector.setMethod(ZProjector.MAX_METHOD);
-	project.doProejection();
+	projector.doRGBProjection();
 	ImagePlus projected = projector.getProjection();
 
-	//get index 2 channel
+	//get the index 2 channel
         byte[] red = new byte[Width*Height];
         byte[] gre = new byte[Width*Height];
         byte[] blue = new byte[Width*Height];
         byte[] combinedChannel=null;   
-        project.getProcessor.getRGB(red,gre,blue);
-	if(index2 = 0)
+        ((ColorProcessor)projected.getProcessor()).getRGB(red,gre,blue);
+	if(index2 == 0)
                combinedChannel = red;
-        else if(index2=1)
+        else if(index2 == 1)
 		combinedChannel = gre;
 	else  
 		combinedChannel = blue;
-	ImagePlus combinedImage = new ImagePlus("combined channel", new ByteProcessor(Width, Height,combinedChannel, null));
+	ImagePlus combinedImage = new ImagePlus("projected neuropil channel", new ByteProcessor(Width, Height,combinedChannel, null));
 	
 	//get a binary mask ( using RATS? or automatic without threshold input? before enhance, so threshold can be different?)
-	String opt = "noise="+ThrVal+" lambda=3 min=5";
+	//5/22: Conclusion (on ddaC-A2): RATS give more details.  autoThreshold give a rough boundary, which is more conservative for noise removal.
+	/*String opt = "noise=5 lambda=3 min=20";
         RATSForAxon  rats = new RATSForAxon();
 	rats.setup("",combinedImage); 
-	ImagePlus maskImageComb = rats.run(aySliceImgNeu.getProcessor(),opt);
-	
-	//link the boundary
+	ImagePlus maskImageComb = rats.run(combinedImage.getProcessor(),opt);
+	maskImageComb.show();
         byte[] mask = (byte[]) maskImageComb.getProcessor().getPixels();
- 	int[] neuropilMinZ = new int[Width];
-	int[] neuropilMaxZ = new int[Width];
+        */
+	//use auto-threshold default in ImageJ?
+	//can this be done on the RGB image directly, so that axon signal is considered?
+	//The documentation seems not the same as the acutal effect (which works on a converted graylevel instead of working on 3 channels separately)
+	combinedImage.getProcessor().autoThreshold();
+	if (show_mask)	combinedImage.show();
+  	byte[] mask = (byte[]) combinedImage.getProcessor().getPixels();
+
 	getNeuroBoundary(mask, neuropilMinZ, neuropilMaxZ, false);
-	
-	//denoise the original image stack based on bounary, anything outside mask in both channels is set to 0
-	denoiseBasedOnBoundary(neuropilMinZ, neuropilMaxZ, imgp.getStack());	
 
     }
 
@@ -488,8 +525,8 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	for(int i=0; i<intensNeu.length; i++) intensNeu[i] =0; 
 	for(int i=0; i<intensBack.length; i++) intensBack[i] =0; 
 
-	String opt = "noise="+ThrVal+" lambda=3 min=5";
-	String opt2 = "noise="+ThrVal2+" lambda=3 min=5";
+	String opt = "noise="+ThrVal+" lambda=3 min="+ leafSizeAxon;
+	String opt2 = "noise="+ThrVal2+" lambda=3 min=" + leafSizeNeuropil;
 		
 	ImageStack maskOneStack = null, maskTwoStack = null, enhancedStack = null;
 	ImageStack denoisedAxon = null,  flippedNeuro = null;
@@ -502,12 +539,16 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	    if(enhanceNeuropil)  enhancedStack = new ImageStack(Width, Height);
 	}
 
-	//5/17/2012 denoise based on Z-projection
-	denoiseUsing2DProjection(stack);
+	//5/17/2012 get the 2D territory boundary based on Z-projection. Pass in the global ImagePlus.
+	//Will be used later after getting masks of each frame.
+	//duplicate the imageplus to avoid interfere with later steps?!
+ 	int[] twoDNeuMinZ = new int[Width];
+	int[] twoDNeuMaxZ = new int[Width];
+	//get2DBoundaryViaProjection(index1, index2, twoDNeuMinZ, twoDNeuMaxZ, img);
+	get2DBoundaryViaProjection(index1, index2, twoDNeuMinZ, twoDNeuMaxZ, img.duplicate());
 
 	//automatic enhancement based on neuropil intensity  4/2012
 	//Rule: If less than 35, discard. Else if less than 80, increase to above 80 (but lower than 100).   Otherwise, no enhancement.
-	//
 	int interval = 10;
 	int max = 255;
 	int neuroInt = calAverageBgIntensityForStack(stack, ThrVal2, index2);
@@ -598,7 +639,6 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	   }
 	}//else do nothing because it is already > 80.
 
-
 	//calculate TI and relative TI
 	for(z=0; z<NbSlices; z++)
         {
@@ -621,11 +661,9 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	  else if(index1==2)
   	     aySliceImgObj = new ImagePlus("channel for obj (axon)",new ByteProcessor(Width, Height,blue, null));
 
-          RATSForAxon rats = new RATSForAxon();
+	  RATSForAxon rats = new RATSForAxon();
 	  rats.setup("",aySliceImgObj); 
 	  ImagePlus maskImageAxon = rats.run(aySliceImgObj.getProcessor(),opt);
-	  if(show_mask)
-	     maskOneStack.addSlice("axon", maskImageAxon.getProcessor());
 
 	  //calculate intensity for current slice for axon based on mask, return total, and # of voxels
 	  int avgAxonArr[] = calIntensity(aySliceImgObj.getProcessor(), maskImageAxon.getProcessor());	
@@ -641,33 +679,39 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	      aySliceImgNeu = new ImagePlus("channel for Neu",new ByteProcessor(Width, Height,blue, null));
 
 	  // enhance --  needed for red channel only
-	  ImagePlus backup = null;
+	  /*ImagePlus backup = null;
 	  if(enhanceNeuropil)
 	  { 
             backup = aySliceImgNeu.duplicate();
             //parameters are for blockRadius, bins, slope
 	    HistogramEq.run(aySliceImgNeu, 20, 255, 3.00f, null, null);	
-	  }
+	  }*/
 
           rats = new RATSForAxon();
 	  rats.setup("",aySliceImgNeu); 
 	  ImagePlus maskImageNeu = rats.run(aySliceImgNeu.getProcessor(),opt2);
-	  if(show_mask)
-	  {
-	     maskTwoStack.addSlice("neuropil mask", maskImageNeu.getProcessor());
-	     if(enhanceNeuropil)  enhancedStack.addSlice("enhaned neuropil", aySliceImgNeu.getProcessor());
-	  }
+
+	  //5/22/2012: DENOISE CURRENT SLICE BASED ON 2D BOUNDARY GOT EARLIER
+	  denoiseBasedOnBoundary(twoDNeuMinZ, twoDNeuMaxZ, maskImageAxon.getProcessor());
+	  denoiseBasedOnBoundary(twoDNeuMinZ, twoDNeuMaxZ, maskImageNeu.getProcessor());
 
 	  int avgNeurArr[] = calIntensity(aySliceImgNeu.getProcessor(), maskImageNeu.getProcessor());
 	  intensNeu[0] += avgNeurArr[0];
 	  intensNeu[1] += avgNeurArr[1];
-	  if(enhanceNeuropil)
+	  /*if(enhanceNeuropil)
 	  {
    	    int avgBakArr[] = calIntensity(backup.getProcessor(), maskImageNeu.getProcessor());
 	    intensBack[0] += avgBakArr[0];
 	    intensBack[1] += avgBakArr[1];
-	  }
+	  }*/
           
+	  if(show_mask)
+	  {
+	     maskOneStack.addSlice("axon", maskImageAxon.getProcessor());
+	     maskTwoStack.addSlice("neuropil mask", maskImageNeu.getProcessor());
+	     if(enhanceNeuropil)  enhancedStack.addSlice("enhaned neuropil", aySliceImgNeu.getProcessor());
+	  }
+
 	  //call calculation for TI
 	  IJ.log("slice "+(z+1));
 	  IJ.log(" -- Caculating T.I. .. ");
@@ -680,36 +724,30 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	    res[3] += resfory[3];
           }
 	  else
-	  {
 	    IJ.log(" -- The slice is skipped for TI calculation!");	  
-	  }
 
 	  // calculate relative TI based on flipped out image	
 	  IJ.log(" -- Caculating Relative T.I. after flipping the neuropil image .. ");
 	  ImagePlus[] flippedImages = getImageUsingComptationalFlipOut(maskImageAxon.duplicate(), maskImageNeu.duplicate());
-
 	  if(flippedImages !=null)
 	  {
-  	   if(show_mask)
-	   {
-	     denoisedAxon.addSlice("denoised axon", flippedImages[0].getProcessor());
-	     flippedNeuro.addSlice("flipped neuropil", flippedImages[1].getProcessor());
-	   }
-
+  	  // if(show_mask)
+	  // {
+	  //   denoisedAxon.addSlice("denoised axon", flippedImages[0].getProcessor());
+	  //   flippedNeuro.addSlice("flipped neuropil", flippedImages[1].getProcessor());
+	  // }
             resfory = getTopoIndexGivenTwoImages(flippedImages[0], flippedImages[1], EXCLUSIVELIMIT);
 	    res[4] += resfory[0];
 	    res[5] += resfory[1];
 	    res[6] += resfory[2];
 	    res[7] += resfory[3];
 	  }
-	  else{
+	  else
 	    IJ.log(" -- The slice is skipped for relative TI calculation (possibly a black slice)!");	  
-	  }
-
+	  
 	}//end of all y (DV slices)
 
 	//normalized for y
-        //IJ.log("total TI:"+res[0] + "   total voxel" + res[1]);
 	IJ.log("---- Final Result For The Neuron -----");
 	IJ.log("Average Intensity:" );
 	if(enhanceNeuropil)
@@ -718,10 +756,8 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	IJ.log("   Axon: " + intensAxon[0]/intensAxon[1]);
 	IJ.log("Topographic Index:"+res[0]/res[1]);
 	IJ.log("Relative Topographic Index:"+res[4]/res[5]);
-
 	//IJ.log("Territory Proportion:"+res[2]/res[3]);
 	
-
 	if(show_mask)
 	{
   	  if(enhanceNeuropil)  
@@ -735,14 +771,12 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
           maskOne.show();
 	  maskTwo.show();	  
 
-	  ImagePlus maskThree = new ImagePlus(img.getTitle()+".axon denoised.tif", denoisedAxon);
-	  ImagePlus maskFour = new ImagePlus(img.getTitle()+".flipped neuropil.tif", flippedNeuro);
-	  maskThree.show();
-	  maskFour.show();
+	  //ImagePlus maskThree = new ImagePlus(img.getTitle()+".axon denoised.tif", denoisedAxon);
+	  //ImagePlus maskFour = new ImagePlus(img.getTitle()+".flipped neuropil.tif", flippedNeuro);
+	  //maskThree.show();
+	  //maskFour.show();
 	}
-
 	return res;
-
      }
 
      //
@@ -922,23 +956,6 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 
         for(x=0; x<Width; x++)	
 	  {
-             /*		  
-     	     //find out the uplimit and downlimit of z in neuropil (index 2 channel)
-	     neuropilMinZ = Height; neuropilMaxZ = 0;
-	     for (y=0; y<Height; y++)
-	     {
-	       valNeu = mask2[y*Width+x]&0xff;
-	       //neuropile channel, update minZ and maxZ
-	       if(valNeu != 0)  //white spot on mask
-	       {
-	            if (y < neuropilMinZ)  
-		      neuropilMinZ = y;
-                    if (y > neuropilMaxZ)
-	              neuropilMaxZ = y;
-	       }
-	     } //end of first z loop
-	     */
-
              neuropilMinZ = neuropilMinY[x]; 
 	     neuropilMaxZ = neuropilMaxY[x];
 
@@ -948,7 +965,6 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	     for (y=0; y<Height; y++)
 	     {
 	       valAxon = mask1[y*Width+x]&0xff;
-	       //IJ.log("axon mask value:"+valAxon);
 	       //check if it is a valid axon voxel and there is sth in the other channel too, if yes, calculate 
 	       if ( valAxon != 0 && neuropilMinZ != Height)
 	       {
@@ -981,17 +997,7 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	     }
 	 }//end of x
        
-       //output total ti for the neuron
-       /*
-       float TI =0;
-       if (voxelCount > 0)
-         TI = tisum/voxelCount;
-
-       //normalize territory proportion? due to size difference during imaging??
-       float terri_normalized = 0;
-       if(terr_count > 0)
-          terri_normalized = terr_sum /terr_count; 
-       */
+ 
        float[] res = new float[4];
        res[0] = tisum;
        res[1] = voxelCount; 
@@ -1032,7 +1038,6 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	double xOrigin = cal.xOrigin;
 	//IJ.log("zOrigin:" +xOrigin + " yOrigin" + yOrigin + " zOrigin" + zOrigin);
 
-
         //preprocessing is still needed 
         if(despeckle)
         {
@@ -1066,8 +1071,17 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	//get topographic index
 	float[] res = getTopoIndex(index1, index2, ThrVal, ThrVal2,stack);
 
-
-
+	//save TI to a file (append)
+	try{
+         java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileOutputStream(new java.io.File("TIOutput.csv"), true)); 
+	 writer.println(img.getTitle()+","+res[0]/res[1]);
+	 writer.close();
+	}catch(Exception e)
+	{
+	   IJ.log("Problem in saving the result into TIOutput.csv --"+e.getMessage());
+	   return;
+	}
+	 IJ.log("Result appended to TIOutput.csv (at ImageJ's folder by default).");
     }
 
     public void adjustmentValueChanged(AdjustmentEvent e) {
