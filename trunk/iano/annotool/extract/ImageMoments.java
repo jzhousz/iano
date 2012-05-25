@@ -306,6 +306,7 @@ public class ImageMoments implements FeatureExtractor
     }
 }
 
+/*
 class Tester
 {
     public static void main(String[] args) {
@@ -417,4 +418,4 @@ class Tester
     
 
 
-}
+}*/
