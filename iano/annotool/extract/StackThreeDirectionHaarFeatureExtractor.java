@@ -12,6 +12,11 @@ import java.util.ArrayList;
  *  Total extracted features: width*height + width*stackSize + height*stackSize
  *  
  *  revised 09/03/11 to process one image at a time.
+ *  
+ *  5/25/2012 Problems in   haar.getHaarFeatureOfOneImage(bdata4OneXZImage, features4OneXZImage);
+ *    calcFeatures() Commented for the release. 
+ *   *   
+ *  
  */
 public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtractor {
 
@@ -70,6 +75,9 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 	
 	protected float[][] calcFeatures() throws Exception {
 		
+		return null;
+		
+		/*
 		//number of extracted features
 		int totaldim = dim.width*dim.height + dim.width*stackSize + dim.height*stackSize;
 		features  = new float[length][totaldim];
@@ -184,7 +192,7 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 			}//end of all images in the set
 			
 			return features;
-		
+		*/
 		
         /*		
 		//get into 3D (4D with length) data format (temporary storage)
