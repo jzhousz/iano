@@ -56,13 +56,16 @@ import java.awt.event.*;
 
 public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, AdjustmentListener, TextListener {
     static final String pluginName = "Axon_TopoMap_Inclusive_AutoEnhance_Denoise";
-    final int INCLUSIVELIMIT = 2;   //level of allowance of axon outside neuropil
+    int InclusiveLimit = 2;   //level of allowance of axon outside neuropil
     final int EXCLUSIVELIMIT = 999; //a very big number
-    final int ENHANCE_TARGET = 80;
+    int ENHANCE_BASE = 35;
+    int ENHANCE_TARGET = 80;
 
+    boolean combineFlag = false;
     boolean debug = false;
     boolean useCLAHE = false; //test and compare with window/level adjustment
     boolean useRATS = true;   //Is rats too adaptive for such high noise images? 
+   
                               //note that simple setThreshold() does not work with very dim images (largely white for some images in 2nd set)
 			      //Current conclusion: still use RATS, but with more suitable parameters, plus 2D projection ...
    int  leafSizeAxon = 5;
@@ -154,7 +157,14 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
         gd.addCheckbox("Neuropil channel is red", br_default);
         gd.addCheckbox("Neuropil_ channel is green", bg_default);
         gd.addCheckbox("Neuropil__ channel is blue", bb_default);
-  
+	//added May 27 2012
+       // gd.addMessage("Other Parameters:");  
+	gd.addCheckbox("Combine axon and neuropil as denoise reference (only neuropil is used if unchecked)", combineFlag);
+        gd.addSlider("Cushion for Noise of Axon Over Neuropil: ", 0, 10, InclusiveLimit);
+	gd.addSlider("Minimum Intensity Requirement for Neuropil: ", ip.getMin(), ip.getMax(), ENHANCE_BASE);
+	gd.addSlider("Target Intensity for Enhancing Neuropil: ", ip.getMin(), ip.getMax(), ENHANCE_TARGET);
+	
+
         gd.showDialog();
         
         if (gd.wasCanceled()){
@@ -165,7 +175,6 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 
         ThrVal=(int) gd.getNextNumber();
         ThrVal2=(int) gd.getNextNumber();
-	
         //despeckle = gd.getNextBoolean();     despeckle_default = despeckle;
         //smooth = gd.getNextBoolean(); 	     smooth_default = smooth;
 	//enhanceNeuropil = gd.getNextBoolean(); 
@@ -176,6 +185,10 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
         br =gd.getNextBoolean();             br_default = br;
         bg =gd.getNextBoolean();             bg_default = bg;
         bb =gd.getNextBoolean(); 	     bb_default = bb;
+	combineFlag = gd.getNextBoolean();
+	InclusiveLimit = (int) gd.getNextNumber();
+	ENHANCE_BASE = (int)  gd.getNextNumber();
+	ENHANCE_TARGET = (int) gd.getNextNumber();
   
         IJ.register(Axon_TopoMap_Inclusive_AutoEnhance_Denoise.class); // static fields preserved when plugin is restarted
         //Reset the threshold
@@ -444,11 +457,9 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	//For inclusive, need to combine?????!!!! (Will batchtest to compare) 
 	// The projection can be cleaner when neuropil is very noisy.   
 	// THIS IS ONLY FOR EXCLUSIVE??????????????????????????
-	// 
-	// 
 	// why there are bad spots after combined? (0xff and /2)
-	// 
- 	//combineAxonAndNeuropil(index1, index2, imgp.getStack());
+	if(combineFlag) 
+ 	  combineAxonAndNeuropil(index1, index2, imgp.getStack());
 	
 	//do z-project (on RGB)
 	ZProjector projector = new ZProjector(imgp);
@@ -555,8 +566,8 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	ColorProcessor duplicatedImp;
 	ImageStack  duplicatedStack;
 	IJ.log("starting neuropil intensity: " + neuroInt);		
-	if(neuroInt < 35)
-	{  IJ.log("Neuropil Intensity is only " + neuroInt + " (< 35). Exit.");
+	if(neuroInt < ENHANCE_BASE)
+	{  IJ.log("Neuropil Intensity is only " + neuroInt + " (< "+  ENHANCE_BASE +"). Exit.");
 	   return null;
 	} else if (neuroInt < ENHANCE_TARGET )
 	{
@@ -715,7 +726,7 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	  //call calculation for TI
 	  IJ.log("slice "+(z+1));
 	  IJ.log(" -- Caculating T.I. .. ");
-          float[] resfory = getTopoIndexGivenTwoImages(maskImageAxon, maskImageNeu, INCLUSIVELIMIT);
+          float[] resfory = getTopoIndexGivenTwoImages(maskImageAxon, maskImageNeu, InclusiveLimit);
 	  if(resfory !=null) 
 	  {
 	    res[0] += resfory[0];
@@ -1036,8 +1047,7 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	double zOrigin = cal.zOrigin;
 	double yOrigin = cal.yOrigin;
 	double xOrigin = cal.xOrigin;
-	//IJ.log("zOrigin:" +xOrigin + " yOrigin" + yOrigin + " zOrigin" + zOrigin);
-
+	
         //preprocessing is still needed 
         if(despeckle)
         {
@@ -1087,12 +1097,19 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
     public void adjustmentValueChanged(AdjustmentEvent e) {
     	
         ThrVal=((Scrollbar)sliders.elementAt(0)).getValue();
+	ThrVal2 = ((Scrollbar)sliders.elementAt(1)).getValue();
+	InclusiveLimit = ((Scrollbar)sliders.elementAt(2)).getValue();
+	ENHANCE_BASE = ((Scrollbar)sliders.elementAt(3)).getValue();
+	ENHANCE_TARGET = ((Scrollbar)sliders.elementAt(4)).getValue();
     }
 
     public void textValueChanged(TextEvent e) {
         ((Scrollbar)sliders.elementAt(0)).setValue((int) Tools.parseDouble(((TextField)value.elementAt(0)).getText()));
-  
-    }
+        ((Scrollbar)sliders.elementAt(1)).setValue((int) Tools.parseDouble(((TextField)value.elementAt(1)).getText()));
+        ((Scrollbar)sliders.elementAt(2)).setValue((int) Tools.parseDouble(((TextField)value.elementAt(2)).getText()));
+        ((Scrollbar)sliders.elementAt(3)).setValue((int) Tools.parseDouble(((TextField)value.elementAt(3)).getText()));
+        ((Scrollbar)sliders.elementAt(3)).setValue((int) Tools.parseDouble(((TextField)value.elementAt(4)).getText()));
+     }
 
  
 }
