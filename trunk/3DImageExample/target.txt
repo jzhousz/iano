@@ -1,0 +1,5 @@
+Fruitfly_C4DA
+1:ddaC  2:v'ada 3:vdaB
+1   ddaC-A2.tif
+2   v'ada-A2.tif
+3   vdaB-A2.tif
