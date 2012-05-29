@@ -81,6 +81,7 @@ public class RoiModeDialogPanel extends JPanel implements ActionListener {
 			this.add(buildFileLoadingPanel());
 		else if (modeflag == Annotator.AN) // Annotate
 			this.add(buildFileLoadingPanel());
+		
 	}
 
 	private JPanel buildFileLoadingPanel() {
@@ -316,7 +317,7 @@ public class RoiModeDialogPanel extends JPanel implements ActionListener {
 
 	private String[] openRois(JTextField dirfieldp) {
 		fileChooser.setDialogTitle("Open ROI File(s)");
-
+		
 		// Choose only directories
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		fileChooser.setMultiSelectionEnabled(true);
@@ -338,8 +339,15 @@ public class RoiModeDialogPanel extends JPanel implements ActionListener {
 			// display in the textfield.
 			dirfieldp.setText(displayText.toString());
 			
+			//Reset File Filter upon completion
+			fileChooser.resetChoosableFileFilters();
+						
 			return roiPaths;
+			
 		}
+		
+		//Reset File Filter upon cancellation
+		fileChooser.resetChoosableFileFilters();
 		
 		return null;
 	}
