@@ -447,7 +447,7 @@ public class FishersCriterion implements FeatureSelector
 //        }
 
         //sort
-        Collections.sort(all, new FeatureFisherIndex_Compare());
+        Collections.sort(all); //, new FeatureFisherIndex_Compare());
 
         //DEBUG
 //        System.out.println("=== all features SORTED: ===");
@@ -619,7 +619,7 @@ public class FishersCriterion implements FeatureSelector
     }
 }
 
-class FeatureFisherIndex
+class FeatureFisherIndex  implements Comparable
 {
     public double fisher_value;
     public int feature_index;
@@ -627,6 +627,18 @@ class FeatureFisherIndex
     public FeatureFisherIndex(double fisher_value, int feature_index) {
         this.fisher_value = fisher_value;
         this.feature_index = feature_index;
+    }
+    
+    public int compareTo(Object p2) {
+        if (this.fisher_value < ((FeatureFisherIndex)p2).fisher_value) {
+            return 1;
+        }
+        else if (this.fisher_value > ((FeatureFisherIndex)p2).fisher_value) {
+            return -1;
+        }
+        else {
+            return 0;
+        }
     }
 }
 
