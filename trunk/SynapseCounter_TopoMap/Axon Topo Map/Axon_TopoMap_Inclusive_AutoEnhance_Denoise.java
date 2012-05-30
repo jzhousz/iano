@@ -60,6 +60,7 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
     final int EXCLUSIVELIMIT = 999; //a very big number
     int ENHANCE_BASE = 35;
     int ENHANCE_TARGET = 80;
+    String outputfilename = "TIOutput.csv";
 
     boolean combineFlag = false;
     boolean debug = false;
@@ -158,14 +159,12 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
         gd.addCheckbox("Neuropil_ channel is green", bg_default);
         gd.addCheckbox("Neuropil__ channel is blue", bb_default);
 	//added May 27 2012
-       // gd.addMessage("Other Parameters:");  
 	gd.addCheckbox("Combine axon and neuropil as denoise reference (only neuropil is used if unchecked)", combineFlag);
         gd.addSlider("Cushion for Noise of Axon Over Neuropil: ", 0, 10, InclusiveLimit);
 	gd.addSlider("Minimum Intensity Requirement for Neuropil: ", ip.getMin(), ip.getMax(), ENHANCE_BASE);
 	gd.addSlider("Target Intensity for Enhancing Neuropil: ", ip.getMin(), ip.getMax(), ENHANCE_TARGET);
-	
-
-        gd.showDialog();
+	gd.addStringField("File to save TI:",outputfilename,20);
+	gd.showDialog();
         
         if (gd.wasCanceled()){
             ip.resetThreshold();
@@ -189,6 +188,7 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	InclusiveLimit = (int) gd.getNextNumber();
 	ENHANCE_BASE = (int)  gd.getNextNumber();
 	ENHANCE_TARGET = (int) gd.getNextNumber();
+	outputfilename = (String) gd.getNextString();
   
         IJ.register(Axon_TopoMap_Inclusive_AutoEnhance_Denoise.class); // static fields preserved when plugin is restarted
         //Reset the threshold
@@ -454,10 +454,8 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
     void get2DBoundaryViaProjection(int index1, int index2, int[] neuropilMinZ, int[] neuropilMaxZ, ImagePlus  imgp)
     {
 	
-	//For inclusive, need to combine?????!!!! (Will batchtest to compare) 
+	//For inclusive, need to combine? -- THIS IS Required FOR EXCLUSIVE, but optional for INCLUSIVE.
 	// The projection can be cleaner when neuropil is very noisy.   
-	// THIS IS ONLY FOR EXCLUSIVE??????????????????????????
-	// why there are bad spots after combined? (0xff and /2)
 	if(combineFlag) 
  	  combineAxonAndNeuropil(index1, index2, imgp.getStack());
 	
@@ -1082,16 +1080,19 @@ public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	float[] res = getTopoIndex(index1, index2, ThrVal, ThrVal2,stack);
 
 	//save TI to a file (append)
-	try{
-         java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileOutputStream(new java.io.File("TIOutput.csv"), true)); 
-	 writer.println(img.getTitle()+","+res[0]/res[1]);
-	 writer.close();
-	}catch(Exception e)
+	if(!outputfilename.equals(""))
 	{
-	   IJ.log("Problem in saving the result into TIOutput.csv --"+e.getMessage());
+	  try{
+           java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileOutputStream(new java.io.File(outputfilename), true)); 
+	   writer.println(img.getTitle()+","+res[0]/res[1]);
+	   writer.close();
+	  }catch(Exception e)
+	  {
+	   IJ.log("Problem in saving the result into output file --"+e.getMessage());
 	   return;
+	  }
+	  IJ.log("Result appended to "+ outputfilename + " (at ImageJ's folder by default).");
 	}
-	 IJ.log("Result appended to TIOutput.csv (at ImageJ's folder by default).");
     }
 
     public void adjustmentValueChanged(AdjustmentEvent e) {

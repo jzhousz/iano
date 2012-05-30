@@ -39,7 +39,7 @@ In this range, I suggest to set it lower (conservative), so 1) more signal are i
  *   a. Before denoise, combine axon and neuropil channel.  Need to combine the original value. Otherwise, the intensity is too low.
  *   b. Don't duplicate for z-projection based denoise. So the combined channel is used for later calculation.
  *   c. Comment out code for RTI.
- *   d. target intensity is lower.
+ *   d. target intensity can be lower? Add parameter knobs.
  *
  */
 
@@ -58,10 +58,12 @@ import java.awt.event.*;
 
 public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise implements PlugIn, AdjustmentListener, TextListener {
     static final String pluginName = "Axon_TopoMap_Exclusive_AutoEnhance_Denoise";
-    final int INCLUSIVELIMIT = 0;   //level of allowance of axon outside neuropil
+    int InclusiveLimit = 2;   //level of allowance of axon outside neuropil
     final int EXCLUSIVELIMIT = 999; //a very big number
-    final int ENHANCE_TARGET = 80;
-
+    int ENHANCE_BASE = 35;
+    int ENHANCE_TARGET = 80;
+    String outputfilename = "TIOutput.csv";
+  
     boolean debug = false;
     boolean useCLAHE = false; //test and compare with window/level adjustment
     boolean useRATS = true;   //Is rats too adaptive for such high noise images? 
@@ -87,7 +89,6 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise implements PlugIn, Adjus
     public static boolean show_mask_default = true;
     public static boolean enhanceNeuropil = false;
    
-    //final int limit = 2;    //the cushion limit for neurpil boundary.  Used for noise removal. Anything in axon outside boundary are considered noise.
     int ThrVal = 6;
     int ThrVal2  = 7;  //channel for neurpoil
     
@@ -156,7 +157,10 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise implements PlugIn, Adjus
         gd.addCheckbox("Neuropil channel is red", br_default);
         gd.addCheckbox("Neuropil_ channel is green", bg_default);
         gd.addCheckbox("Neuropil__ channel is blue", bb_default);
-  
+        gd.addSlider("Cushion for Noise of Axon Over Neuropil: ", 0, 10, InclusiveLimit);
+	gd.addSlider("Minimum Intensity Requirement for Neuropil: ", ip.getMin(), ip.getMax(), ENHANCE_BASE);
+	gd.addSlider("Target Intensity for Enhancing Neuropil: ", ip.getMin(), ip.getMax(), ENHANCE_TARGET);
+        gd.addStringField("File to save TI:",outputfilename,20);
         gd.showDialog();
         
         if (gd.wasCanceled()){
@@ -178,7 +182,11 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise implements PlugIn, Adjus
         br =gd.getNextBoolean();             br_default = br;
         bg =gd.getNextBoolean();             bg_default = bg;
         bb =gd.getNextBoolean(); 	     bb_default = bb;
-  
+	InclusiveLimit = (int) gd.getNextNumber();
+	ENHANCE_BASE = (int)  gd.getNextNumber();
+	ENHANCE_TARGET = (int) gd.getNextNumber();
+	outputfilename = (String) gd.getNextString();
+    
         IJ.register(Axon_TopoMap_Exclusive_AutoEnhance_Denoise.class); // static fields preserved when plugin is restarted
         //Reset the threshold
         ip.resetThreshold();
@@ -446,13 +454,7 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise implements PlugIn, Adjus
     void get2DBoundaryViaProjection(int index1, int index2, int[] neuropilMinZ, int[] neuropilMaxZ, ImagePlus  imgp)
     {
 	
-	//For inclusive, need to combine?????!!!! (Will batchtest to compare) 
-	// The projection can be cleaner when neuropil is very noisy.   
-	// THIS IS ONLY FOR EXCLUSIVE??????????????????????????
-	// 
-	// 
-	// why there are bad spots after combined? (0xff and /2)
-	// 
+	//Reuired for EXCLUSIVE.  
  	combineAxonAndNeuropil(index1, index2, imgp.getStack());
 	
 	//do z-project (on RGB)
@@ -549,8 +551,8 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	//duplicate the imageplus to avoid interfere with later steps?!
  	int[] twoDNeuMinZ = new int[Width];
 	int[] twoDNeuMaxZ = new int[Width];
+	//different from INCLUSIVE, this will change the original image. So no duplicate.
 	get2DBoundaryViaProjection(index1, index2, twoDNeuMinZ, twoDNeuMaxZ, img);
-	//get2DBoundaryViaProjection(index1, index2, twoDNeuMinZ, twoDNeuMaxZ, img.duplicate());
 
 	//automatic enhancement based on neuropil intensity  4/2012
 	//Rule: If less than 35, discard. Else if less than 80, increase to above 80 (but lower than 100).   Otherwise, no enhancement.
@@ -560,8 +562,8 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	ColorProcessor duplicatedImp;
 	ImageStack  duplicatedStack;
 	IJ.log("starting neuropil intensity: " + neuroInt);		
-	if(neuroInt < 35)
-	{  IJ.log("Neuropil Intensity is only " + neuroInt + " (< 35). Exit.");
+	if(neuroInt < ENHANCE_BASE)
+	{  IJ.log("Neuropil Intensity is only " + neuroInt + " (< "+  ENHANCE_BASE +"). Exit.");
 	   return null;
 	} else if (neuroInt < ENHANCE_TARGET )
 	{
@@ -720,7 +722,7 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	  //call calculation for TI
 	  IJ.log("slice "+(z+1));
 	  IJ.log(" -- Caculating T.I. .. ");
-          float[] resfory = getTopoIndexGivenTwoImages(maskImageAxon, maskImageNeu, INCLUSIVELIMIT);
+          float[] resfory = getTopoIndexGivenTwoImages(maskImageAxon, maskImageNeu, InclusiveLimit);
 	  if(resfory !=null) 
 	  {
 	    res[0] += resfory[0];
@@ -1078,16 +1080,19 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise implements PlugIn, Adjus
 	float[] res = getTopoIndex(index1, index2, ThrVal, ThrVal2,stack);
 
 	//save TI to a file (append)
-	try{
-         java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileOutputStream(new java.io.File("TIOutput.csv"), true)); 
+	if(!outputfilename.trim().equals(""))
+	{
+	 try{
+         java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileOutputStream(new java.io.File(outputfilename), true)); 
 	 writer.println(img.getTitle()+","+res[0]/res[1]);
 	 writer.close();
-	}catch(Exception e)
-	{
-	   IJ.log("Problem in saving the result into TIOutput.csv --"+e.getMessage());
+	 }catch(Exception e)
+	 {
+	   IJ.log("Problem in saving the result into "+ outputfilename + "--"+e.getMessage());
 	   return;
+	 }
+	 IJ.log("Result appended to "+outputfilename +" (at ImageJ's folder by default).");
 	}
-	 IJ.log("Result appended to TIOutput.csv (at ImageJ's folder by default).");
     }
 
     public void adjustmentValueChanged(AdjustmentEvent e) {
