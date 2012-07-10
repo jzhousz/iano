@@ -1,20 +1,14 @@
 package annotool.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -61,8 +55,11 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 	ImageReadyPanel pnlImage = null;
 
 	JFileChooser fileChooser = null; // new JFileChooser ();
-
+	
 	boolean testingTarget = true; // loading testingTarget is optional. 032109
+	boolean roiFlag = false; //For differentiating between Image and ROI annotation for file selection
+	
+	String[] multiFiles = null; //multiple files for selection in ROI Annotation mode
 
 	public static String TARGET = "target.txt"; // Default file to look for in
 												// the target images directory
@@ -82,6 +79,7 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 		else if (modeflag == Annotator.ROI) // roi
 		{
 			testingTarget = false;
+			roiFlag = true;
 			this.add(buildFileLoadingPanel());
 		} else if (modeflag == Annotator.TO) // train only
 		{
@@ -94,10 +92,14 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 	}
 
 	private JPanel buildFileLoadingPanel() {
+		
+		
 		// the panel to load one set of images
 		JPanel luPanel = new JPanel();
 		if (testingTarget)
-			luPanel.setLayout(new GridLayout(4, 1, 5, 5));
+			luPanel.setLayout(new GridLayout(4, 1, 5, 5));		
+		else if(roiFlag)
+			luPanel.setLayout(new GridLayout(5, 1, 5, 5));
 		else
 			luPanel.setLayout(new GridLayout(3, 1, 5, 5));
 
@@ -122,18 +124,22 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 		lur4Panel.setLayout(new java.awt.FlowLayout());
 		lur4Panel.add(loadImageB);
 		lur4Panel.add(new JLabel("        "));
-		lur4Panel.add(cancelB);
-
+		lur4Panel.add(cancelB);	
+		
 		luPanel.add(lur1Panel);
 		luPanel.add(lur2Panel);
+		
 		if (testingTarget)
 			luPanel.add(lur3Panel);
 		luPanel.add(lur4Panel);
+		
 
 		luPanel.setBorder(new CompoundBorder(new TitledBorder(null,
 				"Input images", TitledBorder.LEFT, TitledBorder.TOP),
 				new EmptyBorder(5, 5, 5, 5)));
 		// luPanel.setBackground(java.awt.Color.white);
+		
+		
 
 		filedir.addActionListener(this); // launch dir chooser
 		if (testingTarget)
@@ -239,8 +245,12 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 	}
 
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == filedir)
-			openDir(dirField);
+		if (e.getSource() == filedir){
+			if(roiFlag)
+				multiFiles = roiOpenFiles(dirField);
+			else
+				openDir(dirField);
+		}
 		else if (e.getSource() == targetFile)
 			openFile(targetField);
 		else if (e.getSource() == cancelB)
@@ -249,9 +259,11 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 		else if (e.getSource() == loadImageB) {
 			// mode 1: cv
 			// set the problem parameters
-			Annotator.dir = dirField.getText().trim() + "//";
+			if(!roiFlag)
+				Annotator.dir = dirField.getText().trim() + "//";
 			Annotator.ext = (String) extBox.getSelectedItem();
 			Annotator.targetFile = targetField.getText().trim();
+
 			// display images, plus enable the go button if successful
 			boolean displayOK = true,
 					isColor = false,
@@ -263,7 +275,13 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 							Annotator.dir, Annotator.targetFile, Annotator.ext);
 				}
 				else {
-					displayOK = pnlTable.displayOneImageTable(
+					if(roiFlag){
+						displayOK = pnlTable.displayOneImageTable(
+									multiFiles, Annotator.dir, Annotator.ext);
+						
+					}
+					else
+						displayOK = pnlTable.displayOneImageTable(
 							Annotator.dir, Annotator.ext);
 				}
 				
@@ -312,7 +330,8 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 			openFile(testtargetField);
 		else if (e.getSource() == combinedLoadImageB) {
 			// mode 2 training/testing
-			Annotator.dir = dirField.getText().trim() + "//";
+			if(!roiFlag)
+				Annotator.dir = dirField.getText().trim() + "//";
 			Annotator.ext = (String) extBox.getSelectedItem();
 			Annotator.targetFile = targetField.getText().trim();
 			Annotator.testdir = testdirField.getText().trim() + "//";
@@ -437,4 +456,52 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 			targetField.setText(fFile.getAbsolutePath());
 		}
 	}
+	
+	//Method for multiple file selection for RIO Annotation Input
+	private String[] roiOpenFiles(JTextField dirfieldp) {
+		fileChooser.setDialogTitle("Open Image File(s)");
+		
+		// Choose only files
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fileChooser.setMultiSelectionEnabled(true);
+
+		// Now open chooser
+		int result = fileChooser.showOpenDialog(this);
+		if (result == JFileChooser.APPROVE_OPTION) {
+			File[] files = fileChooser.getSelectedFiles();
+			StringBuffer displayText = new StringBuffer();
+			
+			String[] filePaths = new String[files.length];
+			
+			Annotator.dir = files[0].getAbsolutePath();
+			Annotator.dir = Annotator.dir.substring(0,Annotator.dir.lastIndexOf("\\"));
+			Annotator.dir += "//";
+			System.out.println(Annotator.dir);
+			
+			for(int i = 0; i < files.length; i++) {
+				displayText.append("'" + files[i].getName() + "' ");
+				filePaths[i] = files[i].getName();
+			}
+			
+			// display in the textfield.
+			dirfieldp.setText(displayText.toString());
+			
+			//Reset File Filter upon completion
+			fileChooser.resetChoosableFileFilters();
+						
+			return filePaths;
+			
+		}
+		
+		//Reset File Filter upon cancellation
+		fileChooser.resetChoosableFileFilters();
+		
+		return null;
+	}
+	
+	
+	
+	
+	
+
 }

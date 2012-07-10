@@ -317,7 +317,13 @@ class Tester
         String ext = ".jpg";
         String channel = "a";
 
-        DataInput problem = new DataInput(dir, ext, channel);
+        DataInput problem = null;
+        try{
+        	problem = new DataInput(dir, ext, channel, null);
+        }catch(Exception e)
+        {
+        	e.printStackTrace();
+        }
 
 //        byte[][] data = problem.getData();
 //        byte[] a1 = data[0];

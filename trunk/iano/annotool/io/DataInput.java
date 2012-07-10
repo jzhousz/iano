@@ -27,7 +27,10 @@ import java.util.regex.Pattern;
  *  The constructors can take targetfile, use the directory structure.
  * It now encapsulates everything about a problem.
  * 
+ * June 2012: by AA. Added files to read just a subset of images in the directory. Needed for ROIAnnotation (ROIANNOMODE). 
+ * 
  * Important: readImages(childrenCandidates, stackIndex); is only called by getData().
+ * 
  *  
  */ 
 public class DataInput
@@ -47,6 +50,7 @@ public class DataInput
 	public static final int TARGETFILEMODE = 0;
 	public static final int DIRECTORYMODE = 1; 
 	public static final int ROIMODE = 2;
+	public static final int ROIANNOMODE = 3;
 	 
 	//problem properties
 	protected ArrayList data = null; //store all images in the dir with given ext.
@@ -54,6 +58,7 @@ public class DataInput
 	String[] children = null; //list of image file names in the dir
 	protected int height = 0; //height of the first image
 	protected int width = 0;  //width of the first image
+	protected int depth = 0;
 	int[] widthList = null;  //add width, height lists. Moved from DataInputDynamic 02/2012
 	int[] heightList = null;
 	int[] depthList = null;
@@ -62,6 +67,7 @@ public class DataInput
 	boolean ofSameSize = true; //added Feb 2012 to combine DataInputDynamic
 	String directory;
 	String ext;
+	String[] files;
 
 	String channel = annotool.Annotator.channel;
 	boolean resize = false;
@@ -148,6 +154,21 @@ public class DataInput
 	}
 	
 	/**
+	 This constructor takes no target file and is strictly for ROI Annotation mode
+	 * 
+	 */
+	public DataInput(String directory, String[] files, String ext, String channel) throws Exception
+	{
+		this.mode = ROIANNOMODE;
+		this.directory = directory;
+		this.files = files;
+		this.ext = ext;
+		this.channel = channel;
+		this.depth = depth;
+		
+	}
+	
+	/**
 	 * Creates DataInput object in ROI input method.
 	 * 
 	 * @param image
@@ -161,6 +182,8 @@ public class DataInput
 	{
 		this.channel = channel;
 		this.mode = ROIMODE;
+		this.depth = depth;
+		System.out.println("The ROI depth: " + depth);
 		
 		this.imp = image;
 		this.roiList = roiList;
@@ -291,7 +314,6 @@ public class DataInput
 	//return an arraylist of all images of a particular stack.
 	//This is the working horse for readingImages.
 	//Should just be called one for each stack
-	//private ArrayList readImages(String directory, String ext, int stackIndex)
 	private ArrayList readImages(String[] childrenCandidates, int stackIndex) throws Exception
 	{
 		ImagePlus imgp = null; 
@@ -303,7 +325,7 @@ public class DataInput
 		ArrayList<Integer> tmpHList = new ArrayList<Integer>(childrenCandidates.length);
 		ArrayList<Integer> tmpDList = new ArrayList<Integer>(childrenCandidates.length);
 		data = new ArrayList<String>(childrenCandidates.length);
-
+		
 		//go through the files
 		for (int i=0; i<childrenCandidates.length; i++)
 		{			
@@ -319,7 +341,8 @@ public class DataInput
 			}
 			
 			//update valid children
-			childrenList.add(childrenCandidates[i]);
+				childrenList.add(childrenCandidates[i]);
+			
 			if(childrenList.size() == 1) //the first image
 			{  //these two properties are set once regardless of resizing
 			  	imageType = imgp.getType();
@@ -332,6 +355,7 @@ public class DataInput
 			  tmpWList.add(new Integer(curwidth));
 			  tmpHList.add(new Integer(curheight));
 			  tmpDList.add(new Integer(imgp.getStackSize()));
+			  
 			  if (childrenList.size() == 1)
 			  {   //set general property only once
 				   width = curwidth;
@@ -349,8 +373,9 @@ public class DataInput
 			  tmpHList.add(height);
 			  tmpDList.add(new Integer(imgp.getStackSize()));
 			}
-			//add data.  Resizing will be done inside if needed.	
-			data.add(openOneImage(imgp,  stackIndex));
+			
+			//add data.  Resizing will be done inside if needed.
+			data.add(openOneImage(imgp, stackIndex));
 			
 			//update the index for current data, needed for 3D to avoid re-reading the same stack
 			lastStackIndex = stackIndex;
@@ -518,6 +543,11 @@ public class DataInput
 	    	childrenCandidates = new String[roiList.size()];
 	    	return roiList.keySet().toArray(childrenCandidates);
 	    }
+	    else if(this.mode == ROIANNOMODE)
+	    {
+	    	childrenCandidates = new String[files.length];
+	    	childrenCandidates = files;
+	    }
 	    else
 	    	throw new Exception("Exception: Unsuppported mode for data input.");
 		
@@ -547,6 +577,7 @@ public class DataInput
 	public boolean is3D(String path)
 	{
 		ImagePlus imgp = new ImagePlus(path);
+		
 		int stackSize = imgp.getStackSize();
 	    if (stackSize > 1) 
 	    	return true;
@@ -589,11 +620,12 @@ public class DataInput
 	{
 		int stackSize = getStackSize();
 	    ArrayList data = new ArrayList(stackSize);
-
+	    ImagePlus imgp = new ImagePlus(directory+children[imageindex]);
 	    //stack from 1 to number of slices
 		for(int stackIndex = 1; stackIndex <= stackSize; stackIndex++)
-			data.add(openOneImage(new ImagePlus(directory+children[imageindex]), stackIndex));
-	    
+		{
+			data.add(openOneImage(imgp, stackIndex));			
+		}
 		return data;
 	}
 	

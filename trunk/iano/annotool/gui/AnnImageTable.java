@@ -197,6 +197,65 @@ public class AnnImageTable {
 		return scrollPane;
 	}
 	
+	//Overloaded for ROI Annotation
+	public JScrollPane buildImageTable(String[] files, String directory, String ext) throws Exception
+	{
+		this.directory = directory;
+		problem = new annotool.io.DataInput(directory, files, ext, Annotator.channel);
+		children = problem.getChildren();
+
+		if (children == null)
+		{
+			javax.swing.JOptionPane.showMessageDialog(null,"Error: File path may be incorrect.");
+			return null;
+		}	
+		if (children.length == 0)
+		{
+			javax.swing.JOptionPane.showMessageDialog(null,"There is no image with the given extension.");
+			return null;
+		}
+		//build up the JTable
+		final String[] columnNames;
+		columnNames = new String[2];
+		columnNames[0] = "image thumbnail";
+		columnNames[1]= "file name";
+
+		final Object[][] tabledata = new Object[children.length][columnNames.length];
+		for (int i = 0; i < children.length; i++)
+		{
+			tabledata[i][0] =  getButtonCell(i);
+			tabledata[i][1] = children[i];
+
+		}		
+
+		// Create a model of the data. 
+		javax.swing.table.TableModel dataModel = new javax.swing.table.AbstractTableModel() { 
+			public int getColumnCount() { return columnNames.length; } 
+			public int getRowCount() { return tabledata.length;} 
+			public Object getValueAt(int row, int col) {return tabledata[row][col];} 
+			public String getColumnName(int column) {return columnNames[column];} 
+			public Class getColumnClass(int c) {return getValueAt(0, c).getClass();} 
+			public boolean isCellEditable(int row, int col) {return false ;} 
+			public void setValueAt(Object aValue, int row, int column) 
+			{ tabledata[row][column] = aValue; 
+			fireTableCellUpdated(row, column); //needed if data could change
+			} 
+		}; 
+
+		TableCellRenderer defaultRenderer;
+		table = new JTable(dataModel);
+		table.setRowHeight(THUMB_HEIGHT + 4); 
+		defaultRenderer = table.getDefaultRenderer(JButton.class);
+		table.setDefaultRenderer(JButton.class,
+				new JTableButtonRenderer(defaultRenderer));
+		scrollPane = new JScrollPane(table);
+		scrollPane.setOpaque(true); //content panes must be opaque
+		table.addMouseListener(new JTableButtonMouseListener(table));
+
+		return scrollPane;
+	}
+	
+	
 	/**
 	 * For hierarchical directory structure.
 	 * 
@@ -284,7 +343,7 @@ public class AnnImageTable {
 	 * @return
 	 * @throws Exception
 	 */
-	public JScrollPane buildImageTableFromROI(String imagePath, String[] roiPaths, boolean hasTarget) throws Exception
+	public JScrollPane buildImageTableFromROI(String imagePath, String[] roiPaths, boolean hasTarget, int depth) throws Exception
 	{
 		isRoiInput = true;
 		imp = new ImagePlus(imagePath);
@@ -303,7 +362,7 @@ public class AnnImageTable {
 		if(roiList.size() < 1)
 			JOptionPane.showMessageDialog(null, "No rois loaded.");
 		
-		problem = new DataInput(imp, roiList, classMap, Annotator.channel, 1);
+		problem = new DataInput(imp, roiList, classMap, Annotator.channel, depth);
 		
 		children = problem.getChildren();
 		
@@ -469,6 +528,7 @@ public class AnnImageTable {
 			displayImage.show();
 		}
 		else if(problem.is3D(Annotator.dir+children[0])) {
+		//else if(problem.is3D(directory+children[0])) {
 			ImagePlus imp = ij.IJ.openImage(directory+children[index]);
 			new StackConverter(imp).convertToRGB();
 			//new StackConverter(imp).convertToGray8();
@@ -542,7 +602,15 @@ public class AnnImageTable {
 	JButton getButtonCell(int i)
 	{
 		//return new JButton(new ImageIcon(showIcon));
-		if(isRoiInput || problem.is3D(Annotator.dir+children[0]) || children.length > 100)
+		System.out.println(Annotator.dir);
+		System.out.println(children[0]);
+		if(isRoiInput)
+			System.out.println("wee");
+		if(problem != null)
+			if(problem.is3D(Annotator.dir+children[0]))
+				return new JButton(new ImageIcon(showIcon));
+		//if(isRoiInput || problem.is3D(Annotator.dir+children[0]) || children.length > 100)
+		if(isRoiInput || children.length > 100)
 		{
 			//if input mode is roi or image is 3D or the set is big, don't show thumbnail
 			return new JButton(new ImageIcon(showIcon));
