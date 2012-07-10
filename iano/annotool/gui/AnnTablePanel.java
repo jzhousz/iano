@@ -1,5 +1,9 @@
 package annotool.gui;
 
+import ij.ImagePlus;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.util.HashMap;
@@ -88,11 +92,11 @@ public class AnnTablePanel extends JPanel {
 	 * @return
 	 * @throws Exception
 	 */
-	public boolean displayOneImageTable(String imagePath, String[] roiPaths) throws Exception {		
+	public boolean displayOneImageTable(String imagePath, String[] roiPaths, int depth) throws Exception {		
 		resetTableBeforeBuild();
 
 		AnnImageTable singleTable = new AnnImageTable();
-		tableOneScrollPane = singleTable.buildImageTableFromROI(imagePath, roiPaths, true);
+		tableOneScrollPane = singleTable.buildImageTableFromROI(imagePath, roiPaths, true, depth);
 		classNames = singleTable.getClassNames();
 		
 		is3D = singleTable.is3D();
@@ -132,6 +136,42 @@ public class AnnTablePanel extends JPanel {
 
 		AnnImageTable annotationTable = new AnnImageTable();
 		tableOneScrollPane = annotationTable.buildImageTable(directory, ext);
+		classNames = annotationTable.getClassNames();
+		
+		is3D = annotationTable.is3D();
+		isColor = annotationTable.isColor();
+
+		if (tableOneScrollPane != null) {
+			this.setLayout(new java.awt.BorderLayout());
+			this.add(tableOneScrollPane, java.awt.BorderLayout.CENTER);
+			tableOneScrollPane.setBorder(new CompoundBorder(new TitledBorder(null,
+					"data set", TitledBorder.LEFT, TitledBorder.TOP),
+					new EmptyBorder(5, 5, 5, 5)));
+			currentAnnotationTable = annotationTable;
+			
+			problem = annotationTable.getProblem();
+			
+			adjustFrame();
+			return true;
+		} else
+			return false;
+	}
+	
+	/**
+	 * For ROI Annotation Mode -
+	 * 
+	 * @param files
+	 * @param directory
+	 * @param ext
+	 * @param depth
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean displayOneImageTable(String[] files, String directory, String ext) throws Exception {
+		resetTableBeforeBuild();
+
+		AnnImageTable annotationTable = new AnnImageTable();
+		tableOneScrollPane = annotationTable.buildImageTable(files, directory, ext);
 		classNames = annotationTable.getClassNames();
 		
 		is3D = annotationTable.is3D();
@@ -338,15 +378,15 @@ public class AnnTablePanel extends JPanel {
 	 * @throws Exception
 	 */
 	public boolean displayTwoImageTables(String imagePath, String[] roiPaths, 
-			String testImagePath, String[] testRoiPaths) throws Exception {		
+			String testImagePath, String[] testRoiPaths, int depth) throws Exception {		
 		resetTableBeforeBuild();
 
 		AnnImageTable trainingTable = new AnnImageTable();
-		tableOneScrollPane = trainingTable.buildImageTableFromROI(imagePath, roiPaths, true);
+		tableOneScrollPane = trainingTable.buildImageTableFromROI(imagePath, roiPaths, true, depth);
 		classNames = trainingTable.getClassNames();
 
 		AnnImageTable testingTable = new AnnImageTable();
-		tableTwoScrollPane = testingTable.buildImageTableFromROI(testImagePath, testRoiPaths, true);
+		tableTwoScrollPane = testingTable.buildImageTableFromROI(testImagePath, testRoiPaths, true, depth);
 		
 		is3D = trainingTable.is3D();
 		isColor = trainingTable.isColor();
