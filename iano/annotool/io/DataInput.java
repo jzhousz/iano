@@ -718,10 +718,12 @@ public class DataInput
 		
 		//Do differently based on mode
 		if(this.mode == ROIMODE) 
-		{
+		{ 
 			//build 3d when a 3D depth is specified
 			if(this.stackSize > 1) //Need to consider 3D ROi (although depth may be 1)
 			{
+				System.out.println("3D ROI is not yet supported.");
+				/*
 				//if 3D ROI, it has the x, y, z, info!!! - z is the stack index!! 
 			   Roi roi = roiList.get(childrenCandidate);
 			   //int z = roi.getPosition(); //always return 0, getBounds() does not either?
@@ -737,13 +739,15 @@ public class DataInput
 			   }
 			   else  
 			   {
-				   this.imp.setRoi(roi);
+				   //this.imp.setRoi(roi);
 				   //set up a 3D ROI
 				   ImageStack current3DROI = new ImageStack(w, h);
 				   int start = z - depth/2; 
 				   for(int i = start; i < start + depth; i++)
 				   {
-					   ImageProcessor slice = this.imp.getStack().getProcessor(i).crop();
+					   ImageProcessor slice = this.imp.getStack().getProcessor(i);
+					   slice.setRoi(roi);
+					   ImageProcessor cropped = slice.crop();
 					   System.out.println("slice.w" + slice.getWidth() + " slice.h" + slice.getHeight());
 					   
 				       current3DROI.addSlice("",slice); //java.lang.IllegalArgumentException: Dimensions do not match
@@ -751,7 +755,8 @@ public class DataInput
 				   System.out.println("3D ROI built!!!");
 				   
 				   return new ImagePlus("",current3DROI);
-			   }
+				   
+			   } */
 			}
 			else //2D ROI 
 			{
