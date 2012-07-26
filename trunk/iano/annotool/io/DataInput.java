@@ -1,6 +1,7 @@
 package annotool.io;
 
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.gui.Roi;
 import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
@@ -17,6 +18,14 @@ import java.util.HashSet;
 import java.util.regex.Pattern;
 
 
+
+/**
+ * The class that wraps the data.
+ * 
+ * @author JZhou
+ *
+ */
+
 /* Read images from a directory using ImageJ's utilities. 
  * Add channel number  (r or g or b) as an input option for RGB images. 
  * This class can read data for CV mode or TT mode.  
@@ -31,6 +40,7 @@ import java.util.regex.Pattern;
  * 
  * Important: readImages(childrenCandidates, stackIndex); is only called by getData().
  * 
+ * July 2012: get3DROIData
  *  
  */ 
 public class DataInput
@@ -49,8 +59,8 @@ public class DataInput
 	
 	public static final int TARGETFILEMODE = 0;
 	public static final int DIRECTORYMODE = 1; 
-	public static final int ROIMODE = 2;
-	public static final int ROIANNOMODE = 3;
+	public static final int ROIMODE = 2;     //ROI training/testing
+	public static final int ROIANNOMODE = 3; //ROI annotation
 	 
 	//problem properties
 	protected ArrayList data = null; //store all images in the dir with given ext.
@@ -84,23 +94,6 @@ public class DataInput
 	ImagePlus imp = null;
 	HashMap<String, Roi> roiList = null;
 		
-	
-	//This constructor uses the default channel setting or when the image is b/w.
-	/*
-	public DataInput(String directory, String ext)
-	{
-		this.directory = directory;
-		this.ext = ext;
-	}
-
-	//used in annotation to get a list of images from a directory.
-	public DataInput(String directory, String ext, String channel)
-	{
-		this.directory = directory;
-		this.ext = ext;
-		this.channel = channel;
-	}*/
-	
 	/**
 	 * The constructor takes the target file and resize the (2D) images based on the dimension passed in
 	 * If the images are 3D, it resizes each slice.
@@ -165,7 +158,6 @@ public class DataInput
 		this.ext = ext;
 		this.channel = channel;
 		this.depth = depth;
-		
 	}
 	
 	/**
@@ -182,13 +174,14 @@ public class DataInput
 	{
 		this.channel = channel;
 		this.mode = ROIMODE;
+		this.stackSize = image.getImageStackSize(); // stacksize of the entire image
 		this.depth = depth;
 		System.out.println("The ROI depth: " + depth);
 		
 		this.imp = image;
 		this.roiList = roiList;
 		
-		getChildren();
+		getChildren(); //based on roiList to get children? 
 		
 		//Create a single annotation
 		annotations = new ArrayList<String>();
@@ -217,6 +210,7 @@ public class DataInput
 			}
 			
 			targets[0][i] = classKey;
+	
 		}
 	}
 	
@@ -294,8 +288,6 @@ public class DataInput
 				testimg.show();
 				//testimg.updateAndDraw();
 			}*/
-			
-			
 		}
 		else  if (ip instanceof ShortProcessor || ip instanceof FloatProcessor)
 		{
@@ -312,8 +304,8 @@ public class DataInput
 	}
 
 	//return an arraylist of all images of a particular stack.
-	//This is the working horse for readingImages.
-	//Should just be called one for each stack
+	//This is the working horse for reading images.
+	//Should just be called once for each stack
 	private ArrayList readImages(String[] childrenCandidates, int stackIndex) throws Exception
 	{
 		ImagePlus imgp = null; 
@@ -329,19 +321,17 @@ public class DataInput
 		//go through the files
 		for (int i=0; i<childrenCandidates.length; i++)
 		{			
-			//String path = directory+childrenCandidates[i];
+			//get the image back (maybe a 3D ROI stack)
 			imgp = getImage(childrenCandidates[i]);
-			//imgp = new ImagePlus(path); 
-			
-			
-			if (imgp.getProcessor() == null && imgp.getStackSize() <=1) 
-			{   //an image type not supported by ImageJ
+						
+			if (imgp == null || (imgp.getProcessor() == null && imgp.getStackSize() <=1)) 
+			{   //either not a valid image or an image type not supported by ImageJ
 				System.out.println(childrenCandidates[i] + ": not supported image type.");
 				continue;  
 			}
 			
 			//update valid children
-				childrenList.add(childrenCandidates[i]);
+			childrenList.add(childrenCandidates[i]);
 			
 			if(childrenList.size() == 1) //the first image
 			{  //these two properties are set once regardless of resizing
@@ -361,7 +351,7 @@ public class DataInput
 				   width = curwidth;
 				   height = curheight;
 			  }
-			  if(curwidth != this.width || curheight != this.height || imgp.getStackSize() != this.stackSize)
+			  if(curwidth != this.width || curheight != this.height || (imgp.getStackSize() != this.stackSize && imgp.getStackSize() != this.depth))
 			  {
 				System.out.println("Warning: Image" + childrenCandidates[i] + "is not the same size as the 1st one. ");
 				ofSameSize = false;
@@ -374,8 +364,16 @@ public class DataInput
 			  tmpDList.add(new Integer(imgp.getStackSize()));
 			}
 			
+			if( this.mode == ROIMODE && this.stackSize > 1) //3D ROI
+			{
+				//!!If 3D ROI, stackindex should not matter because it is already in the ROI.
+				// So  ....????  what is data in that case? an array of  ImagePlus..?
+				data.add(imgp);
+			    //return data; //to be modified 7/25/2012	
+			}
 			//add data.  Resizing will be done inside if needed.
 			data.add(openOneImage(imgp, stackIndex));
+			
 			
 			//update the index for current data, needed for 3D to avoid re-reading the same stack
 			lastStackIndex = stackIndex;
@@ -540,6 +538,7 @@ public class DataInput
 			annotations = reader.getAnnotations();
 	    }
 	    else if(this.mode == ROIMODE) {
+	    	//ignore the directory and ext parameters. Use roiList instead
 	    	childrenCandidates = new String[roiList.size()];
 	    	return roiList.keySet().toArray(childrenCandidates);
 	    }
@@ -711,18 +710,60 @@ public class DataInput
 		return (this.mode == DIRECTORYMODE);
 	}
 	
+	
+	//get  an image 
+	// If 2DROI,  return the ROI
+	// If 3DROI,  return the cropped and combined ROI based on depth.  Return null if the roi is too close to surface 
 	private ImagePlus getImage(String childrenCandidate) {
-		if(this.mode == ROIMODE) {
-			Roi roi = roiList.get(childrenCandidate);
-			this.imp.setRoi(roi);
-			return new ImagePlus(childrenCandidate, this.imp.getProcessor().crop());//Only 1 processor so only works for 2D image for now
+		
+		//Do differently based on mode
+		if(this.mode == ROIMODE) 
+		{
+			//build 3d when a 3D depth is specified
+			if(this.stackSize > 1) //Need to consider 3D ROi (although depth may be 1)
+			{
+				//if 3D ROI, it has the x, y, z, info!!! - z is the stack index!! 
+			   Roi roi = roiList.get(childrenCandidate);
+			   //int z = roi.getPosition(); //always return 0, getBounds() does not either?
+			   String[] coors = childrenCandidate.split("-");
+			   int z = Integer.parseInt(coors[0]);
+			   int w = Integer.parseInt(coors[1]);
+			   int h = Integer.parseInt(coors[2]);
+			   System.out.println("z  position of the 3D ROI:" + z + " ROI w:" + w + " ROI h: " + h);
+			   if (z < depth/2 + 1 || z >  this.stackSize - depth/2)
+			   {
+			     System.out.println(" Too close to image surface, cann't cropt 3D ROI");
+			     return null;
+			   }
+			   else  
+			   {
+				   this.imp.setRoi(roi);
+				   //set up a 3D ROI
+				   ImageStack current3DROI = new ImageStack(w, h);
+				   int start = z - depth/2; 
+				   for(int i = start; i < start + depth; i++)
+				   {
+					   ImageProcessor slice = this.imp.getStack().getProcessor(i).crop();
+					   System.out.println("slice.w" + slice.getWidth() + " slice.h" + slice.getHeight());
+					   
+				       current3DROI.addSlice("",slice); //java.lang.IllegalArgumentException: Dimensions do not match
+				   }
+				   System.out.println("3D ROI built!!!");
+				   
+				   return new ImagePlus("",current3DROI);
+			   }
+			}
+			else //2D ROI 
+			{
+			  Roi roi = roiList.get(childrenCandidate);
+			  this.imp.setRoi(roi);
+			  return new ImagePlus(childrenCandidate, this.imp.getProcessor().crop());//Only 1 processor so only works for 2D image for now
+			}
 		}
 		
+		//other modes uses directory
 		String path = directory+childrenCandidate;
 		return (new ImagePlus(path)); 
-		
-		//Do different based on mode
-		//for roi, crop - build 3d when depth specified
 	}
 
 	public int getMode() {
