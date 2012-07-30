@@ -4,7 +4,7 @@ BIOCAT -- Biological Image Classification and Annotation Tool v1.0
 
 This tool requires JAVA runtime environment (JRE) to be installed in the target platform. The latest version of the JRE can be downloaded from http://java.com/en/download/index.jsp.
 
-The downloaded rar file for BICAT also contains a sample set of images (k150) and the corresponding target file (k150_4c_target).
+The downloaded rar file for BIOCAT also contains a sample set of images (k150) and the corresponding target file (k150_4c_target).
 
 The format for the target file should be as follows:
 
