@@ -1,5 +1,5 @@
 
-BI-CAT -- Biological Image Classification and Annotation Tool v1.0
+BIOCAT -- Biological Image Classification and Annotation Tool v1.0
 =====================================================================
 
 This tool requires JAVA runtime environment (JRE) to be installed in the target platform. The latest version of the JRE can be downloaded from http://java.com/en/download/index.jsp.
