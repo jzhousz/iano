@@ -35,7 +35,6 @@ public interface SavableClassifier extends Classifier
     * @param   model      Model to be used by the classifier
     * @throws  Exception  Exception thrown if model is incompatible
     */
-
 	void setModel(java.lang.Object model) throws Exception; 
 
 	

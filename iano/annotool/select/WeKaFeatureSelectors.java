@@ -64,25 +64,54 @@ public class WeKaFeatureSelectors implements FeatureSelector {
 	public final static String KEY_NUM = "Number of Features";
     public final static String KEY_DIS_TH = "Threshold";
 	
+    /**
+     * Default constructor
+     */
     public WeKaFeatureSelectors()
     {}
     
-    public void setParameters(java.util.HashMap<String, String> parameters)
+    /**
+     * Sets algorithm parameters from para
+     * 
+     * @param   para  Each element of the hashmap holds a parameter name
+     *                for its key and a its value is that of the parameter.
+     *                The parameters should be the same as those in the 
+     *                algorithms.xml file.
+     */
+    public void setParameters(java.util.HashMap<String, String> para)
     {
-		if (parameters.containsKey(KEY_NUM))
-			this.numberofFeatures = Integer.parseInt((String)parameters.get(KEY_NUM));
-		if (parameters.containsKey(KEY_DIS_TH))
-			threshold = Integer.parseInt((String)parameters.get(KEY_DIS_TH));
+		if (para.containsKey(KEY_NUM))
+			this.numberofFeatures = Integer.parseInt((String)para.get(KEY_NUM));
+		if (para.containsKey(KEY_DIS_TH))
+			threshold = Integer.parseInt((String)para.get(KEY_DIS_TH));
     }
     
-    public WeKaFeatureSelectors(java.util.HashMap<String, String> parameters)
+    /**
+     * Sets algorithm parameters from para
+     * 
+     * @param   para  Each element of the hashmap holds a parameter name
+     *                for its key and a its value is that of the parameter.
+     *                The parameters should be the same as those in the 
+     *                algorithms.xml file.
+     */
+    public WeKaFeatureSelectors(java.util.HashMap<String, String> para)
     {
-		if (parameters.containsKey(KEY_NUM))
-			this.numberofFeatures = Integer.parseInt((String)parameters.get(KEY_NUM));
-		if (parameters.containsKey(KEY_DIS_TH))
-			threshold = Integer.parseInt((String)parameters.get(KEY_DIS_TH));
+		if (para.containsKey(KEY_NUM))
+			this.numberofFeatures = Integer.parseInt((String)para.get(KEY_NUM));
+		if (para.containsKey(KEY_DIS_TH))
+			threshold = Integer.parseInt((String)para.get(KEY_DIS_TH));
     }
 	
+    /**
+     * Constructor that copies parameters to instance variables 
+     * and calculates the length and dimension.
+     * 
+     * @param   features          Two-dimensional array of extracted image data
+     * @param   targets           Array of the targets for the image
+     * @param   numberofFeatures  Number of features selected
+     * @param   method            (Not used) Name of a method?
+     * @param   threshold         Threshold for scoring system
+     */
 	public WeKaFeatureSelectors(float[][] features, int[] targets, int numberofFeatures, String method, double threshold)
 	{
 		this.features = features;
@@ -116,6 +145,13 @@ public class WeKaFeatureSelectors implements FeatureSelector {
 		*/
 	}
 
+   /**
+    * Copies parameters to instance variables and calculates the length and dimension.
+    * 
+    * @param   features  Two-dimensional array of extracted image data
+    * @param   targets   Array of the targets for the image
+    * @return            Two-dimensional array of features that are selected
+    */
 	public float[][] selectFeatures(float[][] features, int[] targets)
 	{
 		this.features = features;
@@ -125,6 +161,11 @@ public class WeKaFeatureSelectors implements FeatureSelector {
 		return selectFeatures();
 	}
 
+   /**
+    * Selects the features that are relevant
+    * 
+    * @return  Two-dimensional array of features that are selected
+    */
 	public float[][] selectFeatures()
 	{
 	   System.out.println("in selectFeature()...");	
@@ -182,14 +223,25 @@ public class WeKaFeatureSelectors implements FeatureSelector {
     }
 	
 
-	
+   /**
+    * Returns the indices of the selected features 
+    * (an index is between 0 and one less than the number of features).
+    * 
+    * @return  The indices of the selected features.
+    */
 	public int[] getIndices()
 	{
 		return indices;
         
 	}
 
-	//using passed in features, length, numberofFeatures from constructor
+	
+    /**
+     * Selects features using indices and returns the selected features.
+     * 
+     * @param   indices  Array of indices to the data columns
+     * @return           Two-dimensional array of features that are selected   
+     */
 	public float[][] selectFeaturesGivenIndices(int[] indices)
 	{  
 		float[][] selectedFeatures = new float[length][indices.length];
@@ -205,7 +257,13 @@ public class WeKaFeatureSelectors implements FeatureSelector {
 		return selectedFeatures;
 	}
 
-	//using passed in features, length, numberofFeatures from constructor
+    /**
+     * Selects features using indices and returns the selected features.
+     * 
+     * @param   data     Two-dimensional array of extracted image data
+     * @param   indices  Array of indices to the data columns
+     * @return           Two-dimensional array of features that are selected   
+     */
 	public float[][] selectFeaturesGivenIndices(float[][] data, int[] indices)
 	{  
 		float[][] selectedFeatures = new float[data.length][indices.length];
@@ -217,6 +275,11 @@ public class WeKaFeatureSelectors implements FeatureSelector {
 		return selectedFeatures;
 	}
 
+   /**
+    * Returns the number of selected features.
+    * 
+    * @return  The number of selected features.
+    */
 	//may have changed after selection, caller can get from selectedFeatures[0].length
 	public int getNumOfFeatures()
 	{
@@ -227,7 +290,12 @@ public class WeKaFeatureSelectors implements FeatureSelector {
 	//--- Similar as in WeakClassifiers.java ---
 	//--- IANO simply uses float to transport data, otherwise we can reuse. ---
 	
-   //create an empty classifier/training set. In weka tutorial example's constructor.	
+    /**
+    * Creates an empty training set.
+    * 
+    * @param   trainingpatterns  (Not Used) Pattern data to train the algorithm
+    * @param   trainingtargets   Targets for the training pattern
+    */
    public void createModel(float[][] trainingpatterns, int[] trainingtargets)
    {
 		String nameOfDataset = "ImagesForFeatureSelection";
@@ -251,6 +319,13 @@ public class WeKaFeatureSelectors implements FeatureSelector {
 		m_Data.setClassIndex(m_Data.numAttributes() - 1);
    }
 
+   /**
+   * Updates an weka model and adds it to the training data
+   * 
+   * @param   features    Image data to update the weka model
+   * @param   classValue  Image target value to update the weka model
+   * @throws  Exception   (Not used)
+   */
 	public void updateModel(float[] features, int classValue) throws Exception 
 	{
 		 // Convert into an instance.

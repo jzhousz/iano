@@ -6,10 +6,12 @@ import annotool.ImgDimension;
 import weka.attributeSelection.PrincipalComponents;
 import weka.core.Instances;
 
-//use Weka PCA.  
-//It seems slow on images. 
-//This is a work in progress
+/*
+// This is a work in progress.   
+// It uses Weka PCA. It is too slow on images.  Not used in GUI after May 2012 
+//
 // 5/25/2012  Due to the incompatability with the updated DataInput, the methods are commented out.
+*/
 public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 
 	Instances m_Data = null; //will build it
@@ -19,18 +21,41 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
     int width;
     int height;
 
+    /**
+     * Default constructor
+     */
     public PrincipalComponentFeatureExtractor() 
     {}
     
+    /**
+     * Empty implementation of setParameters 
+     * 
+     * @param  para  Each element of para holds a parameter’s name for its key
+     *               and a parameter’s value for its value. The parameters
+     *               should be the same as those in the algorithms.xml file.
+     */
     public void setParameters(java.util.HashMap<String, String> parameters) {
   	  //process parameter if any	
   	}
   	
+    /**
+     * Empty implementation of PrincipalComponentFeatureExtractor(java.util.HashMap<String, String> parameters)
+     * 
+     * @param  para  Each element of para holds a parameter’s name for its key
+     *               and a parameter’s value for its value. The parameters
+     *               should be the same as those in the algorithms.xml file.
+     */
     public PrincipalComponentFeatureExtractor(java.util.HashMap<String, String> parameters) {
 	  //process parameter if any	
 	}
 	   
+    /**
+     * Empty implementation of PrincipalComponentFeatureExtractor(annotool.io.DataInput problem)
+     * 
+     * @param  problem  Image to be processed
+     */
 	public PrincipalComponentFeatureExtractor(annotool.io.DataInput problem) {
+		
 		/*
 		   data = problem.getData();
 		   length = problem.getLength();
@@ -45,15 +70,34 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 	   */
 	}
 
+   /**
+    * Empty implementation of calcFeatures(ArrayList data, int imageType, ImgDimension dim)
+    * 
+    * @param   data       Data taken from the image
+    * @param   imageType  Type of the image
+    * @param   dim        Dimenstions of the image
+    * @return             Array of features
+    * @throws  Exception  (Not used)
+    */
 	public float[][] calcFeatures(ArrayList data, int imageType, ImgDimension dim) throws Exception
 	{ 
-		return null;
+		System.out.println("This method is not yet supported.");
+		throw new Exception("Not supported.");
 	}
 
+    /**
+     * Empty implementation of calcFeatures(annotool.io.DataInput problem)
+     * 
+     * @param   problem    Image to be processed
+     * @return             Array of features
+     * @throws  Exception  (Not used)
+     */
 	@Override
 	public float[][] calcFeatures(annotool.io.DataInput problem) throws Exception
 	{
-		return null;
+		System.out.println("This method is not yet supported.");
+		throw new Exception("Not supported.");
+
 		/*
 		   data = problem.getData();
 		   length = problem.getLength();
@@ -71,8 +115,14 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 	       
 	}
 	
-	
-	public float[][] calcFeatures(byte[][] data, ImgDimension dim)
+   /**
+    * Calculates features based on data and dim.
+    * 
+    * @param   data       Data taken from the image
+    * @param   dim        Dimenstions of the image
+    * @return             Array of features
+    */
+	private float[][] calcFeatures(byte[][] data, ImgDimension dim)
 	{
 		   length = data.length;
 		   width = dim.width;
@@ -113,7 +163,13 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 		return features;
 	}
 
-	
+    /**
+     * Returns whether or not the algorithm is able to extract from a 3D image 
+     * stack. 
+     * 
+     * @return  <code>True</code> if the algorithm is a 3D extractor, 
+     *          <code>False</code> if not. Default is <code>False</code>
+     */
 	public boolean is3DExtractor()
 	{  return false;} 
 }

@@ -9,7 +9,7 @@ import java.util.ArrayList;
 /**
  *  3 directions (x, y, z)  3D wavelet features
  * 
- *  Total extracted features: width*height + width*stackSize + height*stackSize
+ *  Total number of extracted features: width*height + width*stackSize + height*stackSize
  *  
  *  revised 09/03/11 to process one image at a time.
  *  
@@ -37,9 +37,19 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 	public final static String WEIGHT_KEY = "WEIGHTED";
 	  
 	
+	/**
+	 * Default constructor
+	 */
 	public StackThreeDirectionHaarFeatureExtractor()
 	{	}
 	
+   /**
+    * Sets algorithm parameters from para 
+    * 
+    * @param  para  Each element of para holds a parameter’s name for its key
+    *               and a parameter’s value for its value. The parameters
+    *               should be the same as those in the algorithms.xml file.
+    */
 	public void setParameters(java.util.HashMap<String, String> parameters)
 	{
 	    if (parameters != null && parameters.containsKey(LEVEL_KEY))
@@ -49,6 +59,13 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 
 	}
 	
+   /**
+    * Get features based on raw image stored in problem.
+    * 
+    * @param   problem    Image to be processed
+    * @return             Array of features
+    * @throws  Exception  (Not used)
+    */
     public float[][] calcFeatures(annotool.io.DataInput problem) throws Exception
     {
 		this.problem = problem;
@@ -61,6 +78,15 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 		return calcFeatures();
     }
     
+    /**
+     * Get features based on all3DData, imageType, and dim.
+     * 
+     * @param   all3DData  Data taken from the image
+     * @param   imageType  Type of the image
+     * @param   dim        Dimenstions of the image
+     * @return             Array of features
+     * @throws  Exception  (Not used)
+     */
 	public float[][] calcFeatures(ArrayList  all3DData, int imageType, ImgDimension dim) throws Exception
 	{
 		this.length = all3DData.size();
@@ -75,7 +101,8 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 	
 	protected float[][] calcFeatures() throws Exception {
 		
-		return null;
+		System.out.println("This method is not yet supported by 3D feature extractors");
+		throw new Exception("Not supported");
 		
 		/*
 		//number of extracted features
@@ -277,6 +304,13 @@ public class StackThreeDirectionHaarFeatureExtractor implements  FeatureExtracto
 		return weight;
     }
 
+    /**
+     * Returns whether or not the algorithm is able to extract from a 3D image 
+     * stack. 
+     * 
+     * @return  <code>True</code> if the algorithm is a 3D extractor, 
+     *          <code>False</code> if not. Default is <code>True</code>
+     */
 	public boolean is3DExtractor()
 	{  return true;} 
 

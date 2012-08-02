@@ -21,9 +21,9 @@ public interface FeatureSelector
     * Stores features from data and store any relevant values such as
     * the dimensions of data and targets.
     * 
-    * @param   data     Array of extracted image data
+    * @param   data     Two-dimensional array of extracted image data
     * @param   targets  Array of the targets for the image
-    * @return           Array of features that are selected
+    * @return           Two-dimensional array of features that are selected
     */
    public float[][] selectFeatures(float[][] data, int[] targets);
 
@@ -40,11 +40,11 @@ public interface FeatureSelector
    
    
    /**
-    * Selects features using “indices” and returns the selected features.
+    * Selects features using indices and returns the selected features.
     * 
-    * @param   data     Array of extracted image data
+    * @param   data     Two-dimensional array of extracted image data
     * @param   indices  Array of indices to the data columns
-    * @return           Array of features that are selected   
+    * @return           Two-dimensional array of features that are selected   
     */
    public float[][] selectFeaturesGivenIndices(float[][] data, int [] indices);
    

@@ -3,7 +3,7 @@ package annotool.extract;
 import annotool.ImgDimension;
 import annotool.io.DataInput;
 import java.util.ArrayList;
-/*
+/**
  *  weighted average of middle stack features
  * 
  */
@@ -27,9 +27,19 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 	int stacksToInclude = 3; //#of center stacks considered, typically an odd num
 	boolean weighted = false; //default: stacks are weighted differently
 
+	/**
+	 * Default constructor
+	 */
 	public StackSimpleHaarFeatureExtractor()
 	{}
 	
+   /**
+    * Sets algorithm parameters from para 
+    * 
+    * @param  para  Each element of para holds a parameter’s name for its key
+    *               and a parameter’s value for its value. The parameters
+    *               should be the same as those in the algorithms.xml file.
+    */
 	public void setParameters(java.util.HashMap<String, String> parameters)
 	{
 	    if (parameters != null && parameters.containsKey(LEVEL_KEY))
@@ -40,6 +50,13 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		     weighted = Boolean.parseBoolean(parameters.get(WEIGHT_KEY));
 	}
 
+   /**
+    * Get features based on raw image stored in problem.
+    * 
+    * @param   problem    Image to be processed
+    * @return             Array of features
+    * @throws  Exception  (Not used)
+    */
 	public float[][] calcFeatures(DataInput problem) throws Exception
 	{
 		this.problem = problem;
@@ -58,6 +75,15 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		return calcFeatures();
 	}
 	
+   /**
+    * Get features based on all3DData, imageType, and dim.
+    * 
+    * @param   all3DData  Data taken from the image
+    * @param   imageType  Type of the image
+    * @param   dim        Dimenstions of the image
+    * @return             Array of features
+    * @throws  Exception  (Not used)
+    */
 	//What is the data type? --
 	// ArrayList (image set) of ArrayList (stacks) of byte[]/int[]/float[]
 	public float[][] calcFeatures(ArrayList all3DData, int imageType, ImgDimension dim) throws Exception 
@@ -187,6 +213,13 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 				features[i][j] += weight*features4CurrentStack[i][j];
 	}
 
+    /**
+     * Returns whether or not the algorithm is able to extract from a 3D image 
+     * stack. 
+     * 
+     * @return  <code>True</code> if the algorithm is a 3D extractor, 
+     *          <code>False</code> if not. Default is <code>True</code>
+     */
 	public boolean is3DExtractor()
 	{  return true;} 
 
