@@ -16,6 +16,12 @@ import java.util.HashMap;
 import annotool.ImgDimension;
 import annotool.io.DataInput;
 
+/**
+ *  This class wraps a FeatureJ extractor:
+ * 
+ *  http://www.imagescience.org/meijering/software/featurej/
+ *
+ */
 public class FeatureJStatistics implements FeatureExtractor {
 	protected float[][] features = null;
 	protected ArrayList data;
@@ -59,6 +65,9 @@ public class FeatureJStatistics implements FeatureExtractor {
 	private boolean[] isSelectedFeature;
 	private int selectedCount = 0;
 	
+	/**
+	 * Default constructor
+	 */
 	public FeatureJStatistics() {
 		//Intialize with all false
 		isSelectedFeature = new boolean[numFeatures];
@@ -66,12 +75,19 @@ public class FeatureJStatistics implements FeatureExtractor {
 			isSelectedFeature[i] = false;			
 	}
 	
+   /**
+    * Sets algorithm parameters from para 
+    * 
+    * @param  para  Each element of para holds a parameter’s name for its key
+    *               and a parameter’s value for its value. The parameters
+    *               should be the same as those in the algorithms.xml file.
+    */
 	@Override
-	public void setParameters(HashMap<String, String> parameter) {
+	public void setParameters(HashMap<String, String> para) {
 		selectedCount = 0;
-		if (parameter != null) {
+		if (para != null) {
 			for(int i = 0; i < numFeatures; i++)
-				if(parameter.containsKey(KEYS[i]) && "1".equals(parameter.get(KEYS[i]))) {
+				if(para.containsKey(KEYS[i]) && "1".equals(para.get(KEYS[i]))) {
 					isSelectedFeature[i] = true;
 					selectedCount++;
 				}
@@ -80,6 +96,13 @@ public class FeatureJStatistics implements FeatureExtractor {
 		}
 	}
 
+   /**
+    * Get features based on raw image stored in problem.
+    * 
+    * @param   problem    Image to be processed
+    * @return             Array of features
+    * @throws  Exception  (Not used)
+    */
 	@Override
 	public float[][] calcFeatures(DataInput problem) throws Exception {
 		this.data = problem.getData();
@@ -91,6 +114,15 @@ public class FeatureJStatistics implements FeatureExtractor {
 		return calcFeatures();
 	}
 
+   /**
+    * Get features based on data, imageType, and dim.
+    * 
+    * @param   data       Data taken from the image
+    * @param   imageType  Type of the image
+    * @param   dim        Dimenstions of the image
+    * @return             Array of features
+    * @throws  Exception  (Not used)
+    */
 	@Override
 	public float[][] calcFeatures(ArrayList data, int imageType,
 			ImgDimension dim) throws Exception {
@@ -146,6 +178,13 @@ public class FeatureJStatistics implements FeatureExtractor {
 		return features;
 	}
 
+   /**
+    * Returns whether or not the algorithm is able to extract from a 3D image 
+    * stack. 
+    * 
+    * @return  <code>True</code> if the algorithm is a 3D extractor, 
+    *          <code>False</code> if not. Default is <code>False</code>
+    */
 	@Override
 	public boolean is3DExtractor() {
 		return false;

@@ -1,9 +1,10 @@
 package annotool.classify;
 
 import Jama.*;
-
-//  Linear Discriminant Classifier based on Multivariate Normal Distribution.
-//  Estimate the pooled covariance matrix of all classes.
+/**
+*  Linear Discriminant Classifier based on Multivariate Normal Distribution.
+*  It estimates the pooled covariance matrix of all classes.
+*/
 // TODO 11/11/08:  
 //       1. normalize posterior probability (done 07/26/2011)
 //       2. check the pooled covariance matrix to be positive definite
@@ -17,7 +18,7 @@ public class LDAClassifier implements SavableClassifier {
 	LDATrainedModel trainedModel = null;
 	public final static String KEY_PRIORS = "Priors";
 
-	/**
+	/*
 	 * a simple testing case
 	 */
 	public static void main(String[] args) {
@@ -104,30 +105,63 @@ public class LDAClassifier implements SavableClassifier {
 		*/
 	}
 
+	/**
+    * Default constructor. 
+    */
 	public LDAClassifier() {}
 	
-	public void setParameters(java.util.HashMap<String, String> parameters)
+    /**
+    * Sets algorithm parameters from para
+    * 
+    * @param   para  Each element of para holds a parameter name
+    *                for its key and a its value is that of the parameter.
+    *                The parameters should be the same as those in the 
+    *                algorithms.xml file.
+    */
+	public void setParameters(java.util.HashMap<String, String> para)
 	{
 		//set prior if provided
-		if(parameters != null && parameters.containsKey(KEY_PRIORS))
-	          priors = parsePriors(parameters.get(KEY_PRIORS));
+		if(para != null && para.containsKey(KEY_PRIORS))
+	          priors = parsePriors(para.get(KEY_PRIORS));
 	}
 	
-   
-	public LDAClassifier(java.util.HashMap<String, String> parameters)
+    /**
+    * Constructor that sets priors if it has not been set already
+    * 
+    * @param   para    Each element of para holds a parameter name
+    *                  for its key and a its value is that of the parameter.
+    *                  The parameters should be the same as those in the 
+    *                  algorithms.xml file. Piror probabilities is a parameter 
+    *                  that can be set.   If no parameter needs to be set, pass null.
+    */
+	public LDAClassifier(java.util.HashMap<String, String> para)
 	{
 		//set prior if provided
-		if(parameters != null && parameters.containsKey(KEY_PRIORS))
-	          priors = parsePriors(parameters.get(KEY_PRIORS));
+		if(para != null && para.containsKey(KEY_PRIORS))
+	          priors = parsePriors(para.get(KEY_PRIORS));
 	}
 
+    /**
+    * Constructor that copies priors to an instance variable
+    * 
+    * @param   priors  The prior probabilities
+    */
 	public LDAClassifier(float[] priors)
 	{
 		this.priors = priors;
 	}
 
-    //It takes training and testing data for classification. 
-	//Posterior probabilities are calculated and filled.
+    /**
+    * Classifies the patterns using the input parameters.
+    * 
+    * @param   trainingpatterns  Pattern data to train the algorithm
+    * @param   trainingtargets   Targets for the training pattern
+    * @param   testingpatterns   Pattern data to be classified
+    * @param   predictions       Storage for the resulting prediction
+    * @param   prob              Storage for probability result
+    * @throws  Exception         Not Implemented
+    */
+    //Posterior probabilities are calculated and filled.
 	public void classify(float[][] trainingPatterns, int[] trainingtargets, float[][] testingPatterns, int[] predictions, double[] probesti) throws Exception
 	{
 		LDATrainedModel trainedModel = (LDATrainedModel) trainingOnly(trainingPatterns, trainingtargets);
@@ -136,77 +170,6 @@ public class LDAClassifier implements SavableClassifier {
 	    //set to the passed in structure
 	    for(int i=0; i<predictions.length; i++)
 	    	predictions[i] = results[i]; 
-
-	    /*
-		int testinglength = testingPatterns.length;
-	   	Matrix R = trainedModel.getTrainedR();
-       	double logDetSigma = trainedModel.getLogDetSigma();
-       	float[][] means = trainedModel.getMeans();
-
-		//Now testing! Need R (and logDetSigma), means, ngroups
-		//Multivariate Normal (MVN) relative log posterior density
-		double[][] posterior = new double[testinglength][ngroups];
-		for (int k = 0; k < ngroups; k++)
-		{
-			//normalize testing sample
-			double[][] normalizedTesting = normalizeTesting(testingPatterns, means[k]);
-			Matrix testingM = new Matrix(normalizedTesting);
-			//A = (sample - repmat(gmea...)) /R; 
-			//Matrix A = testingM.arrayRightDivide(R); -- element-by-element
-			//A/B roughly the same as A*inv(B)
-			Matrix A;
-			try{
-			A = testingM.times(R.inverse()); //may throw exception for singular R
-			}catch(Exception e)
-			{
-				javax.swing.JOptionPane.showMessageDialog(null,"Matrix is singular. Results are not reliable. Please try another classifier.");
-				throw e;
-			}
-			//D(:,k)=log(prior(k)) - .5*(sum(A.*A, 2) + logDetSigma);
-			A.arrayTimesEquals(A);
-			double[] sum = new double[A.getRowDimension()];
-			for(int i =0; i<sum.length; i++)
-			{
-				for(int j =0; j< A.getColumnDimension(); j++)
-					sum[i] += A.get(i,j);
-				sum[i] += logDetSigma;
-				sum[i] *= 0.5;
-				//get the posterior density
-				posterior[i][k] = Math.log(priors[k]) - sum[i];
-			}
-		}  
-
-		for(int i = 0; i < testinglength; i++)
-		{
-			for(int k = 0; k < ngroups; k++)
-				System.out.print(posterior[i][k] + "\t");
-			System.out.println();
-		}
-
-		//fill predictions and probability estimation
-		for(int i = 0; i < testinglength; i++)
-		{
-			double max = posterior[i][0]; 
-			int target = 0;
-			//use total to normalize posterior probability
-			double total = Math.exp(posterior[i][0]);
-			for(int k = 1; k < ngroups; k++)
-			{
-				if (posterior[i][k] > max)
-				{
-					target = k;
-					max = posterior[i][k];
-				}
-				total += Math.exp(posterior[i][k]);
-				//System.out.println(Math.exp(posterior[i][k]));
-			}
-			//System.out.println("total:"+ total);
-			//probesti[i] = Math.exp(max);
-			probesti[i] = Math.exp(max)/total;
-			predictions[i] =  ((Integer) targetmap.get(target)).intValue();	
-		}
-		
-		*/
 	}
 
 	// Do data transform to double, and calculate the means.
@@ -315,13 +278,19 @@ public class LDAClassifier implements SavableClassifier {
 		}
 	}
 	
+   /**
+    * Trains and returns an internal model using a training set.
+    * 
+    * @param   trainingpatterns  Pattern data to train the algorithm
+    * @param   trainingtargets   Targets for the training pattern
+    * @return                    Model created by the classifier
+    * @throws  Exception         Thrown if there is a problem in training
+    */ 
     public Object trainingOnly(float[][] trainingPatterns, int[] trainingtargets) throws Exception
     { 
 		int traininglength = trainingPatterns.length; 
 		int dimension = trainingPatterns[0].length;
 		int[] convertedTargets = convertTargets(trainingtargets);
-		//for(int i =0; i < convertedTargets.length; i++)
-		//	System.out.println(convertedTargets[i]);
 		
 		System.out.print("ngroups before checking priors "+ ngroups);
 		
@@ -342,8 +311,6 @@ public class LDAClassifier implements SavableClassifier {
 		try{
 		    QRDecomposition decom = new QRDecomposition(trainingM);
 		    R = decom.getR();
-		//System.out.println("R:");
-		//R.print(10, 7);
 		}catch(Exception e)
 		{
 			throw new Exception("Problem in LDA training. Try to reduce the number of features.");
@@ -371,17 +338,36 @@ public class LDAClassifier implements SavableClassifier {
 		return trainedModel;
     }
     
-    //other interface methods
+    
+    /**
+    * Gets the internal model from the classifier
+    * 
+    * @return  Model created by the classifier.
+    */
     public Object getModel()  
     { 
     	return trainedModel; 
     }
     
+    /**
+    * Sets an internal model to be used by the classifier
+    * 
+    * @param   model      Model to be used by the classifier
+    */
     public void setModel(Object model) //load
     { 
         trainedModel = (LDATrainedModel) model;    	
     }
     
+    /**
+    * Classifies the internal model using one testing pattern
+    * 
+    * @param   model            Model to be used by the classifier
+    * @param   testingPattern   Pattern data to be classified
+    * @param   prob             Storage for probability result
+    * @return                   The prediction result
+    * @throws  Exception        Not implemented
+    */
     //call the overloaded version
     public int classifyUsingModel(Object model, float[] testingPattern, double[] prob) throws Exception
     { 
@@ -392,6 +378,15 @@ public class LDAClassifier implements SavableClassifier {
     
     }
     
+    /**
+    * Classifies the internal model using multiple testing patterns
+    * 
+    * @param   model             Model to be used by the classifier
+    * @param   testingPatterns   Pattern data to be classified
+    * @param   prob              Storage for probability result 
+    * @return                    Array of prediction results
+    * @throws  Exception         Exception thrown if matrix is singular
+    */
     public int[] classifyUsingModel(Object model, float[][] testingPatterns, double[] probesti) throws Exception
     { 
       	if (model != null) //model may be null, but only when the internal model is already set.
@@ -444,13 +439,6 @@ public class LDAClassifier implements SavableClassifier {
 			}
 		}  
 
-		/*for(int i = 0; i < testinglength; i++)
-		{
-			for(int k = 0; k < ngroups; k++)
-				System.out.print(posterior[i][k] + "\t");
-			System.out.println();
-		}*/
-
 		//fill predictions 
 		for(int i = 0; i < testinglength; i++)
 		{
@@ -477,6 +465,13 @@ public class LDAClassifier implements SavableClassifier {
     
     }
 
+    /**
+    * Saves a specified model to a specified file
+    * 
+    * @param   trainedModel     Trained model that is to be saved
+    * @param   model_file_name  Name of the file to be saved to
+    * @throws  Exception        Exception thrown if model is not valid
+    */
     public void saveModel(Object trainedModel, String model_file_name) throws java.io.IOException
     {
     	if (!(trainedModel instanceof LDATrainedModel))
@@ -492,6 +487,13 @@ public class LDAClassifier implements SavableClassifier {
     	}
     }
 
+    /**
+    * Loads a previously saved model back into the classifier.
+    * 
+    * @param   model_file_name  Name of the file to be loaded
+    * @return                   Model that was loaded
+    * @throws  Exception        Exception thrown if file cannot be loaded
+    */
     public Object loadModel(String model_file_name) throws java.io.IOException
     {  
     	//read from the file and cast it to trainedModel;
@@ -538,6 +540,12 @@ public class LDAClassifier implements SavableClassifier {
     	return priors;
     }
 	
+     /**
+     * Returns whether or not the algorithm uses probability estimations.
+     * 
+     * @return  <code>True</code> if the algorithm uses probability 
+     *          estimations, <code>False</code> if not
+     */
     public boolean doesSupportProbability()
     {  
     	return true;

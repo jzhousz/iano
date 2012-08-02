@@ -5,13 +5,24 @@ import weka.core.FastVector;
 import weka.core.Instance;
 import weka.core.Instances;
 
+/**
+ * This class creates and handles the Weka instance model
+ */
 //for building an Instances object from float[][]
-// usage: (new WekaHelper()).buildM_Data(features, targets, m_Data, "...");
-
+//usage: (new WekaHelper()).buildM_Data(features, targets, m_Data, "...");
 public class WekaHelper {
 
 	java.util.ArrayList<Integer> targetList = null;
 
+    /**
+    * Handles the creation of an instance model
+    * 
+    * @param   features   Image data to use in the weka model
+    * @param   targets    Image targets to use in the weka model
+    * @param   dsName     Name of the object
+    * @return             Instance of the model
+    * @throws  Exception  Exception thrown if instance cannot be retrieved
+    */
 	//m_data is filled after this method  
 	public Instances buildM_Data(float[][] features, int[] targets, String dsName)
     {
@@ -35,9 +46,9 @@ public class WekaHelper {
 	//--- Similar as in WeakClassifiers.java ---
 	//--- IANO simply uses float to transport data, otherwise we can reuse. ---
 	
-   //create an empty classifier/training set. In weka tutorial example's constructor.	
-   private Instances createModel(float[][] trainingpatterns, int[] trainingtargets, String dsName)
-   {
+    //create an empty classifier/training set. In weka tutorial example's constructor.	
+    private Instances createModel(float[][] trainingpatterns, int[] trainingtargets, String dsName)
+    {
 		// Create attributes (features in our case)
 		FastVector attributes = new FastVector(trainingpatterns[0].length + 1);
 		for (int i = 0 ; i < trainingpatterns[0].length; i++) {
@@ -57,8 +68,16 @@ public class WekaHelper {
 		m_Data.setClassIndex(m_Data.numAttributes() - 1);
 		
 		return m_Data;
-   }
+    }
 
+    /**
+    * Update an weka model and adds it to the Instances object
+    * 
+    * @param   features    Image data to update the weka model
+    * @param   classValue  Image target value to update the weka model
+    * @param   m_Data      Instances object to add the updated weka model to
+    * @throws  Exception   (Not used)
+    */
 	public void updateModel(float[] features, int classValue, Instances m_Data) throws Exception 
 	{
 		 // Convert into an instance.

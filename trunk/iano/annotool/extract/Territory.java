@@ -17,8 +17,6 @@ import annotool.io.DataInput;
  * Extracts the object territory from the image.
  * The number of object pixels is the extracted feature.
  * 
- * @author santosh
- *
  */
 public class Territory  implements FeatureExtractor {
 	protected float[][] features = null;
@@ -31,6 +29,13 @@ public class Territory  implements FeatureExtractor {
 	
 	public final static String RADIUS_KEY = "Radius";
 
+   /**
+    * Sets algorithm parameters from para 
+    * 
+    * @param  para  Each element of para holds a parameter’s name for its key
+    *               and a parameter’s value for its value. The parameters
+    *               should be the same as those in the algorithms.xml file.
+    */
 	@Override
 	public void setParameters(HashMap<String, String> parameter) {
 		if (parameter != null)
@@ -38,6 +43,13 @@ public class Territory  implements FeatureExtractor {
 		    	radius = Double.parseDouble(parameter.get(RADIUS_KEY));		
 	}
 
+   /**
+    * Get features based on raw image stored in problem.
+    * 
+    * @param   problem    Image to be processed
+    * @return             Array of features
+    * @throws  Exception  (Not used)
+    */
 	@Override
 	public float[][] calcFeatures(DataInput problem) throws Exception {
 		this.problem = problem;
@@ -49,11 +61,20 @@ public class Territory  implements FeatureExtractor {
 		return calcFeatures();
 	}
 
-	@Override
+    /**
+     * Get features based on data, imageType, and dim.
+     * 
+     * @param   data       Data taken from the image
+     * @param   imageType  Type of the image
+     * @param   dim        Dimenstions of the image
+     * @return             Array of features
+     * @throws  Exception  (Not used)
+     */
+	
 	public float[][] calcFeatures(ArrayList data, int imageType,
-			ImgDimension dim) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+ImgDimension dim) throws Exception {
+		System.out.println("This method is not yet supported.");
+		throw new Exception("Not supported");
 	}
 	
 	protected float[][] calcFeatures() throws Exception {		
@@ -108,9 +129,15 @@ public class Territory  implements FeatureExtractor {
 		return features;
 	}
 
-	@Override
+    /**
+     * Returns whether or not the algorithm is able to extract from a 3D image 
+     * stack. 
+     * 
+     * @return  <code>True</code> if the algorithm is a 3D extractor, 
+     *          <code>False</code> if not. Default is <code>TFalse</code>
+     */
+
 	public boolean is3DExtractor() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 

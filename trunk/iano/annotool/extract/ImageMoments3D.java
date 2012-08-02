@@ -19,13 +19,23 @@ public class ImageMoments3D implements FeatureExtractor {
 	
 	private static final int numFeatures = 5;
 	
-	@Override
+    /**
+     * Empty implementation of setParameters 
+     * 
+     * @param  para  Each element of para holds a parameter’s name for its key
+     *               and a parameter’s value for its value. The parameters
+     *               should be the same as those in the algorithms.xml file.
+     */
 	public void setParameters(HashMap<String, String> parameter) {
-		// TODO Auto-generated method stub
-		
 	}
 
-	@Override
+    /**
+     * Get features based on raw image stored in problem.
+     * 
+     * @param   problem    Image to be processed
+     * @return             Array of features
+     * @throws  Exception  Optional, generic exception to be thrown
+     */
 	public float[][] calcFeatures(DataInput problem) throws Exception {
 		this.problem = problem;
 		this.length = problem.getLength();
@@ -38,6 +48,15 @@ public class ImageMoments3D implements FeatureExtractor {
 		return calcFeatures();
 	}
 
+    /**
+     * Get features based on all3DData, imageType, and dim.
+     * 
+     * @param   allSDData  Data taken from the image
+     * @param   imageType  Type of the image
+     * @param   dim        Dimenstions of the image
+     * @return             Array of features
+     * @throws  Exception  (Not used)
+     */
 	@Override
 	public float[][] calcFeatures(ArrayList all3DData, int imageType,
 			ImgDimension dim) throws Exception {
@@ -244,6 +263,13 @@ public class ImageMoments3D implements FeatureExtractor {
         return (mu_pqr / Math.pow(mu_000, (p + q + r + 3) / 3));
     }
 
+    /**
+     * Returns whether or not the algorithm is able to extract from a 3D image 
+     * stack. 
+     * 
+     * @return  <code>True</code> if the algorithm is a 3D extractor, 
+     *          <code>False</code> if not. Default is <code>True</code>
+     */
     @Override
 	public boolean is3DExtractor() {
 		return true;

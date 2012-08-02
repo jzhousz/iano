@@ -5,11 +5,8 @@ import annotool.io.DataInput;
 import java.util.ArrayList;
 
 /**
- *
- * @author aleksey
- * Modified 09/02/2011 for various data types JZ
- *   Hu's moments (seven, plus one more)
- *   http://en.wikipedia.org/wiki/Image_moment#Rotation_invariant_moments
+ *  This class calculates Hu's moments (seven, plus one more)
+ *  http://en.wikipedia.org/wiki/Image_moment#Rotation_invariant_moments
  */
 
 public class ImageMoments implements FeatureExtractor
@@ -23,13 +20,29 @@ public class ImageMoments implements FeatureExtractor
     //features to return
     protected float[][] features = null;
 
-    //constructor
+    /**
+     * Default constructor
+     */
     public ImageMoments() 
     {}
     
+    /**
+     * Empty implementation of setParameters 
+     * 
+     * @param  para  Each element of para holds a parameter’s name for its key
+     *               and a parameter’s value for its value. The parameters
+     *               should be the same as those in the algorithms.xml file.
+     */
     public void  setParameters(java.util.HashMap<String, String> parameters)
     {}
 
+    /**
+     * Get features based on raw image stored in problem.
+     * 
+     * @param   problem    Image to be processed
+     * @return             Array of features
+     * @throws  Exception  Optional, generic exception to be thrown
+     */
     public float[][] calcFeatures(DataInput problem) throws Exception
     {
         data = problem.getData();
@@ -42,7 +55,15 @@ public class ImageMoments implements FeatureExtractor
     	return calcFeatures();
     }
     
-    //get features based on byte data, with dimension information. 
+    /**
+     * Get features based on data, imageType, and dim.
+     * 
+     * @param   data       Data taken from the image
+     * @param   imageType  Type of the image
+     * @param   dim        Dimenstions of the image
+     * @return             Array of features
+     * @throws  Exception  (Not used)
+     */
     public float[][] calcFeatures(ArrayList data, int imageType, ImgDimension dim) throws Exception
     {
         this.data = data;
@@ -176,38 +197,14 @@ public class ImageMoments implements FeatureExtractor
             //convert this image from flattened to a 2d array
             convert_flat_to_2d(data.get(image_num), image);
 
-//            //DEBUG
-//            for (int i = 0; i < single_image.length; i++) {
-//                System.out.print(single_image[i] + " ");
-//            }
-//            System.out.println();
-//
-//            //DEBUG
-//            System.out.println("IMAGE NUM");
-//            for (int yy = 0; yy < image.length; yy++) {
-//                for (int xx = 0; xx < image[0].length; xx++) {
-//                    System.out.print(image[yy][xx]);
-//                }
-//                System.out.println();
-//            }
-
             //calculate raw moments
             m_00 = m_pq(image, 0, 0);
             m_10 = m_pq(image, 1, 0);
             m_01 = m_pq(image, 0, 1);
 
-            //DEBUG
-//            System.out.println("IMAGE NUMBER " + image_num);
-//            System.out.println("m_00 = " + m_00);
-//            System.out.println("m_10 = " + m_10);
-//            System.out.println("m_01 = " + m_01);
-
             //calculate mean of x and y
             mean_x = m_10 / m_00;
             mean_y = m_01 / m_00;
-
-//            System.out.println("mean x = " + mean_x);
-//            System.out.println("mean y = " + mean_y);
 
             //calculate centered x and y based on mean
             center_x(image, mean_x, centered_x);
@@ -222,16 +219,6 @@ public class ImageMoments implements FeatureExtractor
             mu_12 = mu_pq(image, 1, 2, centered_x, centered_y);
             mu_21 = mu_pq(image, 2, 1, centered_x, centered_y);
             mu_03 = mu_pq(image, 0, 3, centered_x, centered_y);
-
-            //DEBUG
-//            System.out.println("mu_00 = " + mu_00);
-//            System.out.println("mu_20 = " + mu_20);
-//            System.out.println("mu_02 = " + mu_02);
-//            System.out.println("mu_11 = " + mu_11);
-//            System.out.println("mu_30 = " + mu_30);
-//            System.out.println("mu_12 = " + mu_12);
-//            System.out.println("mu_21 = " + mu_21);
-//            System.out.println("mu_03 = " + mu_03);
 
             //calculate //scale invariant moments,
             //(a.k.a. normalized central moments)
@@ -277,30 +264,14 @@ public class ImageMoments implements FeatureExtractor
 
         return features;
     }
-    //DEBUG
-//    public void debug1() {
-//        byte[][][] images = new byte[length][totalheight][totalwidth];
-//
-//        //for (int i = 0; i < length; i++) {
-////            System.out.println(data[i]);
-////        }
-//
-//        for (int i = 0; i < length; i++) {
-//            images[i] = convert_flat_to_2d(data[i]);
-//        }
-//        for (int i = 0; i < length; i++) {
-//            for (int j = 0; j < images[0].length; j++) {
-//                for (int k = 0; k < images[0][0].length; k++) {
-//                    System.out.print(images[i][j][k]);
-//                }
-//                System.out.println();
-//            }
-//            System.out.println();
-//            System.out.println();
-//        }
-//
-//    }
-    
+     
+    /**
+     * Returns whether or not the algorithm is able to extract from a 3D image 
+     * stack. 
+     * 
+     * @return  <code>True</code> if the algorithm is a 3D extractor, 
+     *          <code>False</code> if not. Default is <code>False</code>
+     */
     public boolean is3DExtractor()
     {  return false ; 
     }

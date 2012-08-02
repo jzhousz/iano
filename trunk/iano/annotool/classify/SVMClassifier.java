@@ -52,17 +52,36 @@ public class SVMClassifier implements SavableClassifier
     svm_model trainedModel = null;
     boolean supportProbability = false;
     
-   //initialize # of samples and # of dimension
+   /**
+   * Default constructor
+   */
    public SVMClassifier() {}    
     
-   public void setParameters(java.util.HashMap<String, String> parameters)
+   /**
+    * Sets algorithm parameters from para
+    * 
+    * @param   para  Each element of para holds a parameter's name
+    *                for its key and a its value is that of the parameter's.
+    *                The parameters should be the same as those in the 
+    *                algorithms.xml file.
+    */
+   public void setParameters(java.util.HashMap<String, String> para)
    {
-	   if(parameters != null && parameters.containsKey(KEY_PARA))
-	          initSVMParameters(parameters.get(KEY_PARA));
+	   if(para != null && para.containsKey(KEY_PARA))
+	          initSVMParameters(para.get(KEY_PARA));
 	 	  else
 	 		initSVMParameters(annotool.Annotator.DEFAULT_SVM);
    }
  
+   /**
+    * Constructor that checks for relevant parameters and calls SVMClassifier 
+    * with either parameters or if there are none, the default parameter.
+    * 
+    * @param   parameters  Each element of parameter holds a parameter's name
+    *                      for its key and a its value is that of the parameter's.
+    *                      The parameters should be the same as those in the 
+    *                      algorithms.xml file.
+    */
    public SVMClassifier(java.util.HashMap<String,String> parameters)
    {
 	  if(parameters != null && parameters.containsKey(KEY_PARA))
@@ -71,16 +90,29 @@ public class SVMClassifier implements SavableClassifier
  		initSVMParameters(annotool.Annotator.DEFAULT_SVM);
    }
 
-    public SVMClassifier(int dimension, String parameters)
+   /**
+   * Constructor that copies dimension to an instance variable and calls initSVMParameters 
+   * with the parameters passed in.
+   * 
+   * @param   dimension   The dimension of data (number of features)
+   * @param   parameters  LiBSVM's parameter string (the general parameter e.g. "-s 0")
+   */
+   public SVMClassifier(int dimension, String parameters)
    {
-	 this.dimension = dimension;
-     initSVMParameters(parameters);
+	  this.dimension = dimension;
+	  initSVMParameters(parameters);
    }
 
+   /**
+   * Constructor that copies dimension to an instance variable and calls initSVMParameters 
+   * with the default parameters.
+   * 
+   * @param   dimension   The dimension of data (number of features)
+   */
    public SVMClassifier(int dimension)
    {
-     this.dimension = dimension;
-     initSVMParameters(annotool.Annotator.DEFAULT_SVM);
+      this.dimension = dimension;
+      initSVMParameters(annotool.Annotator.DEFAULT_SVM);
    }
 
    //parameter setting follows the LibSVM convention.
@@ -179,6 +211,16 @@ public class SVMClassifier implements SavableClassifier
         }//end of parsing parameters
    }//end of init parameters
 
+   
+   /**
+    * Classifies the patterns using the input parameters.
+    * 
+    * @param   trainingpatterns  Pattern data to train the algorithm
+    * @param   trainingtargets   Targets for the training pattern
+    * @param   testingpatterns   Pattern data to be classified
+    * @param   predictions       Storage for the resulting prediction
+    * @param   prob              Storage for probability result
+    */
    //This is an interface method to LibSVM package.
    //It handles training and testing in one method.
    public void classify(float[][] trainingpatterns, int[] trainingtargets, float[][] testingpatterns, int[] predictions, double[] probesti)
@@ -281,7 +323,7 @@ public class SVMClassifier implements SavableClassifier
 	   
     }
   
-    /** 6/14/2011 add 5 methods to save model/load model and classify based on model
+    /* 6/14/2011 add 5 methods to save model/load model and classify based on model
     *  
     *  Rewrite: 6/17/2011
     *  Interface methods to be added to annotool.classify.Classifier:  
@@ -307,8 +349,14 @@ public class SVMClassifier implements SavableClassifier
     *   { e.printStackTrace();}
     *     
     */
-    
-    //training only and sets the internal model
+  
+    /**
+     * Trains and returns an internal model using a training set.
+     * 
+     * @param   trainingpatterns  Pattern data to train the algorithm
+     * @param   trainingtargets   Targets for the training pattern
+     * @return                    Model created by the classifier
+     */
     public Object trainingOnly(float[][] trainingpatterns, int[] trainingtargets)
     {
     	
@@ -349,8 +397,11 @@ public class SVMClassifier implements SavableClassifier
     }
     
     /**
-     * Save the model to a file for persistence 
-     * This method pairs up with a loader.
+     * Saves a specified model to a specified file
+     * 
+     * @param   trainedModel         Trained model that is to be saved
+     * @param   model_file_name      Name of the file to be saved to
+     * @throws  java.io.IOException  Exception thrown if file cannot be found
      */
     public void saveModel(Object trainedModel, String model_file_name) throws java.io.IOException
     {
@@ -372,7 +423,13 @@ public class SVMClassifier implements SavableClassifier
     	}*/
     }
 
-    // load the model from model file 
+    /**
+     * Loads a previously saved model back into the classifier.
+     * 
+     * @param   model_file_name      Name of the file to be loaded
+     * @return                       Model that was loaded
+     * @throws  java.io.IOException  Exception thrown if file cannot be found
+     */
     public Object loadModel(String model_file_name) throws java.io.IOException
     {
     	System.out.println("Loading SVM model from "+ model_file_name);		
@@ -401,13 +458,23 @@ public class SVMClassifier implements SavableClassifier
 	  */
     }
 
-    //return internal model
+    /**
+     * Gets the internal model from the classifier
+     * 
+     * @return  Model created by the classifier.
+     */
     public Object getModel()
     {
     	return trainedModel;
     }
     
-    //set the instance model variable based on input 
+	
+    /**
+     * Sets an internal model to be used by the classifier
+     * 
+     * @param   model      Model to be used by the classifier
+     * @throws  Exception  Exception thrown if model is an invalid file type
+     */
     public void setModel(Object savedModel) throws Exception
     {
     	if(savedModel instanceof svm_model)
@@ -422,15 +489,16 @@ public class SVMClassifier implements SavableClassifier
     
     
     /** Classify one testing pattern, based on the model parameter or the instance variable (if the parameter is null)
-      If input model is not null, use it. Otherwise, use the instance variable, 
-      which may be set by setModel() or a previous call of the method. So this method can be called
-      in a loop to classify multiple testing patterns (see the overloaded method for example).
-     * 
-     * @param model: null (if internal model is set), String (persisted), or svm_model (internal)
-     * @param testingPattern
-     * @return prediction (int)
-     * @throws Exception
-     */
+    * If input model is not null, use it. Otherwise, use the instance variable, 
+    * which may be set by setModel() or a previous call of the method. So this method can be called
+    * in a loop to classify multiple testing patterns (see the overloaded method for example).
+    * 
+    * @param   model            null (if internal model is set), String (persisted), or svm_model (internal)
+    * @param   testingPattern   Pattern data to be classified
+    * @param   prob             Storage for probability result
+    * @return                   The prediction result
+    * @throws  Exception        Exception thrown if no model is passed in
+    */
     public int classifyUsingModel(Object model, float[] testingPattern, double[] prob) throws Exception
     {
        	if (model != null) //model may be null, but only when the internal model is already set.
@@ -482,9 +550,15 @@ public class SVMClassifier implements SavableClassifier
     }
     
     /** The method classify many testing patterns given a model. 
-        it calls the version that work with one testing pattern.
-        The first parameter is essencially a String (filename) in the case of SVM.
-     */     
+    *   it calls the version that work with one testing pattern.
+    *   The first parameter is essencially a String (filename) in the case of SVM.   
+    * 
+    * @param   model             Model to be used by the classifier
+    * @param   testingPatterns   Pattern data to be classified
+    * @param   prob              Storage for probability result 
+    * @return                    Array of prediction results
+    * @throws  Exception         Exception thrown if no model is passed in
+    */
     public int[] classifyUsingModel(Object model, float[][] testingPatterns, double[] probest) throws Exception
     {
         //check the type of model
@@ -515,6 +589,12 @@ public class SVMClassifier implements SavableClassifier
     			
     }
     
+    /**
+     * Returns whether or not the algorithm uses probability estimations.
+     * 
+     * @return  <code>True</code> if the algorithm uses probability  estimations, 
+     *          <code>False</code> if not. Default value is <code>False</code>
+     */
     //default false. May be modified in classify if working with probability estimation
     public boolean doesSupportProbability()
     {

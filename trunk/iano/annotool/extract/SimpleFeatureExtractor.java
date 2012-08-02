@@ -5,8 +5,8 @@ import annotool.io.DataInput;
 
 import java.util.ArrayList;
 
-/*
- * calculate 8 simple statistics features: 
+/**
+ * This class calculates 8 simple statistics features: 
  * mean and standard deviation of 4 divisions: left, right, upper, down
  */
 public class SimpleFeatureExtractor implements FeatureExtractor {
@@ -18,12 +18,29 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 	int length;
 	int imageType;
 
+	/**
+	 * Default constructor
+	 */
 	public SimpleFeatureExtractor()
 	{}
 
+    /**
+     * Empty implementation of setParameters 
+     * 
+     * @param  para  Each element of para holds a parameter’s name for its key
+     *               and a parameter’s value for its value. The parameters
+     *               should be the same as those in the algorithms.xml file.
+     */
 	public void setParameters(java.util.HashMap<String, String> parameters)
 	{}
 	
+    /**
+     * Get features based on raw image stored in problem.
+     * 
+     * @param   problem    Image to be processed
+     * @return             Array of features
+     * @throws  Exception  Optional, generic exception to be thrown
+     */
 	@Override
 	public float[][] calcFeatures(annotool.io.DataInput problem) throws Exception
 	{
@@ -35,7 +52,15 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 		return calcFeatures();
 	}
 	
-	
+    /**
+     * Get features based on data, imageType, and dim.
+     * 
+     * @param   data       Data taken from the image
+     * @param   imageType  Type of the image
+     * @param   dim        Dimenstions of the image
+     * @return             Array of features
+     * @throws  Exception  (Not used)
+     */
 	public float[][] calcFeatures(ArrayList data, int imageType, ImgDimension dim) throws Exception
 	{
 		totalwidth = dim.width;
@@ -161,6 +186,13 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 			return features;
 	}    
 
+    /**
+     * Returns whether or not the algorithm is able to extract from a 3D image 
+     * stack. 
+     * 
+     * @return  <code>True</code> if the algorithm is a 3D extractor, 
+     *          <code>False</code> if not. Default is <code>False</code>
+     */
 	public boolean is3DExtractor()
 	{  return false;} 
 }

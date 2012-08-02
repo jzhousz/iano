@@ -15,6 +15,12 @@ import java.util.HashMap;
 import annotool.ImgDimension;
 import annotool.io.DataInput;
 
+/**
+ *  This class wraps a FeatureJ extractor:
+ * 
+ *  http://www.imagescience.org/meijering/software/featurej/
+ *
+ */
 public class FeatureJStructure implements FeatureExtractor {
 	protected float[][] features = null;
 	protected ArrayList data;
@@ -34,24 +40,38 @@ public class FeatureJStructure implements FeatureExtractor {
 	public final static String INTEGRATION_KEY = "Integration Scale";
 	public final static String EIGENVALUE_KEY = "Eigenvalue";
 	
+   /**
+    * Sets algorithm parameters from para 
+    * 
+    * @param  para  Each element of para holds a parameter’s name for its key
+    *               and a parameter’s value for its value. The parameters
+    *               should be the same as those in the algorithms.xml file.
+    */
 	@Override
-	public void setParameters(HashMap<String, String> parameter) {
-		if (parameter != null) {
-		    if(parameter.containsKey(SMOOTHING_KEY)) 
-		    	sscale = Double.parseDouble(parameter.get(SMOOTHING_KEY));
+	public void setParameters(HashMap<String, String> para) {
+		if (para != null) {
+		    if(para.containsKey(SMOOTHING_KEY)) 
+		    	sscale = Double.parseDouble(para.get(SMOOTHING_KEY));
 		    
-		    if(parameter.containsKey(INTEGRATION_KEY)) 
-		    	iscale = Double.parseDouble(parameter.get(INTEGRATION_KEY));
+		    if(para.containsKey(INTEGRATION_KEY)) 
+		    	iscale = Double.parseDouble(para.get(INTEGRATION_KEY));
 		    
-		    if(parameter.containsKey(EIGENVALUE_KEY)) {
-		    	if(parameter.get(EIGENVALUE_KEY).equals("Largest"))
+		    if(para.containsKey(EIGENVALUE_KEY)) {
+		    	if(para.get(EIGENVALUE_KEY).equals("Largest"))
 		    		selectedEigenValue = LARGESTEIGEN;
-		    	else if(parameter.get(EIGENVALUE_KEY).equals("Smallest"))
+		    	else if(para.get(EIGENVALUE_KEY).equals("Smallest"))
 		    		selectedEigenValue = SMALLESTEIGEN;
 		    }
 		}
 	}
 
+   /**
+    * Get features based on raw image stored in problem.
+    * 
+    * @param   problem    Image to be processed
+    * @return             Array of features
+    * @throws  Exception  (Not used)
+    */
 	@Override
 	public float[][] calcFeatures(DataInput problem) throws Exception {
 		this.data = problem.getData();
@@ -63,6 +83,15 @@ public class FeatureJStructure implements FeatureExtractor {
 		return calcFeatures();
 	}
 
+   /**
+    * Get features based on data, imageType, and dim.
+    * 
+    * @param   data       Data taken from the image
+    * @param   imageType  Type of the image
+    * @param   dim        Dimenstions of the image
+    * @return             Array of features
+    * @throws  Exception  (Not used)
+    */
 	@Override
 	public float[][] calcFeatures(ArrayList data, int imageType,
 			ImgDimension dim) throws Exception {
@@ -121,6 +150,13 @@ public class FeatureJStructure implements FeatureExtractor {
 		return features;
 	}
 
+   /**
+    * Returns whether or not the algorithm is able to extract from a 3D image 
+    * stack. 
+    * 
+    * @return  <code>True</code> if the algorithm is a 3D extractor, 
+    *          <code>False</code> if not. Default is <code>False</code>
+    */
 	@Override
 	public boolean is3DExtractor() {
 		return false;

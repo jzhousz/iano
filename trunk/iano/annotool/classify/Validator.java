@@ -6,29 +6,51 @@ import javax.swing.SwingUtilities;
 
 import annotool.Annotation;
 
-//This helper class is to take the fold number and all data to do cross validation
-//pass to classifier, then do some output
+/**
+* This helper class takes the fold number and all data to do cross validation,
+* pass the data to the classifier, then do some output.
+*/
 public class Validator
 {
-   /****************
-     K fold CV with Classifier object, with K <= length. When K == length, it is leave one out (LOO) validation.
-     Shuffling is needed before calling this method if the samples are ordered sequentially based on categories.
-
-     @return overall recognition rate
-
-   ****************/
 	javax.swing.JProgressBar bar = null;
 	int startPos = 0;
 	int totalRange = 0;
 	
+	/**
+    * Default constructor
+    */
 	public Validator() {}
    
+	/**
+    * Constructor that takes the progress bar, start, and total parameters and stores them in instance variables.
+    * This is for showing the progress of cross-validation
+    * 
+    * @param  bar    Progress bar object
+    * @param  start  Initial position of the progress bar
+    * @param  total  Total range and final position of the progress bar
+    */
     public Validator(javax.swing.JProgressBar bar, int start, int total)
-   {
-	  this.bar = bar;
-	  this.startPos = start;
-	  this.totalRange = total;
-   }
+    {
+	   this.bar = bar;
+	   this.startPos = start;
+	   this.totalRange = total;
+    }
+    
+   /*****************************
+   * K fold CV with Classifier object, with K <= length. When K == length, it is leave one out (LOO) validation.
+   * Shuffling is needed before calling this method if the samples are ordered sequentially based on categories.
+   * 
+   * It will split the data, and call the xxxGivenMethod in the Annotator class.
+   * 
+   * @param K            the number of the fold
+   * @param data         two-dimensional array of the image features 
+   * @param targets      array of targets for the data
+   * @param classifier   classifier to be used
+   * @param shuffle      whether or not the data needs shuffling
+   * @param results      annotations to compare against
+   * @return             overall recognition rate
+   * @throws Exception   Thrown if K value is greater than the number of observations
+   ********************************/
    public float  KFold(int K, float[][] data, int[] targets, Classifier classifier, boolean shuffle, Annotation[] results) throws Exception
    {
 	  int length = data.length;
@@ -135,15 +157,15 @@ public class Validator
    * Pass in String as the classifier name, and parameter as Hashmap.
    * It will split the data, and call the xxxGivenMethod in the Annotator class.
    * 
-   * @param K
-   * @param data
-   * @param targets
-   * @param chosenClassifier
-   * @param para
-   * @param shuffle
-   * @param results
-   * @return overall recognition rate
-   * @throws Exception
+   * @param K                 the number of the fold
+   * @param data              two-dimensional array of the image features 
+   * @param targets           array of targets for the data
+   * @param chosenClassifier  name of the classifier to use
+   * @param para              parameters for the classifier to use
+   * @param shuffle           whether or not the data needs shuffling
+   * @param results           annotations to compare against
+   * @return                  overall recognition rate
+   * @throws Exception        Thrown if K value is greater than the number of observations
    ********************************/
   public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] targets, String chosenClassifier, String path, HashMap<String,String> para, boolean shuffle, Annotation[] results) throws Exception
   {
@@ -247,9 +269,23 @@ public class Validator
       return foldresults;
  	  
   }
-  /*
-   * Overloaded version of the above method - classfier name replaced with classifier object
-   */
+  
+  /*****************************
+  * K fold CV with Classifier object, with K <= length. When K == length, it is leave one out (LOO) validation.
+  * Shuffling is needed before calling this method if the samples are ordered sequentially based on categories.
+  * 
+  * It will split the data, and call the xxxGivenMethod in the Annotator class.
+  * 
+  * @param K            the number of the fold
+  * @param data         two-dimensional array of the image features 
+  * @param targets      array of targets for the data
+  * @param classifier   classifier to be used
+  * @param para         parameters for the classifier to use
+  * @param shuffle      whether or not the data needs shuffling
+  * @param results      annotations to compare against
+  * @return             overall recognition rate
+  * @throws Exception   Thrown if K value is greater than the number of observations
+  ********************************/
   public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] targets, Classifier chosenClassifier, HashMap<String,String> para, boolean shuffle, Annotation[] results) throws Exception
   {
 	  int length = data.length;
@@ -353,12 +389,18 @@ public class Validator
  	  
   }
    
-   /**********************************************************************
-    * Input: training and testing data and targets
-    * Function: send to classify
-    * Ouput: prediction results, recognition rate
-    * It is called by classifyGivenAMethod() in Annotator
-    *********************************************************************/
+   /*****************************
+   * Sends data to the classifier and returns the prediction results and recognition rate. It is called by classifyGivenAMethod() in Annotator
+   * 
+   * @param   trainingpatterns  Pattern data to train the algorithm
+   * @param   testingpatterns   Pattern data to be classified
+   * @param   trainingtargets   Targets for the training pattern
+   * @param   testingtargets    Targets for the testing pattern
+   * @param   classifier        classifier to be used
+   * @param   annotations       storage array for predictions and probabilities
+   * @return                    overall recognition rate
+   * @throws  Exception         (Not used)
+   ********************************/
    public float classify(float[][] trainingPatterns, float[][] testingPatterns,int[] trainingTargets, int[] testingTargets, Classifier classifier, Annotation[] annotations) throws Exception
    {
 	   int testingLength = testingPatterns.length;
@@ -383,7 +425,18 @@ public class Validator
     return (float) correct/testingLength;
    }
    
-   //overloaded version: no testing targets 
+
+   /*****************************
+   * Sends data to the classifier and returns the prediction results and recognition rate. It is called by classifyGivenAMethod() in Annotator
+   * overloaded version: no testing targets
+   * 
+   * @param   trainingpatterns  Pattern data to train the algorithm
+   * @param   testingpatterns   Pattern data to be classified
+   * @param   trainingtargets   Targets for the training pattern
+   * @param   classifier        classifier to be used
+   * @return                    predictions of the classifier
+   * @throws  Exception         (Not used)
+   ********************************/
    public int[] classify(float[][] trainingPatterns, float[][] testingPatterns, int[] trainingTargets, Classifier classifier) throws Exception
    {
  	  int testingLength = testingPatterns.length;
@@ -423,6 +476,7 @@ public class Validator
 
    }
    
+   
 	private void setProgress(final int currentProgress)
 	{
 		if (bar!=null) 
@@ -433,12 +487,19 @@ public class Validator
 	            });
 	}
 	
-	   /******************************************************************************
-	   @return The annotation results (with probability estimation) for each sample 
-	     based on Leave One Output.
-	   
-	   Not linked to GUI on June 2011. 
-	   *******************************************************************************/
+	
+	   /*****************************
+	   * Sets up the parameters for the classifier, calls the classifier, and stores the returned annotations.
+	   * 
+	   * Not linked to GUI after June 2011.
+	   * 
+	   * @param data         two-dimensional array of the image features 
+	   * @param targets      array of targets for the data
+	   * @param classifier   classifier to be used
+	   * @param annos        storage array for predictions and probabilities
+	   * @param shuffle      (Not used) whether or not the data needs shuffling
+	   * @throws Exception   (Not used)
+	   ********************************/
 	   public void LOO(float[][] data, int[] targets, Classifier classifier, Annotation annos[], boolean shuffle) throws Exception
 	   {
 		   //No need to shuffle in LOO 12/23/08

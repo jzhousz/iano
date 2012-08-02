@@ -49,6 +49,14 @@ public class mRMRFeatureSelector implements FeatureSelector
     
     public mRMRFeatureSelector() {}
     
+    /**
+     * Sets algorithm parameters from para
+     * 
+     * @param   para  Each element of the hashmap holds a parameter name
+     *                for its key and a its value is that of the parameter.
+     *                The parameters should be the same as those in the 
+     *                algorithms.xml file.
+     */
     public void setParameters(java.util.HashMap<String, String> parameters)
     {
 		int threshold = 0;
@@ -67,7 +75,15 @@ public class mRMRFeatureSelector implements FeatureSelector
 			discretize(features, length, dimension);
     }
     
-	//taking in the parameters in a standardized way.
+    
+    /**
+     * Constructor that sets algorithm parameters from para
+     * 
+     * @param   para  Each element of the hashmap holds a parameter name
+     *                for its key and a its value is that of the parameter.
+     *                The parameters should be the same as those in the 
+     *                algorithms.xml file.
+     */
     public mRMRFeatureSelector(java.util.HashMap<String, String> parameters)
     {
 		int threshold = 0;
@@ -87,8 +103,19 @@ public class mRMRFeatureSelector implements FeatureSelector
 		
     }
 	
-    
-    public mRMRFeatureSelector(float[][] features, int[] targets, String methodname, java.util.HashMap<String, String> parameters)
+    /**
+     * Constructor that copies parameters to instance variables 
+     * and calculates the length and dimension.
+     * 
+     * @param   features    Two-dimensional array of extracted image data
+     * @param   targets     Array of the targets for the image
+     * @param   methodname  Name of the method to use
+     * @param   para        Each element of the hashmap holds a parameter name
+     *                      for its key and a its value is that of the parameter.
+     *                      The parameters should be the same as those in the 
+     *                      algorithms.xml file.
+     */
+    public mRMRFeatureSelector(float[][] features, int[] targets, String methodname, java.util.HashMap<String, String> para)
 	{
 		int threshold = 0;
 		boolean discreteflag = true; //default is to discretize
@@ -100,12 +127,12 @@ public class mRMRFeatureSelector implements FeatureSelector
 		this.dimension = features[0].length;
 		this.method = methodname;
 		
-		if (parameters.containsKey(KEY_NUM))
-			this.numberofFeatures = Integer.parseInt((String)parameters.get(KEY_NUM));
-		if (parameters.containsKey(KEY_DISCRETE))
-			discreteflag = (Integer.parseInt((String)parameters.get(KEY_DISCRETE)) == 1) ? true : false ;
-		if (parameters.containsKey(KEY_DIS_TH))
-			threshold = Integer.parseInt((String)parameters.get(KEY_DIS_TH));
+		if (para.containsKey(KEY_NUM))
+			this.numberofFeatures = Integer.parseInt((String)para.get(KEY_NUM));
+		if (para.containsKey(KEY_DISCRETE))
+			discreteflag = (Integer.parseInt((String)para.get(KEY_DISCRETE)) == 1) ? true : false ;
+		if (para.containsKey(KEY_DIS_TH))
+			threshold = Integer.parseInt((String)para.get(KEY_DIS_TH));
 		//if (parameters.containsKey(KEY_METHOD))
 		//	this.method = (String)parameters.get(KEY_METHOD);
 		
@@ -114,7 +141,18 @@ public class mRMRFeatureSelector implements FeatureSelector
 				discretize(features, length, dimension);
 	}
 
-	
+    /**
+     * Constructor that calls another constructor and the method passed in.
+     * 
+     * @param   features          Two-dimensional array of extracted image data
+     * @param   targets           Array of the targets for the image
+     * @param   length            Size of the first dimension of features
+     * @param   dimension         Size of the second dimension of features
+     * @param   numberofFeatures  Number of features selected
+     * @param   method            Name of the method to use
+     * @param   discreteflag      Flag to discretize the data or not
+     * @param   threshold         Threshold for scoring system
+     */
 	public mRMRFeatureSelector(float[][] features, int[] targets, int length, int dimension, int numberofFeatures, String method, boolean discreteflag, float threshold)
 	{
 
@@ -122,6 +160,17 @@ public class mRMRFeatureSelector implements FeatureSelector
 		this.method = method;
 	}
 
+    /**
+     * Constructor that copies parameters to instance variables and uses the default method (MIQ)
+     * 
+     * @param   features          Two-dimensional array of extracted image data
+     * @param   targets           Array of the targets for the image
+     * @param   length            Size of the first dimension of features
+     * @param   dimension         Size of the second dimension of features
+     * @param   numberofFeatures  Number of features selected
+     * @param   discreteflag      Flag to discretize the data or not
+     * @param   threshold         Threshold for scoring system
+     */
 	//Use the default method (MIQ)
 	public mRMRFeatureSelector(float[][] features, int[] targets, int length, int dimension, int numberofFeatures, boolean discreteflag, float threshold)
 	{
@@ -156,6 +205,13 @@ public class mRMRFeatureSelector implements FeatureSelector
 		return selectedFeatures; */
 	}	
 	
+   /**
+    * Selects features using indices and returns the selected features.
+    * 
+    * @param   data     Two-dimensional array of extracted image data
+    * @param   indices  Array of indices to the data columns
+    * @return           Two-dimensional array of features that are selected   
+    */
 	//select based on data passed in (instead of instance variable)
 	public float[][] selectFeaturesGivenIndices(float[][] data, int [] indices)
 	{
@@ -169,7 +225,14 @@ public class mRMRFeatureSelector implements FeatureSelector
 		return selectedFeatures;
 	}
 	
-	//interface method
+   /**
+    * Stores features from data and store any relevant values such as
+    * the dimensions of data and targets.
+    * 
+    * @param   data     Two-dimensional array of extracted image data
+    * @param   targets  Array of the targets for the image
+    * @return           Two-dimensional array of features that are selected
+    */
 	public float[][] selectFeatures(float[][] data, int[] targets)
 	{
 		this.features = data;
@@ -351,6 +414,12 @@ public class mRMRFeatureSelector implements FeatureSelector
       } 
 	}
 
+   /**
+    * Returns the indices of the selected features 
+    * (an index is between 0 and one less than the number of features).
+    * 
+    * @return  The indices of the selected features.
+    */
     public int[] getIndices()
     {
     	if (indices == null)
