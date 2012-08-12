@@ -249,7 +249,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 			}
 
 			AutoCompFrame frame = new AutoCompFrame("Auto Comparison Mode",
-					is3D, Annotator.channel, trainingProblem, trainingProblem);
+					is3D, Annotator.channel, trainingProblem, testingProblem);
 			frame.setVisible(true);
 			frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
