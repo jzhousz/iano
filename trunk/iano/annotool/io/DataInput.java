@@ -40,9 +40,7 @@ import java.util.regex.Pattern;
  * 
  * Important: readImages(childrenCandidates, stackIndex); is only called by getData().
  * 
- * July 2012: get3DROIData
- * 8/1/2012:  3D ROI resize: done.  2D ROI resize: to be added.
- *  
+ * 8/1/2012:  3D and 2D ROI resize: done.  
  *  ReTHINK DATA INTERFACE:   8/6/2012
 
 Conclusion:
@@ -1012,14 +1010,19 @@ public class DataInput
 			
 		if (mode == ROIMODE)  //if 3D ROI, return that ROI
 		{
-		   int stackSize = getDepth();
+		   int stackSize = getDepth(); //3D ROI's depth are always the same.
 		   ArrayList data = new ArrayList(stackSize);
 		   for(int stackIndex = 1; stackIndex <= stackSize; stackIndex++)
 		     data.add(openROIImage(children[imageindex], stackIndex, null));
 		   return data;
 		}
 		
-		int stackSize = getStackSize();
+		//image sets
+		int stackSize;
+		if(ofSameSize)
+		   stackSize = getStackSize();
+		else
+		   stackSize = getDepthList()[imageindex];
 	    ArrayList data = new ArrayList(stackSize);
 	    ImagePlus imgp = new ImagePlus(directory+children[imageindex]);
 	    //stack from 1 to number of slices
