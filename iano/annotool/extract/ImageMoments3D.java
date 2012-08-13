@@ -17,6 +17,7 @@ public class ImageMoments3D implements FeatureExtractor {
 	
 	ImgDimension dim = new ImgDimension();
 	
+	
 	private static final int numFeatures = 5;
 	
     /**
@@ -37,12 +38,24 @@ public class ImageMoments3D implements FeatureExtractor {
      * @throws  Exception  Optional, generic exception to be thrown
      */
 	public float[][] calcFeatures(DataInput problem) throws Exception {
+
+		//check if the extractor can handle this problem.
+		if (problem.ofSameSize() == false)
+			throw new Exception("The ImageMoments 3D feature extractor has to work with images of same dimension.");
+		
+
 		this.problem = problem;
 		this.length = problem.getLength();
 		this.dim.width  =  problem.getWidth();
 		this.dim.height  = problem.getHeight();
 		this.imageType = problem.getImageType();
-		this.stackSize  = problem.getStackSize();
+
+		//8/8/2012 If ROI, need to get ROI depth instead of image stacksize.
+		if(problem.getMode() == problem.ROIMODE)
+			this.stackSize = problem.getDepth();
+		else
+		    this.stackSize  = problem.getStackSize();
+
 		features = new float[length][numFeatures];
 		
 		return calcFeatures();
@@ -90,7 +103,7 @@ public class ImageMoments3D implements FeatureExtractor {
 		
 		//Process one image at a time
 		for(int imgIndex=0; imgIndex < length; imgIndex++) {
-			System.out.println("Reading image: " + (imgIndex + 1));
+			System.out.println("Total length" + length + " Reading image: " + (imgIndex + 1));
 			ArrayList currentImage = null;
 			
 			if (problem != null)

@@ -65,7 +65,12 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		this.dim.height = problem.getHeight();
 		this.imageType = problem.getImageType();
 
-		this.stackSize  = problem.getStackSize();
+		//8/8/2012 If ROI, need to get ROI depth instead of image stacksize.
+		if(problem.getMode() == problem.ROIMODE)
+			this.stackSize = problem.getDepth();
+		else
+		    this.stackSize  = problem.getStackSize();
+		
 		//the uplimit of stacksToInclude is stackSize
 		if(stacksToInclude > stackSize)
 		{
