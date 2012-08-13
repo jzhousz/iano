@@ -25,6 +25,7 @@ import annotool.io.DataInput;
 import annotool.io.DataInputDynamic;
 
 /**
+ * @deprecated. since May 2012
  * ROI annotator executes the algorithms in ROI annotation mode.
  * This one is not used anymore, currently using ROIAnnotator in annotool.gui.model package
  * 
