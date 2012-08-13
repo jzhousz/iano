@@ -92,11 +92,11 @@ public class AnnTablePanel extends JPanel {
 	 * @return
 	 * @throws Exception
 	 */
-	public boolean displayOneImageTable(String imagePath, String[] roiPaths, int depth) throws Exception {		
+	public boolean displayOneImageTable(String imagePath, String[] roiPaths, int depth, int newwidth, int newheight) throws Exception {		
 		resetTableBeforeBuild();
 
 		AnnImageTable singleTable = new AnnImageTable();
-		tableOneScrollPane = singleTable.buildImageTableFromROI(imagePath, roiPaths, true, depth);
+		tableOneScrollPane = singleTable.buildImageTableFromROI(imagePath, roiPaths, true, depth, newwidth, newheight);
 		classNames = singleTable.getClassNames();
 		
 		is3D = singleTable.is3D();
@@ -378,15 +378,15 @@ public class AnnTablePanel extends JPanel {
 	 * @throws Exception
 	 */
 	public boolean displayTwoImageTables(String imagePath, String[] roiPaths, 
-			String testImagePath, String[] testRoiPaths, int depth) throws Exception {		
+			String testImagePath, String[] testRoiPaths, int depth, int newwidth, int newheight) throws Exception {		
 		resetTableBeforeBuild();
 
 		AnnImageTable trainingTable = new AnnImageTable();
-		tableOneScrollPane = trainingTable.buildImageTableFromROI(imagePath, roiPaths, true, depth);
+		tableOneScrollPane = trainingTable.buildImageTableFromROI(imagePath, roiPaths, true, depth, newwidth, newheight);
 		classNames = trainingTable.getClassNames();
 
 		AnnImageTable testingTable = new AnnImageTable();
-		tableTwoScrollPane = testingTable.buildImageTableFromROI(testImagePath, testRoiPaths, true, depth);
+		tableTwoScrollPane = testingTable.buildImageTableFromROI(testImagePath, testRoiPaths, true, depth, newwidth, newheight);
 		
 		is3D = trainingTable.is3D();
 		isColor = trainingTable.isColor();

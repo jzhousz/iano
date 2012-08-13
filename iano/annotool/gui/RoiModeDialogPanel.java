@@ -60,9 +60,13 @@ public class RoiModeDialogPanel extends JPanel implements ItemListener, ActionLi
 	private JButton btnLoadCombined = new JButton("Load");
 	private JButton btnCancel = new JButton("Cancel");
 	
+	private JSpinner spinnerw = null;
+	private JCheckBox checkBoxNeww = new JCheckBox("Override ROI Width");
+	private JSpinner spinnerh = null;
+	private JCheckBox checkBoxNewh = new JCheckBox("Override ROI Height");
 	private JSpinner spinner = null;
 	private JCheckBox checkBox3d = new JCheckBox("ROI Depth for 3D Image");
-	int depth = 1;
+	int depth = 1;	int newwidth =0; int newheight=0;  //default
 
 	private LandingPanel pnlLanding = null;
 	private ImageReadyPanel pnlImage = null;
@@ -135,12 +139,25 @@ public class RoiModeDialogPanel extends JPanel implements ItemListener, ActionLi
 		btnLoad.addActionListener(this);
 		btnCancel.addActionListener(this);
 
-		//Checkbox for ROI depth in  3D images
+		//Checkbox for overwrite ROIWidth
+		checkBoxNeww.addItemListener(this);
+		spinnerw = new javax.swing.JSpinner(new SpinnerNumberModel(1, 1, 500, 1));
+		spinnerw.setEnabled(false);
+		//Checkbox for overwrite ROIHeight
+		checkBoxNewh.addItemListener(this);
+		spinnerh = new javax.swing.JSpinner(new SpinnerNumberModel(1, 1, 500, 1));
+		spinnerh.setEnabled(false);
+		//Checkbox  for ROI Depth of 3D images
 		checkBox3d.addItemListener(this);
 		spinner = new javax.swing.JSpinner(new SpinnerNumberModel(1, 1, 500, 1));           
 		spinner.setEnabled(false);
+		
 		JPanel sliderPanel = new JPanel();
 		sliderPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+		sliderPanel.add(checkBoxNeww);
+		sliderPanel.add(spinnerw);
+		sliderPanel.add(checkBoxNewh);
+		sliderPanel.add(spinnerh);
 		sliderPanel.add(checkBox3d);
 		sliderPanel.add(spinner);
 
@@ -219,12 +236,25 @@ public class RoiModeDialogPanel extends JPanel implements ItemListener, ActionLi
 		btnBrowseTestRoi.addActionListener(this); // launch dir chooser
 		btnBrowseTestImage.addActionListener(this); // launch file chooser
 
+		//Checkbox for overwrite ROIWidth
+		checkBoxNeww.addItemListener(this);
+		spinnerw = new javax.swing.JSpinner(new SpinnerNumberModel(1, 1, 500, 1));
+		spinnerw.setEnabled(false);
+		//Checkbox for overwrite ROIHeight
+		checkBoxNewh.addItemListener(this);
+		spinnerh = new javax.swing.JSpinner(new SpinnerNumberModel(1, 1, 500, 1));
+		spinnerh.setEnabled(false);
 		//Checkbox  for ROI Depth of 3D images
 		checkBox3d.addItemListener(this);
 		spinner = new javax.swing.JSpinner(new SpinnerNumberModel(1, 1, 500, 1));           
 		spinner.setEnabled(false);
+		
 		JPanel sliderPanel = new JPanel();
 		sliderPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+		sliderPanel.add(checkBoxNeww);
+		sliderPanel.add(spinnerw);
+		sliderPanel.add(checkBoxNewh);
+		sliderPanel.add(spinnerh);
 		sliderPanel.add(checkBox3d);
 		sliderPanel.add(spinner);
 
@@ -253,7 +283,7 @@ public class RoiModeDialogPanel extends JPanel implements ItemListener, ActionLi
 			dialog.dismiss();
 
 		else if (e.getSource() == btnLoad) {
-			//the load button for training only mode
+			//the load button for training only mode!!!
 			if(roiPaths == null) {
 				JOptionPane.showMessageDialog(this,
 					    "Please select roi files to use.",
@@ -269,16 +299,16 @@ public class RoiModeDialogPanel extends JPanel implements ItemListener, ActionLi
 					is3D = false;
 			String errorMsg = "";
 			
-			System.out.println("checkBox3D "+checkBox3d.isSelected());
+			if(checkBoxNeww.isSelected())		
+				newwidth = (Integer) spinnerw.getValue();
+			if(checkBoxNewh.isSelected())		
+				newheight = (Integer) spinnerh.getValue();
 			if(checkBox3d.isSelected())		
-			{
 				depth = (Integer) spinner.getValue();
-				System.out.println("get depth from spinner:"+depth);
-			}
 			
 			AnnTablePanel pnlTable = pnlImage.getTablePanel();
 			try {
-				displayOK = pnlTable.displayOneImageTable(imagePath, roiPaths, depth);
+				displayOK = pnlTable.displayOneImageTable(imagePath, roiPaths, depth, newwidth, newheight);
 				isColor = pnlTable.isColor();
 				is3D = pnlTable.is3D();
 								
@@ -316,7 +346,7 @@ public class RoiModeDialogPanel extends JPanel implements ItemListener, ActionLi
 		else if (e.getSource() == btnBrowseTestImage)
 			openImage(txtTestImageFile);
 		else if (e.getSource() == btnLoadCombined) {
-			//this is the load button for training/testing mode
+			//this is the load button for training/testing mode!!!
 			
 			if(roiPaths == null || testRoiPaths == null) {
 				JOptionPane.showMessageDialog(this,
@@ -325,9 +355,13 @@ public class RoiModeDialogPanel extends JPanel implements ItemListener, ActionLi
 					    JOptionPane.ERROR_MESSAGE);
 				return;
 			}
+			if(checkBoxNeww.isSelected())		
+				newwidth = (Integer) spinnerw.getValue();
+			if(checkBoxNewh.isSelected())		
+				newheight = (Integer) spinnerh.getValue();
 			if(checkBox3d.isSelected())		
 				depth = (Integer) spinner.getValue();
-			
+				
 			String imagePath = txtImageFile.getText().trim();
 			String testImagePath = txtTestImageFile.getText().trim();
 			
@@ -338,7 +372,7 @@ public class RoiModeDialogPanel extends JPanel implements ItemListener, ActionLi
 			
 			AnnTablePanel pnlTable = pnlImage.getTablePanel();
 			try {
-				displayOK = pnlTable.displayTwoImageTables(imagePath, roiPaths, testImagePath, testRoiPaths, depth);
+				displayOK = pnlTable.displayTwoImageTables(imagePath, roiPaths, testImagePath, testRoiPaths, depth, newwidth, newheight);
 				isColor = pnlTable.isColor();
 				is3D = pnlTable.is3D();
 			} catch (Exception ex) {
@@ -437,6 +471,24 @@ public class RoiModeDialogPanel extends JPanel implements ItemListener, ActionLi
 			}
 			else{
 				spinner.setEnabled(false);
+			}
+		}
+		if(e.getSource() == checkBoxNeww)
+		{
+			if(checkBoxNeww.isSelected()){			
+				spinnerw.setEnabled(true);
+			}
+			else{
+				spinnerw.setEnabled(false);
+			}
+		}
+		if(e.getSource() == checkBoxNewh)
+		{
+			if(checkBoxNewh.isSelected()){			
+				spinnerh.setEnabled(true);
+			}
+			else{
+				spinnerh.setEnabled(false);
 			}
 		}
 	}

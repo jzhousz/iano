@@ -209,7 +209,6 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 			ExpertFrame ef = new ExpertFrame("Simple Mode", is3D,
 					Annotator.channel, trainingProblem, testingProblem);
 			ef.setVisible(true);
-			// ef.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			ef.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
 			// Keep track of opened frames

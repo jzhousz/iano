@@ -36,6 +36,8 @@ import annotool.ComboFeatures;
  * It provides methods that runs training only, training/testing and cross validation modes
  * 
  * @author Santosh
+ * 
+ * 8/13/2012: Set ChainModel for 3D image size.
  *
  */
 public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListener, Runnable {
@@ -85,6 +87,12 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	JFileChooser fileChooser;
 	
 	boolean enableSave = false;
+
+	//Keep features to be dumped into chain file
+    int imgWidth;
+    int imgHeight;
+    int imgDepth = 1;  //for 3D ROI 8/13/12
+    int imgStackSize; //for 3D image
 	
 	public ExpertFrame(String arg0, boolean is3D, String channel, DataInput trainingProblem, DataInput testingProblem) {
 		super(arg0, trainingProblem, testingProblem, channel);
@@ -344,7 +352,26 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         featureExtractor = extractor.getName();
         featureSelector = selector.getName();
         classifierChoice = classifier.getName();
-		
+
+        //set the image dimension data (to be dumped into Chain Model) 
+        //extracted from individual process method e.g. ttrun()
+	    try {
+			imgWidth = trainingProblem.getWidth();
+			imgHeight = trainingProblem.getHeight();
+			imgStackSize = trainingProblem.getStackSize();
+			if(imgStackSize > 1)
+			{
+			  if (trainingProblem.getMode() == DataInput.ROIMODE)	
+				imgDepth = trainingProblem.getDepth();
+			  else
+				imgDepth = imgStackSize;
+			}
+		} catch (Exception e) {
+			pnlOutput.setOutput("Failed to read width/height/depth/stackSize from the problem.");
+			e.printStackTrace();
+			return;
+		}
+
 		anno = new Annotator();
 		
 		try {
@@ -384,31 +411,11 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 			return;
 		}
 		
-		//Keep features to be dumped into chain file
-		int imgWidth;
-        int imgHeight;
-        
-        try {
-			imgWidth = trainingProblem.getWidth();
-			imgHeight = trainingProblem.getHeight();
-		} catch (Exception e) {
-			pnlOutput.setOutput("Failed to read width/height from the problem.");
-			e.printStackTrace();
-			return;
-		}
-        
-		
-        //int[] resArr = new int[2]; //place holder for misc results
-        //ArrayList<String> annoLabels = new ArrayList<String>();
-        //HashMap<String, String> classNames = new HashMap<String, String>();
         ArrayList<String> annoLabels = trainingProblem.getAnnotations();
         HashMap<String, String> classNames = trainingProblem.getClassNames();
         int[][] trainingTargets = trainingProblem.getTargets();
         int numOfAnno = annoLabels.size();
         
-        //int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels, classNames);
-        //get statistics from training set
-        //int numOfAnno = resArr[0];
         anno.setAnnotationLabels(annoLabels);//why??? TODO:used when writing out model file later, can be replaced with annotation labels from problem
 
         //feature extraction.
@@ -430,13 +437,9 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 			return;
 		}
         
-        //clear data memory
-        //trainingProblem.setDataNull();
-
         //apply feature selector and classifier
-        if (!setProgress(50)) {
+        if (!setProgress(50)) 
             return;
-        }
         
         //Initialize ChainModel object for each label
         chainModels = new ChainModel[numOfAnno];
@@ -466,7 +469,6 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
                 }
                 //selected features overrides the passed in original features
                 selectedFeatures = combo.getTrainingFeatures();
- 
                 
                 //For dump file
                 Selector sel = new Selector(featureSelector);
@@ -506,7 +508,10 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             
             //Save information to dump in chain file
         	chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
-        	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
+			if(imgStackSize > 1)
+				chainModels[i].setImageSize(imgWidth + "x" + imgHeight + "x" + imgDepth);
+			else
+				chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         	chainModels[i].setMode("Training Only");
         	chainModels[i].setChannel(channel);
         	
@@ -535,56 +540,25 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	//Training/Testing
 	private void ttRun() {		
 		//read images and wrapped into DataInput instances.
-        //DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);//
-        //DataInput testingProblem = new DataInput(Annotator.testdir, Annotator.testext, channel);	//        
-		if(trainingProblem == null || testingProblem == null) {
+ 		if(trainingProblem == null || testingProblem == null) {
 			pnlOutput.setOutput("Training and/or testing problem is not set.");
 			return;
 		}
 		
-		//Keep features to be dumped into chain file
-        int imgWidth;
-        int imgHeight;
-        
-        try {
-			imgWidth = trainingProblem.getWidth();
-			imgHeight = trainingProblem.getHeight();
-		} catch (Exception e) {
-			pnlOutput.setOutput("Failed to read width/height from the problem.");
-			e.printStackTrace();
-			return;
-		}
-		
-        //int[] resArr = new int[2]; //place holder for misc results
-        //ArrayList<String> annoLabels = new ArrayList<String>();
-        //HashMap<String, String> classNames = new HashMap<String, String>();
-        ArrayList<String> annoLabels = trainingProblem.getAnnotations();
+	    ArrayList<String> annoLabels = trainingProblem.getAnnotations();
         HashMap<String, String> classNames = trainingProblem.getClassNames();
         int numOfAnno = annoLabels.size();
         int[][] trainingTargets = trainingProblem.getTargets();
-        
-        //int[][] trainingTargets = anno.readTargets(trainingProblem, Annotator.targetFile, resArr, annoLabels, classNames);
-        //get statistics from training set
-        //int numOfAnno = resArr[0];
         anno.setAnnotationLabels(annoLabels);	        
-
-        //testing set targets
-        //int[][] testingTargets = anno.readTargets(testingProblem, Annotator.testtargetFile, resArr, null);
         int[][] testingTargets = testingProblem.getTargets();
         
         //feature extraction.
         if (!setProgress(30))  {
             return;
         }
-        
         pnlOutput.setOutput("Extracting features...");
-        
-        //float[][] trainingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, trainingProblem);
-        //float[][] testingFeatures = anno.extractGivenAMethod(featureExtractor, exParams, testingProblem);
-        
         float[][] trainingFeatures = null;
         float[][] testingFeatures = null;
-        
         try {
         	trainingFeatures = anno.extractGivenAMethod(extractor.getClassName(), extractor.getExternalPath(), exParams, trainingProblem);
         	testingFeatures = anno.extractGivenAMethod(extractor.getClassName(), extractor.getExternalPath(), exParams, testingProblem);
@@ -597,11 +571,6 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	return;
         }        
         
-        
-        //clear data memory
-        //trainingProblem.setDataNull();
-        //testingProblem.setDataNull();
-
         //apply feature selector and classifier
         if (!setProgress(50)) {
             return;
@@ -609,7 +578,6 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         //trainingTestingOutput(trainingFeatures, testingFeatures, trainingTargets, testingTargets, numOfAnno);
         
         int testingLength = testingFeatures.length;
-        //int numoffeatures;
 
         //initialize structure to store annotation results
         Annotation[][] annotations = new Annotation[numOfAnno][testingLength];
@@ -695,7 +663,10 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             //Save information to dump in chain file
         	chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
         	chainModels[i].setTestingSet(new File(Annotator.testdir).getAbsolutePath());
-        	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
+			if(imgStackSize > 1)
+				chainModels[i].setImageSize(imgWidth + "x" + imgHeight + "x" + imgDepth);
+			else
+				chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         	chainModels[i].setMode("Training/Testing");
         	chainModels[i].setChannel(channel);
         	
@@ -741,19 +712,6 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 			return;
 		}
 		
-		//Keep features to be dumped into chain file
-        int imgWidth;
-        int imgHeight;
-        
-        try {
-			imgWidth = problem.getWidth();
-			imgHeight = problem.getHeight();
-		} catch (Exception e) {
-			pnlOutput.setOutput("Failed to read width/height from the problem.");
-			e.printStackTrace();
-			return;
-		}
-		
         //-----  read targets matrix (for multiple annotations, one per column) --------//
         if (!setProgress(20)) {
             return;
@@ -785,11 +743,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 			enableSave = false;
 			return;
 		}
-        
-        
-        //raw data is not used after this point, set to null.
-        //problem.setDataNull();
-
+  
         //-----  output the annotation/classification results
         if (!setProgress(50)) {
             return;
@@ -899,7 +853,10 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             
             //Save information to dump in chain file
             chainModels[i].setImageSet(new File(Annotator.dir).getAbsolutePath());
-            chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
+			if(imgStackSize > 1)
+				chainModels[i].setImageSize(imgWidth + "x" + imgHeight + "x" + imgDepth);
+			else
+				chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         	chainModels[i].setMode("Cross Validation. Fold: " + Annotator.fold);
         	chainModels[i].setChannel(channel);
         	
