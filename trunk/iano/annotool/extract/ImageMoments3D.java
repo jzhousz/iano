@@ -6,6 +6,7 @@ import java.util.HashMap;
 import annotool.ImgDimension;
 import annotool.io.DataInput;
 
+//updated 8/13/2012 to handle various image size
 public class ImageMoments3D implements FeatureExtractor {
 	protected float[][] features = null;
 	int length;
@@ -16,7 +17,7 @@ public class ImageMoments3D implements FeatureExtractor {
 	ArrayList all3DData = null;
 	
 	ImgDimension dim = new ImgDimension();
-	
+
 	
 	private static final int numFeatures = 5;
 	
@@ -40,14 +41,18 @@ public class ImageMoments3D implements FeatureExtractor {
 	public float[][] calcFeatures(DataInput problem) throws Exception {
 
 		//check if the extractor can handle this problem.
-		if (problem.ofSameSize() == false)
-			throw new Exception("The ImageMoments 3D feature extractor has to work with images of same dimension.");
-		
+		//if (problem.ofSameSize() == false)
+		//	throw new Exception("The ImageMoments 3D feature extractor has to work with images of same dimension.");
 
 		this.problem = problem;
 		this.length = problem.getLength();
-		this.dim.width  =  problem.getWidth();
-		this.dim.height  = problem.getHeight();
+		
+		if (problem.ofSameSize() != false)
+		{
+		  this.dim.width  =  problem.getWidth();
+		  this.dim.height  = problem.getHeight();
+		}
+
 		this.imageType = problem.getImageType();
 
 		//8/8/2012 If ROI, need to get ROI depth instead of image stacksize.
@@ -63,7 +68,7 @@ public class ImageMoments3D implements FeatureExtractor {
 
     /**
      * Get features based on all3DData, imageType, and dim.
-     * 
+     * This method assumes the data are of the same dimension
      * @param   allSDData  Data taken from the image
      * @param   imageType  Type of the image
      * @param   dim        Dimenstions of the image
@@ -73,6 +78,11 @@ public class ImageMoments3D implements FeatureExtractor {
 	@Override
 	public float[][] calcFeatures(ArrayList all3DData, int imageType,
 			ImgDimension dim) throws Exception {
+		
+		//check if the extractor can handle this problem.
+		if (problem.ofSameSize() == false)
+			throw new Exception("The ImageMoments 3D feature extractor has to work with images of same dimension.");
+		
 		this.length = all3DData.size();
 		this.dim = dim;
 		this.imageType = imageType;
@@ -107,16 +117,20 @@ public class ImageMoments3D implements FeatureExtractor {
 			ArrayList currentImage = null;
 			
 			if (problem != null)
+			{
 			  currentImage = problem.getAllStacksOfOneImage(imgIndex);
+			  dim.width = problem.getWidthList()[imgIndex];
+			  dim.height = problem.getHeightList()[imgIndex];
+			}
 	        else if (all3DData != null)
 	          currentImage = (ArrayList)all3DData.get(imgIndex);
 			
 			//Calculate raw moments
 			System.out.println("Calculating raw moments...");
-			M_000 = M_pqr(currentImage, 0, 0, 0);
-			M_100 = M_pqr(currentImage, 1, 0, 0);
-			M_010 = M_pqr(currentImage, 0, 1, 0);
-			M_001 = M_pqr(currentImage, 0, 0, 1);
+			M_000 = M_pqr(currentImage, 0, 0, 0, dim);
+			M_100 = M_pqr(currentImage, 1, 0, 0, dim);
+			M_010 = M_pqr(currentImage, 0, 1, 0, dim);
+			M_001 = M_pqr(currentImage, 0, 0, 1, dim);
 			
 			//Calculate centroid co-ordinates
 			mean_x = M_100 / M_000;
@@ -125,17 +139,17 @@ public class ImageMoments3D implements FeatureExtractor {
 			
 			//Calcualte central moments
 			System.out.println("Calculating central moments...");
-			mu_200 = mu_pqr(currentImage, 2, 0, 0, mean_x, mean_y, mean_z);
-			mu_020 = mu_pqr(currentImage, 0, 2, 0, mean_x, mean_y, mean_z);
-			mu_002 = mu_pqr(currentImage, 0, 0, 2, mean_x, mean_y, mean_z);
-			mu_011 = mu_pqr(currentImage, 0, 1, 1, mean_x, mean_y, mean_z);
-			mu_101 = mu_pqr(currentImage, 1, 0, 1, mean_x, mean_y, mean_z);
-			mu_110 = mu_pqr(currentImage, 1, 1, 0, mean_x, mean_y, mean_z);
-			mu_100 = mu_pqr(currentImage, 1, 0, 0, mean_x, mean_y, mean_z);
+			mu_200 = mu_pqr(currentImage, 2, 0, 0, mean_x, mean_y, mean_z, dim);
+			mu_020 = mu_pqr(currentImage, 0, 2, 0, mean_x, mean_y, mean_z, dim);
+			mu_002 = mu_pqr(currentImage, 0, 0, 2, mean_x, mean_y, mean_z, dim);
+			mu_011 = mu_pqr(currentImage, 0, 1, 1, mean_x, mean_y, mean_z, dim);
+			mu_101 = mu_pqr(currentImage, 1, 0, 1, mean_x, mean_y, mean_z, dim);
+			mu_110 = mu_pqr(currentImage, 1, 1, 0, mean_x, mean_y, mean_z, dim);
+			mu_100 = mu_pqr(currentImage, 1, 0, 0, mean_x, mean_y, mean_z, dim);
 			
 			//Calculate scale normalized moments
 			System.out.println("Calculating normalized moments...");
-			nu_200 = nu_pqr(mu_200, 2, 0, 0, M_000);
+			nu_200 = nu_pqr(mu_200, 2, 0, 0, M_000 );
 			nu_020 = nu_pqr(mu_020, 0, 2, 0, M_000);
 			nu_002 = nu_pqr(mu_002, 0, 0, 2, M_000);
 			nu_011 = nu_pqr(mu_011, 0, 1, 1, M_000);
@@ -180,20 +194,20 @@ public class ImageMoments3D implements FeatureExtractor {
 	 * @return
 	 * @throws Exception
 	 */
-    protected double M_pqr(ArrayList image, int p, int q, int r) throws Exception {
+    protected double M_pqr(ArrayList image, int p, int q, int r, ImgDimension curdim) throws Exception {
         CompSumDouble m = new CompSumDouble();
         
         int mask = 0xff; 
         int longmask = 0xffff;
         Object data = null;
         
-        int size = dim.width * dim.height;
+        int size = curdim.width * curdim.height;
         int x, y;
         for(int z = 0; z < image.size(); z++) {
         	data = image.get(z);
         	for(int i = 0; i < size; i++) {
-        		x = i % dim.width;
-        		y = i / dim.width;
+        		x = i % curdim.width;
+        		y = i / curdim.width;
         		if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
         			m.Add(getLowerPower(x, p) * getLowerPower(y, q) * getLowerPower(z, r) * (float) (((byte[])data)[i] & mask));
         		else if (imageType == DataInput.GRAY16)
@@ -222,20 +236,20 @@ public class ImageMoments3D implements FeatureExtractor {
      * @throws Exception
      */
     protected double mu_pqr(ArrayList image, int p, int q, int r,
-    		double mean_x, double mean_y, double mean_z) throws Exception {
+    		double mean_x, double mean_y, double mean_z, ImgDimension curdim) throws Exception {
         CompSumDouble mu = new CompSumDouble();
         
         int mask = 0xff; 
         int longmask = 0xffff;
         Object data = null;
         
-        int size = dim.width * dim.height;
+        int size = curdim.width * curdim.height;
         int x, y;
         for(int z = 0; z < image.size(); z++) {
         	data = image.get(z);
         	for(int i = 0; i < size; i++) {
-        		x = i % dim.width;
-        		y = i / dim.width;
+        		x = i % curdim.width;
+        		y = i / curdim.width;
         		if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
         			mu.Add(getLowerPower(x - mean_x, p) * getLowerPower(y - mean_y, q) * getLowerPower(z - mean_z, r) * (float) (((byte[])data)[i] & mask));
         		else if (imageType == DataInput.GRAY16)
@@ -288,4 +302,7 @@ public class ImageMoments3D implements FeatureExtractor {
 		return true;
 	}
 
+	public boolean canHandleDifferentSize() {
+		return true;
+	}
 }
