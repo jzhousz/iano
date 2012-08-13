@@ -13,7 +13,7 @@ import ij.ImagePlus;
 import ij.gui.NewImage;
 import ij.process.*;
 
-/*
+/********************************************************************************************
 
 Image Annotation Tool          Jie Zhou   
 
@@ -267,16 +267,7 @@ public class Annotator
      */
     public float classifyGivenAMethod(Classifier classifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) throws Exception {
         
-       	System.out.println("parameters for classifier:"+parameters.toString());
-       	for(int i =0 ; i<selectedTrainingFeatures.length; i++)
-       		for(int j =0 ; j<selectedTrainingFeatures[i].length; j++)
-       			System.out.println("training:"+selectedTrainingFeatures[i][j]);
-       	for(int i =0 ; i<selectedTestingFeatures.length; i++)
-       		for(int j =0 ; j<selectedTestingFeatures[i].length; j++)
-       	       	System.out.println("testing:"+selectedTestingFeatures[i][j]);
-    	
-    	
-        float rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
+    	float rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
         return rate;
     }
 
@@ -334,11 +325,23 @@ public class Annotator
     public float[][] extractGivenAMethod(String chosenExtractor, String path, java.util.HashMap<String, String> parameters, DataInput problem) throws Exception 
     {
     	if (chosenExtractor == null || chosenExtractor.equalsIgnoreCase("NONE"))
-    	{  //use raw image or middle stack for 3D
-        	int stackSize = problem.getStackSize();
+    	{
+    		//use raw image or middle stack for 3D
+    		if(!problem.ofSameSize())
+    			throw new Exception("When no extractor is selected, the images or ROIs must be of the same size.");
+
+    		int stackSize = 0;
+    		if (problem.getMode() == DataInput.ROIMODE) //8/6/12
+    			stackSize = problem.getDepth();
+    		else 
+    			stackSize = problem.getStackSize();
             int imageSize = problem.getHeight()*problem.getWidth();
             int imageType = problem.getImageType();
-    		return extractGivenNONE(problem.getData(stackSize / 2 + 1), imageSize, imageType);
+            
+            if (stackSize > 1)
+            	System.out.println("When no extractor is selected, the middle stack of the 3D image is used for efficiency purpose.");
+
+            return extractGivenNONE(problem.getData(stackSize / 2 + 1), imageSize, imageType);
     	}
 
         //those that are not "NONE"    	    	
@@ -346,7 +349,8 @@ public class Annotator
 
     	//check if it is the right type of feature extractor (2D or 3D)
     	int stackSize = problem.getStackSize();
-    	if ((stackSize == 1 && extractor.is3DExtractor()) || (stackSize > 1 && (!extractor.is3DExtractor())))
+    	int depth = problem.getDepth();
+    	if ((stackSize == 1 && extractor.is3DExtractor()) || (stackSize > 1 && depth !=1 && (!extractor.is3DExtractor())))
     	{
             System.out.println("invalid stack size for the corresponding feature extractor");
             System.exit(1);
@@ -410,12 +414,13 @@ public class Annotator
      	//check if it is the right type of feature extractor (2D or 3D)
     	if (dim.depth > 1 || extractor.is3DExtractor())
     	{
-            System.out.println("3D ROI feature extractor is not yet supported");
-            System.exit(1);
+            System.out.println("Calling 3D ROI feature extractor .. ");
+            //System.exit(1);
     	}
 
     	return extractor.calcFeatures(data, imageType, dim);	
      }
+     
      /*
     //the obsolete version with static mapping
     public FeatureExtractor getExtractorGivenName(String name, HashMap<String, String> parameters)
