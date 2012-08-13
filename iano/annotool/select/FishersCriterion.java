@@ -377,6 +377,13 @@ public class FishersCriterion implements FeatureSelector
             for (int c2 = c1 + 1; c2 < class_ids.length; c2++) {
                 //for each feture
                 for (int f = 0; f < input_number_of_features; f++) {
+
+                	//8/7/2012: check the denominator before doing the division
+                	if ((variances.get(class_ids[c1])[f] + variances.get(class_ids[c2])[f]) == 0)
+                    {
+                		//assume the fisher value is 0 in this case?
+                    	continue;
+                    }
                     fisher[f] +=
                             ((means.get(class_ids[c1])[f] - means.get(class_ids[c2])[f])
                             * (means.get(class_ids[c1])[f] - means.get(class_ids[c2])[f]))
@@ -411,7 +418,7 @@ public class FishersCriterion implements FeatureSelector
         //for each feature f
         for (int f = 0; f < input_number_of_features; f++) {
             //for each class c
-            for (int one_class = 0; one_class < class_ids.length; one_class++) {
+            for (int one_class = 0; one_class < class_ids.length; one_class++) {    	
                 //calc sum, sumSq, and count for each of the other classes, combined
                 //this means add sums and sumsSq of these classes together.
                 for (int other_class = 0; other_class < class_ids.length; other_class++) {
@@ -436,6 +443,13 @@ public class FishersCriterion implements FeatureSelector
                 others_mean = others_sum / others_count;
                 others_var = (others_sumSq - others_sum * others_mean) / (others_count - 1);
 
+            	//8/8/2012: check the denominator before doing the division
+            	if ((variances.get(class_ids[one_class])[f] + others_var) == 0)
+                {
+            		//assume the fisher value is 0 in this case.
+                	continue;
+                }
+                
                 //calc fisher's criterion for this one_vs_others combination
                 //and add to total fisher for this feature
                 fisher[f] +=
@@ -467,20 +481,10 @@ public class FishersCriterion implements FeatureSelector
             all.add(new FeatureFisherIndex(fisher[i], i));
         }
 
-        //DEBUG
-//        System.out.println("=== all features: ===");
-//        for (int i = 0; i < all.size(); i++) {
-//            System.out.println("Fisher: " + all.get(i).fisher_value + " Index: " + all.get(i).feature_index);
-//        }
-
         //sort
-        Collections.sort(all); //, new FeatureFisherIndex_Compare());
+   //     Collections.sort(all, new FeatureFisherIndex_Compare());
+        Collections.sort(all);
 
-        //DEBUG
-//        System.out.println("=== all features SORTED: ===");
-//        for (int i = 0; i < all.size(); i++) {
-//            System.out.println("Fisher: " + all.get(i).fisher_value + " Index: " + all.get(i).feature_index);
-//        }
 
         //get best ones
         this.selected_indices = new int[this.output_number_of_features];
@@ -694,22 +698,38 @@ class FeatureFisherIndex  implements Comparable
         this.feature_index = feature_index;
     }
     
+    
     /**
      * Compares the indices of instance object and a separate object
      * 
      * @param   p2  Second object to be compared
-     * @return      1 if this<p2 , -1 if this1>p2, 0 if this==p2   
+     * @return      1 if (this < p2)  |  -1 if (this > p2)  |  0 if (this == p2)   
      */ 
     public int compareTo(Object p2) {
-        if (this.fisher_value < ((FeatureFisherIndex)p2).fisher_value) {
-            return 1;
+    	final FeatureFisherIndex other = (FeatureFisherIndex)p2;
+    	
+        if (this.fisher_value < other.fisher_value) {
+        	return 1;
         }
-        else if (this.fisher_value > ((FeatureFisherIndex)p2).fisher_value) {
-            return -1;
+        else if (this.fisher_value > other.fisher_value) {
+        	return -1;
         }
         else {
-            return 0;
+        	return 0;
         }
+    }
+    
+    public boolean equals(Object p2)
+    {
+    	if (p2 == null) return false;
+    	
+    	final FeatureFisherIndex other = (FeatureFisherIndex)p2;
+    	
+    	if (this.fisher_value ==  other.fisher_value)
+    		return true;
+    	else 
+    		return false;
+    	
     }
 }
 
@@ -723,6 +743,11 @@ class FeatureFisherIndex_Compare implements Comparator
     * @return      1 if p1<p2 , -1 if p1>p2, 0 if p1==p2   
     */
     public int compare(Object p1, Object p2) {
+ 	
+    	if (p1 == null) return -1;
+    	if (p2 == null) return +1;
+    	
+    
         if (((FeatureFisherIndex) p1).fisher_value < ((FeatureFisherIndex) p2).fisher_value) {
             return 1;
         }

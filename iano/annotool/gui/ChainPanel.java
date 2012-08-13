@@ -814,6 +814,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	            try {
 					classifierObj = anno.getClassifierGivenName(chain.getClassifierClassName(), chain.getClassifierExternalPath(), chain.getClassParams());
 					rate = anno.classifyGivenAMethod(classifierObj, chain.getClassParams(), selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
+					System.out.println("The rate get from classifyGivenAMethod:"+rate);
 					executed = true;
 	            } catch (Exception e) {
 					pnlOutput.setOutput("ERROR: Classifier failure! Classifier = " + chain.getClassifier() + " Chain = " + chain.getName());
