@@ -343,7 +343,7 @@ public class AnnImageTable {
 	 * @return
 	 * @throws Exception
 	 */
-	public JScrollPane buildImageTableFromROI(String imagePath, String[] roiPaths, boolean hasTarget, int depth) throws Exception
+	public JScrollPane buildImageTableFromROI(String imagePath, String[] roiPaths, boolean hasTarget, int depth, int newwidth, int newheight) throws Exception
 	{
 		isRoiInput = true;
 		imp = new ImagePlus(imagePath);
@@ -362,7 +362,7 @@ public class AnnImageTable {
 		if(roiList.size() < 1)
 			JOptionPane.showMessageDialog(null, "No rois loaded.");
 		
-		problem = new DataInput(imp, roiList, classMap, Annotator.channel, depth);
+		problem = new DataInput(imp, roiList, classMap, Annotator.channel, depth, newwidth, newheight);
 		
 		children = problem.getChildren();
 		
@@ -721,8 +721,8 @@ public class AnnImageTable {
 		if(problem == null | children == null)
 			throw new Exception("Data not read yet.");
 		
-		if(isRoiInput)
-			return (imp.getStackSize() > 1);
+		if(isRoiInput) //if 3DROI's depth is 1, can still use 2D feature extractor
+			return (imp.getStackSize() > 1 && problem.getDepth() != 1);
 			
 		return (problem.is3D(this.directory + children[0]));
 	}
