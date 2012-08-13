@@ -29,9 +29,18 @@ import annotool.io.DataInput;
  * ROI annotator executes the algorithms in ROI annotation mode.
  * TODO: Rewrite to use similar technique (DataInput constructor) as in ROI input mode
  * 
+ * 8/10/2012: Add 3D ROI:
+ *   Note: 3D ROI with a depth of 1 is treated as 2D ROI.
+ *   ArrayList can be a 3D data.
+ *   
+ *   isMaxima -> 3D ; Not select in the case of 3D
+ *   interval -> z-interval? The same for now.
+ *   mark images on result if 2D
+ *   export -> 3D
  */
 public class ROIAnnotator {
 	private int interval;
+	private int zInterval;
 	private int paddingMode;
 	private String exportDir = "";
 	private boolean isExport = false;
@@ -66,6 +75,7 @@ public class ROIAnnotator {
 		this.pnlStatus = pnlImages.getOutputPanel();
 		
 		this.interval = interval;
+		this.zInterval = interval; //simplified for now
 		this.paddingMode = paddingMode;
 		this.isExport = isExport;
 		if(!"".equals(exportDir))
@@ -90,6 +100,10 @@ public class ROIAnnotator {
 		String[] roiSize = model.getImageSize().split("x");
 		int roiWidth = Integer.parseInt(roiSize[0]);
 		int roiHeight = Integer.parseInt(roiSize[1]);
+		int roiDepth = 1;
+		if (roiSize.length == 3) //3D 
+			roiDepth = Integer.parseInt(roiSize[2]);
+		System.out.println("roiWidth:"+roiWidth+"roiHeight "+ roiHeight+" roiDepth"+roiDepth);
 		
 		ArrayList data  = null;
 		int totalImages = 0;
@@ -104,6 +118,7 @@ public class ROIAnnotator {
 		
 		for(int i = 0; i < totalImages; i++) {
 			boolean isSelected = false;
+			//check if this image is selected.
 			for(int index=0; index < selectedImages.length; index++){
 				if(selectedImages[index] == i) {
 					isSelected = true; 
@@ -111,7 +126,17 @@ public class ROIAnnotator {
 				}
 			}
 			if(isSelected)
-				annotateAnImage(problem.getImagePlus(i), data.get(i), model, roiWidth, roiHeight, problem.getImageType());
+			{
+			  try
+			  {
+				annotateAnImage(problem.getImagePlus(i), data.get(i), model, roiWidth, roiHeight, roiDepth, problem.getImageType());
+			  }catch(Exception e)
+			  {
+				e.printStackTrace();  
+				pnlStatus.setOutput("Error in annotating "+ i +"th image.");
+				System.err.println(e.getMessage());
+			  }
+			}
 		}
 	}
 	
@@ -122,17 +147,24 @@ public class ROIAnnotator {
 	 * @param data : Image data in single dimensional bytes array (width * height).
 	 * @param model : Model to use for annotation.
 	 */
-	private void annotateAnImage(ImagePlus imp, Object datain, ChainModel model, int roiWidth, int roiHeight, int imageType) {
-		ImageProcessor ip = imp.getProcessor();
+	private void annotateAnImage(ImagePlus imp, Object datain, ChainModel model, int roiWidth, int roiHeight, int roiDepth, int imageType) {
 		
-		//If only local maxima are to be annotated, find local maxima
+		ImageProcessor ip = imp.getProcessor(); //first slice if 3D?
 		int width = ip.getWidth();
 		int height = ip.getHeight();
-		
-		float[] floatData = null;
+		int stackSize = imp.getImageStackSize();
 		boolean[] isMaxima = null;
-		
+	
+		//If only local maxima are to be annotated, find local maxima
+		//!currently maxiMa detection is 2D. Change to 3D: TBD 8/10/12
 		if(this.isMaximaOnly) {
+			if(stackSize > 1)
+			{   System.err.println("Local-Maxima-only is to be supported for 3D ROI.");
+				System.exit(1);
+			}
+				
+			float[] floatData = null;
+	
 			floatData = new float[width * height];
 			
 			if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
@@ -150,17 +182,15 @@ public class ROIAnnotator {
 	 	        for(int i = 0; i < width*height; i++)
 	 	        	floatData[i] = (float) data[i];
 	 	    }
-			
 			isMaxima = Utility.getLocalMaxima(floatData, width, height, 1, 3, 3, 1);
 		}
 		
 		//Divide the image into an array of small target images for ROI annotation		
-		if(ip.getWidth() < roiWidth || ip.getHeight() < roiHeight) {
+		if(ip.getWidth() < roiWidth || ip.getHeight() < roiHeight || imp.getImageStackSize() < roiDepth) {
 			System.out.println("ROI cannot be greater than the image");
 			return;
 		}
 		
-		//byte[] subImage = new byte[roiWidth*roiHeight];
 		Object subImage = null;
 		if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) 
 			subImage = new byte[roiWidth*roiHeight];
@@ -168,22 +198,34 @@ public class ROIAnnotator {
 			subImage = new float[roiWidth*roiHeight];
 		else if(imageType == DataInput.GRAY32)
 			subImage = new int[roiWidth*roiHeight];
-		
+		ArrayList<Object> ThreeDsubimage = null; 
+		if (roiDepth > 1)
+		   ThreeDsubimage = new ArrayList<Object>(roiDepth);
+
 		int numSubImages;
 		int startCol, startRow, endRow, endCol;
+		int startSlice, endSlice;
 		if(paddingMode == ROIParameterPanel.SYMMETRIC) {
-			numSubImages = ((roiWidth/2 + ip.getWidth() - 1) / interval + 1) * ((roiHeight/2 + ip.getHeight() - 1) / interval + 1);
+			numSubImages = ((roiWidth/2 + ip.getWidth() - 1) / interval + 1)
+			            * ((roiHeight/2 + ip.getHeight() - 1) / interval + 1)
+			            * ((roiDepth/2 + imp.getImageStackSize() - 1) / zInterval + 1);
 			startCol = -roiWidth/2;
 			startRow = -roiHeight/2;
+			startSlice = -roiDepth/2;
 			endCol = ip.getWidth() - 1;
 			endRow = ip.getHeight() - 1;
+			endSlice = imp.getImageStackSize() -1;
 		}
 		else {
-			numSubImages = ((ip.getWidth()-roiWidth) / interval + 1) * ((ip.getHeight() - roiHeight) / interval + 1);
+			numSubImages = ((ip.getWidth()-roiWidth) / interval + 1) 
+			         * ((ip.getHeight() - roiHeight) / interval + 1)
+			         * ((imp.getImageStackSize() - roiDepth) / zInterval + 1);
 			startCol = 0;
 			startRow = 0;
+			startSlice = 0;
 			endCol = ip.getWidth() - roiWidth;
 			endRow = ip.getHeight() - roiHeight;
+			endSlice = imp.getImageStackSize() - roiDepth;
 		}
 		
 		System.out.println("Number of sub-images in the image:" + numSubImages);		
@@ -191,14 +233,15 @@ public class ROIAnnotator {
 		//Data structure to store target patterns.
 		float[][] targetROIPatterns = new float[1][];
 		Annotation[] annotations = new Annotation[1];
-
 		SavableClassifier classifier = (SavableClassifier)model.getClassifier();
 		Annotator anno = new Annotator();
 		int[] predictions = new int[numSubImages];
 		
 		int imageIndex = -1;
-		for(int i = startCol; i <= endCol; i = i + interval)
-		{	
+		for(int z = startSlice; z <= endSlice; z= z + zInterval)
+		{ 
+		  for(int i = startCol; i <= endCol; i = i + interval)
+		  {	
 			//columns
 			for(int j = startRow ; j <= endRow; j = j + interval)
 			{ 
@@ -214,9 +257,19 @@ public class ROIAnnotator {
 				
 				//rows
 				imageIndex++;
-				
-				//(i,j) is the upperleft corner of the subimage
-				for(int m = 0; m < roiWidth; m++)//col
+				if (roiDepth > 1)
+					   ThreeDsubimage.clear();
+				System.out.println("Working on subImage: " + imageIndex);
+
+				for(int p = 0; p < roiDepth; p++)
+                { 
+				  int zindex = z; 	
+                  if (z < 0)  zindex = -z; //symmetric
+                  else if (z >= stackSize) zindex = (stackSize - 1) - (z - stackSize);
+                  //slice# start from 1
+                  ip = imp.getStack().getProcessor(zindex + 1 + p);
+                  //(i,j) is the upperleft corner of the subimage
+				  for(int m = 0; m < roiWidth; m++)//col
 					for(int n = 0; n < roiHeight; n++) //row
 						if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) 
 							((byte[]) subImage)[n * roiWidth + m] = (Byte)getSubImageData(datain, m + i, n + j, ip.getWidth(), ip.getHeight(), imageType);
@@ -225,10 +278,18 @@ public class ROIAnnotator {
 						else if(imageType == DataInput.GRAY32)
 							((float[]) subImage)[n * roiWidth + m] = (Float)getSubImageData(datain, m + i, n + j, ip.getWidth(), ip.getHeight(), imageType);
 				
+			 	  if(roiDepth > 1)
+				   ThreeDsubimage.add(subImage);
+                }
+			
 				//feature extraction on testing subimage.
 				float[] features  = null;
 				try {
-					features = getExtractedFeaturesFromROI(subImage, roiWidth, roiHeight, model.getExtractors(), imageType);
+				  if (roiDepth == 1)	
+					features = getExtractedFeaturesFromROI(subImage, roiWidth, roiHeight, roiDepth, model.getExtractors(), imageType);
+				  else
+					features = getExtractedFeaturesFromROI(ThreeDsubimage, roiWidth, roiHeight, roiDepth, model.getExtractors(), imageType);
+				  
 				} catch (Exception e) {
 					e.printStackTrace();
 					this.pnlStatus.setOutput("Feature extraction failure!");
@@ -256,10 +317,17 @@ public class ROIAnnotator {
 					this.pnlStatus.setOutput("Classification exception! Classifier=" + model.getClassifierName());
 				}
 			}//	end of j
-	    } //end of i
+	      } //end of i
+	    } //end of z
 		System.out.println("Image INdex: " + imageIndex);
+
+		//visualize and output
+		if(stackSize == 1) //2D
+		 markResultsOnImage(imp, predictions, roiWidth, roiHeight, isMaxima, startCol, startRow, endCol, endRow);
 		
-		markResultsOnImage(imp, predictions, roiWidth, roiHeight, isMaxima, startCol, startRow, endCol, endRow);
+		exportToFile(imp, predictions, roiWidth, roiHeight, roiDepth, isMaxima,
+		    		startCol, startRow, endCol, endRow, startSlice, endSlice);
+		 
 	}
 	
 	private Object getSubImageData(Object data, int col, int row, int imgWidth, int imgHeight, int imageType) {
@@ -284,7 +352,7 @@ public class ROIAnnotator {
 			return null;
 	}
 	
-	protected float[] getExtractedFeaturesFromROI(Object subImage, int width, int height, ArrayList<Extractor> extractors, int imageType) throws Exception
+	protected float[] getExtractedFeaturesFromROI(Object subImage, int width, int height, int depth, ArrayList<Extractor> extractors, int imageType) throws Exception
 	{
 		/*if(extractors.size() < 1) {
 			float[] features = new float[width * height];
@@ -298,16 +366,18 @@ public class ROIAnnotator {
 		HashMap<String, String> params = null;
 		String extractorPath = null;
 		
+		//2D or 3D ROI dimension
 		ImgDimension dim = new ImgDimension();
     	dim.width = width;
     	dim.height = height;
-    	dim.depth = 1;
+    	dim.depth = depth;
     	
     	//Using array of bytes array since "extractGivenAMethod" needs bytes[][] instead of bytes
     	//byte[][] data = new byte[1][subImage.length];
     	//data[0] = subImage;
     	
     	//Using arraylist of array to pass to extractor
+    	//Just one subimage here.
     	ArrayList data = new ArrayList();
     	data.add(subImage);
     	
@@ -424,7 +494,11 @@ public class ROIAnnotator {
     	//display the annotated image
     	imp.updateAndDraw();
     	imp.show();
-    	
+    }
+    
+    private void exportToFile(ImagePlus imp,int[] predictions, int roiWidth, int roiHeight, int roiDepth, boolean[] isMaxima,
+    		int startCol, int startRow, int endCol, int endRow, int startSlice, int endSlice)
+    {
     	//Write prediction indices to file for each class
     	if(this.isExport) {
     		//Check if export dir exists, if not try creating it
@@ -432,12 +506,15 @@ public class ROIAnnotator {
     		boolean dirExists = dir.exists();
     		if(!dirExists)
     			dirExists = dir.mkdirs();
-    		
     		if(dirExists)
     		{
+    			String imageName = imp.getTitle();
+    			int width = imp.getProcessor().getWidth();
+    			int height = imp.getProcessor().getHeight();
+    			int stackSize = imp.getImageStackSize();
 		    	for(String key : classNames.keySet()) {
-		    		exportPrediction(startCol, endCol, startRow, endRow, roiWidth, roiHeight, predictions, imageName, key,
-		    						width, height, isMaxima);
+		    		exportPrediction(startCol, endCol, startRow, endRow, startSlice, endSlice, roiWidth, roiHeight, roiDepth, predictions, imageName, key,
+		    						width, height, stackSize, isMaxima);
 		    	}
     		}
     		else
@@ -445,9 +522,12 @@ public class ROIAnnotator {
     	}
     }
      
-    public void exportPrediction(int startCol, int endCol, int startRow, int endRow, int roiWidth, int roiHeight,
+    //write the center coordinate of the voxel coressponding to the prediction.
+    // Coordinates are 0-started?!
+    public void exportPrediction(int startCol, int endCol, int startRow, int endRow, int startSlice, int endSlice, int roiWidth, int roiHeight, int roiDepth,
     		int[] predictions, String baseFile, String classKey, 
-    		int width, int height, boolean[] isMaxima) {
+    		int width, int height, int stackSize, boolean[] isMaxima) {
+    	
     	String newLine = System.getProperty("line.separator");
     	
     	//Open file for each class : the file contains list of coordinate of annotated pixel
@@ -456,10 +536,14 @@ public class ROIAnnotator {
     	try {
 	    	BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 	    	
-	    	int index = 0, res = 0, x = 0, y = 0;	
-	    	for(int i=startCol; i <= endCol; i = i + interval) {
+	    	int index = 0, res = 0, x = 0, y = 0, z = 0;	
+	    	for(int k = startSlice; k <= endSlice; k = k+ zInterval)
+	    	{
+	    	  for(int i=startCol; i <= endCol; i = i + interval) 
+	    	  {
 	    		for(int j=startRow ; j <= endRow; j = j + interval)
 	    		{
+	    		    z = k + roiDepth / 2;   //if roiDepth=1, then z=k
 	    			y = j + roiHeight / 2;
 					x = i + roiWidth / 2;
 					
@@ -473,12 +557,16 @@ public class ROIAnnotator {
 	    			
 	    			res = predictions[index++];
 	    			if(classKey.equals(String.valueOf(res))) {
-	    				writer.write(x + "," + y);
+	    				if(stackSize > 1 ) //3D, including roiDepth = 1
+	    				 //can accomodate Vaa3D landmark file here.	
+		    			   writer.write(x + "," + y + "," + z);
+	    				else
+	    				   writer.write(x + "," + y);
 		    			writer.write(newLine);
 	    			}
 	    		}
+	    	  }
 	    	}
-	    	
 	    	writer.flush();
         	writer.close();
 			
