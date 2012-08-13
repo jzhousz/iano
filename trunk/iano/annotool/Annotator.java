@@ -13,7 +13,7 @@ import ij.ImagePlus;
 import ij.gui.NewImage;
 import ij.process.*;
 
-/********************************************************************************************
+/*
 
 Image Annotation Tool          Jie Zhou   
 
@@ -267,6 +267,15 @@ public class Annotator
      */
     public float classifyGivenAMethod(Classifier classifier, HashMap<String, String> parameters, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) throws Exception {
         
+       	System.out.println("parameters for classifier:"+parameters.toString());
+       	for(int i =0 ; i<selectedTrainingFeatures.length; i++)
+       		for(int j =0 ; j<selectedTrainingFeatures[i].length; j++)
+       			System.out.println("training:"+selectedTrainingFeatures[i][j]);
+       	for(int i =0 ; i<selectedTestingFeatures.length; i++)
+       		for(int j =0 ; j<selectedTestingFeatures[i].length; j++)
+       	       	System.out.println("testing:"+selectedTestingFeatures[i][j]);
+    	
+    	
         float rate = (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
         return rate;
     }

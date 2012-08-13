@@ -678,6 +678,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 			}
             try {
             	rate = anno.classifyGivenAMethod(classifierObj, classParams, selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
+            	System.out.println("Simple mode: The rate get from classifyGivenAMethod:"+rate);
             }
             catch(Exception ex) {
         		pnlOutput.setOutput("ERROR: Classification failed! Classifier = " + classifier.getName());

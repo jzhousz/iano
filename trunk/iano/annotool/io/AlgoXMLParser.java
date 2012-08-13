@@ -154,8 +154,8 @@ public class AlgoXMLParser
 				Element paramEl = (Element)nl.item(i);
 				name = getTextValue(paramEl, "Name");
 				type = paramEl.getAttribute("type");
-				min = getTextValue(paramEl, "Low");
-				max = getTextValue(paramEl, "High");
+				min = getTextValue(paramEl, "Min");
+				max = getTextValue(paramEl, "Max");
 				def = getTextValue(paramEl, "Default");
 				domain = getTextValue(paramEl, "Domain");
 				
