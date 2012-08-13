@@ -74,14 +74,11 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	//Details
 	JTextArea taDetail = new JTextArea(6,30);
 	JScrollPane detailPane = new JScrollPane(taDetail);
-	
 	AutoCompFrame gui = null;
-	
 	JFileChooser fileChooser = null;
 	
 	private Thread thread = null;
 	private boolean isRunning = false;
-	
 	private String channel;
 	
 	JProgressBar bar = null;
@@ -98,6 +95,12 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	ChainModel[] chainModels = null;
 	
 	boolean executed = false;	//Set to true if at least one chain is successfully executed
+
+	//Keep features to be dumped into chain file
+    int imgWidth;
+    int imgHeight;
+    int imgDepth = 1;  //for 3D ROI 8/13/12
+    int imgStackSize; //for 3D image
 	
 	public ChainPanel(AutoCompFrame gui, String channel, AnnOutputPanel pnlOutput) {
 		this.channel = channel;		
@@ -145,8 +148,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		tca = new TableColumnAdjuster(tblChain);
 		tca.setOnlyAdjustLarger(false);
 		tca.adjustColumns();
-		
-		
+				
 		scrollPane = new JScrollPane(tblChain);
 		pnlTable.add(scrollPane, BorderLayout.CENTER);
 		
@@ -551,6 +553,25 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		tblChain.setEnabled(false);
 		
 		executed = false;
+	    
+		//extracted from individual process method e.g. ttrun()
+		DataInput trainingProblem = gui.trainingProblem;
+	    try {
+			imgWidth = trainingProblem.getWidth();
+			imgHeight = trainingProblem.getHeight();
+			imgStackSize = trainingProblem.getStackSize();
+			if(imgStackSize > 1)
+			{
+			  if (trainingProblem.getMode() == DataInput.ROIMODE)	
+				imgDepth = trainingProblem.getDepth();
+			  else
+				imgDepth = imgStackSize;
+			}
+		} catch (Exception e) {
+			pnlOutput.setOutput("Failed to read width/height/depth/stackSize from the problem.");
+			e.printStackTrace();
+			return;
+		}
 		
 		try {
 			//Initiate appropriate process
@@ -584,8 +605,6 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		Annotator anno = new Annotator();
 		
 		//read images and wrapped into DataInput instances.
-	    //DataInput trainingProblem = new DataInput(Annotator.dir, Annotator.ext, channel);
-	    //DataInput testingProblem = new DataInput(Annotator.testdir, Annotator.testext, channel);	        
 		DataInput trainingProblem = gui.trainingProblem;
 	    DataInput testingProblem = gui.testingProblem;
 		
@@ -600,25 +619,11 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	    //testing set targets
 	    int[][] testingTargets = testingProblem.getTargets();
 	    
-	    
 	    //Initialize float array to hold rates for each annotation for each selected chain and list of selected chains to pass to result panel
 	    ArrayList<Chain> selectedChains = getSelectedChains(); 
 	    float[][] rates = new float[selectedChains.size()][numOfAnno];
 	    
 	    int chainCount = 0;
-	    
-	  	//Keep features to be dumped into chain file
-	    int imgWidth,
-	    	imgHeight;
-	    
-	    try {
-	    	imgWidth = trainingProblem.getWidth();
-	    	imgHeight = trainingProblem.getHeight();
-	    }catch (Exception ex) {
-	    	pnlOutput.setOutput("ERROR: Failed to read width/height from the problem.");
-			ex.printStackTrace();
-			return;
-	    }
 	    
 	    //Chain Models to keep track of the best model for each target
 	    chainModels = new ChainModel[numOfAnno];
@@ -633,8 +638,11 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	    	chainModels[i].setChannel(channel);
 	    	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
 	    	chainModels[i].setClassNames(classNames);
-	    	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
-	    }
+			if(imgStackSize > 1)
+				chainModels[i].setImageSize(imgWidth + "x" + imgHeight + "x" + imgDepth);
+			else
+				chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
+       }
 	    
 	    for(int row = 0; row < tableModel.getRowCount(); row++) {
 	    	//Only use the checked chains
@@ -875,19 +883,6 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
         
         int chainCount = 0;
         
-      	//Keep features to be dumped into chain file
-        int imgWidth,
-    	imgHeight;
-    
-	    try {
-	    	imgWidth = problem.getWidth();
-	    	imgHeight = problem.getHeight();
-	    }catch (Exception ex) {
-	    	pnlOutput.setOutput("ERROR: Failed to read width/height from the problem.");
-			ex.printStackTrace();
-			return;
-	    }
-        
         //Chain Models to keep track of the best model for each target
         chainModels = new ChainModel[numOfAnno];
         
@@ -900,7 +895,10 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
         	chainModels[i].setChannel(channel);
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
         	chainModels[i].setClassNames(classNames);
-        	chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
+			if(imgStackSize > 1)
+				chainModels[i].setImageSize(imgWidth + "x" + imgHeight + "x" + imgDepth);
+			else
+				chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
         }
         
         for(int row = 0; row < tableModel.getRowCount(); row++) {
