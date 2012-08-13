@@ -295,7 +295,8 @@ public class ModelLoader implements Runnable {
         	modelLabels[modelIndex] = model.getLabel();
         	
         	//If image size in the model is not same as the problem size, display message
-        	if(!model.getImageSize().equals(imgWidth + "x" + imgHeight)) {
+        	//Could be 3D such as 5*5*4
+        	if(!model.getImageSize().startsWith(imgWidth + "x" + imgHeight)) {
         		pnlStatus.setOutput("Image size mismatch between model and problem. Model: " + (modelIndex + 1));
         		return;
         	}
