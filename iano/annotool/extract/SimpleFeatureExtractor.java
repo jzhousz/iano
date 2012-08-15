@@ -115,7 +115,7 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
        }
 	 else if(imageType == DataInput.GRAY16)
      {
-  	  int[] data  = (int[]) indata;
+  	  short[] data  = (short[]) indata;
 		  for(int i = left; i < right; i++)
 			for (int j = top; j < bottom; j++)
 				mean += data[i*totalwidth + j]&0xffff;
@@ -151,7 +151,7 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 	    }
  	    else if(imageType == DataInput.GRAY16)
  	    {
- 	  	  int[] idata  = (int[]) indata;
+ 	  	  short[] idata  = (short[]) indata;
  		  for(int i = left; i < right; i++)
  			for (int j = top; j < bottom; j++)
  			{
