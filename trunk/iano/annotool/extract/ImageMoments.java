@@ -23,8 +23,8 @@ public class ImageMoments implements FeatureExtractor
     /**
      * Default constructor
      */
-    public ImageMoments() 
-    {}
+    //public ImageMoments() 
+    //{}
     
     /**
      * Empty implementation of setParameters 
@@ -45,10 +45,21 @@ public class ImageMoments implements FeatureExtractor
      */
     public float[][] calcFeatures(DataInput problem) throws Exception
     {
+
+		//check if the extractor can handle this problem.
+		if (problem.ofSameSize() == false)
+			throw new Exception("The Image Moments feature extractor currently has to work with images of same dimension.");
+
         data = problem.getData();
         length = problem.getLength();
-        totalwidth = problem.getWidth();
-        totalheight = problem.getHeight();
+        
+		if (problem.ofSameSize() != false)
+		{
+		  this.totalwidth  =  problem.getWidth();
+		  this.totalheight  = problem.getHeight();
+		}
+        //totalwidth = problem.getWidth();
+        //totalheight = problem.getHeight();
         imageType = problem.getImageType();
         features = new float[length][8];
  

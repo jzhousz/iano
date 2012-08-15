@@ -51,7 +51,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
     * @param   data       Data taken from the image
     * @param   problem    Image to be processed
     * @return             Array of features
-    * @throws  Exception  (Not used)
+    * @throws  Exception  
     */
    //not used?
   public float[][] calcFeatures(float[][] data, DataInput problem) throws Exception
@@ -64,12 +64,16 @@ public class HaarFeatureExtractor implements FeatureExtractor
   /**
    * Get features based on raw image stored in problem.
    * 
-   * @param   problem    Image to be processed
+   * @param   problem    Image data to be processed
    * @return             Array of features
-   * @throws  Exception  (Not used)
+   * @throws  Exception  thrown when the data has a problem or not compatible with the algorithm e.g. images are of various size
    */
   public float[][] calcFeatures(DataInput problem) throws Exception
   {
+	 //check if the extractor can handle this problem.
+	 if (problem.ofSameSize() == false)
+		throw new Exception("The Haar feature extractor has to work with images of same dimension.");
+	  
 	  totalwidth = problem.getWidth();
 	  totalheight = problem.getHeight();
 	  this.length = problem.getLength();

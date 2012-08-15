@@ -79,10 +79,6 @@ public class ImageMoments3D implements FeatureExtractor {
 	public float[][] calcFeatures(ArrayList all3DData, int imageType,
 			ImgDimension dim) throws Exception {
 		
-		//check if the extractor can handle this problem.
-		if (problem.ofSameSize() == false)
-			throw new Exception("The ImageMoments 3D feature extractor has to work with images of same dimension.");
-		
 		this.length = all3DData.size();
 		this.dim = dim;
 		this.imageType = imageType;
