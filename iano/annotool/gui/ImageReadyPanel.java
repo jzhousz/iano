@@ -613,8 +613,14 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 					Annotator.channel, Annotator.targetFile);
 		else if (mode == DataInput.DIRECTORYMODE)
 			trainingProblem = new DataInput(Annotator.dir, Annotator.ext, Annotator.channel, true);
-		//else if(mode == DataInput.ROIMODE)
-			//trainingProblem = new DataInput();//TODO
+		else if(mode == DataInput.ROIMODE)
+			//trainingProblem = new DataInput(imp, roiList, classMap, Annotator.channel, depth, newwidth, newheight);
+		{
+			trainingProblem = pnlTable.getTrainingProblem();
+			trainingProblem.setChannel(Annotator.channel);
+			trainingProblem.setDataNull();
+		}
+				
 
 		return trainingProblem;
 	}
@@ -645,8 +651,13 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 			else if (mode == DataInput.DIRECTORYMODE)
 				testingProblem = new DataInput(Annotator.testdir,
 						Annotator.testext, Annotator.channel, true);
-			//else if(mode == DataInput.ROIMODE)
-				//testingProblem = new DataInput();//TODO
+			else if(mode == DataInput.ROIMODE)
+			{
+				testingProblem = pnlTable.getTestingProblem();
+				testingProblem.setChannel(Annotator.channel);
+				testingProblem.setDataNull();
+			}
+					
 		}
 		
 		return testingProblem;

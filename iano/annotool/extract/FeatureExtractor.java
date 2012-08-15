@@ -35,8 +35,7 @@ public interface FeatureExtractor
 // functions allow for reading image properties, data, and images from a 
 // stack. For further reference, see the DataInput API.
 
-   
-   
+      
    /**
     * Get features based on data, imageType, and dim.
     * <p>
