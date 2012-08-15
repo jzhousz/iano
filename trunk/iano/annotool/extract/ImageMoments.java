@@ -115,7 +115,7 @@ public class ImageMoments implements FeatureExtractor
             {
                x = i % totalwidth;
                y = i / totalwidth;
-               image[y][x] = (float) (((int[])flat_image)[i] & longmask);
+               image[y][x] = (float) (((short[])flat_image)[i] & longmask);
             }
         }
         else if (imageType == DataInput.GRAY32)

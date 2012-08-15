@@ -139,7 +139,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
 	    }
 	    else if(imageType == DataInput.GRAY16)
 	    {
-	    	int[] data = (int[]) datain;
+	    	short[] data = (short[]) datain;
  	        for(int i = 0; i< totalwidth*totalheight; i++)
  	    	  feature[i] = (float) (data[i]&0xffff);
 	    }	
