@@ -1,0 +1,25 @@
+STEPS FOR BUILDING A BIOCAT RELEASE
+
+August 16, 2012
+
+1.  Generate biocat.jar 
+    In Eclipse, "export...", 
+	choose: executable jar file;  put the needed libaraies next to the jar
+    
+2.  Clean up biocat.jar
+    In 7zip:  remove unneeded folders such as ROI_annotatotor, mRMR, and cell_counting
+    (Can I not include them in Step 1?)
+
+
+3. Create the tar file:
+   Add:  
+         1. Algorithms.xml
+         2. Sample image folder with k150, 2DROI (etc.)
+         3. run
+	 4. ReleaseNotes.txt
+         5. Terms and Conditions.txt
+         Optional:
+         1. biocat.exe for windows
+         2. 2 libraraies files for mRMR
+ 
+
