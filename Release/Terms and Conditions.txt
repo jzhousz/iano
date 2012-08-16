@@ -1,0 +1,7 @@
+The use of this package, in source and binary forms, with or without modification, are permitted provided that the copyright notice is retained and the use is for academic and research purpose.
+
+Neither name of copyright holders nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission. You agree to appropriately cite this work in your related studies and publications.
+
+The commercial use of software is not allowed without contacting the copyright holders (Jie Zhou) to obtain permission.
+
+The software is provided by the copyright holders and contributors "AS IS". In no event shall the copyright owner or contributors be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; reasonable royalties; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.

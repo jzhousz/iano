@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Algorithms>
+	<Algorithm type="Selector">
+		<Name>mRMR</Name>
+		<ClassName>annotool.select.mRMRFeatureSelector</ClassName>
+		<Parameter type="String">
+			<Name>Method</Name>
+			<Domain>mRMR-MIQ,mRMR-MID</Domain>
+			<Default>mRMR-MIQ</Default>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>Number of features</Name>
+			<Default>8</Default>
+			<Min>1</Min>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>Discrete Flag</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Double">
+			<Name>Discretize Threshold</Name>
+			<Default>0</Default>
+		</Parameter>
+	</Algorithm>	
+	<Algorithm type="Selector">
+		<Name>Fisher</Name>
+		<ClassName>annotool.select.FishersCriterion</ClassName>
+		<Parameter type="String">
+			<Name>MULTICLASS COMPARISON METHOD</Name>
+			<Domain>PAIRWISE,ONE VS OTHERS</Domain>
+			<Default>PAIRWISE</Default>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>NUMBER OF FEATURES</Name>
+			<Default>5</Default>
+			<Min>1</Min>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>FeatureJ Statistics</Name>
+		<ClassName>annotool.extract.FeatureJStatistics</ClassName>
+		<Desc>Simple statistics using FeatureJ</Desc>
+		<Parameter type="Boolean">
+			<Name>AVERAGE ABSOLUTE DEVIATION</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>ELEMENTS</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>KURTOSIS</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>L1NORM</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>L2NORM</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MASS</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MAXIMUM</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MEAN</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MEDIAN</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MINIMUM</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MODE</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>SDEVIATION</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>SKEWNESS</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>VARIANCE</Name>
+			<Default>0</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>FeatureJ Laplacian</Name>
+		<ClassName>annotool.extract.FeatureJLaplacian</ClassName>
+		<Desc>Laplacian of input images</Desc>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>		
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>FeatureJ Edges</Name>
+		<ClassName>annotool.extract.FeatureJEdges</ClassName>
+		<Desc>Edge detection</Desc>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>Suppress Non-maximum Gradients</Name>
+			<Default>0</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>FeatureJ Derivatives</Name>
+		<ClassName>annotool.extract.FeatureJDerivative</ClassName>
+		<Desc>Computes Gaussian Derivatives of Images</Desc>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>x-order</Name>
+			<Default>0</Default>
+			<Min>0</Min>
+			<Max>10</Max>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>y-order</Name>
+			<Default>0</Default>
+			<Min>0</Min>
+			<Max>10</Max>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>z-order</Name>
+			<Default>0</Default>
+			<Min>0</Min>
+			<Max>10</Max>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>FeatureJ Structure</Name>
+		<ClassName>annotool.extract.FeatureJStructure</ClassName>
+		<Desc>Computes Structure Tensor Eigen Images</Desc>
+		<Parameter type="String">
+			<Name>Eigenvalue</Name>
+			<Domain>Largest,Smallest</Domain>
+			<Default>Largest</Default>
+		</Parameter>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>
+		<Parameter type="Real">
+			<Name>Integration Scale</Name>
+			<Default>3.0</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>FeatureJ Hessian</Name>
+		<ClassName>annotool.extract.FeatureJHessian</ClassName>
+		<Desc>Computes Hessian Eigen Images</Desc>
+		<Parameter type="String">
+			<Name>Eigenvalue</Name>
+			<Domain>Largest,Smallest</Domain>
+			<Default>Largest</Default>
+		</Parameter>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>Absolute Eigen Value Comparison</Name>
+			<Default>1</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>HAAR</Name>
+		<ClassName>annotool.extract.HaarFeatureExtractor</ClassName>
+		<Desc>HAAR wavelet transform</Desc>
+		<Parameter type="Integer">
+			<Name>Wavelet Level</Name>
+			<Default>2</Default>
+			<Min>1</Min>
+			<Max>10</Max>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>2D Hu Moments</Name>
+		<ClassName>annotool.extract.ImageMoments</ClassName>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>Object Territory</Name>
+		<ClassName>annotool.extract.Territory</ClassName>
+		<Desc>Number of object pixels</Desc>
+		<Parameter type="Real">
+			<Name>Radius</Name>
+			<Default>50</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="3DExtractor">
+		<Name>3D Moments</Name>
+		<ClassName>annotool.extract.ImageMoments3D</ClassName>
+	</Algorithm>	
+	<Algorithm type="3DExtractor">
+		<Name>Anisotropic 3D Wavelet</Name>
+		<ClassName>annotool.extract.StackSimpleHaarFeatureExtractor</ClassName>
+		<Desc>Average HAAR of middle frame</Desc>
+		<Parameter type="Integer">
+			<Name>Wavelet Level</Name>
+			<Default>2</Default>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>Midstacks to Include</Name>
+			<Default>3</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>WEIGHTED</Name>
+			<Default>1</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="Classifier">
+		<Name>SVM</Name>
+		<ClassName>annotool.classify.SVMClassifier</ClassName>
+		<Desc>Support Vector Machine</Desc>
+		<Parameter type="String">
+			<Name>General Parameter</Name>
+			<Default>-t 0</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="Classifier">
+		<Name>Weka</Name>
+		<ClassName>annotool.classify.WekaClassifiers</ClassName>
+		<Parameter type="String">
+			<Name>CLASSIFIER_TYPE</Name>
+			<Domain>W_Tree,W_NaiveBayes,W_RandomForest,W_NearestNeighbor</Domain>
+			<Default>W_Tree</Default>
+		</Parameter>
+	</Algorithm>
+</Algorithms>

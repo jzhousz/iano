@@ -1,0 +1,48 @@
+8/16/2012
+1. 3D ROI Annotation functionality is more complete.
+2. Fisher Criterion is more stable.
+3. Bug fix in Comparison mode of Training/Testing mode.
+4. Bug fix in channel switching for ROI mode.
+
+5/25/2012
+
+1. Introduced two new modes for taking input. In addition to the target file mode, now there is a ROI mode and directory structure mode.
+2. 3D images are now displayed in 3D volume viewer.
+3. Legends dialog added to ROI annotation.
+4. For multilabel annotation, summary of classes were added to result.
+
+
+12/06/2011
+
+1. Renamed to BioCAT
+2. Additional "FeatureJ" feature extractors included.
+3. New parameters for "Partial3D" extractor.
+4. ROI annotation results can be exported to user selected path as plain text files with co-ordinates.
+
+8/23/2011
+
+New features:
+
+BI-CAT -- Biological Image Classification and Annotation Tool v1.0
+
+Completely refactored from the original IANO!
+
+1.  Re-designed GUI that is more user-friendly and with more functionality.
+2.  Consolidated GUI and algorithms for working with 2D and 3D bio-images.
+3.  Model selection supports an auto-comparison of algorithm chains to automatically pick the best algorithms for the given problem
+4.  Model selection module includes training/testing, training only and cross-validation modes.
+5.  An algorithm chain in auto-comparison can be custom-built to include multiple feature extractors, selectors and a classifier.
+6.  All algorithms and parameters are configured using easy-to-edit property files, based on which GUI is dynamically created.
+7.  Learned chain and models can be saved and loaded in later annotation sessions, or directly applied in current session.
+8.  Integrated single-label Image set classification, multiple-label image annotation and ROI annotation.
+9.  Detailed and savalble reports of model selection results.
+10. Detailed and savable reports of annotation results.
+11. Simple algorithms interfaces for programmers to extend to more algorithms.
+
+Known issues:
+mRMR feature selector is native code and not supported on some platforms (e.g. 64bit windows).
+
+
+Sample image acknowledgements:
+K150: Howard Hughes Medical Institute
+2DROI: Cell Centered Database
