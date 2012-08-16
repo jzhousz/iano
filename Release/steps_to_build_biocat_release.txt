@@ -18,6 +18,7 @@ August 16, 2012
          3. run
 	 4. ReleaseNotes.txt
          5. Terms and Conditions.txt
+         6. Readme file
          Optional:
          1. biocat.exe for windows
          2. 2 libraraies files for mRMR
