@@ -527,8 +527,8 @@ public class AnnImageTable {
 			displayImage.setRoi(roi);
 			displayImage.show();
 		}
-		else if(problem.is3D(Annotator.dir+children[0])) {
-		//else if(problem.is3D(directory+children[0])) {
+		//else if(problem.is3D(Annotator.dir+children[0])) {
+		else if(problem.is3D()) {
 			ImagePlus imp = ij.IJ.openImage(directory+children[index]);
 			new StackConverter(imp).convertToRGB();
 			//new StackConverter(imp).convertToGray8();
@@ -601,14 +601,18 @@ public class AnnImageTable {
 	//to speed up, maybe can precompute the thumbnails when the app is first loaded.
 	JButton getButtonCell(int i)
 	{
-		//return new JButton(new ImageIcon(showIcon));
-		System.out.println(Annotator.dir);
-		System.out.println(children[0]);
-		if(isRoiInput)
-			System.out.println("wee");
-		if(problem != null)
-			if(problem.is3D(Annotator.dir+children[0]))
-				return new JButton(new ImageIcon(showIcon));
+		return new JButton(new ImageIcon(showIcon));
+		
+		//System.out.println(Annotator.dir); //buggy! Could be testDir!
+		//System.out.println(children[i]);
+		//if(isRoiInput)
+		//	System.out.println("ROI Input");
+		//if(problem != null)
+		//	if(problem.is3D(Annotator.dir+children[0]))
+		//		return new JButton(new ImageIcon(showIcon));
+		
+		
+		/*
 		//if(isRoiInput || problem.is3D(Annotator.dir+children[0]) || children.length > 100)
 		if(isRoiInput || children.length > 100)
 		{
@@ -621,7 +625,7 @@ public class AnnImageTable {
 		 b.setContentAreaFilled(false);
 		 //b.setOpaque(true);
 		 return b;
-		}
+		}*/
 	}
 
 	//an inner class to help the buttons in the table to get the event
@@ -714,7 +718,7 @@ public class AnnImageTable {
 		if(isRoiInput)
 			return (imp.getProcessor() instanceof ColorProcessor);
 		
-		return (problem.isColor(this.directory + children[0]));
+		return (problem.isColor());
 	}
 
 	public boolean is3D() throws Exception {
@@ -724,7 +728,7 @@ public class AnnImageTable {
 		if(isRoiInput) //if 3DROI's depth is 1, can still use 2D feature extractor
 			return (imp.getStackSize() > 1 && problem.getDepth() != 1);
 			
-		return (problem.is3D(this.directory + children[0]));
+		return (problem.is3D());
 	}
 	
 	//Gets the indexed item from namelist, and uses this name to retrieve corresponding roi from roiList

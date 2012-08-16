@@ -156,33 +156,30 @@ public class ROIAnnotator {
 		boolean[] isMaxima = null;
 	
 		//If only local maxima are to be annotated, find local maxima
-		//!currently maxiMa detection is 2D. Change to 3D: TBD 8/10/12
 		if(this.isMaximaOnly) {
-			if(stackSize > 1)
-			{   System.err.println("Local-Maxima-only is to be supported for 3D ROI.");
-				System.exit(1);
-			}
-				
-			float[] floatData = null;
-	
-			floatData = new float[width * height];
-			
-			if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
-		      byte[] data = (byte[]) datain;
-		      for(int i = 0; i < width*height; i++)
-		    	  floatData[i] = (float) (data[i]&0xff);
-		    }
-		    else if(imageType == DataInput.GRAY16) {
-		    	int[] data = (int[]) datain;
-	 	        for(int i = 0; i < width*height; i++)
-	 	        	floatData[i] = (float) (data[i]&0xffff);
-		    }	
-	 	    else if(imageType == DataInput.GRAY32) {
+			if (stackSize == 1) //2D
+			{
+				float[] floatData = null;
+				floatData = new float[width * height];
+				if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
+					byte[] data = (byte[]) datain;
+					for(int i = 0; i < width*height; i++)
+						floatData[i] = (float) (data[i]&0xff);
+				}
+				else if(imageType == DataInput.GRAY16) {
+					int[] data = (int[]) datain;
+					for(int i = 0; i < width*height; i++)
+						floatData[i] = (float) (data[i]&0xffff);
+				}	
+				else if(imageType == DataInput.GRAY32) {
 		    	float[] data = (float[]) datain;
 	 	        for(int i = 0; i < width*height; i++)
 	 	        	floatData[i] = (float) data[i];
-	 	    }
-			isMaxima = Utility.getLocalMaxima(floatData, width, height, 1, 3, 3, 1);
+				}
+				isMaxima = Utility.getLocalMaxima(floatData, width, height, 1, 3, 3, 1);
+			}
+			else
+				isMaxima = Utility.getLocalMaxima(imp, 3, 3, 1);
 		}
 		
 		//Divide the image into an array of small target images for ROI annotation		
