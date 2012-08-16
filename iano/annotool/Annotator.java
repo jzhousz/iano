@@ -377,7 +377,7 @@ public class Annotator
               features[i][j] = (float) (data[j] & 0xff);
           }else if (imageType == DataInput.GRAY16)
           {
-	    	int[] data = (int[]) datain.get(i);
+	    	short[] data = (short[]) datain.get(i);
  	        for(int j = 0; j< imageSize; j++)
  	    	  features[i][j] = (float) (data[j]&0xffff);
 	      }	
