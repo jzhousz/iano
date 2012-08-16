@@ -1,0 +1,11 @@
+Steps to use SVN and Eclipse in a synchronized way
+
+06/06/2011
+
+1. download tortoiseSVN.
+2. checkout 
+3. new Eclipse project. Instead of using default location under workspace, choose E:\IANO. 
+   Also make sure the src and bin are in different folders.
+   E:\IANO\iano  is now automatically the src of the Java project.
+4. add external jars
+5. copy icon images, example images, dll to the level parallel to iano
