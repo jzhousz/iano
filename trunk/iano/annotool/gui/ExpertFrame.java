@@ -431,6 +431,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 			trainingFeatures = anno.extractGivenAMethod(extractor.getClassName(), extractor.getExternalPath(), exParams, trainingProblem);
 		} catch (Exception e) {
 			pnlOutput.setOutput("ERROR: Feature extractor failed! Extractor = " + extractor.getName());
+			pnlOutput.setOutput("       Message: "+e.getMessage());
 			e.printStackTrace();
 			setProgress(0);
 			enableSave = false;
@@ -462,6 +463,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
                 }
                 catch (Exception ex) {
             		pnlOutput.setOutput("ERROR: Feature selection failed! Selector = " + featureSelector);
+            		pnlOutput.setOutput("       Message: "+ex.getMessage());
             		ex.printStackTrace();
             		setProgress(0);
                 	enableSave = false;
@@ -484,6 +486,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 				classifierObj = anno.getClassifierGivenName(classifier.getClassName(), classifier.getExternalPath(), classParams);
 			} catch (Exception e) {
 				pnlOutput.setOutput("ERROR: Classifier failed! Classifier = " + classifier.getName());
+				pnlOutput.setOutput("       Message: "+e.getMessage());
 				e.printStackTrace();
 				setProgress(0);
 				enableSave = false;
@@ -497,6 +500,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             	}
             	catch (Exception ex) {
             		pnlOutput.setOutput("ERROR: Classification failed! Classifier = " + classifier.getName());
+            		pnlOutput.setOutput("       Message: "+ex.getMessage());
             		ex.printStackTrace();
             		setProgress(0);
             		enableSave = false;
@@ -565,6 +569,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         }
         catch(Exception e) {
         	pnlOutput.setOutput("ERROR: Feature extractor failed! Extractor = " + extractor.getName());
+        	pnlOutput.setOutput("       Message: "+e.getMessage());
         	e.printStackTrace();
         	setProgress(0);
         	enableSave = false;
@@ -612,6 +617,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
                 }
                 catch (Exception ex) {
             		pnlOutput.setOutput("ERROR: Feature selection failed! Selector = " + featureSelector);
+            		pnlOutput.setOutput("       Message: "+ex.getMessage());
             		ex.printStackTrace();
             		setProgress(0);
                 	enableSave = false;
@@ -639,6 +645,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 				classifierObj = anno.getClassifierGivenName(classifier.getClassName(), classifier.getExternalPath(), classParams);
 			} catch (Exception e) {
 				pnlOutput.setOutput("ERROR: Classifier failed! Classifier = " + classifier.getName());
+				pnlOutput.setOutput("       Message: "+e.getMessage());
 				e.printStackTrace();
 				setProgress(0);
 				enableSave = false;
@@ -650,7 +657,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
             }
             catch(Exception ex) {
         		pnlOutput.setOutput("ERROR: Classification failed! Classifier = " + classifier.getName());
-            	ex.printStackTrace();
+        		pnlOutput.setOutput("       Message: "+ex.getMessage());
+        		ex.printStackTrace();
         		setProgress(0);
             	enableSave = false;
         		return;
@@ -738,6 +746,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 			features = anno.extractGivenAMethod(extractor.getClassName(), extractor.getExternalPath(), exParams, problem);
 		} catch (Exception e) {
 			pnlOutput.setOutput("ERROR: Feature extractor failed! Extractor = " + extractor.getName());
+			pnlOutput.setOutput("       Message: "+e.getMessage());
 			e.printStackTrace();
 			setProgress(0);
 			enableSave = false;
@@ -808,6 +817,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
                 }
                 catch (Exception ex) {
             		pnlOutput.setOutput("ERROR: Feature selection failed! Selector = " + featureSelector);
+            		pnlOutput.setOutput("       Message: "+ex.getMessage());
             		ex.printStackTrace();
             		setProgress(0);
                 	enableSave = false;
@@ -829,6 +839,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 				classifierObj = anno.getClassifierGivenName(classifier.getClassName(), classifier.getExternalPath(), classParams);
 			} catch (Exception e) {
 				pnlOutput.setOutput("ERROR: Classifier failed! Classifier = " + classifier.getName());
+				pnlOutput.setOutput("       Message: "+e.getMessage());
 				e.printStackTrace();
 				setProgress(0);
 				enableSave = false;

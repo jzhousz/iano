@@ -61,11 +61,11 @@ public class RoiModeDialogPanel extends JPanel implements ItemListener, ActionLi
 	private JButton btnCancel = new JButton("Cancel");
 	
 	private JSpinner spinnerw = null;
-	private JCheckBox checkBoxNeww = new JCheckBox("Override ROI Width");
+	private JCheckBox checkBoxNeww = new JCheckBox("Override ROI Width (pixel)");
 	private JSpinner spinnerh = null;
-	private JCheckBox checkBoxNewh = new JCheckBox("Override ROI Height");
+	private JCheckBox checkBoxNewh = new JCheckBox("Override ROI Height (pixel)");
 	private JSpinner spinner = null;
-	private JCheckBox checkBox3d = new JCheckBox("ROI Depth for 3D Image");
+	private JCheckBox checkBox3d = new JCheckBox("ROI Depth for 3D Image (pixel)");
 	int depth = 1;	int newwidth =0; int newheight=0;  //default
 
 	private LandingPanel pnlLanding = null;
