@@ -117,6 +117,8 @@ public class DataInput
 	//For roi mode
 	ImagePlus imp = null;
 	HashMap<String, Roi> roiList = null;
+	
+	boolean isColor = true; // true if the first image/ROI is COLOR_RGB 
 		
 	/**
 	 * The constructor takes the target file and resize the (2D) images based on the dimension passed in
@@ -136,6 +138,7 @@ public class DataInput
 		this.ext = ext;
 		this.channel = channel;
 		this.targetFile = targetFile;
+		
 		if (targetFile != null)
 		{
 		  getChildren();
@@ -633,6 +636,9 @@ public class DataInput
 	//Should just be called once throughout the program.
 	private ArrayList readImages(String[] childrenCandidates, int stackIndex) throws Exception
 	{
+		
+		System.err.println("READING THE IMAGES !!!!!!!!!!!!!!!!");
+		
 		ImagePlus imgp = null; Object oneroidata = null;
 		int curwidth, curheight, curdepth;
 		
@@ -925,6 +931,7 @@ public class DataInput
 	}
 
 	//return true if the given image is a color image
+	/*
 	public boolean isColor(String path)
 	{
 		ImagePlus imgp = new ImagePlus(path); 
@@ -933,10 +940,10 @@ public class DataInput
 		   return true;
 	   else
 			return false;
-	}
+	}*/
 
 	//return true if the given image is a 3D image
-	public boolean is3D(String path)
+	/*public boolean is3D(String path)
 	{
 		ImagePlus imgp = new ImagePlus(path);
 		
@@ -945,6 +952,29 @@ public class DataInput
 	    	return true;
 	    else 
 	    	return false;
+	}*/
+	
+	//Return true if it involves a 3D image.
+	//Note: It includes the case when a 3D ROI with depth of 1.
+	public boolean is3D()
+	{
+		if (stackSize == 0)
+		{
+			System.err.println("The data is not yet read. Cann't determine if it is 3D.");
+			return false;
+		}
+		return stackSize > 1;
+	}
+	
+	public boolean isColor()
+	{
+		if (imageType == 0)
+		{
+			System.err.println("The data is not yet read. Cann't determine if it is 3D.");
+			return false;
+		}
+
+		return imageType == 4;
 	}
 	
 	
