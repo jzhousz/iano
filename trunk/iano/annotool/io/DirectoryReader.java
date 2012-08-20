@@ -44,10 +44,10 @@ public class DirectoryReader {
 			}
 		}
 		
-		for(String child : fileList) {
-			System.out.println(child);
-		}
-		System.out.println("----------------------------------");
+		//for(String child : fileList) {
+		//	System.out.println(child);
+		//}
+		//System.out.println("----------------------------------");
 	}
 	
 	public HashMap<String, String> getClassNames() {
