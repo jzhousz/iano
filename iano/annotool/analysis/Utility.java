@@ -139,15 +139,15 @@ public class Utility {
 //only operates on bytes (int), not float comparison
 //Note that the order of storage is z, then y, then x
 
-public static boolean[] getLocalMaxima(ImagePlus imp, int wX, int wY, int wZ)
+public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int wY, int wZ)
 {
 	ImageProcessor ip = imp.getProcessor();
 	int width = ip.getWidth();
 	int height = ip.getHeight();
 	int depth = imp.getStackSize();
 	int imageType = imp.getType();
-	if (imageType != DataInput.GRAY8 && imageType != DataInput.GRAY16) {
-		System.out.println("Only grayscale 8 or 16  supported");
+	if (imageType != DataInput.GRAY8 && imageType != DataInput.GRAY16 && imageType != DataInput.COLOR_RGB) {
+		System.out.println("Only grayscale 8 or 16 or RGB supported");
 		return null;
 	}
 	
@@ -163,6 +163,7 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int wX, int wY, int wZ)
 	int offsetk = 0;
 	float meanv; 
     int pixelvalue;
+    int[] rgbpixelvalue;
     ImageProcessor currentimagep = null; 
     
     System.out.println("calculating mean ..");
@@ -176,7 +177,11 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int wX, int wY, int wZ)
 		 //offsetj = y * width;
 			for(int x = 0; x < width; x++) {
 				//index = offsetk + offsetj + x;
-			    pixelvalue = currentimagep.get(x,y);
+				if (imageType != DataInput.COLOR_RGB)
+			     pixelvalue = currentimagep.get(x,y);
+				else
+				 pixelvalue = (currentimagep.getPixel(x,y, null))[channel];
+
 				if(pixelvalue > lowth) 
 				{
 					sum += pixelvalue;
@@ -197,7 +202,12 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int wX, int wY, int wZ)
     	currentimagep = imp.getStack().getProcessor(z+1);
     	for(int y = 0; y < height; y++) {
     		for(int x = 0; x < width; x++) {
-    			pixelvalue = currentimagep.get(x,y);
+    			
+				if (imageType != DataInput.COLOR_RGB)
+				     pixelvalue = currentimagep.get(x,y);
+					else
+					 pixelvalue = (currentimagep.getPixel(x,y, null))[channel];
+
     			if(pixelvalue > meanv) {
     				sum1 += pixelvalue;
     				num1++;
@@ -236,7 +246,11 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int wX, int wY, int wZ)
 				currentimagep = imp.getStack().getProcessor(k+1);
 				for(int j = yb; j <= ye; j++) {
 					for(int i = xb; i <= xe; i++) {
-						pixelvalue = currentimagep.getPixel(i,j);
+						if (imageType != DataInput.COLOR_RGB)
+					     pixelvalue = currentimagep.get(x,y);
+						else
+						 pixelvalue = (currentimagep.getPixel(x,y, null))[channel];
+
 						val = pixelvalue;
 						if(max < val) max = val;
 					}
@@ -254,7 +268,12 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int wX, int wY, int wZ)
 		currentimagep = imp.getStack().getProcessor(z+1);
 		for(int y = 0; y < height; y++) {
 			for(int x = 0; x < width; x++) {
-				pixelvalue = currentimagep.get(x,y);
+				//pixelvalue = currentimagep.get(x,y);
+				if (imageType != DataInput.COLOR_RGB)
+				     pixelvalue = currentimagep.get(x,y);
+				else
+					pixelvalue = (currentimagep.getPixel(x,y, null))[channel];
+
 				if((pixelvalue == maxVal[index]) && (pixelvalue > meanv))
 				{
 					isMaxima[index] = true;
