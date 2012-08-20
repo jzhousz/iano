@@ -12,7 +12,8 @@ import java.util.ArrayList;
 public class SimpleFeatureExtractor implements FeatureExtractor {
 
 	protected float[][] features = null;
-	protected ArrayList data;
+	protected ArrayList data = null;
+	protected DataInput problem = null;
 	int totalwidth;
 	int totalheight;
 	int length;
@@ -44,10 +45,10 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 	@Override
 	public float[][] calcFeatures(annotool.io.DataInput problem) throws Exception
 	{
-		totalwidth = problem.getWidth();
-		totalheight = problem.getHeight();
+		this.problem = problem;
+		this.totalwidth = problem.getWidth();
+		this.totalheight = problem.getHeight();
 		this.length = problem.getLength();
-		this.data = problem.getData();
 		this.imageType = problem.getImageType();
 		return calcFeatures();
 	}
@@ -75,7 +76,12 @@ public class SimpleFeatureExtractor implements FeatureExtractor {
 		// calculate simple 8 features: mean and st of 4 divisions: left, right, upper, down
 		features  = new float[length][8]; 
 		for(int i=0; i <length; i++)
+		{
+		   if (data != null)	
 			getSimpleFeatureOfOneImage(data.get(i), features[i]);
+		   else
+			getSimpleFeatureOfOneImage(problem.getData(i,1), features[i]);
+		}
 
 		return features;
 

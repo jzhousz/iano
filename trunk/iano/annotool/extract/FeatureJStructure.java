@@ -4,6 +4,7 @@ import ij.ImagePlus;
 import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
 import imagescience.feature.Structure;
 import imagescience.image.Axes;
 import imagescience.image.Coordinates;
@@ -23,7 +24,8 @@ import annotool.io.DataInput;
  */
 public class FeatureJStructure implements FeatureExtractor {
 	protected float[][] features = null;
-	protected ArrayList data;
+	protected ArrayList data = null;
+	protected DataInput problem = null;
 	int length;
 	int width;
 	int height;
@@ -74,7 +76,7 @@ public class FeatureJStructure implements FeatureExtractor {
     */
 	@Override
 	public float[][] calcFeatures(DataInput problem) throws Exception {
-		this.data = problem.getData();
+		this.problem = problem;
 		this.length = problem.getLength();
 		this.width = problem.getWidth();
 		this.height = problem.getHeight();
@@ -115,15 +117,24 @@ public class FeatureJStructure implements FeatureExtractor {
 		
 		double values[][] = new double[this.height][this.width];
 		
-		for(int imageIndex = 0; imageIndex < data.size(); imageIndex++) {
+		for(int imageIndex = 0; imageIndex < length; imageIndex++) {
 			if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
-				ip = new ByteProcessor(this.width, this.height, (byte[])data.get(imageIndex), null);
+				if (data != null)
+				 ip = new ByteProcessor(this.width, this.height, (byte[])data.get(imageIndex), null);
+				else 
+				 ip = new ByteProcessor(this.width, this.height, (byte[])problem.getData(imageIndex, 1), null);
 		    }
 		    else if(imageType == DataInput.GRAY16) {
-		    	ip = new FloatProcessor(this.width, this.height, (int[])data.get(imageIndex));
+		    	if (data != null)
+		    	 ip = new ShortProcessor(this.width, this.height, (short[])data.get(imageIndex), null);
+		    	else
+		    	 ip = new ShortProcessor(this.width, this.height, (short[])problem.getData(imageIndex,1), null);
 		    }	
 	 	    else if(imageType == DataInput.GRAY32) {
-		    	ip = new FloatProcessor(this.width, this.height, (float[])data.get(imageIndex), null);
+	 	    	if (data != null)
+		    	 ip = new FloatProcessor(this.width, this.height, (float[])data.get(imageIndex), null);
+	 	    	else
+			     ip = new FloatProcessor(this.width, this.height, (float[])problem.getData(imageIndex, 1), null);
 	 	    }
 	 	    else {
 	 	    	throw new Exception("Unsuppored image type");

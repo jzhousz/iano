@@ -8,15 +8,16 @@ import java.util.ArrayList;
  *  This class calculates Hu's moments (seven, plus one more)
  *  http://en.wikipedia.org/wiki/Image_moment#Rotation_invariant_moments
  */
-
+//8/18/2012: deal with different image size
 public class ImageMoments implements FeatureExtractor
 {
-    protected ArrayList data;    //data from DataInput
+    protected ArrayList data = null;    
     int totalwidth;             //width of images
     int totalheight;            //height of images
     int length;                 //number of images
     int imageType;              //the type of image (defined in DataInput)
-
+    DataInput problem = null;
+ 
     //features to return
     protected float[][] features = null;
 
@@ -47,10 +48,10 @@ public class ImageMoments implements FeatureExtractor
     {
 
 		//check if the extractor can handle this problem.
-		if (problem.ofSameSize() == false)
-			throw new Exception("The Image Moments feature extractor currently has to work with images of same dimension.");
+		//if (problem.ofSameSize() == false)
+		//	throw new Exception("The Image Moments feature extractor currently has to work with images of same dimension.");
 
-        data = problem.getData();
+		this.problem = problem;
         length = problem.getLength();
         
 		if (problem.ofSameSize() != false)
@@ -58,8 +59,6 @@ public class ImageMoments implements FeatureExtractor
 		  this.totalwidth  =  problem.getWidth();
 		  this.totalheight  = problem.getHeight();
 		}
-        //totalwidth = problem.getWidth();
-        //totalheight = problem.getHeight();
         imageType = problem.getImageType();
         features = new float[length][8];
  
@@ -187,13 +186,12 @@ public class ImageMoments implements FeatureExtractor
 
     protected float[][] calcFeatures() throws Exception {
         //single image
-    	//reuse to save memory 09/01/2011
-        float[][] image = new float[totalheight][totalwidth];
+        float[][] image = null; //size may vary depending on image# 
         //centered x and y based on mean
         double mean_x;
         double mean_y;
-        double[] centered_x = new double[image[0].length];
-        double[] centered_y = new double[image.length];
+        double[] centered_x = new double[totalwidth];
+        double[] centered_y = new double[totalheight];
         //raw image moments
         double m_00, m_01, m_10;
         //central moments
@@ -205,9 +203,26 @@ public class ImageMoments implements FeatureExtractor
 
         //for each image in the set
         for (int image_num = 0; image_num < this.length; image_num++) {
-            //convert this image from flattened to a 2d array
-            convert_flat_to_2d(data.get(image_num), image);
 
+        	//convert this image from flattened to a 2d array
+        	if (problem !=null)
+        	{
+        		if (!problem.ofSameSize())
+        		{  	
+        		 this.totalheight = problem.getHeightList()[image_num];
+        		 this.totalwidth = problem.getHeightList()[image_num];
+        		}
+                image = new float[totalheight][totalwidth];
+        		convert_flat_to_2d(problem.getData(image_num,1), image);
+        	}
+        	else if (data != null)
+        	{
+                image = new float[totalheight][totalwidth];
+        		convert_flat_to_2d(data.get(image_num), image);
+        	}
+        	else
+        		throw new Exception("Data was not passed in correctly");
+        	
             //calculate raw moments
             m_00 = m_pq(image, 0, 0);
             m_10 = m_pq(image, 1, 0);
@@ -218,6 +233,11 @@ public class ImageMoments implements FeatureExtractor
             mean_y = m_01 / m_00;
 
             //calculate centered x and y based on mean
+    		if (!problem.ofSameSize())
+    		{ 	//size is different now!
+    			centered_x = new double[totalwidth];
+    			centered_y = new double[totalheight];
+    		}
             center_x(image, mean_x, centered_x);
             center_y(image, mean_y, centered_y);
 

@@ -14,7 +14,8 @@ import annotool.io.DataInput;
 public class HaarFeatureExtractor implements FeatureExtractor
 {
    protected float[][] features = null;
-   protected ArrayList data;
+   protected ArrayList data = null;  //if pass directly in
+   protected DataInput problem = null;
    int totallevel = 1;
    int totalwidth;
    int totalheight;
@@ -22,7 +23,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
    boolean singleImage = false; //handle many images by default
    protected byte[] singleData;
    public final static String LEVEL_KEY = "Wavelet Level";
-   boolean workOnRawBytes = true; //work as the first feature extractor by default
+   boolean workOnRawBytes = true; //work as the first feature extractor by default, not used in current BIOCAT since all feature extractors are parallel
    int imageType;
    
    /**
@@ -53,8 +54,8 @@ public class HaarFeatureExtractor implements FeatureExtractor
     * @return             Array of features
     * @throws  Exception  
     */
-   //not used?
-  public float[][] calcFeatures(float[][] data, DataInput problem) throws Exception
+   //not used since feature extractors are not sequential 
+   public float[][] calcFeatures(float[][] data, DataInput problem) throws Exception
   {
  	  this.features = data;
 	  workOnRawBytes = false;
@@ -79,7 +80,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
 	  this.length = problem.getLength();
       this.imageType = problem.getImageType();
 	  if(workOnRawBytes)
-   	   data = problem.getData();
+   	   this.problem = problem;
       
 	  return calcFeatures();
   }
@@ -113,7 +114,12 @@ public class HaarFeatureExtractor implements FeatureExtractor
           if(!singleImage)
           {
 	       for(int i=0; i <length; i++)
-            getHaarFeatureOfOneImage(data.get(i), features[i]);
+	       { 
+	    	 if (data == null)  
+               getHaarFeatureOfOneImage(problem.getData(i,1), features[i]);
+	    	 else
+	    	   getHaarFeatureOfOneImage(data.get(i), features[i]);
+	       }
           }
           else 
         	getHaarFeatureOfOneImage(singleData, features[0]);
@@ -127,6 +133,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
    }
 
    //add ImageType on 1/24/2011, called by StackSimpleHaarFeature
+   // parameter datain is an array
    private void getHaarFeatureOfOneImage(Object datain, float[] feature) throws Exception
    {
 	   //copy data to feature,
