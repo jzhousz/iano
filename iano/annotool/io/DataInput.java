@@ -92,7 +92,8 @@ public class DataInput
 	String[] children = null; //list of image file names in the dir
 	protected int height = 0; //height of the first image (or of the entire set if of the same size)
 	protected int width = 0;  //width of the first image
-	protected int depth = 0;  //depth in the case of 3D ROI.
+	protected int depth = 0;  //if non ROI.  1 if 2D ROI,  1+ if 3D ROI.  
+
 	int[] widthList = null;  //Moved from DataInputDynamic to allow dynamic size 02/2012
 	int[] heightList = null;
 	int[] depthList = null;
@@ -289,15 +290,15 @@ public class DataInput
 
 	//return an array whose type depending on image type
 	//The size of the array can be either based on the original image dimension or resized dimension.
-	private Object openOneImage(ImagePlus imgp, int stackIndex, int curw, int curh) throws Exception
+	private Object openOneImage(ImagePlus imgp, int stackIndex) throws Exception
 	{
 		//stack from 1 to number of slices
 		ImageProcessor ip = imgp.getStack().getProcessor(stackIndex);
 		Object results = null;
-		int w = curw, h = curh;
+		int w = imgp.getWidth(), h = imgp.getHeight();
 		
 		if (resize)
-		{
+		{  //don't use the image's width/height
 			ip  = ip.resize(this.width,this.height);
 			w = this.width; 
 			h = this.height;
@@ -634,10 +635,12 @@ public class DataInput
 	//return an arraylist of all images (or ROIs) of a certain stackIndex.
 	//This is the working horse for reading images.
 	//Should just be called once throughout the program.
-	private ArrayList readImages(String[] childrenCandidates, int stackIndex) throws Exception
+    //Changed 8/16/2012:
+    //  No longer save the whole data for memory tuning.
+	private void readImages(String[] childrenCandidates, int stackIndex) throws Exception
 	{
 		
-		System.err.println("READING THE IMAGES !!!!!!!!!!!!!!!!");
+		System.out.println("READING THE IMAGES !!!!!!!!!!!!!!!!");
 		
 		ImagePlus imgp = null; Object oneroidata = null;
 		int curwidth, curheight, curdepth;
@@ -647,7 +650,7 @@ public class DataInput
 		ArrayList<Integer> tmpWList = new ArrayList<Integer>(childrenCandidates.length);
 		ArrayList<Integer> tmpHList = new ArrayList<Integer>(childrenCandidates.length);
 		ArrayList<Integer> tmpDList = new ArrayList<Integer>(childrenCandidates.length);
-		data = new ArrayList<Object>(childrenCandidates.length);
+		//data = new ArrayList<Object>(childrenCandidates.length);
 		
 		//go through the files
 		for (int i=0; i<childrenCandidates.length; i++)
@@ -706,10 +709,10 @@ public class DataInput
 			}
 			tmpDList.add(curdepth);  //depth is never resized 
 			
-			if( this.mode == ROIMODE) 
-				data.add(oneroidata);
-			else //must be called after setting the width and height
-			    data.add(openOneImage(imgp, stackIndex, curwidth, curheight));
+			//if( this.mode == ROIMODE) 
+			//	data.add(oneroidata);
+			//else //must be called after setting the width and height
+			 //   data.add(openOneImage(imgp, stackIndex, curwidth, curheight));
 
 			//update the index for current data, needed for 3D image to avoid re-reading the same stack
 			lastStackIndex = stackIndex;
@@ -722,38 +725,79 @@ public class DataInput
 		if (children.length == 0)
 			throw new Exception("There is no valid image found in the directory.");
 	
-		return data;
+		//return data;
 	}
 
-	/** return the pixel data -- 
+	/** 
+	    Deprecated due to memory usage. 
+	    
+	    return the pixel data -- 
 	    The algorithm needs use a mask to avoid sign extension
 	  		such as data[i][j]&0xff
 	 **/
-	public ArrayList getData() throws Exception
-	{
-		//return the first slice for normal 2D images.
-		return getData(1);
-	}
+	//public ArrayList getData() throws Exception
+	//{
+	//	//return the first slice for normal 2D images.
+	//	return getData(1);
+	//}
 
-	/** return the pixel data -- 
+	/** 
+	 *  Deprecated. A lot of memory for large sets. Not recommended.
+	 
+	    return the pixel data -- 
 	    The algorithm needs to use a mask to avoid sign extension
 		such as data[i][j]&0xff (for byte)
 		
 		stackIndex:  between 1 and stackSize. 
     **/
-	public ArrayList getData(int stackIndex) throws Exception
+	public ArrayList<Object> getStackData(int stackIndex) throws Exception
 	{
 		//check if need to read the data based on lastStackIndex
-		if (data == null ||  lastStackIndex != stackIndex)
-	    {
-		   String[] childrenCandidates = getChildrenCandidates(directory, ext);
-		   data = readImages(childrenCandidates, stackIndex);
-	    }  
-	    lastStackIndex = stackIndex; //update the index of the last read stack.
-	   
-	   return data;
+		
+		//if (data == null ||  lastStackIndex != stackIndex)
+	    //{
+		//   String[] childrenCandidates = getChildrenCandidates(directory, ext);
+		//   data = readImages(childrenCandidates, stackIndex);
+	    //}  
+	    //lastStackIndex = stackIndex; //update the index of the last read stack.
+	
+		//get/build the array. A lot of memory for large sets ... not recommended.
+		ArrayList<Object> data = new ArrayList<Object>(children.length);
+		for (int i = 0; i < children.length; i++)
+			data.add(getData(i, stackIndex));
+	    
+	    return data;
 	}
 	
+	/**
+	  Get the array of the image (2D slice) of a given stackIndex
+	  The type of the Object depends on the image type
+	 * @param imgIndex start from 0
+	 * @param stackIndex  start from 1.
+	 * @return
+	 * @throws Exception
+	 * */
+	 
+	public Object getData(int imgIndex, int stackIndex) throws Exception
+	{
+		if (children == null)
+			getChildren();
+
+		//read the image based on mode
+		Object result = null;
+		//get data
+		if( this.mode == ROIMODE) 
+		   //read the ROI data, get the ROI width and height
+			result = openROIImage(children[imgIndex], stackIndex, null);
+		else //otherwise get the imageplus and then read data
+		{
+		   ImagePlus imp = getImage(children[imgIndex]);
+		   result = openOneImage(imp, stackIndex);
+		}
+
+		return result;
+	}
+		
 	//getter should be called after images are read.
 	public int getLength() throws Exception
 	{
@@ -847,16 +891,33 @@ public class DataInput
 	}
 	
 	/**
-	 * This returns the depth. 
+	 * This method is preferred since it covers both ROI and non-ROI cases 
+	 * 
+	 * This returns the depth if ROI, and the stack size for non-ROI. 
+	 * 
 	 * In the case of 3D ROI, it is 1+.
 	 * If 2D ROI:  should be the fault depth from ROI input dialog: 1;
-	 * If not a ROI: should be 0 (from default value of DataInput.
+	 * If not a ROI: the depth instance is 0 (from default value of DataInput), so the stackSize
+	 *    of the image is returned.
+	 * 
 	 * @return   int depth
 	 */
-	public int getDepth() 
+	public int getDepth() throws Exception
 	{
-		//0 if non ROI.  1 if 2D ROI,  1+ if 3D ROI.  
-		return depth;
+		if (mode == ROIMODE)
+			return depth;
+		else
+		{  // return stackSize
+			if(stackSize == 0)
+			{
+			 System.out.println("Read the first image to get info.");
+			 String[] children = getChildren();
+			 ImagePlus imgp = new ImagePlus(directory+children[0]);
+			 stackSize = imgp.getStackSize();
+			}
+			return stackSize;	
+		}
+			
 	}
 
 	/* This method is called by getData() depending on training/testing 
@@ -925,7 +986,12 @@ public class DataInput
 	public String[] getChildren() throws Exception
 	{
 		if (children == null)
-			getData();
+		{
+		   String[] childrenCandidates = getChildrenCandidates(directory, ext);
+		   readImages(childrenCandidates, 1);
+		}
+	
+		//	getData();
 		
 		return children;
 	}
@@ -974,7 +1040,7 @@ public class DataInput
 			return false;
 		}
 
-		return imageType == 4;
+		return imageType == COLOR_RGB;
 	}
 	
 	
@@ -1057,7 +1123,7 @@ public class DataInput
 	    ImagePlus imgp = new ImagePlus(directory+children[imageindex]);
 	    //stack from 1 to number of slices
 		for(int stackIndex = 1; stackIndex <= stackSize; stackIndex++)
-			data.add(openOneImage(imgp, stackIndex, imgp.getWidth(), imgp.getHeight()));			
+			data.add(openOneImage(imgp, stackIndex));			
 
 		return data;
 	}
@@ -1068,7 +1134,7 @@ public class DataInput
 		if (widthList == null)
 		{
 			System.out.println("Read the images to get info.");
-			getData();
+			getChildren();
 		}
 			
 		return widthList;
@@ -1079,7 +1145,7 @@ public class DataInput
 		if (heightList == null)
 		{
 			System.out.println("Read the images to get info.");
-			getData();
+			getChildren();
 		}
 			
 		return heightList;
@@ -1090,7 +1156,8 @@ public class DataInput
         if (depthList == null)
         {
 			System.out.println("Read the images to get info.");
-			getData();
+			getChildren();
+			//getData();
         }
         return depthList;
 	}

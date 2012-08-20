@@ -105,10 +105,10 @@ public class ROIAnnotator {
 			roiDepth = Integer.parseInt(roiSize[2]);
 		System.out.println("roiWidth:"+roiWidth+"roiHeight "+ roiHeight+" roiDepth"+roiDepth);
 		
-		ArrayList data  = null;
+		//ArrayList data  = null;
 		int totalImages = 0;
 		try {
-			data = problem.getData();
+			//data = problem.getData();
 			totalImages = problem.getLength();
 		} catch(Exception ex) {
 			ex.printStackTrace();
@@ -129,7 +129,8 @@ public class ROIAnnotator {
 			{
 			  try
 			  {
-				annotateAnImage(problem.getImagePlus(i), data.get(i), model, roiWidth, roiHeight, roiDepth, problem.getImageType());
+				//annotateAnImage(problem.getImagePlus(i), data.get(i), model, roiWidth, roiHeight, roiDepth, problem.getImageType());
+				  annotateAnImage(problem, i, model, roiWidth, roiHeight, roiDepth);
 			  }catch(Exception e)
 			  {
 				e.printStackTrace();  
@@ -147,8 +148,11 @@ public class ROIAnnotator {
 	 * @param data : Image data in single dimensional bytes array (width * height).
 	 * @param model : Model to use for annotation.
 	 */
-	private void annotateAnImage(ImagePlus imp, Object datain, ChainModel model, int roiWidth, int roiHeight, int roiDepth, int imageType) {
-		
+	//private void annotateAnImage(ImagePlus imp, Object datain, ChainModel model, int roiWidth, int roiHeight, int roiDepth, int imageType) {
+	private void annotateAnImage(DataInput problem, int bigImageIndex, ChainModel model, int roiWidth, int roiHeight, int roiDepth) throws Exception 
+	{
+		ImagePlus imp = problem.getImagePlus(bigImageIndex);
+		int imageType = problem.getImageType();
 		ImageProcessor ip = imp.getProcessor(); //first slice if 3D?
 		int width = ip.getWidth();
 		int height = ip.getHeight();
@@ -159,6 +163,8 @@ public class ROIAnnotator {
 		if(this.isMaximaOnly) {
 			if (stackSize == 1) //2D
 			{
+				System.out.println("2D local maxima: TBD");
+				/*
 				float[] floatData = null;
 				floatData = new float[width * height];
 				if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
@@ -177,6 +183,7 @@ public class ROIAnnotator {
 	 	        	floatData[i] = (float) data[i];
 				}
 				isMaxima = Utility.getLocalMaxima(floatData, width, height, 1, 3, 3, 1);
+				*/
 			}
 			else
 				isMaxima = Utility.getLocalMaxima(imp, 3, 3, 1);
@@ -233,6 +240,7 @@ public class ROIAnnotator {
 		SavableClassifier classifier = (SavableClassifier)model.getClassifier();
 		Annotator anno = new Annotator();
 		int[] predictions = new int[numSubImages];
+		Object datain = null; //complete slice of the given image
 		
 		int imageIndex = -1;
 		for(int z = startSlice; z <= endSlice; z= z + zInterval)
@@ -266,6 +274,8 @@ public class ROIAnnotator {
                   //slice# start from 1
                   ip = imp.getStack().getProcessor(zindex + 1 + p);
                   //(i,j) is the upperleft corner of the subimage
+                  //get that stack
+                  datain = problem.getData(bigImageIndex, zindex+1+p); //if 2D, 2nd para is 1.
 				  for(int m = 0; m < roiWidth; m++)//col
 					for(int n = 0; n < roiHeight; n++) //row
 						if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) 

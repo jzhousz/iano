@@ -6,6 +6,7 @@ import ij.plugin.filter.RankFilters;
 import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,7 +26,7 @@ public class Territory  implements FeatureExtractor {
 	int length;
 	int imageType;
 	
-	protected ArrayList data;
+	protected ArrayList data = null;
 	
 	public final static String RADIUS_KEY = "Radius";
 
@@ -54,7 +55,7 @@ public class Territory  implements FeatureExtractor {
 	public float[][] calcFeatures(DataInput problem) throws Exception {
 		this.problem = problem;
 		this.length = problem.getLength();
-		this.data = problem.getData();
+		//this.data = problem.getData();
 		this.imageType = problem.getImageType();
 		this.features = new float[length][1];
 		
@@ -86,7 +87,30 @@ ImgDimension dim) throws Exception {
 		BackgroundSubtracter bs = new BackgroundSubtracter();
 		int[][] binaryData = null;
 		
-		for (int imageIndex = 0; imageIndex < this.length; imageIndex++) {
+		for(int imageIndex = 0; imageIndex < length; imageIndex++) {
+			if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
+				if (data != null)
+				 ip = new ByteProcessor(width, height, (byte[])data.get(imageIndex), null);
+				else 
+				 ip = new ByteProcessor(width, height, (byte[])problem.getData(imageIndex, 1), null);
+		    }
+		    else if(imageType == DataInput.GRAY16) {
+		    	if (data != null)
+		    	 ip = new ShortProcessor(width, height, (short[])data.get(imageIndex), null);
+		    	else
+		    	 ip = new ShortProcessor(width, height, (short[])problem.getData(imageIndex,1), null);
+		    }	
+	 	    else if(imageType == DataInput.GRAY32) {
+	 	    	if (data != null)
+		    	 ip = new FloatProcessor(width, height, (float[])data.get(imageIndex), null);
+	 	    	else
+			     ip = new FloatProcessor(width, height, (float[])problem.getData(imageIndex, 1), null);
+	 	    }
+	 	    else {
+	 	    	throw new Exception("Unsuppored image type");
+	 	    }
+		
+		/*for (int imageIndex = 0; imageIndex < this.length; imageIndex++) {
 			if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
 	            for (int i = 0; i < width*height; i++) 
 	            	ip = new ByteProcessor(width, height, (byte[])data.get(imageIndex), null);
@@ -97,8 +121,8 @@ ImgDimension dim) throws Exception {
 	            for (int i = 0; i < width*height; i++) 
 	            	ip = new FloatProcessor(width, height, (float[])data.get(imageIndex), null);
 	        else
-	              throw new Exception("Not supported image type in Moments: type "+imageType);
-			
+	              throw new Exception("Not supported image type: type "+imageType);
+		 */	
 			//Apply despeckle : median filter with radius 1			
 			filter.rank(ip, 1, RankFilters.MEDIAN);
 			
