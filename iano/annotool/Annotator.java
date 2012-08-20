@@ -398,25 +398,44 @@ public class Annotator
     
     //Take in ArrayList instead of Problem. 
     //Typically used by ROI with one image in the ArrayList.
-    private float[][] extractGivenNONE(ArrayList alldata, int imageSize, int imageType) throws Exception
+    private float[][] extractGivenNONE(ArrayList alldata, ImgDimension dim, int imageType) throws Exception
     {
+    	int stackSize = dim.depth/2 +1; 
+    	if (dim.depth > 1)
+    	{ //if 3D, the first dimension is imageIndex, second is stackIndex
+           System.out.println("When no extractor is selected, the middle stack of the 3D image is used for efficiency purpose.");
+    	}
+    	
+    	int imageSize = dim.height*dim.width;
         int length = alldata.size();
         float[][] features = new float[length][imageSize];
         for (int i = 0; i < length; i++) {
    	      if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB)
    	      {
-  	        byte[] data = (byte[]) alldata.get(i);
+   	    	byte[] data = null;  
+   	    	if (dim.depth > 1)
+   	    		data = (byte[]) ((ArrayList) alldata.get(i)).get(stackSize);
+   	    	else
+   	    		data = (byte[]) alldata.get(i);
             for (int j = 0; j < imageSize; j++) 
               features[i][j] = (float) (data[j] & 0xff);
           }else if (imageType == DataInput.GRAY16)
           {
-	    	short[] data = (short[]) alldata.get(i);
+	    	short[] data;
+	    	if (dim.depth > 1)
+	    		data = (short[]) ((ArrayList) alldata.get(i)).get(stackSize);
+	    	else 
+	    		data = (short[]) alldata.get(i);
  	        for(int j = 0; j< imageSize; j++)
  	    	  features[i][j] = (float) (data[j]&0xffff);
 	      }	
  	      else if(imageType == DataInput.GRAY32)
  	      {
-	    	float[] data = (float[]) alldata.get(i);
+	    	float[] data;
+	    	if (dim.depth > 1)
+	    	    data = (float[]) ((ArrayList) alldata.get(i)).get(stackSize);
+	    	else
+	    		data = (float[]) alldata.get(i);
  	        for(int j = 0; j< imageSize; j++)
  	 	      features[i][j] = (float) data[j];
  	      }
@@ -435,12 +454,12 @@ public class Annotator
      *  8/5/2011: Current version only deals with 2DROI (depth == 1)
      *  In order to handle 3D ROI, 3D feature extractors need to work with byte[] with 3D info.
      *  9/2/2011: byte[][] is changed to ArrayList for other ImageProcessor types     
-     *  8/2012: Now worth with 3D
+     *  8/2012: Now work with 3D
      */
      public float[][] extractGivenAMethod(String chosenExtractor, String path, java.util.HashMap<String, String> parameters, ArrayList data, int imageType, ImgDimension dim) throws Exception
      {
     	 if (chosenExtractor == null || chosenExtractor.equalsIgnoreCase("NONE")) 
-    		return extractGivenNONE(data, dim.height*dim.width, imageType); 
+    		return extractGivenNONE(data, dim, imageType); 
             
         //those that are not "NONE"    	    	
      	FeatureExtractor extractor = getExtractorGivenName(chosenExtractor, path, parameters);
