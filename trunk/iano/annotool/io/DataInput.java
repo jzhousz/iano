@@ -87,16 +87,16 @@ public class DataInput
 	public static final int ROIANNOMODE = 3; //ROI annotation
 	 
 	//problem properties
-	protected ArrayList data = null; //store all images in the dir with given ext.
+	private ArrayList data = null; //store all images (of a slice). Not suggested for larget sets
 	int lastStackIndex = 0; // the variable to track if the last getData() was for the same stack
 	String[] children = null; //list of image file names in the dir
 	protected int height = 0; //height of the first image (or of the entire set if of the same size)
 	protected int width = 0;  //width of the first image
 	protected int depth = 0;  //if non ROI.  1 if 2D ROI,  1+ if 3D ROI.  
 
-	int[] widthList = null;  //Moved from DataInputDynamic to allow dynamic size 02/2012
-	int[] heightList = null;
-	int[] depthList = null;
+	protected int[] widthList = null;  //Moved from DataInputDynamic to allow dynamic size 02/2012
+	protected int[] heightList = null;
+	protected int[] depthList = null;
 	protected int stackSize = 0;
 	protected int imageType = 0;
 	boolean ofSameSize = true; //added 02/2012 to combine DataInputDynamic
@@ -313,11 +313,11 @@ public class DataInput
 			byte[] pixels= new byte[w*h];
 			byte[] tmppixels= new byte[w*h];  //for the irrelevant channels.
 
-			if (channel == "r")
+			if (channel.equals("r")) 
 				((ColorProcessor)ip).getRGB(pixels,tmppixels,tmppixels);
-			else if (channel == "g")
+			else if (channel.equals("g"))
 				((ColorProcessor)ip).getRGB(tmppixels,pixels,tmppixels);
-			else if (channel == "b")
+			else if (channel.equals("b"))
 				((ColorProcessor)ip).getRGB(tmppixels,tmppixels,pixels);
 			else
 				throw new Exception("Not supported channel " + channel);
@@ -715,7 +715,7 @@ public class DataInput
 			 //   data.add(openOneImage(imgp, stackIndex, curwidth, curheight));
 
 			//update the index for current data, needed for 3D image to avoid re-reading the same stack
-			lastStackIndex = stackIndex;
+			//lastStackIndex = stackIndex;
 			children = (String[]) childrenList.toArray(new  String[childrenList.size()]);
 			widthList =  convertListTointArray(tmpWList);  
 			heightList = convertListTointArray(tmpHList);
@@ -762,10 +762,11 @@ public class DataInput
 	    //lastStackIndex = stackIndex; //update the index of the last read stack.
 	
 		//get/build the array. A lot of memory for large sets ... not recommended.
-		ArrayList<Object> data = new ArrayList<Object>(children.length);
+		data = new ArrayList<Object>(children.length);
 		for (int i = 0; i < children.length; i++)
 			data.add(getData(i, stackIndex));
-	    
+		
+		lastStackIndex = stackIndex; //update the index of the last read stack.
 	    return data;
 	}
 	
@@ -1044,10 +1045,11 @@ public class DataInput
 	}
 	
 	
-    //reset data to facilitate gc
+    //Reset data to facilitate gc.
+	//Not useful if data is not read in during reading
 	public void setDataNull()
 	{
-	    data = null;	
+	   data = null;	
 	}
 
 	/**
@@ -1157,7 +1159,6 @@ public class DataInput
         {
 			System.out.println("Read the images to get info.");
 			getChildren();
-			//getData();
         }
         return depthList;
 	}
