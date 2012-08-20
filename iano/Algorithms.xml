@@ -207,7 +207,7 @@
 		<ClassName>annotool.extract.ImageMoments3D</ClassName>
 	</Algorithm>	
 	<Algorithm type="3DExtractor">
-		<Name>Partial3D</Name>
+		<Name>Anisotropic 3D Wavelet</Name>
 		<ClassName>annotool.extract.StackSimpleHaarFeatureExtractor</ClassName>
 		<Desc>Average HAAR of middle frame</Desc>
 		<Parameter type="Integer">
