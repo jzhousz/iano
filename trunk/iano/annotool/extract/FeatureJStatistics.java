@@ -140,7 +140,7 @@ public class FeatureJStatistics implements FeatureExtractor {
 	
 	protected float[][] calcFeatures() throws Exception {
 		//Initialize features array
-		features = new float[data.size()][selectedCount];
+		features = new float[length][selectedCount];
 		
 		ImageProcessor ip = null;
 		ImagePlus imp = null;
