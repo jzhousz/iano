@@ -27,16 +27,14 @@ import annotool.io.DataInput;
 
 /**
  * ROI annotator executes the algorithms in ROI annotation mode.
- * TODO: Rewrite to use similar technique (DataInput constructor) as in ROI input mode
  * 
  * 8/10/2012: Add 3D ROI:
  *   Note: 3D ROI with a depth of 1 is treated as 2D ROI.
  *   ArrayList can be a 3D data.
  *   
- *   isMaxima -> 3D ; Not select in the case of 3D
  *   interval -> z-interval? The same for now.
  *   mark images on result if 2D
- *   export -> 3D
+ *   only export to file if 3D
  */
 public class ROIAnnotator {
 	private int interval;
@@ -161,32 +159,10 @@ public class ROIAnnotator {
 	
 		//If only local maxima are to be annotated, find local maxima
 		if(this.isMaximaOnly) {
-			if (stackSize == 1) //2D
-			{
-				System.out.println("2D local maxima: TBD");
-				/*
-				float[] floatData = null;
-				floatData = new float[width * height];
-				if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
-					byte[] data = (byte[]) datain;
-					for(int i = 0; i < width*height; i++)
-						floatData[i] = (float) (data[i]&0xff);
-				}
-				else if(imageType == DataInput.GRAY16) {
-					int[] data = (int[]) datain;
-					for(int i = 0; i < width*height; i++)
-						floatData[i] = (float) (data[i]&0xffff);
-				}	
-				else if(imageType == DataInput.GRAY32) {
-		    	float[] data = (float[]) datain;
-	 	        for(int i = 0; i < width*height; i++)
-	 	        	floatData[i] = (float) data[i];
-				}
-				isMaxima = Utility.getLocalMaxima(floatData, width, height, 1, 3, 3, 1);
-				*/
-			}
-			else
-				isMaxima = Utility.getLocalMaxima(imp, 3, 3, 1);
+				int ch = 0; //default "r"
+				if (problem.getChannel().equals("g"))  ch = 1;
+				else if (problem.getChannel().equals("b")) ch = 2;
+				isMaxima = Utility.getLocalMaxima(imp, ch, 3, 3, 1);
 		}
 		
 		//Divide the image into an array of small target images for ROI annotation		
