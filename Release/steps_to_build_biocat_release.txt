@@ -5,6 +5,8 @@ August 16, 2012
 1.  Generate biocat.jar 
     In Eclipse, "export...", 
 	choose: executable jar file;  put the needed libaraies next to the jar
+	
+    The needed external libraries should be up-to-date, in particular, ij.jar (for ImageJ) should be correct.
     
 2.  Clean up biocat.jar
     In 7zip:  remove unneeded folders such as ROI_annotatotor, mRMR, and cell_counting
@@ -13,7 +15,7 @@ August 16, 2012
 
 3. Create the tar file:
    Add:  
-         1. Algorithms.xml
+         1. Algorithms.xml  -- Make sure it is up-to-date.
          2. Sample image folder with k150, 2DROI (etc.)
          3. run
 	 4. ReleaseNotes.txt
