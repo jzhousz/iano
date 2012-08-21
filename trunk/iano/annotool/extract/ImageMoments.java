@@ -12,7 +12,7 @@ import java.util.ArrayList;
 //8/20/2012: Avoid converting to 2D array.
 public class ImageMoments implements FeatureExtractor
 {
-    protected ArrayList data = null;    
+    protected ArrayList alldata = null;    //if pass via ArrayList instead of DataInput
     int totalwidth;             //width of images
     int totalheight;            //height of images
     int length;                 //number of images
@@ -66,7 +66,7 @@ public class ImageMoments implements FeatureExtractor
      */
     public float[][] calcFeatures(ArrayList data, int imageType, ImgDimension dim) throws Exception
     {
-        this.data = data;
+        this.alldata = data;
         length = data.size();
         totalwidth = dim.width;
         totalheight = dim.height;
@@ -76,53 +76,8 @@ public class ImageMoments implements FeatureExtractor
     	return calcFeatures();
     }
 
-    //converts a flattened image into a 2d array.
-    //yes, I'm just moving bytes around in memory,
-    //but 2d arrays are a lot easier to work with...
-    //a 4000x4000 image takes ~135ms to convert on my computer (2.53Ghz cpu)
-    //09/01/11: change to convert the original Object (byte[]/int[]/float[]) to float[][]
-    //08/20/2012:  not used
-    protected void convert_flat_to_2d(Object flat_image, float[][] image) throws Exception 
-    {
-        int mask = 0xff; 
-        int longmask = 0xffff;
-
-        int y, x;
-        if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
-        {
-            for (int i = 0; i < totalheight*totalwidth; i++) 
-            {
-                x = i % totalwidth;
-                y = i / totalwidth;
-                image[y][x] = (float) (((byte[])flat_image)[i] & mask);
-            }
-        }
-        else if (imageType == DataInput.GRAY16)
-        {
-            for (int i = 0; i < totalheight*totalwidth; i++) 
-            {
-               x = i % totalwidth;
-               y = i / totalwidth;
-               image[y][x] = (float) (((short[])flat_image)[i] & longmask);
-            }
-        }
-        else if (imageType == DataInput.GRAY32)
-        { 	
-            for (int i = 0; i < totalheight*totalwidth; i++) 
-            {
-              x = i % totalwidth;
-              y = i / totalwidth;
-              image[y][x] = ((float[])flat_image)[i];
-            }
-        }
-        else
-              throw new Exception("Not supported image type in Moments: type "+imageType);	
- 
-    }
- 
-
     //calculates raw image moments
-    protected double m_pq(Object data, int p, int q, int ImageType, int width, int height) throws Exception {
+    protected double m_pq(Object data, int p, int q, int width, int height) throws Exception {
         CompSumDouble m = new CompSumDouble(); //compensated sum
         int size = width * height;  
         int x, y;
@@ -134,7 +89,7 @@ public class ImageMoments implements FeatureExtractor
     		if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
     			m.Add(getLowerPower(x, p) * getLowerPower(y, q) * (float) (((byte[])data)[i] & mask));
     		else if (imageType == DataInput.GRAY16)
-    			m.Add(getLowerPower(x, p) * getLowerPower(y, q) * (float) (((int[])data)[i] & longmask));
+    			m.Add(getLowerPower(x, p) * getLowerPower(y, q) * (float) (((short[])data)[i] & longmask));
     		else if (imageType == DataInput.GRAY32)
     			m.Add(getLowerPower(x, p) * getLowerPower(y, q) * ((float[])data)[i]);
     		else
@@ -169,7 +124,7 @@ public class ImageMoments implements FeatureExtractor
     }
 
     //calculates central moments
-    protected double mu_pq(Object data, int p, int q, int ImageType, int width, int height, double[] centered_x, double[] centered_y) throws Exception {
+    protected double mu_pq(Object data, int p, int q, int width, int height, double[] centered_x, double[] centered_y) throws Exception {
 
         CompSumDouble mu = new CompSumDouble();
         int size = width * height;  
@@ -215,23 +170,26 @@ public class ImageMoments implements FeatureExtractor
 
         //for each image in the set
         Object data = null;
-        int imageType = problem.getImageType();
         for (int image_num = 0; image_num < this.length; image_num++) {
 
         	if (problem !=null)
         	{
         		if (!problem.ofSameSize())
-        		{  	
+        		{  	//set the size for this image
         		 this.totalheight = problem.getHeightList()[image_num];
         		 this.totalwidth = problem.getHeightList()[image_num];
         		}
         	}
         	
             //calculate raw moments
-        	data = problem.getData(image_num,1);
-        	m_00 = m_pq(data, 0, 0, imageType, totalwidth, totalwidth);
-        	m_10 = m_pq(data, 1, 0, imageType, totalwidth, totalwidth);
-        	m_01 = m_pq(data, 0, 1, imageType, totalwidth, totalwidth);
+        	if (problem !=null)
+        	  data = problem.getData(image_num,1);
+        	else  //alldata is not null
+        	  data = alldata.get(image_num);	
+        		
+        	m_00 = m_pq(data, 0, 0, totalwidth, totalheight);
+        	m_10 = m_pq(data, 1, 0, totalwidth, totalheight);
+        	m_01 = m_pq(data, 0, 1, totalwidth, totalheight);
 
             //calculate mean of x and y
             mean_x = m_10 / m_00;
@@ -244,14 +202,14 @@ public class ImageMoments implements FeatureExtractor
             getCenter(totalheight, mean_y, centered_y);
 
             //calculate central moments
-            mu_00 = mu_pq(data, 0, 0, imageType, totalwidth, totalwidth, centered_x, centered_y);
-            mu_20 = mu_pq(data, 2, 0, imageType, totalwidth, totalwidth, centered_x, centered_y);
-            mu_02 = mu_pq(data, 0, 2, imageType, totalwidth, totalwidth, centered_x, centered_y);
-            mu_11 = mu_pq(data, 1, 1, imageType, totalwidth, totalwidth, centered_x, centered_y);
-            mu_30 = mu_pq(data, 3, 0, imageType, totalwidth, totalwidth, centered_x, centered_y);
-            mu_12 = mu_pq(data, 1, 2, imageType, totalwidth, totalwidth, centered_x, centered_y);
-            mu_21 = mu_pq(data, 2, 1, imageType, totalwidth, totalwidth, centered_x, centered_y);
-            mu_03 = mu_pq(data, 0, 3, imageType, totalwidth, totalwidth, centered_x, centered_y);
+            mu_00 = mu_pq(data, 0, 0, totalwidth, totalheight, centered_x, centered_y);
+            mu_20 = mu_pq(data, 2, 0, totalwidth, totalheight, centered_x, centered_y);
+            mu_02 = mu_pq(data, 0, 2, totalwidth, totalheight, centered_x, centered_y);
+            mu_11 = mu_pq(data, 1, 1, totalwidth, totalheight, centered_x, centered_y);
+            mu_30 = mu_pq(data, 3, 0, totalwidth, totalheight, centered_x, centered_y);
+            mu_12 = mu_pq(data, 1, 2, totalwidth, totalheight, centered_x, centered_y);
+            mu_21 = mu_pq(data, 2, 1, totalwidth, totalheight, centered_x, centered_y);
+            mu_03 = mu_pq(data, 0, 3, totalwidth, totalheight, centered_x, centered_y);
 
             //calculate //scale invariant moments,
             //(a.k.a. normalized central moments)
@@ -307,6 +265,52 @@ public class ImageMoments implements FeatureExtractor
     public boolean is3DExtractor()
     {  return false ; 
     }
+
+
+    //converts a flattened image into a 2d array.
+    //yes, I'm just moving bytes around in memory,
+    //but 2d arrays are a lot easier to work with...
+    //a 4000x4000 image takes ~135ms to convert on my computer (2.53Ghz cpu)
+    //09/01/11: change to convert the original Object (byte[]/int[]/float[]) to float[][]
+    //08/20/2012:  not used
+    /*
+    protected void convert_flat_to_2d(Object flat_image, float[][] image) throws Exception 
+    {
+        int mask = 0xff; 
+        int longmask = 0xffff;
+
+        int y, x;
+        if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
+        {
+            for (int i = 0; i < totalheight*totalwidth; i++) 
+            {
+                x = i % totalwidth;
+                y = i / totalwidth;
+                image[y][x] = (float) (((byte[])flat_image)[i] & mask);
+            }
+        }
+        else if (imageType == DataInput.GRAY16)
+        {
+            for (int i = 0; i < totalheight*totalwidth; i++) 
+            {
+               x = i % totalwidth;
+               y = i / totalwidth;
+               image[y][x] = (float) (((short[])flat_image)[i] & longmask);
+            }
+        }
+        else if (imageType == DataInput.GRAY32)
+        { 	
+            for (int i = 0; i < totalheight*totalwidth; i++) 
+            {
+              x = i % totalwidth;
+              y = i / totalwidth;
+              image[y][x] = ((float[])flat_image)[i];
+            }
+        }
+        else
+              throw new Exception("Not supported image type in Moments: type "+imageType);	
+ 
+    }*/
 }
 
 /*
