@@ -9,6 +9,7 @@ import java.util.ArrayList;
  *  http://en.wikipedia.org/wiki/Image_moment#Rotation_invariant_moments
  */
 //8/18/2012: deal with different image size
+//8/20/2012: Avoid converting to 2D array.
 public class ImageMoments implements FeatureExtractor
 {
     protected ArrayList data = null;    
@@ -21,12 +22,6 @@ public class ImageMoments implements FeatureExtractor
     //features to return
     protected float[][] features = null;
 
-    /**
-     * Default constructor
-     */
-    //public ImageMoments() 
-    //{}
-    
     /**
      * Empty implementation of setParameters 
      * 
@@ -46,11 +41,6 @@ public class ImageMoments implements FeatureExtractor
      */
     public float[][] calcFeatures(DataInput problem) throws Exception
     {
-
-		//check if the extractor can handle this problem.
-		//if (problem.ofSameSize() == false)
-		//	throw new Exception("The Image Moments feature extractor currently has to work with images of same dimension.");
-
 		this.problem = problem;
         length = problem.getLength();
         
@@ -91,13 +81,12 @@ public class ImageMoments implements FeatureExtractor
     //but 2d arrays are a lot easier to work with...
     //a 4000x4000 image takes ~135ms to convert on my computer (2.53Ghz cpu)
     //09/01/11: change to convert the original Object (byte[]/int[]/float[]) to float[][]
+    //08/20/2012:  not used
     protected void convert_flat_to_2d(Object flat_image, float[][] image) throws Exception 
     {
         int mask = 0xff; 
         int longmask = 0xffff;
 
-        //not needed to new for each image. waste of memory  jz 
-        //float[][] image = new float[totalheight][totalwidth];
         int y, x;
         if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
         {
@@ -130,52 +119,78 @@ public class ImageMoments implements FeatureExtractor
               throw new Exception("Not supported image type in Moments: type "+imageType);	
  
     }
+ 
 
     //calculates raw image moments
-    protected double m_pq(float[][] image, int p, int q) {
+    protected double m_pq(Object data, int p, int q, int ImageType, int width, int height) throws Exception {
         CompSumDouble m = new CompSumDouble(); //compensated sum
-        for (int y = 0; y < image.length; y++) {
-            for (int x = 0; x < image[0].length; x++) {
-                m.Add(Math.pow(x, p) * Math.pow(y, q) * image[y][x]);
-            }
-        }
+        int size = width * height;  
+        int x, y;
+        int mask = 0xff; 
+        int longmask = 0xffff;
+    	for(int i = 0; i < size; i++) {
+    		x = i % width;
+    		y = i / width;
+    		if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
+    			m.Add(getLowerPower(x, p) * getLowerPower(y, q) * (float) (((byte[])data)[i] & mask));
+    		else if (imageType == DataInput.GRAY16)
+    			m.Add(getLowerPower(x, p) * getLowerPower(y, q) * (float) (((int[])data)[i] & longmask));
+    		else if (imageType == DataInput.GRAY32)
+    			m.Add(getLowerPower(x, p) * getLowerPower(y, q) * ((float[])data)[i]);
+    		else
+    			throw new Exception("Not supported image type in Moments. Type = " + imageType);
+    	}
+
         return m.getSum();
     }
+    
+    //Works with power 0, 1 and 2
+    private double getLowerPower(double base, int power) {
+    	if (power == 0)
+    		return 1;
+    	else if(power == 1)
+    		return base;
+    	else if(power == 2)
+    		return base * base;
+    	else
+    		return 0;
+    }
 
-    //the next two functions calculate the centered values for x and y,
+    //the next function calculate the centered values for x and y,
     // based on mean x and mean y.  This way, instead of subtracting the mean
     //from x or y each time when I calculate the central moments,
     //(essentially doing it M*N times for every one), I pre-calculate them
     //in advance (M+N times).  Trading a little memory for a little speed...
-    protected double[] center_x(float[][] image, double x_mean, double[] centered_x) {
-        // double[] centered_x = new double[image[0].length]; //waste
-        for (int x = 0; x < image[0].length; x++) {
-            centered_x[x] = x - x_mean;
-        }
-        return centered_x;
-    }
-
-    protected static double[] center_y(float[][] image, double y_mean, double[] centered_y) {
-        //double[] centered_y = new double[image.length]; //waste
-        for (int y = 0; y < image.length; y++) {
+    protected static double[] getCenter(int size, double y_mean, double[] centered_y) {
+        for (int y = 0; y < size; y++) {
             centered_y[y] = y - y_mean;
         }
         return centered_y;
     }
 
     //calculates central moments
-    protected double mu_pq(float[][] image, int p, int q,
-                           double[] centered_x, double[] centered_y) {
+    protected double mu_pq(Object data, int p, int q, int ImageType, int width, int height, double[] centered_x, double[] centered_y) throws Exception {
+
         CompSumDouble mu = new CompSumDouble();
-        for (int y = 0; y < image.length; y++) {
-            for (int x = 0; x < image[0].length; x++) {
-                mu.Add(
-                        Math.pow(centered_x[x], p)
-                        * Math.pow(centered_y[y], q)
-                        * image[y][x] );
-            }
-        }
-        return mu.getSum();
+        int size = width * height;  
+        int x, y;
+        int mask = 0xff; 
+        int longmask = 0xffff;
+
+    	for(int i = 0; i < size; i++) {
+    		x = i % width;
+    		y = i / width;
+    		if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
+    			mu.Add(getLowerPower(centered_x[x], p) * getLowerPower(centered_y[y], q)  * (float) (((byte[])data)[i] & mask));
+    		else if (imageType == DataInput.GRAY16)
+    			mu.Add(getLowerPower(centered_x[x], p) * getLowerPower(centered_y[y], q)  * (float) (((short[])data)[i] & longmask));
+    		else if (imageType == DataInput.GRAY32)
+    			mu.Add(getLowerPower(centered_x[x], p) * getLowerPower(centered_y[y], q)  * ((float[])data)[i]);
+    		else
+    			throw new Exception("Not supported image type in Moments. Type = " + imageType);
+    	}
+      
+    	return mu.getSum();
     }
 
     //calculates scale invariant moments, (a.k.a. normalized central moments)
@@ -185,13 +200,10 @@ public class ImageMoments implements FeatureExtractor
     
 
     protected float[][] calcFeatures() throws Exception {
-        //single image
-        float[][] image = null; //size may vary depending on image# 
-        //centered x and y based on mean
         double mean_x;
         double mean_y;
-        double[] centered_x = new double[totalwidth];
-        double[] centered_y = new double[totalheight];
+        double[] centered_x = null;
+        double[] centered_y = null;
         //raw image moments
         double m_00, m_01, m_10;
         //central moments
@@ -202,9 +214,10 @@ public class ImageMoments implements FeatureExtractor
         double[] Hu = new double[8];
 
         //for each image in the set
+        Object data = null;
+        int imageType = problem.getImageType();
         for (int image_num = 0; image_num < this.length; image_num++) {
 
-        	//convert this image from flattened to a 2d array
         	if (problem !=null)
         	{
         		if (!problem.ofSameSize())
@@ -212,44 +225,33 @@ public class ImageMoments implements FeatureExtractor
         		 this.totalheight = problem.getHeightList()[image_num];
         		 this.totalwidth = problem.getHeightList()[image_num];
         		}
-                image = new float[totalheight][totalwidth];
-        		convert_flat_to_2d(problem.getData(image_num,1), image);
         	}
-        	else if (data != null)
-        	{
-                image = new float[totalheight][totalwidth];
-        		convert_flat_to_2d(data.get(image_num), image);
-        	}
-        	else
-        		throw new Exception("Data was not passed in correctly");
         	
             //calculate raw moments
-            m_00 = m_pq(image, 0, 0);
-            m_10 = m_pq(image, 1, 0);
-            m_01 = m_pq(image, 0, 1);
+        	data = problem.getData(image_num,1);
+        	m_00 = m_pq(data, 0, 0, imageType, totalwidth, totalwidth);
+        	m_10 = m_pq(data, 1, 0, imageType, totalwidth, totalwidth);
+        	m_01 = m_pq(data, 0, 1, imageType, totalwidth, totalwidth);
 
             //calculate mean of x and y
             mean_x = m_10 / m_00;
             mean_y = m_01 / m_00;
 
             //calculate centered x and y based on mean
-    		if (!problem.ofSameSize())
-    		{ 	//size is different now!
-    			centered_x = new double[totalwidth];
-    			centered_y = new double[totalheight];
-    		}
-            center_x(image, mean_x, centered_x);
-            center_y(image, mean_y, centered_y);
+   			centered_x = new double[totalwidth];
+   			centered_y = new double[totalheight];
+            getCenter(totalwidth, mean_x, centered_x);
+            getCenter(totalheight, mean_y, centered_y);
 
             //calculate central moments
-            mu_00 = mu_pq(image, 0, 0, centered_x, centered_y);
-            mu_20 = mu_pq(image, 2, 0, centered_x, centered_y);
-            mu_02 = mu_pq(image, 0, 2, centered_x, centered_y);
-            mu_11 = mu_pq(image, 1, 1, centered_x, centered_y);
-            mu_30 = mu_pq(image, 3, 0, centered_x, centered_y);
-            mu_12 = mu_pq(image, 1, 2, centered_x, centered_y);
-            mu_21 = mu_pq(image, 2, 1, centered_x, centered_y);
-            mu_03 = mu_pq(image, 0, 3, centered_x, centered_y);
+            mu_00 = mu_pq(data, 0, 0, imageType, totalwidth, totalwidth, centered_x, centered_y);
+            mu_20 = mu_pq(data, 2, 0, imageType, totalwidth, totalwidth, centered_x, centered_y);
+            mu_02 = mu_pq(data, 0, 2, imageType, totalwidth, totalwidth, centered_x, centered_y);
+            mu_11 = mu_pq(data, 1, 1, imageType, totalwidth, totalwidth, centered_x, centered_y);
+            mu_30 = mu_pq(data, 3, 0, imageType, totalwidth, totalwidth, centered_x, centered_y);
+            mu_12 = mu_pq(data, 1, 2, imageType, totalwidth, totalwidth, centered_x, centered_y);
+            mu_21 = mu_pq(data, 2, 1, imageType, totalwidth, totalwidth, centered_x, centered_y);
+            mu_03 = mu_pq(data, 0, 3, imageType, totalwidth, totalwidth, centered_x, centered_y);
 
             //calculate //scale invariant moments,
             //(a.k.a. normalized central moments)
@@ -262,7 +264,6 @@ public class ImageMoments implements FeatureExtractor
             n_03 = n_pq(mu_03, 0, 3, mu_00);
 
             //calculate Hu's moments
-            //double[] Hu = new double[8];
             Hu[0] = n_20 + n_02;
             Hu[1] = (n_20 - n_02) * (n_20 - n_02)
                     + 4 * (n_11 * n_11);
@@ -347,8 +348,6 @@ class Tester
 //        for(int i = 0; i < a.length; i++){
 //            System.out.println(a[i]);
 //        }
-
-
 
         ImageMoments m = new ImageMoments();
 
