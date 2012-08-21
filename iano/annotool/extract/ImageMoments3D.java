@@ -207,7 +207,7 @@ public class ImageMoments3D implements FeatureExtractor {
         		if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
         			m.Add(getLowerPower(x, p) * getLowerPower(y, q) * getLowerPower(z, r) * (float) (((byte[])data)[i] & mask));
         		else if (imageType == DataInput.GRAY16)
-        			m.Add(getLowerPower(x, p) * getLowerPower(y, q) * getLowerPower(z, r) * (float) (((int[])data)[i] & longmask));
+        			m.Add(getLowerPower(x, p) * getLowerPower(y, q) * getLowerPower(z, r) * (float) (((short[])data)[i] & longmask));
         		else if (imageType == DataInput.GRAY32)
         			m.Add(getLowerPower(x, p) * getLowerPower(y, q) * getLowerPower(z, r) * ((float[])data)[i]);
         		else
@@ -249,7 +249,7 @@ public class ImageMoments3D implements FeatureExtractor {
         		if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
         			mu.Add(getLowerPower(x - mean_x, p) * getLowerPower(y - mean_y, q) * getLowerPower(z - mean_z, r) * (float) (((byte[])data)[i] & mask));
         		else if (imageType == DataInput.GRAY16)
-        			mu.Add(getLowerPower(x - mean_x, p) * getLowerPower(y - mean_y, q) * getLowerPower(z - mean_z, r) * (float) (((int[])data)[i] & longmask));
+        			mu.Add(getLowerPower(x - mean_x, p) * getLowerPower(y - mean_y, q) * getLowerPower(z - mean_z, r) * (float) (((short[])data)[i] & longmask));
         		else if (imageType == DataInput.GRAY32)
         			mu.Add(getLowerPower(x - mean_x, p) * getLowerPower(y - mean_y, q) * getLowerPower(z - mean_z, r) * ((float[])data)[i]);
         		else
