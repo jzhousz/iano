@@ -6,8 +6,9 @@ August 16, 2012
     In Eclipse, "export...", 
 	choose: executable jar file;  put the needed libaraies next to the jar
 	
-    The needed external libraries should be up-to-date, in particular, ij.jar (for ImageJ) should be correct.
-    
+    a. The needed external libraries should be up-to-date, in particular, ij.jar (for ImageJ) should be correct: Image version 145.
+    b. The jdk should be 1.6 instead of 1.7 for version compatibility
+
 2.  Clean up biocat.jar
     In 7zip:  remove unneeded folders such as ROI_annotatotor, mRMR, and cell_counting
     (Can I not include them in Step 1?)
