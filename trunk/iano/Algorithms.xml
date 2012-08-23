@@ -1,27 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Algorithms>
 	<Algorithm type="Selector">
-		<Name>mRMR</Name>
-		<ClassName>annotool.select.mRMRFeatureSelector</ClassName>
-		<Parameter type="String">
-			<Name>Method</Name>
-			<Domain>mRMR-MIQ,mRMR-MID</Domain>
-			<Default>mRMR-MIQ</Default>
-		</Parameter>
-		<Parameter type="Integer">
-			<Name>Number of features</Name>
-			<Default>8</Default>
-		</Parameter>
-		<Parameter type="Boolean">
-			<Name>Discrete Flag</Name>
-			<Default>1</Default>
-		</Parameter>
-		<Parameter type="Double">
-			<Name>Discretize Threshold</Name>
-			<Default>0</Default>
-		</Parameter>
-	</Algorithm>	
-	<Algorithm type="Selector">
 		<Name>Fisher</Name>
 		<ClassName>annotool.select.FishersCriterion</ClassName>
 		<Parameter type="String">
@@ -32,6 +11,7 @@
 		<Parameter type="Integer">
 			<Name>NUMBER OF FEATURES</Name>
 			<Default>5</Default>
+			<Min>1</Min>
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="2DExtractor">
@@ -187,6 +167,7 @@
 		<Parameter type="Integer">
 			<Name>Wavelet Level</Name>
 			<Default>2</Default>
+			<Min>0</Min>
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="2DExtractor">
@@ -200,6 +181,7 @@
 		<Parameter type="Real">
 			<Name>Radius</Name>
 			<Default>50</Default>
+			<Min>1</Min>
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="3DExtractor">
@@ -213,10 +195,12 @@
 		<Parameter type="Integer">
 			<Name>Wavelet Level</Name>
 			<Default>2</Default>
+			<Min>0</Min>
 		</Parameter>
 		<Parameter type="Integer">
 			<Name>Midstacks to Include</Name>
 			<Default>3</Default>
+			<Min>0</Min>
 		</Parameter>
 		<Parameter type="Boolean">
 			<Name>WEIGHTED</Name>
@@ -233,15 +217,6 @@
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="Classifier">
-		<Name>LDA</Name>
-		<ClassName>annotool.classify.LDAClassifier</ClassName>
-		<Desc>Linear Discriminant Analysis</Desc>
-		<Parameter type="Real">
-			<Name>Priors</Name>
-			<Default>0.3 0.7</Default>
-		</Parameter>
-	</Algorithm>
-	<Algorithm type="Classifier">
 		<Name>Weka</Name>
 		<ClassName>annotool.classify.WekaClassifiers</ClassName>
 		<Parameter type="String">
@@ -249,17 +224,5 @@
 			<Domain>W_Tree,W_NaiveBayes,W_RandomForest,W_NearestNeighbor</Domain>
 			<Default>W_Tree</Default>
 		</Parameter>
-	</Algorithm>
-	<Algorithm type="2DExtractor">
-		<Name>BadE</Name>
-		<ClassName>annotool.extract.Bad</ClassName>
-	</Algorithm>
-	<Algorithm type="Selector">
-		<Name>BadS</Name>
-		<ClassName>annotool.select.Bad</ClassName>
-	</Algorithm>
-	<Algorithm type="Classifier">
-		<Name>BadC</Name>
-		<ClassName>annotool.classify.Bad</ClassName>
 	</Algorithm>
 </Algorithms>

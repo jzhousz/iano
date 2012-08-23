@@ -433,6 +433,9 @@ public class AnnTablePanel extends JPanel {
 		AnnImageTable singleTable = new AnnImageTable();
 		tableOneScrollPane = singleTable.buildImageTableFromSubdirectories(directory, ext, true);
 		classNames = singleTable.getClassNames();
+		
+		is3D = singleTable.is3D();
+		isColor = singleTable.isColor();
 
 		if (tableOneScrollPane != null) {
 			this.setLayout(new java.awt.BorderLayout());
