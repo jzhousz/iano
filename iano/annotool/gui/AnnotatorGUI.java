@@ -73,7 +73,7 @@ public class AnnotatorGUI extends JFrame
 	        	  System.out.println("Substance L&F failed to initialize");
 	          }
     		
-	          AnnotatorGUI gui = new AnnotatorGUI("BioCAT -- Biological Image Classification and Annotation Tool 1.0");
+	          AnnotatorGUI gui = new AnnotatorGUI("BioCAT -- Biological Image Classification and Annotation Tool 1.2");
 	          System.out.println("Hello BioCAT!");
     		
 	          gui.pack();
