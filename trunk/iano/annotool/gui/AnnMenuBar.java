@@ -319,9 +319,9 @@ public class AnnMenuBar implements ActionListener {
 	public void displayAbout()
 	{
 		String aboutString =  "BioCAT (Biological Image Classification and Annotation Tool)\n\n" +
-		"Version: 1.0.0\n\n" +
+		"Version: 1.2.0\n\n" +
 		"Jie Zhou, Hanchuan Peng, Santosh Lamichhane and other contributors\n" +
-		"2009 - 2011.  All rights reserved.\n\n" +
+		"2009 - 2012.  All rights reserved.\n\n" +
 		"This tool uses software below:\n" +
 		"mRMR -- \thttp://research.janelia.org/peng/proj/mRMR/ \n" +
 		"ImageJ -- \thttp://rsbweb.nih.gov/ij \n" +
