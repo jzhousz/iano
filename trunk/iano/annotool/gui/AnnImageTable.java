@@ -63,6 +63,7 @@ public class AnnImageTable {
 	String imagePath;
 	HashMap<String, String> classMap = null;
 	HashMap<String, Roi> roiList = null;
+	ImageIcon image = null;  //used if all buttons use the same image
 
 	AnnImageTable()
 	{	}
@@ -601,7 +602,20 @@ public class AnnImageTable {
 	//to speed up, maybe can precompute the thumbnails when the app is first loaded.
 	JButton getButtonCell(int i)
 	{
-		return new JButton(new ImageIcon(showIcon));
+		if(image != null) //reuse the same ImageIcon
+		   return new JButton(image);
+
+		try {
+			java.net.URL url = this.getClass().getResource("/"+showIcon);
+			if (url != null)
+			  image = new ImageIcon(url);
+			else  
+  			  image = new ImageIcon(showIcon);
+			thumb = new JButton(image);
+		} catch (Exception ex) {
+			thumb = new JButton("click to show");
+		
+		return thumb;
 		
 		//System.out.println(Annotator.dir); //buggy! Could be testDir!
 		//System.out.println(children[i]);
