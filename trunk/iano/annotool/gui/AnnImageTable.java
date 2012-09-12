@@ -605,6 +605,7 @@ public class AnnImageTable {
 		if(image != null) //reuse the same ImageIcon
 		   return new JButton(image);
 
+		JButton thumb = null;
 		try {
 			java.net.URL url = this.getClass().getResource("/"+showIcon);
 			if (url != null)
@@ -614,7 +615,7 @@ public class AnnImageTable {
 			thumb = new JButton(image);
 		} catch (Exception ex) {
 			thumb = new JButton("click to show");
-		
+		}
 		return thumb;
 		
 		//System.out.println(Annotator.dir); //buggy! Could be testDir!
