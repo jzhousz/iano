@@ -358,13 +358,17 @@ public class DataInput
 	//   -- which replies on ImageJ's ROI management mechanism
 	private Object openROIImage(String childrenCandidate, int stackIndex, int[] dim) 
 	{
-	   	int w, h; 
+	   	int w, h, oldw, oldh;
 	   	int d = depth;
 	    Roi roi = roiList.get(childrenCandidate);
 	    //work with rectangle ROI with width/height. ROI type check tba.
 	    //x,y is the uppperleft corner of ROI
+	    //if resizing to a much bigger/smaller ROI, it will cause center shift.
 	    int x = roi.getBounds().x;
 		int y = roi.getBounds().y;
+	    oldw = roi.getBounds().width;
+	    oldh = roi.getBounds().height;
+
 		if (resize)
 		{ 	// if resize, use the passed in w,h of ROI 
 			w = this.width;
@@ -372,8 +376,8 @@ public class DataInput
 		}
 		else // else use ROI w, h 
 		{
-		    w = roi.getBounds().width;
-		    h = roi.getBounds().height;
+		    w = oldw; 
+		    h = oldh;
 		}
 		if (dim!= null) //pass back to the caller, e.g. readImages()
 		{   dim[0] = w; 
@@ -395,9 +399,13 @@ public class DataInput
 	      }
 		}
 	    //check bounds
+		if (resize)
+		{ //shift start of x and y so that the center is not changed
+		   x = x - (w/2 - oldw/2); 
+	       y = y - (h/2 - oldh/2);
+		}
 	    if (!checkROIBounds(x, y, cz, w, h, d, this.imp.getWidth(), this.imp.getHeight(), this.stackSize))
 	    		return null;
-	    
 	    //check stackIndex with ROI depth
 	    if (stackIndex > depth) { System.err.println("ROI slice index bigger than depth");return null;}
 	    
