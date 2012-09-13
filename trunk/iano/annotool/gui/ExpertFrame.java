@@ -108,7 +108,9 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		pnlMain.setAlignmentX(LEFT_ALIGNMENT);
 		tabPane = new JTabbedPane();
 		tabPane.addTab("Algorithms", pnlMain);
-		this.add(tabPane);
+		
+		JScrollPane scrollPane = new JScrollPane(tabPane, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		this.add(scrollPane);
 		
 		//Algorithm selector part
 		pnlAlgo = new JPanel();
@@ -176,7 +178,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		pnlAlgo.add(pnlExt);
 		pnlAlgo.add(pnlSel);
 		pnlAlgo.add(pnlClass);
-		
+
 		//Button part
 		btnRun = new JButton("Run");		
 		btnRun.addActionListener(this);

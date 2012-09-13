@@ -240,7 +240,7 @@ public class ROIAnnotator {
 				imageIndex++;
 				if (roiDepth > 1)
 					   ThreeDsubimage.clear();
-				System.out.println("Working on subImage: " + imageIndex);
+				//System.out.println("Working on subImage: " + imageIndex);
 
 				for(int p = 0; p < roiDepth; p++)
                 { 
