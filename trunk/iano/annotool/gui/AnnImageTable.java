@@ -95,7 +95,7 @@ public class AnnImageTable {
 		//build up the JTable
 		final String[] columnNames;
 		columnNames = new String[numOfAnno + 2];
-		columnNames[0] = "image thumbnail";
+		columnNames[0] = "image";
 		columnNames[1]= "file name";
 		for(int i= 0; i < numOfAnno; i++)
 			columnNames[2+i] = annotations.get(i);

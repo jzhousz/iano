@@ -138,9 +138,11 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 		pnlButton = new JPanel();
 
 		// Expert and Auto Comparison buttons
-		btnSimple = new JButton("Simple");
+		btnSimple = new JButton("Single");
+		btnSimple.setToolTipText("Build a model using one algorithm chain");
 		btnSimple.addActionListener(this);
-		btnAutoComp = new JButton("Comparison");
+		btnAutoComp = new JButton("Multiple");
+		btnAutoComp.setToolTipText("Build a model by comparing multiple algorithm chains automatically");
 		btnAutoComp.addActionListener(this);
 
 		// Load and model button
@@ -206,7 +208,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 				pnlStatus.setOutput(ex.getMessage());
 			}
 
-			ExpertFrame ef = new ExpertFrame("Simple Mode", is3D,
+			ExpertFrame ef = new ExpertFrame("Single Mode", is3D,
 					Annotator.channel, trainingProblem, testingProblem);
 			ef.setVisible(true);
 			ef.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
