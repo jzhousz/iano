@@ -51,14 +51,16 @@ public class Validator
    * @return             overall recognition rate
    * @throws Exception   Thrown if K value is greater than the number of observations
    ********************************/
-   public float  KFold(int K, float[][] data, int[] targets, Classifier classifier, boolean shuffle, Annotation[] results) throws Exception
+   public float  KFold(int K, float[][] data, int[] originalTargets, Classifier classifier, boolean shuffle, Annotation[] results) throws Exception
    {
 	  int length = data.length;
 	  int dimension = data[0].length;
 	  
+	  int[] targets = originalTargets; //the reference to targets, 
 	  if (shuffle)
-	    shuffle(length, dimension, data, targets);
-
+		 //the original order of targets of the problem should be preserved in the case of shuffling
+	     targets = shuffle(length, dimension, data, originalTargets);
+	  
 	  float[][] testingPatterns;
       float[][] trainingPatterns;
       int[] trainingTargets;
@@ -167,14 +169,16 @@ public class Validator
    * @return                  overall recognition rate
    * @throws Exception        Thrown if K value is greater than the number of observations
    ********************************/
-  public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] targets, String chosenClassifier, String path, HashMap<String,String> para, boolean shuffle, Annotation[] results) throws Exception
+  public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] originalTargets, String chosenClassifier, String path, HashMap<String,String> para, boolean shuffle, Annotation[] results) throws Exception
   {
 	  int length = data.length;
 	  int dimension = data[0].length;
 	  
+	  int[] targets = originalTargets; //the reference to targets, 
 	  if (shuffle)
-	    shuffle(length, dimension, data, targets);
- 
+		 //the original order of targets of the problem should be preserved in the case of shuffling
+	     targets = shuffle(length, dimension, data, originalTargets);
+
 	  float[][] testingPatterns;
       float[][] trainingPatterns;
       int[] trainingTargets;
@@ -285,14 +289,20 @@ public class Validator
   * @param results      annotations to compare against
   * @return             overall recognition rate
   * @throws Exception   Thrown if K value is greater than the number of observations
+  * 
+  * If shuffle, then the argument for data will be shuffled (assuming that it won't be reused). 
+  * The targets will be copied first before shuffling to preserver the order of the problem's targets for reusing.
   ********************************/
-  public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] targets, Classifier chosenClassifier, HashMap<String,String> para, boolean shuffle, Annotation[] results) throws Exception
+  public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] originalTargets, Classifier chosenClassifier, HashMap<String,String> para, boolean shuffle, Annotation[] results) throws Exception
   {
 	  int length = data.length;
 	  int dimension = data[0].length;
+	  int[] targets = originalTargets; //the reference to targets, 
 	  
 	  if (shuffle)
-	    shuffle(length, dimension, data, targets);
+		 //the original order of targets of the problem should be preserved in the case of shuffling
+		  //otherwise subsequent with new data runs will have trouble.
+	     targets = shuffle(length, dimension, data, originalTargets);
  
 	  float[][] testingPatterns;
       float[][] trainingPatterns;
@@ -448,13 +458,20 @@ public class Validator
    }  
    
    //shuffle the data
-   private void shuffle(int length, int dimension, float[][] data, int[] targets)
+   private int[] shuffle(int length, int dimension, float[][] data, int[] targets)
    {
+	   //make a copy of targets to preserve the order for reuse
+	   int[] shuffledTargets = new int[targets.length];
+	   
+	   System.arraycopy(targets, 0, shuffledTargets, 0, targets.length);
+	   
        for (int i = 0; i < length; i++)
        {
 	       int r = i + (int) (Math.random() * (length-i));   // between i and length-1
-	       exch(data, targets, i, r, dimension);
+	       exch(data, shuffledTargets, i, r, dimension);
 	   }
+       
+       return shuffledTargets;
 
    }
 
