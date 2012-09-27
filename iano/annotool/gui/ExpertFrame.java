@@ -54,6 +54,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	
 	private String channel;
 	
+	protected JProgressBar bar = null; 
+	
 	int tabNumber = 1; //Initial number of tabs
 	
 	//Algorithms and parameters
@@ -79,7 +81,6 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
     Annotator anno = null;
 	
 	AnnOutputPanel pnlOutput = null;
-	static JProgressBar bar = null; //Bar has to be static to work with the clear output button.
 	
 	private Thread thread = null;
 	private boolean isRunning;
@@ -198,7 +199,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 			btnRun.setText("Train");
 		}
 		
-		pnlOutput = new AnnOutputPanel();
+		pnlOutput = new AnnOutputPanel(this);
 		bar = new JProgressBar(0, 100);
 		bar.setValue(0);
 		bar.setStringPainted(true);
@@ -1077,5 +1078,10 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		pnlContainer.add(lbDesc, BorderLayout.NORTH);
 		
 		return pnlContainer;
+	}
+	
+	public JProgressBar getBar()
+	{
+	    return bar;	
 	}
 }

@@ -19,9 +19,11 @@ public class AnnOutputPanel extends JPanel implements ActionListener {
 	JTextArea output = new JTextArea(6,30);
 	JScrollPane pane = new JScrollPane(output);
 	JButton clearOutputB = new JButton("Clear Output");
+	Object workingFrame = null; //the parent JFrame or JPanel where the outputpanel resides in, such as ExpertFrame, AutoCompFrame, ImageReadyPanel
 
-	public AnnOutputPanel()
+	public AnnOutputPanel(Object theContainer)
 	{
+		this.workingFrame = theContainer;
 		this.setLayout(new BorderLayout());
 		this.add(pane, BorderLayout.CENTER);
 		JPanel tmpPanel = new JPanel();
@@ -59,7 +61,8 @@ public class AnnOutputPanel extends JPanel implements ActionListener {
 	public void clearOutput()
 	{
 		  output.setText("");
-		  ExpertFrame.bar.setValue(0); //Set the bar back to 0%
+		  if (workingFrame instanceof ExpertFrame) //the single selection has progress bar
+		      ((ExpertFrame)workingFrame).getBar().setValue(0); //Set the bar back to 0%
 	}
 	
 	public void actionPerformed(ActionEvent e)
