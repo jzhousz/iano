@@ -59,6 +59,7 @@ public class AnnOutputPanel extends JPanel implements ActionListener {
 	public void clearOutput()
 	{
 		  output.setText("");
+		  ExpertFrame.bar.setValue(0); //Set the bar back to 0%
 	}
 	
 	public void actionPerformed(ActionEvent e)

@@ -79,7 +79,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
     Annotator anno = null;
 	
 	AnnOutputPanel pnlOutput = null;
-	JProgressBar bar = null;
+	static JProgressBar bar = null; //Bar has to be static to work with the clear output button.
 	
 	private Thread thread = null;
 	private boolean isRunning;
