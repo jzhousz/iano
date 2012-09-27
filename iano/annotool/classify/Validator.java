@@ -10,6 +10,9 @@ import annotool.Annotation;
 * This helper class takes the fold number and all data to do cross validation,
 * pass the data to the classifier, then do some output.
 */
+// 9/12: If the data need to be shuffled, then X will be shuffled, but targets and predictions
+// will remain the original order to facilitate future calls on the same problem, as well as 
+//  the result visualization (which was done based on the original data order of targets).
 public class Validator
 {
 	javax.swing.JProgressBar bar = null;
@@ -57,9 +60,13 @@ public class Validator
 	  int dimension = data[0].length;
 	  
 	  int[] targets = originalTargets; //the reference to targets, 
+	  int[] idBeforeShuffle = null;
 	  if (shuffle)
+	  {
 		 //the original order of targets of the problem should be preserved in the case of shuffling
-	     targets = shuffle(length, dimension, data, originalTargets);
+		 idBeforeShuffle = new int[length]; 
+		 targets = shuffle(length, dimension, data, originalTargets,idBeforeShuffle);
+	  }
 	  
 	  float[][] testingPatterns;
       float[][] trainingPatterns;
@@ -145,11 +152,15 @@ public class Validator
 
       }
 
+      if (shuffle)
+       results = reverseShuffleOfResults(idBeforeShuffle, results);
+ 
       //output the overall result
       setProgress(startPos + totalRange);
       System.out.println("overall recognition rate: " + (float)correct/length);
       return (float) correct/length;
    }
+
 
 
  
@@ -174,10 +185,14 @@ public class Validator
 	  int length = data.length;
 	  int dimension = data[0].length;
 	  
-	  int[] targets = originalTargets; //the reference to targets, 
+	  int[] targets = originalTargets; //the reference to targets,
+	  int[] idBeforeShuffle = null;
 	  if (shuffle)
+	  {
 		 //the original order of targets of the problem should be preserved in the case of shuffling
-	     targets = shuffle(length, dimension, data, originalTargets);
+		 idBeforeShuffle = new int[length]; 
+	     targets = shuffle(length, dimension, data, originalTargets, idBeforeShuffle);
+	  }
 
 	  float[][] testingPatterns;
       float[][] trainingPatterns;
@@ -269,6 +284,9 @@ public class Validator
       System.out.println("overall recognition rate: " + (float)correct/length);
       foldresults[K] = (float) correct/length;
       
+      if (shuffle)
+        results = reverseShuffleOfResults(idBeforeShuffle, results);
+      
       setProgress(startPos + totalRange);
       return foldresults;
  	  
@@ -299,11 +317,14 @@ public class Validator
 	  int dimension = data[0].length;
 	  int[] targets = originalTargets; //the reference to targets, 
 	  
+	  int[] idBeforeShuffle = null;
 	  if (shuffle)
+	  {
 		 //the original order of targets of the problem should be preserved in the case of shuffling
-		  //otherwise subsequent with new data runs will have trouble.
-	     targets = shuffle(length, dimension, data, originalTargets);
- 
+		 idBeforeShuffle = new int[length]; 
+		 targets = shuffle(length, dimension, data, originalTargets,idBeforeShuffle);
+	  }
+	  
 	  float[][] testingPatterns;
       float[][] trainingPatterns;
       int[] trainingTargets;
@@ -394,6 +415,11 @@ public class Validator
       System.out.println("overall recognition rate: " + (float)correct/length);
       foldresults[K] = (float) correct/length;
       
+      if (shuffle)
+      {
+          results = reverseShuffleOfResults(idBeforeShuffle, results);
+      }
+      
       setProgress(startPos + totalRange);
       return foldresults;
  	  
@@ -458,17 +484,24 @@ public class Validator
    }  
    
    //shuffle the data
-   private int[] shuffle(int length, int dimension, float[][] data, int[] targets)
+   private int[] shuffle(int length, int dimension, float[][] data, int[] targets, int[] id)
    {
 	   //make a copy of targets to preserve the order for reuse
 	   int[] shuffledTargets = new int[targets.length];
 	   
 	   System.arraycopy(targets, 0, shuffledTargets, 0, targets.length);
-	   
-       for (int i = 0; i < length; i++)
+
+	   for (int i = 0; i < length; i++)
+	       id[i] = i;
+	   int temp;
+	   for (int i = 0; i < length; i++)
        {
 	       int r = i + (int) (Math.random() * (length-i));   // between i and length-1
 	       exch(data, shuffledTargets, i, r, dimension);
+	       //preserver the original order
+	       temp = id[i];
+	       id[i] = id[r];
+	       id[r] = temp;
 	   }
        
        return shuffledTargets;
@@ -493,8 +526,23 @@ public class Validator
 
    }
    
+   public Annotation[] reverseShuffleOfResults(int[] idBeforeShuffle, Annotation[] results)
+   {
+	      int length = idBeforeShuffle.length;
+	
+	      //set the results back the original order of input before passing back
+	      int[] returnedResults = new int[length];
+	      for(int i = 0; i < length; i++)
+	    	  returnedResults[idBeforeShuffle[i]] = results[i].anno;
+
+	      //override the result to be returned.
+	      for(int i = 0; i < length; i++)
+	    	   results[i].anno = returnedResults[i];
+	      
+	      return results;
+   }
    
-	private void setProgress(final int currentProgress)
+   private void setProgress(final int currentProgress)
 	{
 		if (bar!=null) 
 	        SwingUtilities.invokeLater(new Runnable() {
