@@ -88,7 +88,7 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 		pnlClassBtn = new JPanel(new FlowLayout(FlowLayout.TRAILING));
 		pnlClassBtn.add(btnAddClass);
 				
-		pnlOutput = new AnnOutputPanel();
+		pnlOutput = new AnnOutputPanel(this);
 		
 		//Right side panel for chains
 		pnlChain = new ChainPanel(this, channel, pnlOutput);

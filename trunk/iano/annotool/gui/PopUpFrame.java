@@ -3,6 +3,7 @@ package annotool.gui;
 import java.awt.event.WindowEvent;
 
 import javax.swing.JFrame;
+import javax.swing.JProgressBar;
 
 import annotool.io.ChainModel;
 import annotool.io.DataInput;
@@ -18,7 +19,9 @@ public class PopUpFrame extends JFrame {
 	
 	protected DataInput trainingProblem = null;
 	protected DataInput testingProblem = null;
-	
+
+
+
 	public PopUpFrame(String arg0, DataInput trainingProblem, DataInput testingProblem, String channel) {
 		super(arg0);
 		this.setTitle(arg0 + " - channel " + getChannelNameForDisplay(channel));
@@ -57,4 +60,7 @@ public class PopUpFrame extends JFrame {
 			return "blue";
 		return null;
 	}
+	
+
+	
 }

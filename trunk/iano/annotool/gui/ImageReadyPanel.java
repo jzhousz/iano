@@ -89,7 +89,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 		// Center panel for displaying loaded images
 		pnlTable = new AnnTablePanel(gui);
 		// Text area for status
-		pnlStatus = new AnnOutputPanel();
+		pnlStatus = new AnnOutputPanel(this);
 
 		// Mode information
 		pnlModeInfo = new JPanel(new FlowLayout(FlowLayout.LEFT));

@@ -45,7 +45,7 @@ import annotool.io.DataInput;
  *
  */
 public class ROITagger extends JDialog implements ActionListener {
-	private AnnOutputPanel pnlStatus = new AnnOutputPanel();
+	private AnnOutputPanel pnlStatus = new AnnOutputPanel(this);
 	private ImagePlus imp = null;
 	private JButton btnLoadImg = null;
 	private JButton btnLoadROI = null;
