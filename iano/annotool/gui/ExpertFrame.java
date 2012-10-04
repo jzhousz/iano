@@ -95,8 +95,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
     int imgDepth = 1;  //for 3D ROI 8/13/12
     int imgStackSize; //for 3D image
 	
-	public ExpertFrame(String arg0, boolean is3D, String channel, DataInput trainingProblem, DataInput testingProblem) {
-		super(arg0, trainingProblem, testingProblem, channel);
+	public ExpertFrame(String arg0, boolean is3D, String channel, DataInput trainingProblem, DataInput testingProblem, boolean channelFlag) {
+		super(arg0, trainingProblem, testingProblem, channel, channelFlag);
 		this.channel = channel;
 		
 		fileChooser = new JFileChooser();

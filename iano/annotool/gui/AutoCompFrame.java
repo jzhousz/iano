@@ -65,8 +65,8 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 	
 	AnnOutputPanel pnlOutput = null;
 	
-	public AutoCompFrame(String arg0, boolean is3D, String channel,  DataInput trainingProblem, DataInput testingProblem) {
-		super(arg0, trainingProblem, testingProblem, channel);
+	public AutoCompFrame(String arg0, boolean is3D, String channel,  DataInput trainingProblem, DataInput testingProblem, boolean channelFlag) {
+		super(arg0, trainingProblem, testingProblem, channel, channelFlag);
 		
 		pnlMain = new JPanel();
 		pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
