@@ -22,8 +22,10 @@ public class PopUpFrame extends JFrame {
 
 
 
-	public PopUpFrame(String arg0, DataInput trainingProblem, DataInput testingProblem, String channel) {
+	public PopUpFrame(String arg0, DataInput trainingProblem, DataInput testingProblem, String channel, boolean channelFlag) {
 		super(arg0);
+		if (channelFlag == false)
+			channel = "";
 		this.setTitle(arg0 + " - channel " + getChannelNameForDisplay(channel));
 				
 		
@@ -58,7 +60,7 @@ public class PopUpFrame extends JFrame {
 			return "green";
 		if(channel.equals("b"))
 			return "blue";
-		return null;
+		return "gray scale"; //What appears when there is no channel selected.
 	}
 	
 

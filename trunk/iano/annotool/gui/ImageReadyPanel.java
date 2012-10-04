@@ -52,6 +52,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 	private JPanel pnlRight, pnlRightCenter, pnlDynamic, pnlLegends,
 			pnlModeInfo, pnlChannel, pnlButton;
 	private ROIParameterPanel pnlROIParam = null;
+	public boolean channelFlag;
 
 	JLabel lbModeInfo;
 	JRadioButton rbRed, rbGreen, rbBlue;
@@ -209,7 +210,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 			}
 
 			ExpertFrame ef = new ExpertFrame("Single Mode", is3D,
-					Annotator.channel, trainingProblem, testingProblem);
+					Annotator.channel, trainingProblem, testingProblem, channelFlag);
 			ef.setVisible(true);
 			ef.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
@@ -250,7 +251,7 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 			}
 
 			AutoCompFrame frame = new AutoCompFrame("Auto Comparison Mode",
-					is3D, Annotator.channel, trainingProblem, testingProblem);
+					is3D, Annotator.channel, trainingProblem, testingProblem, channelFlag);
 			frame.setVisible(true);
 			frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
@@ -394,8 +395,8 @@ public class ImageReadyPanel extends JPanel implements ActionListener {
 		rbRed.setEnabled(flag);
 		rbGreen.setEnabled(flag);
 		rbBlue.setEnabled(flag);
+		channelFlag = flag; //Sets whether or not the channel will be showed as the title
 	}
-
 	public void setIs3D(boolean flag) {
 		this.is3D = flag;
 	}
