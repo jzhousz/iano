@@ -201,7 +201,7 @@ public class ThreeDROIAnnotation {
 		*/
 		// use a window of 3*3*2 to get local maxim
 		System.out.println("get localmaxima");
-		boolean[] isMaxima = Utility.getLocalMaxima(imp, 3, 3, 2);
+		boolean[] isMaxima = Utility.getLocalMaxima(imp, 0, 3, 3, 2); //2nd arg is channel
 		draw(isMaxima, imp, totaldepth, totalheight, totalwidth);
 
 		// get cube around local maxima, send to classifier
