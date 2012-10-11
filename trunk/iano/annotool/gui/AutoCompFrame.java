@@ -91,7 +91,7 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 		pnlOutput = new AnnOutputPanel(this);
 		
 		//Right side panel for chains
-		pnlChain = new ChainPanel(this, channel, pnlOutput);
+		pnlChain = new ChainPanel(this, channel, pnlOutput, channelFlag);
 		
 		pnlMainOuter = new JPanel(new BorderLayout());
 		pnlMainOuter.add(algoScrollPane, BorderLayout.WEST);
@@ -398,9 +398,9 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 		btnAddClass.setEnabled(flag);
 	}
 	
-	public void addTab(String title, float[][] rates, ArrayList<String> labels, ArrayList<Chain> selectedChains, int imgWidth, int imgHeight, String channel) {
+	public void addTab(String title, float[][] rates, ArrayList<String> labels, ArrayList<Chain> selectedChains, int imgWidth, int imgHeight, String channel, boolean cFlag) {
 		//Display result
-        ACResultPanel pnlResult = new ACResultPanel(tabPane, imgWidth, imgHeight, channel, selectedChains);
+        ACResultPanel pnlResult = new ACResultPanel(tabPane, imgWidth, imgHeight, channel, selectedChains, cFlag);
         tabPane.addTab(title, pnlResult);
         pnlResult.display(rates, labels); 
         

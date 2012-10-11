@@ -71,6 +71,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	
 	private ChainTableModel tableModel = new ChainTableModel();
 	
+	public boolean cFlag;
 	//Details
 	JTextArea taDetail = new JTextArea(6,30);
 	JScrollPane detailPane = new JScrollPane(taDetail);
@@ -102,11 +103,13 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
     int imgDepth = 1;  //for 3D ROI 8/13/12
     int imgStackSize; //for 3D image
 	
-	public ChainPanel(AutoCompFrame gui, String channel, AnnOutputPanel pnlOutput) {
+	public ChainPanel(AutoCompFrame gui, String channel, AnnOutputPanel pnlOutput, boolean chFlag) {
 		this.channel = channel;		
 		this.gui = gui;
 		gui.setButtonsEnabled(false);
 		this.pnlOutput = pnlOutput;
+		
+		cFlag = chFlag;
 		
 		fileChooser = new JFileChooser();
 		fileChooser.setAcceptAllFileFilterUsed(false); //Remove "all files" options from file chooser
@@ -857,7 +860,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	    
 	    //Display result
 	    if(executed)	//Display result if at least one chain is executed
-	    	gui.addTab("Auto Comparison Results", rates, anno.getAnnotationLabels(), selectedChains, imgWidth, imgHeight, channel);
+	    	gui.addTab("Auto Comparison Results", rates, anno.getAnnotationLabels(), selectedChains, imgWidth, imgHeight, channel, cFlag);
 	}
 
 	private void cvRun() {
@@ -1064,7 +1067,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
         
         //Display result
         if(executed)	//Display result if at least one chain is executed
-        	gui.addTab("Auto Comparison Results", rates, anno.getAnnotationLabels(), selectedChains, imgWidth, imgHeight, channel);
+        	gui.addTab("Auto Comparison Results", rates, anno.getAnnotationLabels(), selectedChains, imgWidth, imgHeight, channel, cFlag);
 	}
 	/*
      * The method has 2 purposes:

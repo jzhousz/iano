@@ -86,7 +86,7 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		   imageSet = null, testSet = null;
 	int imgWidth, imgHeight;
 	
-	public ACResultPanel(JTabbedPane parentPane, int imgWidth, int imgHeight, String channel, ArrayList<Chain> selectedChains) {
+	public ACResultPanel(JTabbedPane parentPane, int imgWidth, int imgHeight, String channel, ArrayList<Chain> selectedChains, boolean cFlag) {
 	   	this.parentPane = parentPane;
 	   	this.tabIndex = parentPane.getTabCount();
 	   	this.selectedChains = selectedChains;
@@ -104,12 +104,16 @@ public class ACResultPanel extends JPanel implements ActionListener{
 			mode = "Cross Validation " + "[Fold: " + Annotator.fold + "]";
 		}
 	   	
+	   	if (cFlag == true){
 	   	if(channel.equals("r")) 
 			channelName = "Red";
 		else if(channel.equals("g")) 
 			channelName = "Green";
 		else if(channel.equals("b")) 
 			channelName = "Blue";
+	   	}
+	   	else
+	   		channelName = "Gray Scale";
 	   	
 	   	this.imgWidth = imgWidth;
 	   	this.imgHeight = imgHeight;
