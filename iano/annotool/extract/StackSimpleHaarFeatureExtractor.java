@@ -4,7 +4,7 @@ import annotool.ImgDimension;
 import annotool.io.DataInput;
 import java.util.ArrayList;
 /**
- *  weighted average of middle stack features
+ *  weighted average of middle stack features  (anisotropic)
  * 
  */
 public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
@@ -116,6 +116,10 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		if(features == null)
 		 features  = new float[length][dim.width*dim.height]; 
 
+		for(int i=0; i<length; i++)
+		 for(int j=0; j<dim.width*dim.height; j++)
+			 features[i][j]  = 0.0f; 
+
 		float[][] features4CurrentStack = new float[length][];
 
 		float weight;
@@ -125,11 +129,12 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		if (stacksToInclude %2 == 1) //odd number
 			righthalf = stacksToInclude/2 +1;
 
-		//get an extractor object
-		HaarFeatureExtractor haar = new HaarFeatureExtractor();
+		//get an extractor object //bug!Cann't reuse the same extractor!
+		//HaarFeatureExtractor haar = new HaarFeatureExtractor();
+		//haar.setParameters(para);
+		
 		java.util.HashMap<String, String> para = new java.util.HashMap<String, String>();
 		para.put(HaarFeatureExtractor.LEVEL_KEY, String.valueOf(level));
-		haar.setParameters(para);
 		
 		if(all3DData != null && problem == null)
 		{
@@ -141,7 +146,10 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		        Object oneImageData = ((ArrayList)all3DData.get(i)).get(stackIndex);
 				listforstack.add(oneImageData);   
  			  }
- 			  features4CurrentStack = haar.calcFeatures(listforstack, imageType, dim);
+			  HaarFeatureExtractor haar = new HaarFeatureExtractor();
+  			  haar.setParameters(para);
+
+			  features4CurrentStack = haar.calcFeatures(listforstack, imageType, dim);
  			  weight = getWeightForStack(stackIndex-1, stackSize);
  			  addFeatures(features,features4CurrentStack, length, dim.width*dim.height, weight);
  			  listforstack.clear();  
@@ -154,17 +162,25 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		  //stackIndex starts from 1 for getData()!
 		  for (int stackIndex = mid-lefthalf +1;  stackIndex <= mid + righthalf; stackIndex ++) 
 		  {
-			//certain stack of all images; 
+			//certain stack of all images;
+			System.out.println("Working on slice " + stackIndex);
 			for(int imgindex = 0; imgindex < length; imgindex++)
 			{
 			  data.clear();
 			  data.add(problem.getData(imgindex,stackIndex)); //changed  8/20/12
-			  features4CurrentStack[imgindex] = haar.calcFeatures(data, imageType, dim)[0]; 
+			  //10/16/2012 must get new object to avoid reusing the same feature space!!
+			  HaarFeatureExtractor haar = new HaarFeatureExtractor();
+			  haar.setParameters(para);
+			  features4CurrentStack[imgindex] = haar.calcFeatures(data, imageType, dim)[0];
 			} //end of images
+			
 			//add all stacks together
 			weight = getWeightForStack(stackIndex-1, stackSize);
+			System.out.println("The weight of  slice " + stackIndex + " is " + weight);
 			addFeatures(features,features4CurrentStack, length, dim.width*dim.height, weight);
 		  } //end of stacks
+		  //return features4CurrentStack;
+		  
 		}else
 		{
 			throw new Exception("data is not passed in properly in feature extractor.");
@@ -183,9 +199,9 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 		  // N(stackSize/2, 1.0) or linear
 		  if (stackIndex < mid/2 || stackIndex > mid*1.5) weight = 0;
 		  else  if (stackIndex <= mid)
-			weight = (float) stackIndex/mid;
+			weight = ((float) stackIndex)/mid;
 		  else
-			weight = (float) (stackSize - stackIndex)/mid;
+			weight = ((float) (stackSize - stackIndex))/mid;
     	}
 		return weight;
     }

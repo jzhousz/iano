@@ -250,7 +250,8 @@ public class ROIAnnotator {
                   //slice# start from 1
                   ip = imp.getStack().getProcessor(zindex + 1 + p);
                   //(i,j) is the upperleft corner of the subimage
-                  //get that stack
+                  //get that stack: read from dir again? If the same slice, won't read from dir again in DataInput.
+                  //System.out.println("calling getData at slice "+ (zindex+1+p));
                   datain = problem.getData(bigImageIndex, zindex+1+p); //if 2D, 2nd para is 1.
 				  for(int m = 0; m < roiWidth; m++)//col
 					for(int n = 0; n < roiHeight; n++) //row
