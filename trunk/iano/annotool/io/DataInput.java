@@ -89,6 +89,12 @@ public class DataInput
 	//problem properties
 	private ArrayList data = null; //store all images (of a slice). Not suggested for larget sets
 	int lastStackIndex = 0; // the variable to track if the last getData() was for the same stack
+	//Cache properties for getData(int, int), don't store slice of all images. For speed. e.g. ROIAnnotator repeatedly reading the same image 
+	private Object lastData = null; //The last read slice of one particular image;
+	int lastGetDataSlice = -1;
+	int lastGetDataImage = -1;
+	ImagePlus lastImageCache = null;//The cached last image for getData, so that the repeated reading of the same image don't need to be relaoded.
+	
 	String[] children = null; //list of image file names in the dir
 	protected int height = 0; //height of the first image (or of the entire set if of the same size)
 	protected int width = 0;  //width of the first image
@@ -116,7 +122,7 @@ public class DataInput
 	protected int mode;
 	
 	//For roi mode
-	ImagePlus imp = null;
+	ImagePlus imp = null; //the complete image for ROI
 	HashMap<String, Roi> roiList = null;
 	
 	boolean isColor = true; // true if the first image/ROI is COLOR_RGB 
@@ -794,14 +800,28 @@ public class DataInput
 
 		//read the image based on mode
 		Object result = null;
+		ImagePlus imp = null;
 		//get data
 		if( this.mode == ROIMODE) 
 		   //read the ROI data, get the ROI width and height
 			result = openROIImage(children[imgIndex], stackIndex, null);
 		else //otherwise get the imageplus and then read data
-		{
-		   ImagePlus imp = getImage(children[imgIndex]);
-		   result = openOneImage(imp, stackIndex);
+		{   //try to read from cached data (last slice/image) first.
+		    //if read the same slice of the same image, don't repeat.
+			//For example, ROIAnnotator reads the same slice for 2D image
+			if(lastGetDataSlice == stackIndex && lastGetDataImage == imgIndex)
+				return lastData;
+			else if (lastGetDataImage == imgIndex)
+			    imp = lastImageCache;	
+			else  //not in cache, read from directory.
+				imp = getImage(children[imgIndex]);
+		    result = openOneImage(imp, stackIndex);
+		    
+		    //update the cache
+		    lastGetDataSlice = stackIndex;
+		    lastGetDataImage = imgIndex;
+		    lastData = result;
+		    lastImageCache = imp;
 		}
 
 		return result;
@@ -1054,10 +1074,16 @@ public class DataInput
 	
 	
     //Reset data to facilitate gc.
-	//Not useful if data is not read in during reading
+	//Not useful if data is not read-in during reading?
 	public void setDataNull()
 	{
 	   data = null;	
+	   //clear the cache too;
+	   lastStackIndex = 0; 
+	   lastData = null; 
+	   lastGetDataSlice = -1;
+	   lastGetDataImage = -1;
+	   lastImageCache = null;
 	}
 
 	/**

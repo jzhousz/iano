@@ -128,6 +128,14 @@ public class HaarFeatureExtractor implements FeatureExtractor
 	       for(int i=0; i <length; i++)
             getHaarFeatureOfOneImage(features[i]);
 
+	    //debug:
+	    //for(int l = 0 ; l < length; l++)
+	    //{
+	    // for(int m = 200; m < 500; m++)
+	    //	System.out.print(features[l][m]+ " ");
+	    // System.out.println();
+	    //}
+	    
 	    return features;
 
    }

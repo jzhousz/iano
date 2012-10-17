@@ -442,7 +442,7 @@ public class Validator
 	   int testingLength = testingPatterns.length;
 	   int[]	 predictions = new int[testingLength];
 	   double[]	 prob = new double[testingLength];
-			
+	   
        classifier.classify(trainingPatterns, trainingTargets, testingPatterns, predictions,  prob);
 
        //calculate the recognition rate
