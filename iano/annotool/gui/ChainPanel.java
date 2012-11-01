@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -69,6 +70,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 					btnRun, btnSaveModel,
 					btnApplyModel;
 	
+	private JCheckBox checkSelect;
 	private ChainTableModel tableModel = new ChainTableModel();
 	
 	public boolean cFlag;
@@ -194,6 +196,10 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(10, 10, 10, 10)));
 		pnlMain.add(pnlTable, BorderLayout.CENTER);
 		pnlMain.add(pnlControl, BorderLayout.EAST);
+		
+		checkSelect = new JCheckBox("Select All");
+	    checkSelect.addActionListener(this);
+		pnlMain.add(checkSelect, BorderLayout.NORTH);
 		
 		bar = new JProgressBar(0, 100);
 		bar.setValue(0);
@@ -385,7 +391,17 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 				gui.pullThePlug();				
 			}
 		}
-		
+		else if(ev.getSource().equals(checkSelect)){
+			Object item = new Object();
+			if (checkSelect.isSelected()) //If the button is selected, set to true
+				item = true;
+			else // Else set to false.
+				item = false;
+			for (int i = 0; i < tblChain.getRowCount(); i++) //Sets all rows to the value in item.
+			{
+				tblChain.setValueAt(item, i, COL_CHECK);
+			}
+		}
 	}
 	private void setButtonState() {
 		if(tableModel.getRowCount() > 0) {
