@@ -47,7 +47,8 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
 	    if (parameters != null && parameters.containsKey(STACKS_TO_INCLUDE))
 			  this.stacksToInclude = Integer.parseInt(parameters.get(STACKS_TO_INCLUDE));
 	    if (parameters != null && parameters.containsKey(WEIGHT_KEY))
-		     weighted = Boolean.parseBoolean(parameters.get(WEIGHT_KEY));
+	    	//weighted = Boolean.parseBoolean(parameters.get(WEIGHT_KEY)); //parseBoolean works with true/false
+	    	if("1".equals(parameters.get(WEIGHT_KEY)))	weighted = true;
 	}
 
    /**
