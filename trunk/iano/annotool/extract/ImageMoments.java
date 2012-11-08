@@ -177,7 +177,7 @@ public class ImageMoments implements FeatureExtractor
         		if (!problem.ofSameSize())
         		{  	//set the size for this image
         		 this.totalheight = problem.getHeightList()[image_num];
-        		 this.totalwidth = problem.getHeightList()[image_num];
+        		 this.totalwidth = problem.getWidthList()[image_num];
         		}
         	}
         	

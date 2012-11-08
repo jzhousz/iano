@@ -25,6 +25,8 @@ public class Territory  implements FeatureExtractor {
 	double radius = 50;			//Default value for radius of the rolling ball
 	int length;
 	int imageType;
+	int width;
+	int height;
 	
 	protected ArrayList data = null;
 	
@@ -58,6 +60,8 @@ public class Territory  implements FeatureExtractor {
 		//this.data = problem.getData();
 		this.imageType = problem.getImageType();
 		this.features = new float[length][1];
+		this.width = problem.getWidth();
+		this.height = problem.getHeight();
 		
 		return calcFeatures();
 	}
@@ -74,13 +78,19 @@ public class Territory  implements FeatureExtractor {
 	
 	public float[][] calcFeatures(ArrayList data, int imageType,
 ImgDimension dim) throws Exception {
-		System.out.println("This method is not yet supported.");
-		throw new Exception("Not supported");
+		this.data = data;
+		this.length = data.size();
+		this.imageType = imageType;
+		this.features = new float[length][1];
+		this.height = dim.height;
+		this.width = dim.width;
+		
+		return calcFeatures();
 	}
 	
 	protected float[][] calcFeatures() throws Exception {		
-		int width = problem.getWidth();
-		int height = problem.getHeight();
+
+		
 		
 		ImageProcessor ip = null;
 		RankFilters filter = new RankFilters();
@@ -88,6 +98,14 @@ ImgDimension dim) throws Exception {
 		int[][] binaryData = null;
 		
 		for(int imageIndex = 0; imageIndex < length; imageIndex++) {
+        	if (problem !=null)
+        	{
+        		if (!problem.ofSameSize())
+        		{  	//set the size for this image
+        		 this.height = problem.getHeightList()[imageIndex];
+        		 this.width = problem.getWidthList()[imageIndex];
+        		}
+        	}
 			if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
 				if (data != null)
 				 ip = new ByteProcessor(width, height, (byte[])data.get(imageIndex), null);
