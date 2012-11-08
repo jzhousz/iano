@@ -311,7 +311,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	else if(control instanceof JComboBox)
         		value = ((JComboBox)control).getSelectedItem().toString();
         	else if(control instanceof JCheckBox)
-        		value = ((JCheckBox)control).isSelected() ? "true" : "false";
+        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
         	else if(control instanceof JSpinner)
         		value = ((JSpinner)control).getValue().toString();
         	else if(control instanceof JComboBox)
@@ -327,7 +327,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	else if(control instanceof JComboBox)
         		value = ((JComboBox)control).getSelectedItem().toString();
         	else if(control instanceof JCheckBox)
-        		value = ((JCheckBox)control).isSelected() ? "true" : "false";
+        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
         	else if(control instanceof JSpinner)
         		value = ((JSpinner)control).getValue().toString();
         	else if(control instanceof JComboBox)
@@ -343,7 +343,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	else if(control instanceof JComboBox)
         		value = ((JComboBox)control).getSelectedItem().toString();
         	else if(control instanceof JCheckBox)
-        		value = ((JCheckBox)control).isSelected() ? "true" : "false";
+        		value = ((JCheckBox)control).isSelected() ? "1" : "0";
         	else if(control instanceof JSpinner)
         		value = ((JSpinner)control).getValue().toString();
         	else if(control instanceof JComboBox)
@@ -1023,7 +1023,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 				JCheckBox cb = new JCheckBox(param.getParamName());
 				
 				if(param.getParamDefault() != null)
-					cb.setSelected((param.getParamDefault().equals("true")) ? true: false);	//1 for true, everything else : false
+					cb.setSelected((param.getParamDefault().equals("1")) ? true: false);	//1 for true, everything else : false
 				
 				pnlItem.add(cb);			
 				
