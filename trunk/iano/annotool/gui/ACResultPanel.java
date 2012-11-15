@@ -157,7 +157,7 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		//Build image info panel
 		pnlImageInfo = new JPanel();
 		pnlImageInfo.setLayout(new BoxLayout(pnlImageInfo, BoxLayout.PAGE_AXIS));
-		pnlImageInfo.setBorder(new CompoundBorder(new TitledBorder(null, "Image Inforamtion", 
+		pnlImageInfo.setBorder(new CompoundBorder(new TitledBorder(null, "Image Information", 
 				TitledBorder.LEFT, TitledBorder.TOP), new EmptyBorder(10, 10, 10, 10)));
 		pnlImageInfo.setAlignmentX(RIGHT_ALIGNMENT);
 		pnlImageInfo.add(lbImgSet);
