@@ -40,23 +40,20 @@ import java.util.regex.Pattern;
  * 
  * Important: readImages(childrenCandidates, stackIndex); is only called by getData().
  * 
- * 8/1/2012:  3D and 2D ROI resize: done.  
- *  ReTHINK DATA INTERFACE:   8/6/2012
 
 Conclusion:
-    How to get 3D ROI data out of DataInput?
-     a)  Use getData(int)  to get a ArrayList of all data of certain slice
-     b)  Use getAllStackofAnImage(int)  to get a 3D ROI, an Arraylist of all slices
     No method gets you everything in 3D image or ROI. (For saving memory.)
- 
-    If 3D images: same as above 
-    If 2D images: The stackIndex is 1, so just use getData() to get all image data. 
-    If 2D ROI:  Just use getData() to get all ROI data.
-
+	  getData(int imageIndex, int sliceIndex) gets you a slice of certain image.
+	
+    How to get 3D Image or ROI data out of DataInput?
+     a)  Continuously call getData(int, int).
+     b)  Use getAllStackofAnImage(int)  to get an Arraylist of all slices
+    If 2D images or ROI: The stackIndex is 1. 
+    
 - Feature extractors need to use a mask to avoid sign extension of the data
 		such as data[i][j]&0xff (for byte)
 - Feature extractors can call  ofSameSize() to check of the images are of the same size
-- 3D feature extractors need to check if it is ROI before deciding to call getStackSize() or getDepth() 
+- 3D feature extractors need to check if it is ROI before calling getStackSize() 
 
 	//case 1: 2D image set: depth = 0; stackSize = 1
 	//case 2: 3D image set: depth = 0; stackSize > 1
@@ -480,8 +477,6 @@ public class DataInput
 	}
 
 	//get  an image 
-	// If 2DROI,  return the ROI
-	// If 3DROI,  return the cropped and combined ROI based on depth.  Commented out to save re-allocating memory
 	private ImagePlus getImage(String childrenCandidate) 
 	{
 		//Do differently based on mode
@@ -532,106 +527,7 @@ public class DataInput
 		return (new ImagePlus(path)); 
 	}
 	
-     /*
-	//returns 1 big array of entire 3D ROI.  Not used. 
-	Object openROIImageAsArray(String childrenCandidate, int[] dim) 
-	{
-	   	int w, h; 
-	   	int d = depth;
-	    Roi roi = roiList.get(childrenCandidate);
-	    //only work with rectangle ROI with width/height. ROI type check tba.
-	    //x,y is the uppperleft corner of ROI
-	    int x = roi.getBounds().x;
-		int y = roi.getBounds().y;
-		if (resize)
-		{ 	// if resize, use the passed in w,h of ROI 
-			w = this.width;
-		    h = this.height;
-		}
-		else // else use ROI w, h 
-		{
-		    w = roi.getBounds().width;
-		    h = roi.getBounds().height;
-		}
-		if (dim!= null) //pass back to the caller, e.g. readImages()
-		{   dim[0] = w; 
-		    dim[1] = h; 
-		}
-		
-		int cz = 1;  //In the case of 2d, depth, cz are 1.
-		if (stackSize > 1) //assume a 3D ROI if it is a 3D image. any risk here?
-		{
-	      String[] coors = childrenCandidate.split("-");
-	      cz = Integer.parseInt(coors[0]);
-		}
-	    //check bounds
-	    if (!checkROIBounds(x, y, cz, w, h, d, this.imp.getWidth(), this.imp.getHeight(), this.stackSize))
-	    		return null;
-	    
-	    //start getting the data
-	    int startz = cz - depth/2;
-	    System.out.println("startx:" + x + " starty:" + y + " startz:" + startz);
-
-	    Object result;
-	    ImageProcessor impr = this.imp.getStack().getProcessor(1);
-	    if (impr instanceof ByteProcessor)
-	    	result = new byte[w*h*d];
-	    else if (impr instanceof ColorProcessor)
-	    	result = new byte[w*h*d];
-	    else if (impr instanceof ShortProcessor)
-	    	result = new int[w*h*d];
-	    else if (impr instanceof FloatProcessor)	
-	        result = new float[w*h*d];
-    	else
-    	{
-    		System.err.println("not supported image type in 3D ROI");
-	    	  return null;
-    	}
-	    	    
-	    int index = 0;
-	    int[] channeldata =  new int[3];
-	    for(int i = startz; i < startz + depth; i++)
-		{
-	    	impr = this.imp.getStack().getProcessor(i);
-	        //go through slices  //check image type
-		    if(impr instanceof ByteProcessor) 
-		    {   //get the data around the center
-		    	for(int j = y; j < y + h; j++ )
-		    		for(int k = x; k < x + w; k++)
-		    	     ((byte[]) result)[index++] = (byte) impr.getPixel(k,j);
-		    }
-		    else if(impr instanceof ShortProcessor) 
-		    {
-		    	for(int j = y; j < y + h; j++ )
-		    		for(int k = x; k < x + w; k++)
-		    	     ((int[]) result)[index++] = impr.getPixel(k,j);
-		    }
-		    else if(impr instanceof FloatProcessor)
-		    {
-		    	for(int j = y; j < y + h; j++ )
-		    		for(int k = x; k < x + w; k++)
-		    	     ((float[]) result)[index++] = Float.intBitsToFloat(impr.getPixel(k,j));
-		    }
-	    	else if (impr instanceof ColorProcessor)
-	    	{
-	        	for(int j = y; j < y + h; j++ )
-		    		for(int k = x; k < x + w; k++)
-		    		{
-		    		   impr.getPixel(k,j, channeldata);
-		    		   if (channel == "r")
-		    			   ((byte[]) result)[index++] = (byte) channeldata[0];
-		    			 else if (channel == "g")
-		    				 ((byte[]) result)[index++] = (byte) channeldata[1];	
-		    			else if (channel == "b")
-		    				((byte[]) result)[index++] = (byte)channeldata[2];
-		    		}
-	    	}
-	      }
-	    	return result;
-	}
-   */
-	
-	//check bounds based on the ROI dimension and entire image's dimension
+    //check bounds based on the ROI dimension and entire image's dimension
 	// cz start from 1; 
 	// x, y start from 0. (upperleft corner of ROI)
     private boolean checkROIBounds(int x, int y, int cz, int w, int h, int d, int imwidth, int imheight, int stackSize)
@@ -766,15 +662,6 @@ public class DataInput
     **/
 	public ArrayList<Object> getStackData(int stackIndex) throws Exception
 	{
-		//check if need to read the data based on lastStackIndex
-		
-		//if (data == null ||  lastStackIndex != stackIndex)
-	    //{
-		//   String[] childrenCandidates = getChildrenCandidates(directory, ext);
-		//   data = readImages(childrenCandidates, stackIndex);
-	    //}  
-	    //lastStackIndex = stackIndex; //update the index of the last read stack.
-	
 		//get/build the array. A lot of memory for large sets ... not recommended.
 		data = new ArrayList<Object>(children.length);
 		for (int i = 0; i < children.length; i++)
@@ -1011,20 +898,6 @@ public class DataInput
 		return childrenCandidates;
 	}
 
-	//get the testing files or one set CV files
-	public String[] getChildren() throws Exception
-	{
-		if (children == null)
-		{
-		   String[] childrenCandidates = getChildrenCandidates(directory, ext);
-		   readImages(childrenCandidates, 1);
-		}
-	
-		//	getData();
-		
-		return children;
-	}
-
 	//return true if the given image is a color image
 	/*
 	public boolean isColor(String path)
@@ -1049,6 +922,20 @@ public class DataInput
 	    	return false;
 	}*/
 	
+	//get the testing files or one set CV files
+	public String[] getChildren() throws Exception
+	{
+		if (children == null)
+		{
+		   String[] childrenCandidates = getChildrenCandidates(directory, ext);
+		   readImages(childrenCandidates, 1);
+		}
+	
+		//	getData();
+		
+		return children;
+	}
+
 	//Return true if it involves a 3D image.
 	//Note: It includes the case when a 3D ROI with depth of 1.
 	public boolean is3D()
@@ -1089,23 +976,47 @@ public class DataInput
 	/**
 	 * Return the ImagePlus object of the given image index.
 	 * In the case of ROI, the parameter is ignore and the entire image is returned.
+	 * In the case of RGB, the image of the channel is wrapped into an image and returned.
 	 * 
 	 * @param i  The index of the image to be returned. (Ignored in ROI mode.)
 	 * @return The ith image in the case of image set. Or the entire image in the case of ROI.
+	 * 
 	 */
 	public ImagePlus getImagePlus(int i) throws Exception
 	{
 		if (mode == ROIMODE) //ignore the parameter and return the entire image
 		  return imp;
-		else
-		{
-		  if (children == null)
-		  {   //typically it should already be set, e.g. in the constructor.
+		
+		if (children == null)
+		{   //typically it should already be set, e.g. in the constructor.
 				System.err.println("Children is not yet set.");
 				getChildren();
-		  }
-		  return (new ImagePlus(directory+children[i]));
 		}
+		return (new ImagePlus(directory+children[i]));
+	}
+	
+	
+	//returns the image plus for a particular ROI region.
+	public ImagePlus getROIImagePlus(int i) throws Exception
+	{
+		if (mode != ROIMODE) //ignore the parameter and return the entire image
+		   throw new Exception("This is not an ROI problem. Cann't return ROI ImagePlus.");
+
+		if(this.getStackSize() > 1)
+			throw new Exception("getROIImagePlus only works with 2D data");
+
+		if (children == null)
+		{   
+			//typically it should already be set, e.g. in the constructor.
+			System.err.println("Children is not yet set.");
+			getChildren(); //children from get roiList 
+		}
+		
+		String childrenCandidate = children[i];
+		Roi roi = roiList.get(childrenCandidate);
+		this.imp.setRoi(roi);
+		//Only 1 processor so only works for 2D image for now
+		return new ImagePlus(childrenCandidate, this.imp.getProcessor().crop());
 	}
 	
 	public int getImageType()
@@ -1246,4 +1157,55 @@ public class DataInput
 	public int getMode() {
 		return mode;
 	}
+
+
+    //utility method for getting the data array from an ImageJ ImagePlus
+	//Need to pass in channel and dimension
+	//This can be used for HaarFeatureExtractor to resize images after the images are loaded
+	public static Object openOneImage(ImagePlus imgp, int stackIndex, String channel, int width, int height) throws Exception
+	{
+		//stack from 1 to number of slices
+		ImageProcessor ip = imgp.getStack().getProcessor(stackIndex);
+		Object results = null;
+		int w = imgp.getWidth(), h = imgp.getHeight();
+		
+		if (w != width || h != height)
+		{  //don't use the image's width/height
+			ip  = ip.resize(width,height);
+			w = width; 
+			h = height;
+		}
+
+		//get the pixel values. We only deal with one color for RGB picture
+		if (ip instanceof ByteProcessor)
+			results = ip.getPixels();
+		else if (ip instanceof ColorProcessor)
+		{
+			//System.out.println("RGB image..");
+			byte[] pixels= new byte[w*h];
+			byte[] tmppixels= new byte[w*h];  //for the irrelevant channels.
+
+			if (channel.equals("r")) 
+				((ColorProcessor)ip).getRGB(pixels,tmppixels,tmppixels);
+			else if (channel.equals("g"))
+				((ColorProcessor)ip).getRGB(tmppixels,pixels,tmppixels);
+			else if (channel.equals("b"))
+				((ColorProcessor)ip).getRGB(tmppixels,tmppixels,pixels);
+			else
+				throw new Exception("Not supported channel " + channel);
+			
+			results = pixels;
+		}
+		else  if (ip instanceof ShortProcessor || ip instanceof FloatProcessor)
+			//16 bit or 32 bit grayscale
+			results =  ip.getPixels();
+		else
+		{
+			System.err.println("Image type is not supported.");
+			System.exit(0);
+		}
+		
+		return results;
+	}
+
 }
