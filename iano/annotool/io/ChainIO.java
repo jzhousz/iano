@@ -96,6 +96,85 @@ public class ChainIO {
     		writer.close();
     	}
 	}
+	
+	//This method is added for saving the results of the chain. 
+	//It is just for providing convenience when dispatching the chain
+	//to a node on a cluster in super computer.  It is meant 
+	//to be saved with other data info (e.g., dir, ext, channel). 
+	//Note that different from ChainModel, it does not contain model parameters.
+	public void saveRanks(File file, ArrayList<Chain> chainList, float[][] rates, int chainNum) throws IOException{		
+		//Cross platform new line character
+    	String newLine = System.getProperty("line.separator");
+    	
+    	BufferedWriter writer = null;
+    	try {
+	    	writer = new BufferedWriter(new FileWriter(file));
+	  
+	    	for(Chain chain : chainList) {
+	    		writer.write("[CHAIN_START]" + newLine);
+	    		writer.write("Name=" + chain.getName() + newLine);
+	    		for(Extractor ex : chain.getExtractors()) {
+		        	//Write feature extractor
+		        	writer.write("[FEATURE_EXTRACTOR]" + newLine);
+		        	writer.write("Name=" + ex.getName() + newLine);
+		        	writer.write("ClassName=" + ex.getClassName() + newLine);
+		        	writer.write("Path=" + ex.getExternalPath() + newLine);
+		        	writer.write("[PARAMETER_START]" + newLine);
+		        	for (String parameter : ex.getParams().keySet()) {
+		        		writer.write(parameter + "=" +ex.getParams().get(parameter) + newLine);
+		        	}
+		        	writer.write("[PARAMETER_END]" + newLine);
+	        	}
+	    		
+	    		for(Selector sel : chain.getSelectors()) {
+		        	//Write feature selector
+		        	writer.write("[FEATURE_SELECTOR]" + newLine);
+		        	writer.write("Name=" + sel.getName() + newLine);
+		        	writer.write("ClassName=" + sel.getClassName() + newLine);
+		        	writer.write("Path=" + sel.getExternalPath() + newLine);
+		        	writer.write("[PARAMETER_START]" + newLine);
+		        	for (String parameter : sel.getParams().keySet()) {
+		        		writer.write(parameter + "=" +sel.getParams().get(parameter) + newLine);
+		        	}
+		        	writer.write("[PARAMETER_END]" + newLine);
+	        	}
+	        	
+	        	if(chain.getClassifier() != null) {
+		        	//Write classifier
+		        	writer.write("[CLASSIFIER]" + newLine);
+		        	writer.write("Name=" + chain.getClassifier() + newLine);
+		        	writer.write("ClassName=" + chain.getClassifierClassName() + newLine);
+		        	writer.write("Path=" + chain.getClassifierExternalPath() + newLine);
+		        	//Write classifier parameters
+		        	writer.write("[PARAMETER_START]" + newLine);
+		        	for (String parameter : chain.getClassParams().keySet()) {
+		        		writer.write(parameter + "=" +chain.getClassParams().get(parameter) + newLine);
+		        	}
+		        	writer.write("[PARAMETER_END]" + newLine); 
+	        	}
+	        	
+	        	
+	        	if(rates != null) {
+	        		for(int i = 0; i < rates[chainNum].length; i++) {
+		        		writer.write("[RATE_START]" + newLine);
+		        		writer.write(rates[chainNum][i] + newLine);
+		        		writer.write("[RATE_END]" + newLine);
+	        		}
+	        	}
+	        	writer.write("[CHAIN_END]" + newLine);
+			}//End of for loop
+	
+	    	writer.flush();
+    	}
+    	catch (IOException ex) {
+    		System.out.println("Exception occured while writing file: " + file.getName());
+        	ex.printStackTrace();
+        	throw ex;
+    	}
+    	finally {
+    		writer.close();
+    	}
+	}
 	/*
 	 * Reads the algorithm chains from the specified file and returns an arraylist of read chains
 	 */
