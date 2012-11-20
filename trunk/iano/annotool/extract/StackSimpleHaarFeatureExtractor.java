@@ -60,6 +60,9 @@ public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {
     */
 	public float[][] calcFeatures(DataInput problem) throws Exception
 	{
+	   if (problem.ofSameSize() == false)
+		 	throw new Exception("The 3D anisotopic wavelet feature extractor has to work with images of same dimension.");
+
 		this.problem = problem;
 		this.length = problem.getLength();
 		this.dim.width = problem.getWidth();
