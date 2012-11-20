@@ -98,32 +98,44 @@ public class FeatureJLaplacian implements FeatureExtractor {
 		
 		double values[][] = new double[this.height][this.width];
 		
-		for(int imageIndex = 0; imageIndex < length; imageIndex++) {
-			if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
-				if (data != null)
-				 ip = new ByteProcessor(this.width, this.height, (byte[])data.get(imageIndex), null);
-				else 
-				 ip = new ByteProcessor(this.width, this.height, (byte[])problem.getData(imageIndex, 1), null);
+		int currentHeight = 0, currentWidth = 0;
+		for(int imageIndex = 0; imageIndex < length; imageIndex++)
+		{
+			currentWidth = this.width;
+			currentHeight = this.height;
+			if (problem !=null && !problem.ofSameSize())
+			{
+			  currentWidth = problem.getWidthList()[imageIndex];
+			  currentHeight = problem.getHeightList()[imageIndex];
+			}
+		    if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
+               if (data != null)
+                  ip = new ByteProcessor(currentWidth, currentHeight, (byte[])data.get(imageIndex), null);
+               else 
+                  ip = new ByteProcessor(currentWidth, currentHeight, (byte[])problem.getData(imageIndex, 1), null);
 		    }
 		    else if(imageType == DataInput.GRAY16) {
-		    	if (data != null)
-		    	 ip = new ShortProcessor(this.width, this.height, (short[])data.get(imageIndex), null);
-		    	else
-		    	 ip = new ShortProcessor(this.width, this.height, (short[])problem.getData(imageIndex,1), null);
-		    }	
-	 	    else if(imageType == DataInput.GRAY32) {
-	 	    	if (data != null)
-		    	 ip = new FloatProcessor(this.width, this.height, (float[])data.get(imageIndex), null);
-	 	    	else
-			     ip = new FloatProcessor(this.width, this.height, (float[])problem.getData(imageIndex, 1), null);
-	 	    }
-	 	    else {
-	 	    	throw new Exception("Unsuppored image type");
-	 	    }
-	
+		    	 if (data != null)
+		    		 ip = new ShortProcessor(currentWidth, currentHeight, (short[])data.get(imageIndex), null);
+		    	 else
+		    		 ip = new ShortProcessor(currentWidth, currentHeight, (short[])problem.getData(imageIndex,1), null);
+		    }   
+		    else if(imageType == DataInput.GRAY32) {
+		    	 if (data != null)
+		    		 ip = new FloatProcessor(currentWidth, currentHeight, (float[])data.get(imageIndex), null);
+		    	 else
+		    		 ip = new FloatProcessor(currentWidth, currentHeight, (float[])problem.getData(imageIndex, 1), null);
+		     }
+		     else {
+		    	 throw new Exception("Unsuppored image type");
+		     }
+
+		 	//resize if needed
+			if (problem !=null && !problem.ofSameSize())
+			  if (currentHeight != this.height || currentWidth != this.width)
+						ip.resize(this.width, this.height);
 			
 			img = Image.wrap(new ImagePlus("Image", ip));
-			
 			img = laplacian.run(img, scale);
         	img.axes(Axes.X + Axes.Y);
         	img.get(startCO, values);
@@ -135,8 +147,8 @@ public class FeatureJLaplacian implements FeatureExtractor {
         			i++;
         		}
         	
-        	//if(imageIndex == (this.length - 1))
-        		//img.imageplus().show();
+        	//if(imageIndex == 0) //(this.length - 1))
+        	//	img.imageplus().show();
 		}
 		
 		return features;

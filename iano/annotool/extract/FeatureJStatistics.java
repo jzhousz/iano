@@ -146,30 +146,38 @@ public class FeatureJStatistics implements FeatureExtractor {
 		ImagePlus imp = null;
 		Image img = null;
 		Statistics stats = new Statistics();
-		
+
+		int currentHeight = 0, currentWidth = 0;
 		for(int imageIndex = 0; imageIndex < length; imageIndex++) {
+	     	if (problem !=null)
+        	{
+        		if (!problem.ofSameSize())
+        		{  	//set the size for this image
+        		 this.height = problem.getHeightList()[imageIndex];
+        		 this.width = problem.getWidthList()[imageIndex];
+        		}
+        	}
 			if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
 				if (data != null)
-				 ip = new ByteProcessor(this.width, this.height, (byte[])data.get(imageIndex), null);
+				 ip = new ByteProcessor(width, height, (byte[])data.get(imageIndex), null);
 				else 
-				 ip = new ByteProcessor(this.width, this.height, (byte[])problem.getData(imageIndex, 1), null);
+				 ip = new ByteProcessor(width, height, (byte[])problem.getData(imageIndex, 1), null);
 		    }
 		    else if(imageType == DataInput.GRAY16) {
 		    	if (data != null)
-		    	 ip = new ShortProcessor(this.width, this.height, (short[])data.get(imageIndex), null);
+		    	 ip = new ShortProcessor(width, height, (short[])data.get(imageIndex), null);
 		    	else
-		    	 ip = new ShortProcessor(this.width, this.height, (short[])problem.getData(imageIndex,1), null);
+		    	 ip = new ShortProcessor(width, height, (short[])problem.getData(imageIndex,1), null);
 		    }	
 	 	    else if(imageType == DataInput.GRAY32) {
 	 	    	if (data != null)
-		    	 ip = new FloatProcessor(this.width, this.height, (float[])data.get(imageIndex), null);
+		    	 ip = new FloatProcessor(width, height, (float[])data.get(imageIndex), null);
 	 	    	else
-			     ip = new FloatProcessor(this.width, this.height, (float[])problem.getData(imageIndex, 1), null);
+			     ip = new FloatProcessor(width, height, (float[])problem.getData(imageIndex, 1), null);
 	 	    }
 	 	    else {
 	 	    	throw new Exception("Unsuppored image type");
 	 	    }
-	
 			
 			imp = new ImagePlus("Image", ip);
 			img = Image.wrap(imp);

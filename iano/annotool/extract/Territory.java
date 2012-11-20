@@ -90,8 +90,6 @@ ImgDimension dim) throws Exception {
 	
 	protected float[][] calcFeatures() throws Exception {		
 
-		
-		
 		ImageProcessor ip = null;
 		RankFilters filter = new RankFilters();
 		BackgroundSubtracter bs = new BackgroundSubtracter();

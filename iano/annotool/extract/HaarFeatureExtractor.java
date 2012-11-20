@@ -1,6 +1,8 @@
 package annotool.extract;
 
 import annotool.ImgDimension;
+import ij.process.ImageProcessor;
+
 import java.util.ArrayList;
 import annotool.Util;
 import annotool.io.DataInput;
@@ -72,8 +74,8 @@ public class HaarFeatureExtractor implements FeatureExtractor
   public float[][] calcFeatures(DataInput problem) throws Exception
   {
 	 //check if the extractor can handle this problem.
-	 if (problem.ofSameSize() == false)
-		throw new Exception("The Haar feature extractor has to work with images of same dimension.");
+	 //if (problem.ofSameSize() == false)
+	 //	throw new Exception("The Haar feature extractor has to work with images of same dimension.");
 	  
 	  totalwidth = problem.getWidth();
 	  totalheight = problem.getHeight();
@@ -109,25 +111,47 @@ public class HaarFeatureExtractor implements FeatureExtractor
 	    if(features == null)
 	       features  = new float[length][totalwidth*totalheight]; //In Matlab, an 50*100 image has 5050 features due to rounding.
 	    
-	    if(workOnRawBytes)
-	    {	
-          if(!singleImage)
-          {
+	    if(!workOnRawBytes)
+	    { //work as 2nd feature extractor or later if allowing sequential chaining of extractors 
 	       for(int i=0; i <length; i++)
-	       { 
-	    	 if (data == null)  
-               getHaarFeatureOfOneImage(problem.getData(i,1), features[i]);
-	    	 else
-	    	   getHaarFeatureOfOneImage(data.get(i), features[i]);
-	       }
-          }
-          else 
-        	getHaarFeatureOfOneImage(singleData, features[0]);
+	            getHaarFeatureOfOneImage(features[i]);
+	       return features;
 	    }
-	    else //work as 2nd or 3rd feature extractor
-	       for(int i=0; i <length; i++)
-            getHaarFeatureOfOneImage(features[i]);
-
+	    if(singleImage)
+	    {
+	    	getHaarFeatureOfOneImage(singleData, features[0]);
+	    	return features;
+	    }
+	    	
+	    //the normal case
+	    Object imgData;
+	    for(int i=0; i <length; i++)
+	    { 
+ 		    imgData = null;
+     	    if (data != null)
+     		     imgData =   data.get(i);
+     	    else if (problem != null); 
+       			 imgData = problem.getData(i,1);
+       			 
+       	    //check if there is a need to resize 
+       	    if (problem != null && !problem.ofSameSize()) 
+	        { 
+			  int currentHeight = problem.getHeightList()[i];
+			  int currentWidth = problem.getWidthList()[i];
+			  //size is different, reopen to get it resized.
+			  if (currentHeight != this.totalheight || currentWidth != this.totalwidth)
+			  {
+				ij.ImagePlus ip = null;  
+				if (problem.getMode() == problem.ROIMODE)
+				    ip = problem.getROIImagePlus(i);
+				else
+					ip = problem.getImagePlus(i);
+				imgData = DataInput.openOneImage(ip, 1, problem.getChannel(), totalwidth, totalheight);
+			  }
+	         }
+    	     getHaarFeatureOfOneImage(imgData, features[i]);
+        }//end of loop for images
+           
 	    //debug:
 	    //for(int l = 0 ; l < length; l++)
 	    //{
@@ -204,11 +228,8 @@ public class HaarFeatureExtractor implements FeatureExtractor
          float[] temp = new float[wid*height];
          int i, j, k;
 
-
          //process rows (addition and subtraction of neighboring rows) and put into temp
-         //System.out.println("height/2:"+height/2);
-		 //System.out.println("wid"+wid);
-		 //No risk of arrayoutofbound exception here but boundary may be lost. Example: height =9; i= 0-3; k+1 can be up to 7 (row 8).
+  	     //No risk of arrayoutofbound exception here but boundary may be lost. Example: height =9; i= 0-3; k+1 can be up to 7 (row 8).
 
          for(i = 0; i < height/2; i++)
          {
@@ -216,9 +237,6 @@ public class HaarFeatureExtractor implements FeatureExtractor
             for(j = 0; j < wid; j++)
             {
                temp[i*wid+j] = (data[k*origWid+j] + data[(k+1)*origWid+j])/2;  //top half
-               //System.out.println("(height/2+i)*origWid+j - " + (height/2+i)*origWid+j);
-           //    System.out.println("k*origWid+j - " + k*origWid+j);
-           //    System.out.println("(k+1)*origWid+j - " + (k+1)*origWid+j);
                temp[(height/2+i)*wid+j] = (data[k*origWid+j] - data[(k+1)*origWid+j])/2;   //lowerhalf
             }
          }
