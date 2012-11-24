@@ -28,22 +28,19 @@ In this range, I suggest to set it lower (conservative), so 1) more signal are i
  *  5/17/2012
  *  Denoise: When the neuropil's noise is high, it might cause the mask to be problematic.
  *  Denoise based on 2D max projection.
- *  Add a batch mode macro to let it work with a directory.
- *  Need to adjust RATS parameter of leaf size (segmentation for neuropil and axon), as well as enhance target?
+ *  Need to add a batch mode macro to let it work with a directory.
+ *
+ *  Need to adjust RATS parameter of leaf size (segmentation for neuropil and axon), as well as enhance target.
  *  
  *  5/22/2012
- *  Q: what is the exact effect of  adjusting window, set min/max?  What happened the the original high spots???
+ *  Q: what is the exact effect of  adjusting window, set min/max?  What happened to the original high spots???
+ *  TODO: Make leafsize a parameter?
+ *  TODO: Make target of a parameter?
+ *  TODO: Combine for EXCLUSIVE?
+ *  TODO: TEST MORE IMAGES
  *
- *  5/26/2012
- *  Test on exclusive data. The difference between exclusive and inclusive: 
- *   a. Before denoise, combine axon and neuropil channel.  Need to combine the original value. Otherwise, the intensity is too low.
- *   b. Don't duplicate for z-projection based denoise. So the combined channel is used for later calculation.
- *   c. Comment out code for RTI.
- *   d. target intensity can be lower? Add parameter knobs.
- *
- * 11/21/2012
- *   Add the calculation of volume ratio between neuropil and clone.
- *  
+ *  11/24/2012
+ *  add volume ratio.
  */
 
 
@@ -59,17 +56,19 @@ import java.awt.*;
 import java.util.*;
 import java.awt.event.*;
 
-public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements PlugIn, AdjustmentListener, TextListener {
-    static final String pluginName = "Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio";
+public class Axon_TopoMap_Inclusive_AutoEnhance_Denoise_VolumeRatio implements PlugIn, AdjustmentListener, TextListener {
+    static final String pluginName = "Axon_TopoMap_Inclusive_AutoEnhance_Denoise_VolumeRatio";
     int InclusiveLimit = 2;   //level of allowance of axon outside neuropil
     final int EXCLUSIVELIMIT = 999; //a very big number
     int ENHANCE_BASE = 35;
     int ENHANCE_TARGET = 80;
     String outputfilename = "TIOutput.csv";
-  
+
+    boolean combineFlag = false;
     boolean debug = false;
     boolean useCLAHE = false; //test and compare with window/level adjustment
     boolean useRATS = true;   //Is rats too adaptive for such high noise images? 
+   
                               //note that simple setThreshold() does not work with very dim images (largely white for some images in 2nd set)
 			      //Current conclusion: still use RATS, but with more suitable parameters, plus 2D projection ...
    int  leafSizeAxon = 5;
@@ -92,6 +91,7 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
     public static boolean show_mask_default = true;
     public static boolean enhanceNeuropil = false;
    
+    //final int limit = 2;    //the cushion limit for neurpil boundary.  Used for noise removal. Anything in axon outside boundary are considered noise.
     int ThrVal = 6;
     int ThrVal2  = 7;  //channel for neurpoil
     
@@ -136,6 +136,7 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
         imgtitle = img.getTitle();
 	helper = new TopoQuantificationHelper(Width, Height);
 
+
         //does not work with RGB processor-- Thresholding of RGB images is not supported!
         ip=img.getProcessor();
         //ThrVal=ip.getAutoThreshold();
@@ -163,11 +164,13 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
         gd.addCheckbox("Neuropil channel is red", br_default);
         gd.addCheckbox("Neuropil_ channel is green", bg_default);
         gd.addCheckbox("Neuropil__ channel is blue", bb_default);
+	//added May 27 2012
+	gd.addCheckbox("Combine axon and neuropil as denoise reference (only neuropil is used if unchecked)", combineFlag);
         gd.addSlider("Cushion for Noise of Axon Over Neuropil: ", 0, 10, InclusiveLimit);
 	gd.addSlider("Minimum Intensity Requirement for Neuropil: ", ip.getMin(), ip.getMax(), ENHANCE_BASE);
 	gd.addSlider("Target Intensity for Enhancing Neuropil: ", ip.getMin(), ip.getMax(), ENHANCE_TARGET);
-        gd.addStringField("File to save TI:",outputfilename,20);
-        gd.showDialog();
+	gd.addStringField("File to save TI:",outputfilename,20);
+	gd.showDialog();
         
         if (gd.wasCanceled()){
             ip.resetThreshold();
@@ -177,7 +180,6 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
 
         ThrVal=(int) gd.getNextNumber();
         ThrVal2=(int) gd.getNextNumber();
-	
         //despeckle = gd.getNextBoolean();     despeckle_default = despeckle;
         //smooth = gd.getNextBoolean(); 	     smooth_default = smooth;
 	//enhanceNeuropil = gd.getNextBoolean(); 
@@ -188,12 +190,13 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
         br =gd.getNextBoolean();             br_default = br;
         bg =gd.getNextBoolean();             bg_default = bg;
         bb =gd.getNextBoolean(); 	     bb_default = bb;
+	combineFlag = gd.getNextBoolean();
 	InclusiveLimit = (int) gd.getNextNumber();
 	ENHANCE_BASE = (int)  gd.getNextNumber();
 	ENHANCE_TARGET = (int) gd.getNextNumber();
 	outputfilename = (String) gd.getNextString();
-    
-        IJ.register(Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio.class); // static fields preserved when plugin is restarted
+  
+        IJ.register(Axon_TopoMap_Inclusive_AutoEnhance_Denoise_VolumeRatio.class); // static fields preserved when plugin is restarted
         //Reset the threshold
         ip.resetThreshold();
         img.updateAndDraw();
@@ -243,7 +246,6 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
 	 return CoM;
 
     }
-
 
     //
     //Calculate the total intensity of the image that are considered as foreground
@@ -346,31 +348,28 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
 	       int[] iArray = new int[3];
 	       if (index2==0)
 	       {
-		  iArray[0] = (red[j*Width+i]&0xff)+(axonChannel[j*Width+i]&0xff);
-		  if (iArray[0] > 255) iArray[0] = 255;
+		  iArray[0] = (red[j*Width+i]&0xff)/2+(axonChannel[j*Width+i]&0xff)/2;
 		  iArray[1] = gre[j*Width+i];
 		  iArray[2] = blue[j*Width+i];
 	       }
 	       else if (index2==1)
 	       {
 		  iArray[0] = red[j*Width+i];
-	       	  iArray[1] = (gre[j*Width+i]&0xff)+(axonChannel[j*Width+i]&0xff);
-		  if (iArray[1] > 255) iArray[1] = 255;
+	       	  iArray[1] = (gre[j*Width+i]&0xff)/2+(axonChannel[j*Width+i]&0xff)/2;
 		  iArray[2] = blue[j*Width+i];
 	       }
 	       else if (index2==2)
 	       {
 		  iArray[0] = red[j*Width+i];
 	       	  iArray[1] = gre[j*Width+i];
-		  iArray[2] = (blue[j*Width+i]&0xff)+(axonChannel[j*Width+i]&0xff);
-		  if(iArray[2] > 255) iArray[2] = 255;
+		  iArray[2] = (blue[j*Width+i]&0xff/2)+(axonChannel[j*Width+i]&0xff/2);
 	       }
 	       aySlice.putPixel(i,j,iArray);
 	    }
 	}//end of all z
     } 
    
-    //denoise each stack and each channel, but setting the voxel to 0 if it is out of boundary
+    //denoise each stack and each channel, by setting the voxel to 0 if it is out of boundary
     //Pass in processor or a byte[]
     void denoiseBasedOnBoundary(int[] neuropilMinZ, int[] neuropilMaxZ, ImageProcessor imp)
     {
@@ -396,8 +395,10 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
     void get2DBoundaryViaProjection(int index1, int index2, int[] neuropilMinZ, int[] neuropilMaxZ, ImagePlus  imgp)
     {
 	
-	//Reuired for EXCLUSIVE.  
- 	combineAxonAndNeuropil(index1, index2, imgp.getStack());
+	//For inclusive, need to combine? -- THIS IS Required FOR EXCLUSIVE, but optional for INCLUSIVE.
+	// The projection can be cleaner when neuropil is very noisy.   
+	if(combineFlag) 
+ 	  combineAxonAndNeuropil(index1, index2, imgp.getStack());
 	
 	//do z-project (on RGB)
 	ZProjector projector = new ZProjector(imgp);
@@ -449,7 +450,7 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
     {
 	//x: direction of AP
 	//y: direction of DV    
-	//z: direction of the cross sectin (left-right)
+	//z: direction of the cross section (left-right)  (Later datasets have y and z swicthed.)
         int x, y, z;	    
 	int neuropilMinZ, neuropilMaxZ, axonMinZ, axonMaxZ;
 	float ti =0, tisum =0;
@@ -493,8 +494,8 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
 	//duplicate the imageplus to avoid interfere with later steps?!
  	int[] twoDNeuMinZ = new int[Width];
 	int[] twoDNeuMaxZ = new int[Width];
-	//different from INCLUSIVE, this will change the original image. So no duplicate.
-	get2DBoundaryViaProjection(index1, index2, twoDNeuMinZ, twoDNeuMaxZ, img);
+	//get2DBoundaryViaProjection(index1, index2, twoDNeuMinZ, twoDNeuMaxZ, img);
+	get2DBoundaryViaProjection(index1, index2, twoDNeuMinZ, twoDNeuMaxZ, img.duplicate());
 
 	//automatic enhancement based on neuropil intensity  4/2012
 	//Rule: If less than 35, discard. Else if less than 80, increase to above 80 (but lower than 100).   Otherwise, no enhancement.
@@ -671,15 +672,16 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
 	    res[1] += resfory[1];
 	    res[2] += resfory[2];
 	    res[3] += resfory[3];
-	    
+
 	    //11/22/2012   Add volumes of each slice together
 	    res[4] += resfory[4];
 	    res[5] += resfory[5];
-	  }
+
+          }
 	  else
 	    IJ.log(" -- The slice is skipped for TI calculation!");	  
 
-	  /*  05/26/2012   No need to calculate RTI for exclusive data
+	  /*
 	  // calculate relative TI based on flipped out image	
 	  IJ.log(" -- Caculating Relative T.I. after flipping the neuropil image .. ");
 	  ImagePlus[] flippedImages = getImageUsingComptationalFlipOut(maskImageAxon.duplicate(), maskImageNeu.duplicate());
@@ -690,7 +692,7 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
 	  //   denoisedAxon.addSlice("denoised axon", flippedImages[0].getProcessor());
 	  //   flippedNeuro.addSlice("flipped neuropil", flippedImages[1].getProcessor());
 	  // }
-            resfory = getTopoIndexGivenTwoImages(flippedImages[0], flippedImages[1], EXCLUSIVELIMIT);
+            resfory = helper.getTopoIndexGivenTwoImages(flippedImages[0], flippedImages[1], EXCLUSIVELIMIT);
 	    res[4] += resfory[0];
 	    res[5] += resfory[1];
 	    res[6] += resfory[2];
@@ -699,9 +701,7 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
 	  else
 	    IJ.log(" -- The slice is skipped for relative TI calculation (possibly a black slice)!");	  
 	  */
-
-
-	}//end of all Z
+	}//end of all y (DV slices)
 
 	//normalized for y
 	IJ.log("---- Final Result For The Neuron -----");
@@ -736,7 +736,8 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
 	}
 	return res;
      }
- 
+
+
      //
      //Computational flip out:
      //1. remove noise from green channel (all that are beyong the red channel's binary mask boundary are removed)
@@ -757,7 +758,7 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
  	 int[] neuropilMinZ = new int[Width];
 	 int[] neuropilMaxZ = new int[Width];
  	 //IJ.log("     -- get neuropil boundary for noise removal of axon");
-	 if(!helper.getNeuroBoundary(mask2, neuropilMinZ, neuropilMaxZ, false))
+	 if(!getNeuroBoundary(mask2, neuropilMinZ, neuropilMaxZ, false))
 		 return null;
 
 	 //remove noise based on neuropil boundary 
@@ -792,7 +793,6 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
 	return resImgs;
      }
 
-    
     void analyze() {
         IJ.showStatus("Measure Center of Mass in a  3D Image Stack");
 
@@ -813,8 +813,7 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
 	double zOrigin = cal.zOrigin;
 	double yOrigin = cal.yOrigin;
 	double xOrigin = cal.xOrigin;
-	//IJ.log("zOrigin:" +xOrigin + " yOrigin" + yOrigin + " zOrigin" + zOrigin);
-
+	
         //preprocessing is still needed 
         if(despeckle)
         {
@@ -848,31 +847,38 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
 	//get topographic index
 	float[] res = getTopoIndex(index1, index2, ThrVal, ThrVal2,stack);
 
-	//save TI, and volume info to a file (append)
-	if(!outputfilename.trim().equals(""))
+	//save TI to a file (append)
+	if(!outputfilename.equals(""))
 	{
-	 try{
-         java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileOutputStream(new java.io.File(outputfilename), true)); 
-	 writer.println(img.getTitle()+","+res[0]/res[1]+","+res[5]+","+res[4]+","+res[5]/res[4]);
-	 writer.close();
-	 }catch(Exception e)
-	 {
-	   IJ.log("Problem in saving the result into "+ outputfilename + "--"+e.getMessage());
+	  try{
+           java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileOutputStream(new java.io.File(outputfilename), true)); 
+	   writer.println(img.getTitle()+","+res[0]/res[1]+","+res[5]+","+res[4]+","+res[5]/res[4]);
+	   writer.close();
+	  }catch(Exception e)
+	  {
+	   IJ.log("Problem in saving the result into output file --"+e.getMessage());
 	   return;
-	 }
-	 IJ.log("Result appended to "+outputfilename +" (at ImageJ's folder by default).");
+	  }
+	  IJ.log("Result appended to "+ outputfilename + " (at ImageJ's folder by default).");
 	}
     }
 
     public void adjustmentValueChanged(AdjustmentEvent e) {
     	
         ThrVal=((Scrollbar)sliders.elementAt(0)).getValue();
+	ThrVal2 = ((Scrollbar)sliders.elementAt(1)).getValue();
+	InclusiveLimit = ((Scrollbar)sliders.elementAt(2)).getValue();
+	ENHANCE_BASE = ((Scrollbar)sliders.elementAt(3)).getValue();
+	ENHANCE_TARGET = ((Scrollbar)sliders.elementAt(4)).getValue();
     }
 
     public void textValueChanged(TextEvent e) {
         ((Scrollbar)sliders.elementAt(0)).setValue((int) Tools.parseDouble(((TextField)value.elementAt(0)).getText()));
-  
-    }
+        ((Scrollbar)sliders.elementAt(1)).setValue((int) Tools.parseDouble(((TextField)value.elementAt(1)).getText()));
+        ((Scrollbar)sliders.elementAt(2)).setValue((int) Tools.parseDouble(((TextField)value.elementAt(2)).getText()));
+        ((Scrollbar)sliders.elementAt(3)).setValue((int) Tools.parseDouble(((TextField)value.elementAt(3)).getText()));
+        ((Scrollbar)sliders.elementAt(3)).setValue((int) Tools.parseDouble(((TextField)value.elementAt(4)).getText()));
+     }
 
  
 }
