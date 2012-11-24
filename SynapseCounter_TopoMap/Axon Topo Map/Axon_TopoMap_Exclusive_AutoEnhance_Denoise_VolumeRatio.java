@@ -327,7 +327,7 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
 	if (( (axonMaxZ - axonMinZ) - (neuropilMaxZ - neuropilMinZ) ) >= limit)
 	{
               IJ.log("problem in calculating volume: axon is bigger than neuropil. ");
-	      return -1;
+	      return 0;
 	}
 	
 	//ready to set the value
