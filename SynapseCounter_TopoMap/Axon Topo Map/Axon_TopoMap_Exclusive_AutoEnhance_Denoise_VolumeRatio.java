@@ -585,6 +585,7 @@ public class Axon_TopoMap_Exclusive_AutoEnhance_Denoise_VolumeRatio implements P
  	int[] twoDNeuMinZ = new int[Width];
 	int[] twoDNeuMaxZ = new int[Width];
 	//different from INCLUSIVE, this will change the original image. So no duplicate.
+	//Combination of 2 channels is done inside this method.
 	get2DBoundaryViaProjection(index1, index2, twoDNeuMinZ, twoDNeuMaxZ, img);
 
 	//automatic enhancement based on neuropil intensity  4/2012
