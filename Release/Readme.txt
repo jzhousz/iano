@@ -8,13 +8,15 @@ The latest version of the JRE can be downloaded from http://java.com/en/download
 
 To have a smooth experience using BIOCAT,  4G and more RAM are suggested.
 
-To run BIOCAT, the command is:
+To run the cross-platform verion BIOCAT, the command is:
 
 
-   java -Xmx4G -jar biocat.jar
+   java -Xmx4G -jar biocat/biocat.jar
 
 
 The above command assumes that the computer has enough RAM to set the Java heap size to 4G. The user may adjust the parameter according to the hardware.
+
+The command is in the biocat.bat or biocat.sh for your convenience.
 
 
 Sample Set
