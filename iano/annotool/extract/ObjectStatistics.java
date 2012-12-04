@@ -14,7 +14,7 @@ import annotool.io.DataInput;
  * 3. The variance of the number of above-threshold pixels per object
  * 4. The ratio of the size of the largest object to the smallest.
  * 5. The average object distance to the CenterOfMass (CoM)
- * 6. The varaiance of teh object distance from the image CoM.
+ * 6. The variance of the object distance from the image CoM.
  * 7. The ratio of the largest to the smallest object to image CoM.
  * 
  * Other: Euler # 
@@ -86,7 +86,7 @@ public class ObjectStatistics implements FeatureExtractor {
 		ij.ImagePlus iplus;
 
 		for (int image_num = 0; image_num < this.length; image_num++) {
-			if (image_num % 50 == 0) System.out.println();
+			if (image_num % 50 == 0) System.out.println("Processing ");
 			System.out.print(image_num+" ");
 
 			//get dimension for current image
@@ -224,7 +224,7 @@ public class ObjectStatistics implements FeatureExtractor {
 		{
 			objectCoM = getCofM(imgData, width, height, tag, key);
 			dist = (float) Math.sqrt((objectCoM[0]-center[0])*(objectCoM[0]-center[0])+(objectCoM[1]-center[1])*(objectCoM[1]-center[1]));
-			if (dist < furthest)  furthest = dist;
+			if (dist > furthest)  furthest = dist;
 			if (dist < closest) closest = dist;
 		}
 		return furthest/closest;
