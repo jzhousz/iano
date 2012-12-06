@@ -304,13 +304,13 @@ public class ROIAnnotator {
 	    } //end of z
 		System.out.println("Image INdex: " + imageIndex);
 
-		//visualize and output
-		if(stackSize == 1) //2D
-		 markResultsOnImage(imp, predictions, roiWidth, roiHeight, isMaxima, startCol, startRow, endCol, endRow);
-		
 		exportToFile(imp, predictions, roiWidth, roiHeight, roiDepth, isMaxima,
 		    		startCol, startRow, endCol, endRow, startSlice, endSlice);
-		 
+
+		//visualize and output
+		if(stackSize == 1) //2D.  Visualization will convert to a 3 stack RGB image.
+		 markResultsOnImage(imp, predictions, roiWidth, roiHeight, isMaxima, startCol, startRow, endCol, endRow);
+
 	}
 	
 	private Object getSubImageData(Object data, int col, int row, int imgWidth, int imgHeight, int imageType) {
@@ -536,14 +536,11 @@ public class ROIAnnotator {
 	    				  continue;
 	    				
 	    			res = predictions[index++];
-	    			System.out.println("!!res for pixel/voxel ("+x+","+y+","+","+z+"):" + "classKey:" + classKey + " res:"+ res);
 	    			if(classKey.equals(String.valueOf(res))) {
+	    				System.out.println("stacksize:"+ stackSize);
 	    				if(stackSize > 1 ) //3D, including roiDepth = 1
 	    				 //can accomodate Vaa3D landmark file here.	
-	    				{
-	    				  System.out.println("$$$$$$$$$$$LINE ("+x+","+y+","+","+z+"):" + res);
 		    			   writer.write(x + "," + y + "," + z);
-	    				}
 	    				else
 	    				   writer.write(x + "," + y);
 		    			writer.write(newLine);
