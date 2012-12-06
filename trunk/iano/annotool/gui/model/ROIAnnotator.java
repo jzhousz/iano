@@ -101,7 +101,7 @@ public class ROIAnnotator {
 		int roiDepth = 1;
 		if (roiSize.length == 3) //3D 
 			roiDepth = Integer.parseInt(roiSize[2]);
-		System.out.println("roiWidth:"+roiWidth+"roiHeight "+ roiHeight+" roiDepth"+roiDepth);
+		System.out.println("roi width:"+roiWidth+" roi height:"+ roiHeight+" roi depth:"+roiDepth);
 		
 		//ArrayList data  = null;
 		int totalImages = 0;
@@ -302,7 +302,7 @@ public class ROIAnnotator {
 			}//	end of j
 	      } //end of i
 	    } //end of z
-		System.out.println("Image INdex: " + imageIndex);
+		System.out.println("Number of processed sub-images: " + (imageIndex+1));
 
 		exportToFile(imp, predictions, roiWidth, roiHeight, roiDepth, isMaxima,
 		    		startCol, startRow, endCol, endRow, startSlice, endSlice);
@@ -537,7 +537,7 @@ public class ROIAnnotator {
 	    				
 	    			res = predictions[index++];
 	    			if(classKey.equals(String.valueOf(res))) {
-	    				System.out.println("stacksize:"+ stackSize);
+	    				//System.out.println("stacksize:"+ stackSize);
 	    				if(stackSize > 1 ) //3D, including roiDepth = 1
 	    				 //can accomodate Vaa3D landmark file here.	
 		    			   writer.write(x + "," + y + "," + z);

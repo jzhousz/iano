@@ -290,7 +290,7 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 		} //End of y
 	} //End of z
 
- System.out.println("total total maximum pixels:"+total);	
+ System.out.println("total local maximum pixels:"+total);	
  return isMaxima;
  }
 }
