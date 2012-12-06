@@ -14,6 +14,10 @@ public class Utility {
 	    return (x >= 0 && x < width && y >= 0 && y < height);
 	}
 	
+	public static boolean isWithinBounds(int x, int y, int z, int width, int height, int depth) {
+	    return (x >= 0 && x < width && y >= 0 && y < height && z >=0 && z <depth);
+	}
+	
 	//Calculates the 1D array index for given x and y
 	public static int offset(int x, int y, int width) {
 	    return x + y * width;
