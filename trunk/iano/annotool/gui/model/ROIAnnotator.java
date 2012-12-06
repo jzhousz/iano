@@ -219,6 +219,7 @@ public class ROIAnnotator {
 		Object datain = null; //complete slice of the given image
 		
 		int imageIndex = -1;
+		int shiftx, shifty, shiftz; //shifted centers to judge if current RIO's center is a local maxima
 		for(int z = startSlice; z <= endSlice; z= z + zInterval)
 		{ 
 		  for(int i = startCol; i <= endCol; i = i + interval)
@@ -226,14 +227,13 @@ public class ROIAnnotator {
 			//columns
 			for(int j = startRow ; j <= endRow; j = j + interval)
 			{ 
-				//If only local maxima are to be annotated, skip those which are not maxima
 				if(this.isMaximaOnly && isMaxima != null) {
-					int y = j + roiHeight / 2;
-					int x = i + roiWidth / 2;
-					if (!Utility.isWithinBounds(x, y, width, height))
-						continue;
-					else if(!isMaxima[y  * width + x])
-						continue;
+					//get the center to see if it is local maxima
+					shiftz = z + roiDepth/2;
+					shifty = j + roiHeight / 2;
+					shiftx = i + roiWidth / 2;
+					if (isSkip(shiftx, shifty, shiftz, width, height, stackSize, isMaxima))
+	    				  continue;
 				}
 				
 				//rows
@@ -522,27 +522,28 @@ public class ROIAnnotator {
 	    	int index = 0, res = 0, x = 0, y = 0, z = 0;	
 	    	for(int k = startSlice; k <= endSlice; k = k+ zInterval)
 	    	{
-	    	  for(int i=startCol; i <= endCol; i = i + interval) 
+ 	    	  for(int i=startCol; i <= endCol; i = i + interval) 
 	    	  {
-	    		for(int j=startRow ; j <= endRow; j = j + interval)
+ 	    		for(int j=startRow ; j <= endRow; j = j + interval)
 	    		{
 	    		    z = k + roiDepth / 2;   //if roiDepth=1, then z=k
 	    			y = j + roiHeight / 2;
 					x = i + roiWidth / 2;
-					
+
 	    			//Skip non-maxima if only local maxima annotated
-	    			if(this.isMaximaOnly && isMaxima != null) {						
-						if (!Utility.isWithinBounds(x, y, width, height))
-							continue;
-						else if(!isMaxima[y  * width + x])
-							continue;
-					}
-	    			
+	    			if(this.isMaximaOnly && isMaxima != null) 
+	    				if (isSkip(x, y, z, width, height, stackSize, isMaxima))
+	    				  continue;
+	    				
 	    			res = predictions[index++];
+	    			System.out.println("!!res for pixel/voxel ("+x+","+y+","+","+z+"):" + "classKey:" + classKey + " res:"+ res);
 	    			if(classKey.equals(String.valueOf(res))) {
 	    				if(stackSize > 1 ) //3D, including roiDepth = 1
 	    				 //can accomodate Vaa3D landmark file here.	
+	    				{
+	    				  System.out.println("$$$$$$$$$$$LINE ("+x+","+y+","+","+z+"):" + res);
 		    			   writer.write(x + "," + y + "," + z);
+	    				}
 	    				else
 	    				   writer.write(x + "," + y);
 		    			writer.write(newLine);
@@ -561,5 +562,26 @@ public class ROIAnnotator {
         	ex.printStackTrace();
 			this.pnlStatus.setOutput("Failed to write export file in directory " + this.exportDir);
         }
+    }
+    
+    //decide if skip this pixel/voxel based on local maxima
+    private boolean isSkip(int x, int y, int z, int width, int height, int stackSize, boolean[] isMaxima)
+    {
+		//Skip non-maxima if only local maxima annotated
+	    if (stackSize > 1)  //3D
+		{
+			if (!Utility.isWithinBounds(x, y, z, width, height, stackSize))
+			   return true;
+			if (!isMaxima[z*width*height + y*width + x])
+				return true;
+		} else  //2D
+		{
+		    if (!Utility.isWithinBounds(x, y, width, height))
+			    return true;
+			else if(!isMaxima[y  * width + x])
+			    return true;
+		}
+	  
+	    return false;  
     }
 }

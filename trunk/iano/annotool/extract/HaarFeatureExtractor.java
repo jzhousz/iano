@@ -130,7 +130,7 @@ public class HaarFeatureExtractor implements FeatureExtractor
  		    imgData = null;
      	    if (data != null)
      		     imgData =   data.get(i);
-     	    else if (problem != null); 
+     	    else if (problem != null) 
        			 imgData = problem.getData(i,1);
        			 
        	    //check if there is a need to resize 
