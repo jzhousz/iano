@@ -1,28 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Algorithms>
 	<Algorithm type="Selector">
-		<Name>mRMR</Name>
-		<ClassName>annotool.select.mRMRFeatureSelector</ClassName>
-		<Parameter type="String">
-			<Name>Method</Name>
-			<Domain>mRMR-MIQ,mRMR-MID</Domain>
-			<Default>mRMR-MIQ</Default>
-		</Parameter>
-		<Parameter type="Integer">
-			<Name>Number of features</Name>
-			<Default>8</Default>
-			<Min>1</Min>
-		</Parameter>
-		<Parameter type="Boolean">
-			<Name>Discrete Flag</Name>
-			<Default>1</Default>
-		</Parameter>
-		<Parameter type="Double">
-			<Name>Discretize Threshold</Name>
-			<Default>0</Default>
-		</Parameter>
-	</Algorithm>	
-	<Algorithm type="Selector">
 		<Name>Fisher</Name>
 		<ClassName>annotool.select.FishersCriterion</ClassName>
 		<Parameter type="String">
@@ -189,8 +167,7 @@
 		<Parameter type="Integer">
 			<Name>Wavelet Level</Name>
 			<Default>2</Default>
-			<Min>1</Min>
-			<Max>10</Max>
+			<Min>0</Min>
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="2DExtractor">
@@ -204,7 +181,13 @@
 		<Parameter type="Real">
 			<Name>Radius</Name>
 			<Default>50</Default>
+			<Min>1</Min>
 		</Parameter>
+	</Algorithm>
+	<Algorithm type="2DExtractor">
+		<Name>Object Statistics</Name>
+		<Desc>Statistics of Objects (Connected Components)</Desc>
+		<ClassName>annotool.extract.ObjectStatistics</ClassName>
 	</Algorithm>
 	<Algorithm type="3DExtractor">
 		<Name>3D Moments</Name>
@@ -217,10 +200,12 @@
 		<Parameter type="Integer">
 			<Name>Wavelet Level</Name>
 			<Default>2</Default>
+			<Min>0</Min>
 		</Parameter>
 		<Parameter type="Integer">
 			<Name>Midstacks to Include</Name>
 			<Default>3</Default>
+			<Min>0</Min>
 		</Parameter>
 		<Parameter type="Boolean">
 			<Name>WEIGHTED</Name>

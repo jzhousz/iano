@@ -6,17 +6,26 @@ This tool requires JAVA runtime environment (JRE) to be installed in the target 
 
 The latest version of the JRE can be downloaded from http://java.com/en/download/index.jsp.
 
-To have a smooth experience using BIOCAT,  4G and more RAM are suggested.
 
-To run the cross-platform verion BIOCAT, the command is:
+How to Run BIOCAT? 
+=====================================================================
+
+To run the cross-platform version of BIOCAT, the command is:
 
 
    java -Xmx4G -jar biocat/biocat.jar
 
 
-The above command assumes that the computer has enough RAM to set the Java heap size to 4G. The user may adjust the parameter according to the hardware.
+- The above command assumes a 64-bit system that has enough RAM to set the Java heap size to 4G. 
+  The user can adjust the parameter to higher or lower according to the specific system. 
+  To have a smooth experience using BIOCAT,  4G and more RAM are suggested.
 
-The command is in the biocat.bat or biocat.sh for your convenience.
+- The command is in the run.bat or run.sh for your convenience. 
+
+- The above way of launching is especially suggested for working with large image sets. 
+  Although the user may click the biocat.jar to launch the application, it would use a default heap size which is small. 
+
+For Windows version, the user can simply click the exe file to start.
 
 
 Sample Set
