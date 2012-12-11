@@ -27,8 +27,9 @@ import annotool.io.DataInput;
 
 /**
  * ROI annotator executes the algorithms in ROI annotation mode.
- * 
- * 8/10/2012: Add 3D ROI:
+ */ 
+
+/* 8/10/2012: Add 3D ROI:
  *   Note: 3D ROI with a depth of 1 is treated as 2D ROI.
  *   ArrayList can be a 3D data.
  *   

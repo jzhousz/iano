@@ -19,8 +19,8 @@ import java.awt.Font;
 /**
  * This is the panel that is displayed at the start when the AnnotatorGUI starts.
  * It displays different screens of the initial wizard in card layout.
- * 
- * @author Santosh
+ */ 
+ /* @author Santosh
  *
  */
 public class LandingPanel extends JPanel implements ActionListener, ItemListener

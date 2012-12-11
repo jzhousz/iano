@@ -22,8 +22,6 @@ import annotool.gui.model.Selector;
  * 
  * It is different than ChainModel which is for saving a trained model.
  * 
- * @author Santosh
- *
  */
 public class ChainIO {
 	public ChainIO() {

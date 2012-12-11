@@ -6,7 +6,6 @@ import java.util.ArrayList;
  * Represents a single algorithm(extractor, selector, classifier) loaded from the Algorithm.xml file.
  * This can be later displayed in GUI component.
  * 
- * @author Santosh
  *
  */
 public class Algorithm 

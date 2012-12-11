@@ -57,7 +57,6 @@ import com.itextpdf.text.pdf.PdfWriter;
  * This class represents the result panel that is displayed after the execution of 
  * the chains in auto comparison mode.
  * 
- * @author Santosh
  *
  */
 public class ACResultPanel extends JPanel implements ActionListener{

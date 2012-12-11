@@ -34,10 +34,8 @@ import annotool.ComboFeatures;
 /**
  * This class is responsible for displaying different algorithm choices and executing the selected ones in Simple Mode.
  * It provides methods that runs training only, training/testing and cross validation modes
- * 
- * @author Santosh
- * 
- * 8/13/2012: Set ChainModel for 3D image size.
+ */ 
+ /* 8/13/2012: Set ChainModel for 3D image size.
  *
  */
 public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListener, Runnable {

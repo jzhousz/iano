@@ -41,8 +41,6 @@ import annotool.io.DataInput;
  * This is used if the user prefers to save subimages and use target file mode.
  * Another alternative to creating sub images is to use ROI input mode.
  * 
- * @author Santosh
- *
  */
 public class ROITagger extends JDialog implements ActionListener {
 	private AnnOutputPanel pnlStatus = new AnnOutputPanel(this);

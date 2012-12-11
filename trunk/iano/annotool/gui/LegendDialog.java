@@ -9,8 +9,6 @@ import javax.swing.border.EmptyBorder;
 
 /**
  * This is the dialog box that displays the legends for the resulting colors in ROI annotation.
- * 
- * @author Santosh
  *
  */
 public class LegendDialog extends JDialog implements ActionListener {

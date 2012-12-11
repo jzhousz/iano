@@ -3,8 +3,11 @@ package annotool.io;
 import java.io.*;
 import java.util.Scanner;
 
-/** Read binary labels (targets) from a file
- * The file is formatted as below (0909080): 1st line: annotation labels,  other line: target values, then file name
+/** 
+ * Read labels (targets) from a file.
+ */
+
+/* The file is formatted as below (0909080): 1st line: annotation labels,  other line: target values, then file name
 a150 a273
 1  0   k150_a150_4-23-07_L10_Sum.lsm__AJ-F__GF.tif
 1  0   k150_a150_4-23-07_L11_Sum.lsm__AJ-F__GF.tif

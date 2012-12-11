@@ -3,8 +3,9 @@ package annotool.extract;
 import annotool.ImgDimension;
 import annotool.io.DataInput;
 import java.util.ArrayList;
+
 /**
- *  weighted average of middle stack features  (anisotropic)
+ *  weighted average of middle stack HAAR features, a.k.a. 3D anisotropic wavelet.
  * 
  */
 public class StackSimpleHaarFeatureExtractor implements FeatureExtractor {

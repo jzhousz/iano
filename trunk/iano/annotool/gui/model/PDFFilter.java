@@ -7,7 +7,6 @@ import javax.swing.filechooser.FileFilter;
 /**
  * File filter to allow selection of only pdf files in open/save dialogs.
  * 
- * @author Santosh
  *
  */
 public class PDFFilter extends FileFilter {

@@ -8,7 +8,6 @@ import javax.swing.table.AbstractTableModel;
 /**
  * Table model corresponding to the table used for displaying 
  * list of chains in ChainPanel (Auto comparison mode)
- * @author Santosh
  *
  */
 public class ChainTableModel extends AbstractTableModel {

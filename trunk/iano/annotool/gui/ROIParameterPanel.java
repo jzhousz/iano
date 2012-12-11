@@ -18,8 +18,6 @@ import javax.swing.event.ChangeListener;
  * boundary pixels, checkbox to specify if only local maxima points are to be annotated, 
  * and an option to specify export annotation result.
  * 
- * @author Santosh
- *
  */
 public class ROIParameterPanel extends JPanel implements ChangeListener, ItemListener, ActionListener {
 	private JLabel lbInterval, lbPadMode;

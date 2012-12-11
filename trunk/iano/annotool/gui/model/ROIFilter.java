@@ -7,8 +7,6 @@ import javax.swing.filechooser.FileFilter;
 /**
  * File filter to allow selection of zip files (roi files) only in open/save dialogs.
  * 
- * @author Santosh
- *
  */
 public class ROIFilter extends FileFilter {
 	public boolean accept(File f) {

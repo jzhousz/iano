@@ -9,8 +9,6 @@ import java.util.HashMap;
  * 
  * Not to be confused with actual algorithm to select features.
  * 
- * @author Santosh
- *
  */
 public class Selector {
 	private String name = null;
