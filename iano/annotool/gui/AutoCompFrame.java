@@ -36,8 +36,6 @@ import annotool.ComboFeatures;
  * 
  * After the execution of the chains, it displays the results in the ACResultPanel 
  * 
- * @author Santosh
- *
  */
 public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemListener {
 	private JTabbedPane tabPane;

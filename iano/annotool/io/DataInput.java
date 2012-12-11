@@ -22,8 +22,6 @@ import java.util.regex.Pattern;
 /**
  * The class that wraps the data.
  * 
- * @author JZhou
- *
  */
 
 /* Read images from a directory using ImageJ's utilities. 
@@ -178,7 +176,7 @@ public class DataInput
 	}
 	
 	/**
-	 This constructor takes no target file and is strictly for ROI Annotation mode
+	 This constructor takes no target file and is strictly for ROI Annotation mode.
 	 * 
 	 */
 	public DataInput(String directory, String[] files, String ext, String channel) throws Exception
@@ -975,7 +973,7 @@ public class DataInput
 
 	/**
 	 * Return the ImagePlus object of the given image index.
-	 * In the case of ROI, the parameter is ignore and the entire image is returned.
+	 * In the case of ROI, the parameter is ignored and the entire image is returned.
 	 * In the case of RGB, the image of the channel is wrapped into an image and returned.
 	 * 
 	 * @param i  The index of the image to be returned. (Ignored in ROI mode.)
@@ -1025,7 +1023,7 @@ public class DataInput
 	}
 	
 	/**
-	 * if all images are of the same size, return true; otherwise, return false.
+	 * If all images are of the same size, return true; otherwise, return false.
 	 * @return boolean
 	 */
 	public boolean ofSameSize()

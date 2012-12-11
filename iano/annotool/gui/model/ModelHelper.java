@@ -10,8 +10,6 @@ import annotool.io.ChainModel;
 /**
  * This helper class provides methods to get html formatted strings to display in GUI.
  *  
- * @author Santosh
- *
  */
 public class ModelHelper {
 	/**

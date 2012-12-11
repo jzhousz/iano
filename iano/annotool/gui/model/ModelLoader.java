@@ -19,7 +19,6 @@ import annotool.io.DataInput;
 /**
  * This class is responsible for loading saved model and applying model.
  * 
- * @author Santosh
  *
  */
 public class ModelLoader implements Runnable {

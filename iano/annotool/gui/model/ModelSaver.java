@@ -13,8 +13,6 @@ import javax.swing.SwingUtilities;
  * This class saves the trained models into file system using separate thread of execution.
  * The actual code to write to file is encapsulated in ChainModel objects.
  * 
- * @author Santosh
- *
  */
 public class ModelSaver implements Runnable {
 	JProgressBar bar = null;

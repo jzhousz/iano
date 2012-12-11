@@ -7,8 +7,6 @@ import javax.swing.filechooser.FileFilter;
 /**
  * File filter to select only model files(*.imdl) in open/save dialogs.
  * 
- * @author Santosh
- *
  */
 public class ModelFilter extends FileFilter {
     public boolean accept(File f) {

@@ -16,7 +16,6 @@ import org.xml.sax.SAXException;
  * This class loads the algorithms from the xml file, parses it and creates a list of extractor, selector or classifiers
  * that are used in GUI.
  * 
- * @author Santosh
  *
  */
 public class AlgoXMLParser 

@@ -7,8 +7,6 @@ import com.itextpdf.text.Font.FontFamily;
 /**
  * Defines constants representing styles in pdf report generated.
  * 
- * @author Santosh
- *
  */
 public class Styles {
 	//Font objects to use while writing pdf

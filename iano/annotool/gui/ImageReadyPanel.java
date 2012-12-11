@@ -44,8 +44,8 @@ import annotool.io.ReportSaver;
  * Depending upon the modes (Training Only, Training/Testing, Cross Validation, Image Annotation or ROI Annotation),
  * there are different components displayed.
  * 
- * 
- * @author Santosh
+ */ 
+ /* @author Santosh
  *
  */
 public class ImageReadyPanel extends JPanel implements ActionListener {

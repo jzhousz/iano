@@ -17,8 +17,6 @@ import javax.swing.ImageIcon;
 /**
  * Utility class for some helper methods.
  * 
- * @author Santosh
- *
  */
 public class Utils {
 	// Extension for model and chain files

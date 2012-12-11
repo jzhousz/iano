@@ -14,7 +14,6 @@ import java.util.HashMap;
  * It also creates annotation label. In directory structure mode, there can be only one annotation label.
  * The name of the root directory (problem directory) is used as annotation label.
  * 
- * @author Santosh
  *
  */
 public class DirectoryReader {
