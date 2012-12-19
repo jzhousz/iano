@@ -474,8 +474,9 @@ public class TargetFileDialogPanel extends JPanel implements ActionListener {
 			String[] filePaths = new String[files.length];
 			
 			Annotator.dir = files[0].getAbsolutePath();
-			Annotator.dir = Annotator.dir.substring(0,Annotator.dir.lastIndexOf("\\"));
-			Annotator.dir += "//";
+			System.out.println(File.separator); 	
+			Annotator.dir = Annotator.dir.substring(0,Annotator.dir.lastIndexOf(File.separator));
+			Annotator.dir += File.separator;
 			System.out.println(Annotator.dir);
 			
 			for(int i = 0; i < files.length; i++) {
