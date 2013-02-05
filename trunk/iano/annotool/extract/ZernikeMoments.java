@@ -7,7 +7,8 @@ import annotool.ImgDimension;
 import annotool.io.DataInput;
 
 /*
- * This class calculates the first 20 orders of Zernike Moments
+ * This class calculates the normalized Zernike Moments of a set of images 
+ * according to the order given in the class definition.
  * 
  * Calculation of the moments is accomplished using open source 
  * code from Columbia College 2001 author: Lijun Tang.
@@ -19,9 +20,9 @@ import annotool.io.DataInput;
  */
  
 public class ZernikeMoments implements FeatureExtractor {
-	final int NUMBER_OF_FEATURES = 20;
+	int ORDER = 7;
 	int length;
-	protected float[][] features = new float[length][NUMBER_OF_FEATURES];
+	protected float[][] features = new float[length][1];
 	public static final float M_PI=3.1415926535f;   
 	 
 	int imageType;
@@ -44,7 +45,6 @@ public class ZernikeMoments implements FeatureExtractor {
 			//
 	}
 
-	
 	/**
 	 * Get features based on raw image stored in problem.
 	 * 
@@ -63,9 +63,9 @@ public class ZernikeMoments implements FeatureExtractor {
 			this.height  = problem.getHeight();
 		}
 		this.imageType = problem.getImageType();
-		features = new float[length][NUMBER_OF_FEATURES];
+		features = new float[length][numFeatures(ORDER)];
 	
-		return calcFeatures(); //npe?
+		return calcFeatures();
 	}
 
 	
@@ -87,7 +87,7 @@ public class ZernikeMoments implements FeatureExtractor {
 		this.height = dim.height;
 		this.imageType = imageType;
 		
-		features = new float[length][NUMBER_OF_FEATURES];
+		features = new float[length][numFeatures(ORDER)];
 		
 		return calcFeatures();
 	}
@@ -98,7 +98,10 @@ public class ZernikeMoments implements FeatureExtractor {
 			return false;
 	}
 
+	
+	
 	///////////////////////////////////Private///////////////////////////////////////
+	
 	
 	/**
 	* calcFeatures()
@@ -111,9 +114,7 @@ public class ZernikeMoments implements FeatureExtractor {
 	*/
 	protected float[][] calcFeatures() throws Exception {
 		Object data;
-		float[][] features = new float[this.length][this.NUMBER_OF_FEATURES];
-		//temporary until option added
-		int order = 7;
+		float[][] features = new float[this.length][numFeatures(ORDER)];
 		
 		//get image dimensions and data for each image, then get the
 		//moments and put in feature array.
@@ -136,10 +137,31 @@ public class ZernikeMoments implements FeatureExtractor {
                 data = allData.get(image_num);			
 			
 			//getZerMom returns a 1d array
-			features[image_num] = getZernikeMoments( order, data ); //npe?
+			features[image_num] = getZernikeMoments( ORDER, data ); 
 		}
 			
 		return features;
+	}
+	
+	
+	/**
+	* numFeatures()
+	* Calculate number of features for given order
+	*
+	* @return       number of features based on order
+	*/
+	private int numFeatures(int order) {
+			int m;
+			int num = 0;
+			while(order >= 0) {
+			  for (m=0; m<=order; m++) {   
+			    if ((order-m) %2 == 0)  
+					num++;
+			  }
+			  order--;
+			}
+			System.out.println(" Number of features is: " + num);
+			return num;
 	}
 	
 	/**
@@ -157,49 +179,44 @@ public class ZernikeMoments implements FeatureExtractor {
 		int p;
 		int countMoments = 0;
 		int pairCount = 0;
+		int orderCount = n;
+		
 		//get number of n,m pairs
-		//!! for loop to n--
-		for (m=0; m<=n; m++)   
-		{   
-			if ((n-Math.abs(m)) %2 == 0)  
-				{
-				pairCount++;
-				System.out.println("pair: " + n + ", " + m);
-				}
+		while(orderCount >= 0)
+		{
+			for (m=0; m<=orderCount; m++)   
+			{   
+				if ((orderCount-m) %2 == 0)  
+					{
+					pairCount++;
+					System.out.println("pair: " + orderCount + ", " + m);
+					}
+			}
+			orderCount--;
 		}
 		System.out.println(" number of pairs; " + pairCount);
 		DCOMPLEX[] rawMoments = new DCOMPLEX[pairCount];
 		float [] result = new float[pairCount];
 
-		
-	//need to get m and n pairs
-		//make a struct for m and n pair? ie : struct pair { int n, int m };
-		//pair[] mnArray = new pair[](//num of (n, m) pairs) 
-	// OR get m on the fly and dynamically add to array, seems to slow...
 	
-	
-		//!! for loop to n--
-		for (m=0; m<=n; m++)   
-		{   
-			if ((n-Math.abs(m)) %2 == 0)   
-			{
-			//if zer_mom is void:
-			/*DCOMPLEX[] a=new DCOMPLEX[1];   
-            a[0]=new DCOMPLEX(); 
-			zer_mom( n, m, data, a);
-			rawMoments[countMoments] = a[0];
-			*/
-			
-			//if zer_mom is DCOMPLEX
-			rawMoments[countMoments] = zer_mom(n, m, data); //npe?
-			
-			countMoments++;
+		//get the actual moments and put them in rawMoments[]
+		orderCount = n;
+		while(orderCount >= 0)
+		{			
+			for (m=0; m<=orderCount; m++)   
+			{   
+				if ((orderCount-m) %2 == 0)   
+				{
+				//if zer_mom is DCOMPLEX
+				rawMoments[countMoments] = zer_mom(orderCount, m, data); 
+				countMoments++;
+				}
 			}
+			orderCount--;
 		}
 		
-		
-		//need to process rawMoment into a result
-		//change to magnitude 
+		//normalize rawMoment into a final result
+		//by changeing to magnitude 
 	    for( int i=0; i < countMoments; i++)
 			result[i] = (float) Math.sqrt(rawMoments[i].re*rawMoments[i].re + rawMoments[i].im*rawMoments[i].im);
 				
@@ -217,11 +234,12 @@ public class ZernikeMoments implements FeatureExtractor {
 	
 		DCOMPLEX res = new DCOMPLEX();
 		
-		//adapt logic from reference code
+		//adapted logic from reference code
 		int i,j;   
 		int i_0, j_0;   
 		double i_scale, j_scale;   
 		double x,y;
+		int count = 0;
 		int isize = width, jsize = height;   
 		  
 		DCOMPLEX v=new DCOMPLEX();   
@@ -261,17 +279,27 @@ public class ZernikeMoments implements FeatureExtractor {
 		      {   
 		        v = ZernikeBasis(n,m,x,y);   
 		        res.re += v.re;   
-		        res.im += (-v.im);   
+		        res.im += (-v.im);
+				count++;
 		      }   
 		  }   
 //		      System.out.print("i="+i+"\n");   
 		 }   
-		 res.re = res.re*(n+1)/M_PI;   
-		 res.im = res.im*(n+1)/M_PI;   
+		 
+		 //normalize the momemnts with respect to pixels counted
+		 res.re = res.re*(n+1)/M_PI/count;   
+		 res.im = res.im*(n+1)/M_PI/count;   
 		  
 		return res;
 	}
 	
+	
+	/**
+	* Calculate the value of a pixel normalized from various
+ 	* gray scale forms
+	*
+	* @return value of a pixel
+	*/
 	private int getValue(Object imgData, int arrayIndex)
 	{
 		int value =0;
@@ -317,6 +345,7 @@ public class ZernikeMoments implements FeatureExtractor {
 	/**  
 	 * zer_pol_R() compute the Rnm(p) in polynomial definition of V(n,m,x,y)  
 	 * Definition of Rnm(p) refer to &[1]  
+	 *
 	 * @return res[0] as the value of Rnm(p)  
 	 */   
 	  public static int zer_pol_R(int n, int m_in, double x, double y, double[] res)
@@ -378,26 +407,47 @@ public class ZernikeMoments implements FeatureExtractor {
 	  }
 		
 	//test function to see results of features[][]
+	/**
+	* Test the zernike moment feature extraction 
+ 	* and print the results.
+	*/
 	public static void main(String[] args)
         {
-                String directory = "E:\\IANO\\AllTestingSets\\test\\";
-                String ext = ".jpg";
+                String directory = "J:\\BioCAT\\Work\\Feature extractor work\\testSet2\\";
+                String ext = ".png";
                 String ch = "g";
-			System.out.println( "directory set" ); 
+				System.out.println( "directory set" ); 
                 try
                 {
                         annotool.io.DataInput problem = new annotool.io.DataInput(directory, ext, ch, true);
                         FeatureExtractor fe = new ZernikeMoments();
                         //print out
-                        float[][] features = fe.calcFeatures(problem); //npe?
+                        float[][] features = fe.calcFeatures(problem); 
                         System.out.println();
                         for(int i = 0; i < features.length; i++)
                         {
-                                System.out.print("Image #" + i + ": ");
-                                for(int j=0; j< features[i].length; j++)
-                                        System.out.print(features[i][j]+" ");
+                                System.out.print("\nImage #" + (i+1) + ": \n");
+                                for(int j=0; j< features[i].length; j++){
+										System.out.print("\n");
+                                        System.out.printf("%-12f", features[i][j]);
+										}
                                 System.out.println();
                         }
+						
+						//specific moments
+						System.out.print("\nSpecific moments\n");
+						System.out.println("(0,0)        (3,1)        (4,2)");
+						
+						for(int i = 0; i < features.length; i++)
+						{
+							System.out.print("\nImage #" + (i+1) + ": \n");
+							System.out.printf("%-12f", features[i][8]);
+							System.out.printf("%-12f", features[i][3]);
+							System.out.printf("%-12f", features[i][1]);
+							System.out.print("\n\n");
+							
+						}
+						
                 }catch(Exception e)
                 {
                         e.printStackTrace();
@@ -405,7 +455,7 @@ public class ZernikeMoments implements FeatureExtractor {
                 }
         }
 
-}
+} // endclass ZernikeMoment
 
 
 /* helper class to store a zernike moment as a complex number.
@@ -417,5 +467,5 @@ class DCOMPLEX
 		re=(float)0.0;   
 		im=(float)0.0;   
     }
-}
+} // endClass DCOMPLEX
    
