@@ -20,7 +20,7 @@ import annotool.io.DataInput;
  */
  
 public class ZernikeMoments implements FeatureExtractor {
-	int ORDER = 7;
+	int ORDER = 12;
 	int length;
 	protected float[][] features = new float[length][1];
 	public static final float M_PI=3.1415926535f;   
@@ -160,7 +160,7 @@ public class ZernikeMoments implements FeatureExtractor {
 			  }
 			  order--;
 			}
-			System.out.println(" Number of features is: " + num);
+			//System.out.println(" Number of features is: " + num);
 			return num;
 	}
 	
@@ -189,12 +189,12 @@ public class ZernikeMoments implements FeatureExtractor {
 				if ((orderCount-m) %2 == 0)  
 					{
 					pairCount++;
-					System.out.println("pair: " + orderCount + ", " + m);
+					//System.out.println("pair: " + orderCount + ", " + m);
 					}
 			}
 			orderCount--;
 		}
-		System.out.println(" number of pairs; " + pairCount);
+		System.out.println(" \nnumber of features; " + pairCount);
 		DCOMPLEX[] rawMoments = new DCOMPLEX[pairCount];
 		float [] result = new float[pairCount];
 
@@ -217,9 +217,13 @@ public class ZernikeMoments implements FeatureExtractor {
 		
 		//normalize rawMoment into a final result
 		//by changeing to magnitude 
-	    for( int i=0; i < countMoments; i++)
+	    for( int i=0; i < countMoments; i++) 
+			{
 			result[i] = (float) Math.sqrt(rawMoments[i].re*rawMoments[i].re + rawMoments[i].im*rawMoments[i].im);
-				
+			System.out.print(result[i] + ", ");
+			}
+		
+		
 		return result;
 	}
 	
