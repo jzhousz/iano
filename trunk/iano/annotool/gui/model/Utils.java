@@ -101,6 +101,59 @@ public class Utils {
 			System.out.println("ZIP archive does not appear to contain \".roi\" files");
 	}
 	
+	
+	/**
+	 * Method to read a single Vaa3D marker file and get a list or roi objects. 
+	 * 
+	 * For compatible with roi-based reading in DataInput. 
+	 * @param path
+	 * @return
+	 */
+	public static void openRoiMarker(String path, HashMap<String, Roi> rois, HashMap<String, String> classMap, String className) throws IOException {		
+
+		String s;
+		String[] entries = null;
+		int x, y, z, width, height;
+		Roi roi;
+		int nRois = 0;
+
+		try {
+			
+		java.util.Scanner sc = new java.util.Scanner(new File(path));
+        while(sc.hasNextLine())
+        {
+		 s = sc.nextLine();
+         if (!s.startsWith("#")) //not a comment
+         {
+        	 //System.out.println(s);
+             entries = s.split(",");
+             x = (int) Double.parseDouble(entries[0].trim());
+             y = (int) Double.parseDouble(entries[1].trim());
+             z = (int) Double.parseDouble(entries[2].trim()) + 1;
+             width = Integer.parseInt(entries[3].trim()); //radius
+             height = width = 2*width + 1;
+             roi = new Roi(x, y, width, height);
+
+             //name is like this: "0010-0021-0052-1" (z+1)-y-x
+             String name = String.valueOf(((int)z));
+             name = name + "-" + String.valueOf((int)y);
+             name = name + "-" + String.valueOf((int)z);
+			 name = getUniqueName(classMap.keySet(), name);
+			 classMap.put(name, className);
+			 rois.put(name, roi);
+ 			 nRois++;
+           }
+          }		  
+  		  sc.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw e;
+		}
+		if (nRois == 0)
+			System.out.println("Marker file does not be correctly formatted.");
+	}
+	
+	
 	private static String getUniqueName(Set<String> nameList, String name) {
 		String name2 = name;
         int n = 1;
