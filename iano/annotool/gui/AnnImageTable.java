@@ -356,8 +356,18 @@ public class AnnImageTable {
 		roiList = new HashMap<String, Roi>();
 		
 		for(String path : roiPaths) {
-			String className = Utils.removeExtension(path.substring(path.lastIndexOf(File.separator) + 1));
-			Utils.openRoiZip(path, roiList, classMap, className);
+			
+			
+			if(path.endsWith("marker"))
+			{
+			 String className = Utils.removeExtension(path.substring(path.lastIndexOf(File.separator) + 1));
+			 Utils.openRoiMarker(path, roiList, classMap, className);
+			}
+			else //ROI zip file
+			{
+			 String className = Utils.removeExtension(path.substring(path.lastIndexOf(File.separator) + 1));
+			 Utils.openRoiZip(path, roiList, classMap, className);
+			}
 		}
 		
 		if(roiList.size() < 1)

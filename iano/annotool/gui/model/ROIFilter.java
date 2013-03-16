@@ -16,7 +16,7 @@ public class ROIFilter extends FileFilter {
     	
         String extension = Utils.getExtension(f);
         if (extension != null) {
-            if (extension.equalsIgnoreCase("zip")) {
+            if (extension.equalsIgnoreCase("zip")|| (extension.equalsIgnoreCase("marker"))) {
                     return true;
             } else {
                 return false;

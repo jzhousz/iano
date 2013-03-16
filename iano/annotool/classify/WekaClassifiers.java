@@ -13,7 +13,7 @@ import weka.core.*;
 * Note: annotool.classify.Classifier is a different interface from
 *    weka.classifiers.Classifier.
 */
-public class WekaClassifiers implements Classifier {
+public class WekaClassifiers implements SavableClassifier {
 
 	int dimension = 1;
 	private Instances m_Data = null;
@@ -118,7 +118,7 @@ public class WekaClassifiers implements Classifier {
 		 for (int i=0; i<traininglen; i++)
 			updateModel(trainingpatterns[i],trainingtargets[i]);
 	    
-		 // build classifier.
+		 // build classifier, training
 		 m_Classifier.buildClassifier(m_Data);
 	    
 	    //classify
@@ -217,15 +217,11 @@ public class WekaClassifiers implements Classifier {
 	{
 		
 		Instance instance = new Instance(dimension + 1);
-		
 		// Initialize counts to zero.
 		for (int i = 0; i < dimension; i++) 
-		{
 			instance.setValue(i, features[i]);
-		}
 		
 		instance.setDataset(m_Data);
-		
 		return instance;
 	}
 
@@ -260,5 +256,154 @@ public class WekaClassifiers implements Classifier {
     public boolean doesSupportProbability()
     {
     	return false;
+    }
+
+
+    /**
+     * Gets the internal model from the classifier
+     * 
+     * @return  Model created by the classifier.
+     */
+ 	public Object getModel()
+ 	{
+ 		return m_Classifier;
+ 	}
+
+ 	
+ 	
+    /**
+     * Sets an internal model to be used by the classifier
+     * 
+     * @param   model      Model to be used by the classifier
+     * @throws  Exception  Exception thrown if model is incompatible
+     */
+ 	public void setModel(java.lang.Object model) throws Exception
+ 	{
+ 	   	if(model instanceof weka.classifiers.Classifier)
+ 	   	   m_Classifier = (weka.classifiers.Classifier)model;
+    	else
+    	{
+    		System.err.print("Not a valid model type for weka classifier");
+    		throw new Exception("Not a valid model type for weka classifer");
+    	}
+    	
+ 	}
+
+ 	
+ 	
+    /**
+     * Classifies the internal model using one testing pattern
+     * 
+     * @param   model            Model to be used by the classifier
+     * @param   testingPattern   Pattern data to be classified
+     * @param   prob             Storage for probability result
+     * @return                   The prediction result
+     * @throws  Exception        Exception thrown if model is incompatible
+     */
+ 	public int classifyUsingModel(Object model, float[] testingPattern, double[] prob) throws Exception
+ 	{
+      	if (model != null) //model may be null, but only when the internal model is already set.
+       		if (model instanceof weka.classifiers.Classifier) //pass in an internal model
+       		   setModel(model);
+    	else if(m_Classifier == null)
+    	{  //when model is null && there is no instance variable that contains a valid model
+    		System.err.println("Err: must pass in a model.");
+    		throw new Exception("Err: must pass in a model.");
+    	}   	
+    	
+      	//classify:
+      	return Integer.parseInt(classifyImage(testingPattern));
+ 	}
+
+ 	
+    /**
+     * Classifies the internal model using multiple testing patterns
+     * 
+     * @param   model             Model to be used by the classifier
+     * @param   testingPatterns   Pattern data to be classified
+     * @param   prob              Storage for probability result 
+     * @return                    Array of prediction results
+     * @throws  Exception         Exception thrown if model is incompatible
+     */
+ 	public int[] classifyUsingModel(Object model, float[][] testingPatterns, double[] prob) throws Exception
+ 	{
+      	if (model != null) //model may be null, but only when the internal model is already set.
+       		if (model instanceof weka.classifiers.Classifier) //pass in an internal model
+       		   setModel(model);
+    	else if(m_Classifier == null)
+    	{  //when model is null && there is no instance variable that contains a valid model
+    		System.err.println("Err: must pass in a model.");
+    		throw new Exception("Err: must pass in a model.");
+    	}   	
+    	
+    	//allocate predictions
+    	int[] predictions = new int[testingPatterns.length];
+     	for(int i = 0; i < testingPatterns.length; i++)
+    	  predictions[i] = classifyUsingModel(null, testingPatterns[i], null);
+    	
+    	return predictions;
+ 	}
+
+    /**
+     * Saves a specified model to a specified file
+     * 
+     * @param   trainedModel     Trained model that is to be saved
+     * @param   model_file_name  Name of the file to be saved to
+     * @throws  Exception        Exception thrown if model cannot be saved
+     */
+     public void saveModel(Object trainedModel, String model_file_name) throws java.io.IOException
+     {
+    	  	System.out.println("Saving Weka model to "+ model_file_name);	
+     	   
+        	java.io.ObjectOutputStream filestream = new java.io.ObjectOutputStream(new java.io.FileOutputStream(model_file_name));
+    		filestream.writeObject(m_Classifier);
+    		filestream.close();
+     }
+     
+     
+    /**
+     * Loads a previously saved model back into the classifier.
+     * 
+     * @param   model_file_name  Name of the file to be loaded
+     * @return                   Model that was loaded
+     * @throws  Exception        Exception thrown if file cannot be found
+     */
+     public Object loadModel(String model_file_name) throws java.io.IOException
+     {
+    	   	System.out.println("Loading Weka model from "+ model_file_name);		
+      	  
+    	   	weka.classifiers.Classifier model = null;
+        	java.io.ObjectInputStream filestream = new java.io.ObjectInputStream(new java.io.FileInputStream(model_file_name));
+        	try
+        	{
+        		model = (weka.classifiers.Classifier) filestream.readObject();
+        	}catch(ClassNotFoundException ce)
+        	{
+        		System.err.println("Class Not Found in Loading SVM model");
+        	}
+        	filestream.close();
+        	return model;
+     }
+     
+     public Object trainingOnly(float[][] trainingpatterns, int[] trainingtargets)
+     {
+ 		this.dimension = trainingpatterns[0].length;
+		int traininglen = trainingpatterns.length;
+
+		createModel(trainingpatterns, trainingtargets);
+	    
+	    try
+	    {
+		 for (int i=0; i<traininglen; i++)
+			updateModel(trainingpatterns[i],trainingtargets[i]);
+	    
+		 // build classifier, training
+		 m_Classifier.buildClassifier(m_Data);
+	    
+	    }     
+	    catch(Exception e)
+	    { e.printStackTrace();}
+	    
+	    return m_Classifier;
     }
 }
