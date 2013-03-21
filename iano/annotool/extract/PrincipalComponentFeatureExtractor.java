@@ -2,7 +2,10 @@ package annotool.extract;
 
 import java.util.ArrayList;
 
+import Jama.EigenvalueDecomposition;
+import Jama.Matrix;
 import annotool.ImgDimension;
+import annotool.io.DataInput;
 import weka.attributeSelection.PrincipalComponents;
 import weka.core.Instances;
 
@@ -15,11 +18,15 @@ import weka.core.Instances;
 public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 
 	Instances m_Data = null; //will build it
+	annotool.io.DataInput problem = null;
 	protected float[][] features = null;
     protected byte[][] data;
     int length;
     int width;
     int height;
+	int mask = 0xff; 
+	int longmask = 0xffff;
+	int imageType;
 
     /**
      * Default constructor
@@ -53,22 +60,21 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
      * Empty implementation of PrincipalComponentFeatureExtractor(annotool.io.DataInput problem)
      * 
      * @param  problem  Image to be processed
+     * @throws Exception 
      */
-	public PrincipalComponentFeatureExtractor(annotool.io.DataInput problem) {
+	public PrincipalComponentFeatureExtractor(annotool.io.DataInput problem) throws Exception {
 		
-		/*
-		   data = problem.getData();
-		   length = problem.getLength();
+		   /*length = problem.getLength();
 		   width = problem.getWidth();
 		   height = problem.getHeight();
+		   imageType = problem.getImageType();
+		   
+		   this.problem = problem;
 		   
 		   features  = new float[length][width*height]; 
 		   
-	       for(int i=0; i <length; i++)
- 		     for(int j = 0; j< width*height; j++)
-			       features[i][j] = data[i][j]&0xff;
-	   */
-	}
+		   return calcFeatures();*/
+		}
 
    /**
     * Empty implementation of calcFeatures(ArrayList data, int imageType, ImgDimension dim)
@@ -95,24 +101,16 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 	@Override
 	public float[][] calcFeatures(annotool.io.DataInput problem) throws Exception
 	{
-		System.out.println("This method is not yet supported.");
-		throw new Exception("Not supported.");
-
-		/*
-		   data = problem.getData();
 		   length = problem.getLength();
 		   width = problem.getWidth();
 		   height = problem.getHeight();
+		   imageType = problem.getImageType();
+		   
+		   this.problem = problem;
 		   
 		   features  = new float[length][width*height]; 
 		   
-	       for(int i=0; i <length; i++)
- 		     for(int j = 0; j< width*height; j++)
-			       features[i][j] = data[i][j]&0xff;
-		         
-		  return calcFeatures();
-		  */
-	       
+		   return calcFeatures();
 	}
 	
    /**
@@ -121,10 +119,11 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
     * @param   data       Data taken from the image
     * @param   dim        Dimenstions of the image
     * @return             Array of features
+    * @throws Exception 
     */
-	private float[][] calcFeatures(byte[][] data, ImgDimension dim)
+	private float[][] calcFeatures(byte[][] data, ImgDimension dim) throws Exception
 	{
-		   length = data.length;
+		   /*length = data.length;
 		   width = dim.width;
 		   height = dim.height;
 		   
@@ -132,38 +131,88 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
 		   
 	       for(int i=0; i <length; i++)
  		     for(int j = 0; j< width*height; j++)
-			       features[i][j] = data[i][j]&0xff;
+			       features[i][j] = data[i][j]&0xff;*/
 		
 	       return calcFeatures();
 	}
 	   
 	
 	
-	protected float[][] calcFeatures() {
-
-	     //build a target to make Weka happy. Not needed for PCA.
-		int[] targets = new int[features.length];
-		for(int i=0; i<features.length; i++) targets[i] = 1;
-		m_Data = (new annotool.classify.WekaHelper()).buildM_Data(features, targets, "PCExtractionProblem");
+	protected float[][] calcFeatures() throws Exception {
+		//Build the data matrix (rgb values) is already done
+		//Do this incrementally, eg. one row in the matrix at a time.
+		//Initialize the different matricies.
+		int imgDim = width*height;
+		System.out.println("Image dimension: " + imgDim);
+		double[] mean = new double[imgDim];
+		double[][] cov = new double[imgDim][imgDim];
+		double[] z = new double[imgDim];
+		double[] eigValues = null;
+		double[][]eigVectors = null;
+		Object imgData;
+		//Temp variable declaration
+		int i = 0, j = 0, k = 0;
+		for (i = 0; i < length; i++)
+		{
+			//Get data
+			imgData = problem.getData(i, 1);
+			
+			//Find the sum
+			for (j = 1; j < height; j++)
+					mean[i] += getValue(imgData, j*width+i);
+			k++;
+		}
+		//Find mean
+		for (i = 0; i < imgDim; i++)
+			mean[i] /= k;
 		
-		PrincipalComponents extractor = new PrincipalComponents();
-		try{
-		  System.out.println("Start extracting. May be slow on large sets...");	
-		  extractor.buildEvaluator(m_Data);
-		  Instances new_data = extractor.transformedData();
-		  //convert back to float[][]
-          for(int i=0; i <length; i++)
-	 		     for(int j = 0; j< width*height; i++)
-				       features[i][j] = (float) new_data.instance(i).value(j);
-
-		}catch(Exception e)
-		{ e.printStackTrace();}
+		//Calculate covariance matrix (R)
+		for (k = 0; k < length; k++)
+		{
+			//Get data
+			imgData = problem.getData(k, 1);
+			
+			for (i = 0; i < imgDim; i++)
+				z[i] = getValue(imgData, i) - mean[i];
+			
+			for (i = 0; i < imgDim; i++)
+			{
+				for (j = 0; j < imgDim; j++)
+					cov[i][j] += z[i]*z[j];
+			}
+		}
 		
+		//Find eigenvectors/values
+		Matrix a = new Matrix(cov);
+		EigenvalueDecomposition b = a.eig();
+		a = b.getV();
+		eigVectors = a.getArray();
+		eigValues = b.getRealEigenvalues();
+		
+		// (Dimension reduction, fewer columns)
+		
+		
+		//Transform to get new data set (matrix)
+		//The energies in the makefv are for error, and not necessarily useful
+		double vv;
+		for (i = 0; i < length; i++)
+		{
+			for (j = 0; j < length; j++)
+				features[i][j] = 0;
+			
+			//Dot products
+			for (j = 0; j < length; j++)
+			{
+				vv = eigVectors[i][j];
+				for (k = 0; k < length; k++)
+					features[i][k] = (float) ((float) vv*eigValues[k]);
+			}
+		}
 		
 		return features;
 	}
 
-    /**
+	/**
      * Returns whether or not the algorithm is able to extract from a 3D image 
      * stack. 
      * 
@@ -172,4 +221,15 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
      */
 	public boolean is3DExtractor()
 	{  return false;} 
+	
+	//get value
+	private int getValue(Object imgData, int arrayIndex)
+	{
+		int value =0;
+		if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
+			value = (int) (((byte[])imgData)[arrayIndex] & mask);
+		else if (imageType == DataInput.GRAY16)
+			value = (int) (((short[])imgData)[arrayIndex] & longmask);
+		return value;
+	}
 }

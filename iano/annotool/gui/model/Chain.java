@@ -3,6 +3,8 @@ package annotool.gui.model;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import annotool.io.Algorithm;
+
 /**
  * Represents a single chain of algorithms.
  * It consists one classifier, 0 or more extractors and 0 or more selectors.
@@ -17,6 +19,10 @@ public class Chain {
 	private String classifierExternalPath = null;
 	private HashMap<String, String> classParams = null;
 	
+	public Chain(){
+		//Create an empty chain as a placeholder for chainCopy
+	}
+	
 	public Chain(String name) {
 		this.name = name;
 		
@@ -24,7 +30,7 @@ public class Chain {
 		selectors = new ArrayList<Selector>();
 		classParams = new HashMap<String, String>();
 	}
-	
+
 	public void addExtractor(Extractor ex) {
 		extractors.add(ex);
 	}
@@ -143,5 +149,35 @@ public class Chain {
 	public void setClassifierExternalPath(String classifierExternalPath) {
 		this.classifierExternalPath = classifierExternalPath;
 	}
-	
+	public Chain copyChain(Chain toBeCopied){
+		//Extractors
+		for (int i = 0; i < toBeCopied.extractors.size(); i++)
+			{
+			Extractor ex = new Extractor(toBeCopied.extractors.get(i).getName());
+			ex.setClassName(toBeCopied.extractors.get(i).getClassName());
+			ex.setExternalPath(toBeCopied.extractors.get(i).getExternalPath());
+			ex.setParams(toBeCopied.extractors.get(i).getParams());
+			
+			this.addExtractor(ex);
+			}
+		
+		//Selectors
+		for (int i = 0; i < toBeCopied.selectors.size(); i++)
+			{
+			Selector sel = new Selector(toBeCopied.selectors.get(i).getName());
+			sel.setClassName(toBeCopied.selectors.get(i).getClassName());
+			sel.setExternalPath(toBeCopied.selectors.get(i).getExternalPath());
+			sel.setParams(toBeCopied.selectors.get(i).getParams());
+			
+			this.addSelector(sel);
+			}
+		
+		//Class Parameters
+		this.setClassifier(toBeCopied.getClassifier());
+		this.setClassifierClassName(toBeCopied.getClassifierClassName());
+		this.setClassParams(toBeCopied.classParams);
+		this.setClassifierExternalPath(toBeCopied.getClassifierExternalPath());
+		
+		return this;
+	}
 }
