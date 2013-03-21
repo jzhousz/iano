@@ -68,7 +68,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	private JButton btnNew, btnRemove, 
 	btnSaveChain, btnLoadChain, 
 	btnRun, btnSaveModel,
-	btnApplyModel;
+	btnApplyModel, btnCopyChain, btnStop;
 
 	private JCheckBox checkSelect;
 	private ChainTableModel tableModel = new ChainTableModel();
@@ -177,7 +177,12 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnApplyModel = new JButton("Annotate");
 		btnApplyModel.setEnabled(false);
 		btnApplyModel.addActionListener(this);
-
+		
+		btnCopyChain = new JButton("Copy Selected");
+		btnCopyChain.addActionListener(this);
+		btnStop = new JButton("Stop");
+		btnStop.addActionListener(this);
+		
 		pnlButton = new JPanel(new GridLayout(4, 2));
 		pnlButton.add(btnNew);
 		pnlButton.add(btnRemove);
@@ -186,6 +191,9 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		pnlButton.add(btnRun);
 		pnlButton.add(btnSaveModel);
 		pnlButton.add(btnApplyModel);
+
+		pnlButton.add(btnCopyChain);
+		pnlButton.add(btnStop);
 
 		pnlControl = new JPanel();
 		pnlControl.setLayout(new FlowLayout());
@@ -242,12 +250,14 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			setButtonState();
 		}
 		else if(ev.getSource().equals(btnRemove)) {
+			int currentRow = tblChain.getSelectedRow();
 			tableModel.removeRow(tblChain.getSelectedRow());
 
 			tca.adjustColumns();
 
 			taDetail.setText("");
 			setButtonState();
+			tblChain.changeSelection(currentRow - 1, COL_CHAIN, false, false);
 		}
 		else if(ev.getSource().equals(btnSaveChain)) {
 			//Save chains to file
@@ -397,9 +407,53 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 				item = true;
 			else // Else set to false.
 				item = false;
+			
 			for (int i = 0; i < tblChain.getRowCount(); i++) //Sets all rows to the value in item.
-			{
+				{
 				tblChain.setValueAt(item, i, COL_CHECK);
+				}
+		}
+		else if(ev.getSource().equals(btnCopyChain)){
+			if (tblChain.getSelectedRow() == -1){
+				System.out.println("No row selected.");
+				return;
+				}
+			else
+				{
+				String name = createChainName();
+				Chain chain = new Chain(name);
+				chain.copyChain((Chain)tblChain.getValueAt(tblChain.getSelectedRow(), COL_CHAIN));
+				Object[] rowData = {new Boolean(false), name, chain};
+			
+				tableModel.insertNewRow(rowData);
+				//Select the newly inserted row
+				tblChain.changeSelection(tableModel.getRowCount() - 1, COL_CHAIN, false, false);
+				}
+		}
+		else if(ev.getSource().equals(btnStop)){
+			if (isRunning)
+			{
+				Object[] options = {"Yes","No","Save Chains"};
+			
+				int selection = JOptionPane.showOptionDialog(null, "Do you want to stop the running chains? Note: Some algorithms may take a while to complete.", 
+										"Stop", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[2]);
+			
+				if (selection == 0) {
+					System.out.println("Closing the window");
+					thread.stop();
+					gui.pullThePlug();
+				}
+				else if (selection == 1) {
+					System.out.println("Nothing happens");
+					}
+				else {
+					System.out.println("Saving chains");
+					ev.setSource(btnSaveChain);
+					actionPerformed(ev);
+					}
+			}
+			else {
+				JOptionPane.showMessageDialog(null, "The chains are not running!");
 			}
 		}
 	}
@@ -438,7 +492,16 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		int column = ev.getColumn();
 		if(row < 0 || column < 0)
 			return;
-
+		/*
+		for (int i = 0; i < tblChain.getRowCount(); i++)
+			{
+			if (tblChain.getValueAt(i, COL_CHECK) == (Object)false)
+				{
+				checkSelect.setSelected(false);
+				break;
+				}
+			}
+		*/
 		TableModel model = (TableModel)ev.getSource();
 		String columnName = model.getColumnName(column);
 		if(columnName.equals("Name")) {

@@ -45,7 +45,6 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 				   pnlExt, pnlSel, pnlClass,
 				   pnlExtMain, pnlSelMain, pnlClassMain,
 				   pnlExtBtn, pnlSelBtn, pnlClassBtn;
-	private JScrollPane algoScrollPane;
 	
 	private ChainPanel pnlChain;
 	
@@ -69,7 +68,7 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 		pnlMain = new JPanel();
 		pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
 		pnlMain.setBorder(new EmptyBorder(10, 10, 10, 10));
-		algoScrollPane = new JScrollPane(pnlMain, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		JScrollPane algoScrollPane = new JScrollPane(pnlMain, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 	
 		//Buttons to add algorithms to chain
 		btnAddEx = new JButton("Add");
