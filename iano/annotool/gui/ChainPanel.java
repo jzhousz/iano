@@ -435,23 +435,17 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		else if(ev.getSource().equals(btnStop)){
 			if (isRunning)
 			{
-				Object[] options = {"Yes","No","Save Chains"};
+				Object[] options = {"Yes","No"};
 			
 				int selection = JOptionPane.showOptionDialog(null, "Do you want to stop the running chains? Note: Some algorithms may take a while to complete.", 
-										"Stop", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[2]);
+										"Stop", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 			
 				if (selection == 0) {
-					System.out.println("Closing the window");
-					thread.stop();
-					gui.pullThePlug();
+					System.out.println("Stopping the thread");
+					isRunning = false;
 				}
 				else if (selection == 1) {
 					System.out.println("Nothing happens");
-					}
-				else {
-					System.out.println("Saving chains");
-					ev.setSource(btnSaveChain);
-					actionPerformed(ev);
 					}
 			}
 			else {
