@@ -180,8 +180,10 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		
 		btnCopyChain = new JButton("Copy Selected");
 		btnCopyChain.addActionListener(this);
+		btnCopyChain.setEnabled(false);
 		btnStop = new JButton("Stop");
 		btnStop.addActionListener(this);
+		btnStop.setEnabled(false);
 		
 		pnlButton = new JPanel(new GridLayout(4, 2));
 		pnlButton.add(btnNew);
@@ -460,11 +462,13 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	private void setButtonState() {
 		if(tableModel.getRowCount() > 0) {
 			btnRemove.setEnabled(true);
+			btnCopyChain.setEnabled(true);
 			btnSaveChain.setEnabled(true);
 			gui.setButtonsEnabled(true);
 		}
 		else {
 			btnRemove.setEnabled(false);
+			btnCopyChain.setEnabled(false);
 			btnSaveChain.setEnabled(false);
 			gui.setButtonsEnabled(false);
 		}		
@@ -633,6 +637,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnApplyModel.setEnabled(false);
 		gui.setButtonsEnabled(false);
 		tblChain.setEnabled(false);
+		btnStop.setEnabled(true);
 
 		executed = false;
 
@@ -681,6 +686,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnApplyModel.setEnabled(executed);
 		gui.setButtonsEnabled(true);
 		tblChain.setEnabled(true);
+		btnStop.setEnabled(false);
 	}
 
 	//Training/Testing
