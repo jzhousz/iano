@@ -771,6 +771,12 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		if (gui != null) pnlOutput.setOutput("Extracting features...");
 
 		for(int exIndex=0; exIndex < numExtractors; exIndex++) {
+			
+			//add more checking on progress and whether to stop.3/13
+			if(gui != null) //extraction: 30-50
+				if (!setProgress(30+exIndex*20/numExtractors)) {
+					return null;
+				}
 			extractor = chain.getExtractors().get(exIndex).getClassName();
 			params = chain.getExtractors().get(exIndex).getParams();
 			externalPath = chain.getExtractors().get(exIndex).getExternalPath();
@@ -1033,7 +1039,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			//Start of extraction
 			float[][] features =  null;
 			try {
-				features = anno.extractWithMultipleExtractors(problem, chain.getExtractors());
+				features = this.extractWithMultipleExtractors(problem, chain.getExtractors(), anno, gui);
 			} catch (Exception e) {
 				e.printStackTrace();
 				pnlOutput.setOutput("ERROR: Feature extractor failed! Chain = " + chain.getName());
@@ -1049,11 +1055,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 
 			//raw data is not used after this point, set to null.: commented because used for subsequent loop runs
 			//problem.setDataNull();
-
-			if (!setProgress(50)) {
+			if (!setProgress(50)) 
 				return;
-			}
-
 
 			//Apply Feature Selection and Classification in CV mode.
 			int length = features.length;
@@ -1106,6 +1109,9 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 
 					//Apply each feature selector in the chain
 					for(Selector selector : chain.getSelectors()) {
+
+						if (!setProgress(start)) 
+							return;
 						//Supervised feature selectors need corresponding target data
 						try {
 							combo = anno.selectGivenAMethod(selector.getClassName(), selector.getExternalPath(), selector.getParams(), selectedFeatures, targets[i]);
@@ -1251,4 +1257,49 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		return selectedChains;
 	}
 
+	//move from Anntator to work with progress bar
+	private float[][] extractWithMultipleExtractors(DataInput problem, ArrayList<Extractor> extractors, Annotator anno,  AutoCompFrame gui) throws Exception {
+	   	String extractor = "None";
+	    HashMap<String, String> params = new HashMap<String, String>();
+	    String externalPath = null;
+	        
+	    int numExtractors = extractors.size();
+	    float[][][] exFeatures = new float[numExtractors][][];
+	        
+	    int dataSize = 0;	//To keep track of total size
+	    for(int exIndex=0; exIndex < numExtractors; exIndex++) {
+	    	
+			//add more checking on progress and whether to stop.3/13
+			if(gui != null) //extraction: 30-50
+				if (!setProgress(30+exIndex*20/numExtractors)) {
+					return null;
+				}
+	        extractor = extractors.get(exIndex).getClassName();
+	        params = extractors.get(exIndex).getParams();
+	        externalPath = extractors.get(exIndex).getExternalPath();
+	        	
+	        exFeatures[exIndex] = anno.extractGivenAMethod(extractor, externalPath, params, problem);
+	        	
+	        	dataSize += exFeatures[exIndex][0].length;
+	        }
+	        
+	   float[][] features = null;
+	        
+	   if(numExtractors < 1) {	//If no extractor, call the function by passing "None"
+	        	features = anno.extractGivenAMethod(extractor, null, params, problem);
+	   }
+	   else {	//Else, create feature array with enough space to hold data from all extractors 
+	      	features = new float[problem.getLength()][dataSize];
+	        	
+	      	int destPos = 0;
+	       	for(int exIndex=0; exIndex < numExtractors; exIndex++) {
+	       		for(int item=0; item < features.length; item++) {
+	       			System.arraycopy(exFeatures[exIndex][item], 0, features[item], destPos, exFeatures[exIndex][item].length);
+	       		}
+	       		destPos += exFeatures[exIndex][0].length;
+	       	}
+	   }
+       return features;
+    }
+	
 }
