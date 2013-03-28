@@ -504,7 +504,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		//If something gets unchecked by the user, make sure select all is no longer checked
 		for (int i = 0; i < tblChain.getRowCount(); i++)
 			{
-			if (tblChain.getValueAt(i, COL_CHECK) != (Object)true)
+			if (!((Boolean)tblChain.getValueAt(i, COL_CHECK).equals(true)))
 					{
 					checkSelect.setSelected(false);
 					break;
