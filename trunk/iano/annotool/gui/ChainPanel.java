@@ -633,7 +633,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		gui.setButtonsEnabled(false);
 		tblChain.setEnabled(false);
 		btnStop.setEnabled(true);
-
+		btnCopyChain.setEnabled(false);
+		
 		executed = false;
 
 		//extracted from individual process method e.g. ttrun()
@@ -682,6 +683,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		gui.setButtonsEnabled(true);
 		tblChain.setEnabled(true);
 		btnStop.setEnabled(false);
+		btnCopyChain.setEnabled(true);
 	}
 
 	//Training/Testing
