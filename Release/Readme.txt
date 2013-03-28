@@ -25,7 +25,9 @@ To run the cross-platform version of BIOCAT, the command is:
 - The above way of launching is especially suggested for working with large image sets. 
   Although the user may click the biocat.jar to launch the application, it would use a default heap size which is small. 
 
-For Windows version, the user can simply click the exe file to start.
+- For the Windows-only version (if provided with the download), the user can click the biocat.exe to start. 
+  It assumes a 1G max heap size. 
+
 
 
 Sample Set
