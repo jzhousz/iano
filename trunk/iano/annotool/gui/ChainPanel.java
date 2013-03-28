@@ -501,17 +501,16 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		else if(columnName.equals("")) {	//If check box state changed, then enable/disable run button
 			btnRun.setEnabled(hasSelectedChain());
 		}
-		
 		//If something gets unchecked by the user, make sure select all is no longer checked
 		for (int i = 0; i < tblChain.getRowCount(); i++)
-		{
-		if (tblChain.getValueAt(i, COL_CHECK) == (Object)false && checkSelect.isSelected() == true)
 			{
-			checkSelect.setSelected(false);
-			break;
-			}
+			if (tblChain.getValueAt(i, COL_CHECK) != (Object)true)
+					{
+					checkSelect.setSelected(false);
+					break;
+					}
 			checkSelect.setSelected(true);
-		}
+			}
 	}
 	/**
 	 * Adds the supplied extractor to the currently selected chain.
