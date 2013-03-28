@@ -490,16 +490,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		int column = ev.getColumn();
 		if(row < 0 || column < 0)
 			return;
-		/*
-		for (int i = 0; i < tblChain.getRowCount(); i++)
-			{
-			if (tblChain.getValueAt(i, COL_CHECK) == (Object)false)
-				{
-				checkSelect.setSelected(false);
-				break;
-				}
-			}
-		*/
+		
 		TableModel model = (TableModel)ev.getSource();
 		String columnName = model.getColumnName(column);
 		if(columnName.equals("Name")) {
@@ -509,6 +500,17 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		}
 		else if(columnName.equals("")) {	//If check box state changed, then enable/disable run button
 			btnRun.setEnabled(hasSelectedChain());
+		}
+		
+		//If something gets unchecked by the user, make sure select all is no longer checked
+		for (int i = 0; i < tblChain.getRowCount(); i++)
+		{
+		if (tblChain.getValueAt(i, COL_CHECK) == (Object)false && checkSelect.isSelected() == true)
+			{
+			checkSelect.setSelected(false);
+			break;
+			}
+			checkSelect.setSelected(true);
 		}
 	}
 	/**
