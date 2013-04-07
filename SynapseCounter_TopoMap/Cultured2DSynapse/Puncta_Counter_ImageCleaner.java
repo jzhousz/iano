@@ -16,23 +16,31 @@ import java.awt.event.*;
     
     measure average intensity.  If too low, discard.
 
-2.  Else, start adaptive segmentation (RATS), iteratively, based on a loose size limit (e.g.2*actual size):
+2.  Else, start adaptive segmentation (RATS), iteratively search for a good threshold, 
 
-      start from low theshold 
-      detect the number and size of the components
-      repeat while the sizes of all detected components are less than limit.
-     
-    If after segmentation, the number of components are very few, discard
-       (possibly a not-usable image to start with, such as excuessive density or very smeared).
+      start from a high theshold, so that there are typically a few components and their sizes are small (unless the image was excessove;u bright. 
+      detect the number and size of the connected components (puncta)
+      reduce the threshold, repeat (the number of components and the sizes of them should be increasing).
+      stop when the max size of all component is bigger than a preset limit set loosely based on size (e.g. 2*actual synapse size), or when #of trials exceeds preset number of trials (e.g. 20)
 
-3.  Refinement (conservative):
+     Once the search is stopped, check:
+     If the number of components are only a few or the max size is too big (e.g. >10*actual synapse size), discard
+       (not-usable image, typically due to excuessive density or very smeared).
+       
+
+3.  Refinement in counting (conservative):   (NOTE: Stringent treatment is not considered yet)
    
-    Check which synapses are countable based on size: If not, clear up that area.
+    Check the synapse size and count only those that are smaller than synapse size limit
 
-Output:  a usable (binary) image with unsuable areas removed. 
-   (It also has the statistics of punta, but if MetaMorph give more stats, can use MetaMorph).
+     Output: statistics.
+   If needed, can also otuput a usable (binary) image with unsuable areas removed. 
+   (but if MetaMorph give more stats, can use MetaMorph)
+
+
  * 
+ *3/26: remove init threadshold;  add small numbers ..
  *
+ * 4/7: output total pixel
  */
 
 public class Puncta_Counter_ImageCleaner implements PlugIn { //, AdjustmentListener, TextListener {
@@ -42,23 +50,14 @@ public class Puncta_Counter_ImageCleaner implements PlugIn { //, AdjustmentListe
     Vector sliders;
     Vector value;
 
-    int	segmentationInitThreshold = 5;  //25 is usually a good number but start low will help us to indendify images that are un-usable.
-    int avgIntensityLowerBound = 1; 
+    int	segmentationInitThreshold = 100;  //25 is usually a good number but start high will help us to indendify images that are un-usable.
+    int avgIntensityLowerBound = 15; 
     int minSynapseSize = 0;
-    int maxSynapseSize = 120;
-    int pixelResolutionInNM = 611;  //
-  
-
-    /*
-    int thrValSoma= 42;
-    int thrValDendrite= 23;
-    int	backgroundSubtractionRadius = 3;
-    int	dilateSomaTimes = 0;
-    int	dilateDendriteTimes = 1;
-    boolean or, og, ob, br, bg, bb;
-    ImagePlus imgObj=null, imgDen=null;
-    */
-
+    int maxSynapseSize = 100;     //adjustable, control when to stop threshold searching. 
+    int pixelResolutionInNM = 1000;  //number of pixels per nano meter
+    int sizeLimitForThesholdSearch = (int) 2*maxSynapseSize;
+    int trialLimit = 40;  //max: initTh/step.  //adjustable, control when to stop threshold searching
+ 
     ImagePlus img;
     ImageProcessor ip;
     Calibration cal;
@@ -98,22 +97,11 @@ public class Puncta_Counter_ImageCleaner implements PlugIn { //, AdjustmentListe
         GenericDialog gd=new GenericDialog("Puncta Counter Image Cleaner");
 
 	//probably not needed
-	gd.addSlider("Initial Noise Threshold for Synapse (Will be automatically adjusted to find the optimal, just need a lower bound): ",ip.getMin(), ip.getMax(),segmentationInitThreshold);
+	gd.addSlider("Initial Threshold (to be adjusted downward): ",ip.getMin(), ip.getMax(),segmentationInitThreshold);
 	gd.addSlider("Dark Image Avg Intensity Lower Bound: ",ip.getMin(), ip.getMax(),avgIntensityLowerBound);
-
-	//gd.addMessage("");
-	//gd.addSlider("Rollingball radius for extracting soma: ",0, 100,backgroundSubtractionRadius);
-	//gd.addSlider("Number of Dilation Operations for Soma: ",0, 100,dilateSomaTimes);
-	//gd.addSlider("Number of Dilation Operations for Dendrite (to cover the synpase area): ",0, 100,dilateDendriteTimes);
-	//gd.addSlider("Minimum number of pixels per synpase: ",0, 100,minSynapseSize);
-	gd.addSlider("Maximum number of pixels per synpase: ",0, 10000,maxSynapseSize);
-      	gd.addSlider("Pixel Resolution in Nano Meter (Synapse size will be reported using Micron): ",0, 100000, pixelResolutionInNM);
-    	//gd.addCheckbox("Synapse channel is red", or_default);
-        //gd.addCheckbox("Synapse channel is green", og_default);
-        //gd.addCheckbox("Synapse channel is blue", ob_default);
-        //gd.addCheckbox("Dendrite/Morphology channel is red", br_default);
-        //gd.addCheckbox("Dendrite/Morphology channel is green", bg_default);
-        //gd.addCheckbox("Dendrite/Morphology channel is blue", bb_default);
+	gd.addSlider("Minimum number of pixels per synapse: ",0, 10000,minSynapseSize);
+	gd.addSlider("Maximum number of pixels per synapse: ",0, 10000,maxSynapseSize);
+      	//gd.addSlider("Pixel Resolution in Nano Meter (Synapse size will be reported using Micron): ",0, 100000, pixelResolutionInNM);
         gd.showDialog();
         
         if (gd.wasCanceled()){
@@ -122,13 +110,11 @@ public class Puncta_Counter_ImageCleaner implements PlugIn { //, AdjustmentListe
             return false;
         }
 
-        //thrValSoma=(int) gd.getNextNumber();
-        //thrValDendrite=(int) gd.getNextNumber();
 	segmentationInitThreshold = (int) gd.getNextNumber();
 	avgIntensityLowerBound = (int) gd.getNextNumber();
-	//minSynapseSize  = (int) gd.getNextNumber();
+	minSynapseSize  = (int) gd.getNextNumber();
         maxSynapseSize  = (int) gd.getNextNumber();
-	pixelResolutionInNM = (int) gd.getNextNumber();
+	//pixelResolutionInNM = (int) gd.getNextNumber();
 
         IJ.register(Puncta_Counter_ImageCleaner.class);
         return true;
@@ -143,8 +129,6 @@ public class Puncta_Counter_ImageCleaner implements PlugIn { //, AdjustmentListe
 	}
     
        // measure average intensity.  If too low, discard.
-       // parameter1: a very low average intensity
-       int avgIntensityLowerBound = 10;
        int avgIntensity = getAvgIntensity(imp);
        IJ.log("average intensity: "+avgIntensity);
        if (avgIntensity < avgIntensityLowerBound)
@@ -154,30 +138,40 @@ public class Puncta_Counter_ImageCleaner implements PlugIn { //, AdjustmentListe
        }
 
        //start adapative segmentation:
-       //parameter2: synapseMaxSize;
-       //parameter3:  segmentationInitThreshold;  (lower than the usual threshold)
-       int sizeLimit = 2* maxSynapseSize;
        int step = 2;
        int maxSize;
+
        //loop until all the sizes are less than a size limit
+       //With a very high threshold, it likely that there are less synapses and there are relatively small
+       //as the threshold decreases, typically the # of synapses will increase 
+       //eventually it will reach the point that almost all of the components look like a synapse.
        int[] stat = new int[2];
-       ImagePlus segmentedSynapseImage;
-       for(int th = segmentationInitThreshold; ; th += step)
+       ImagePlus segmentedSynapseImage = null;
+       int th, trials;
+       for(th = segmentationInitThreshold, trials = 0; trials < trialLimit ; th -= step, trials++)
        {
+	  IJ.log("current threshold: " + th);     
           //call segmentation method, get a) count of compnents  b) maxSize
           segmentedSynapseImage = segmentSynapse(img, stat, th);
 	  maxSize = stat[1];
-	  if (maxSize > sizeLimit)
+	  if (maxSize > sizeLimitForThesholdSearch) 
               break;
        }
-       //get a segmented image where each compnent is less than 2*synapse max size.
-       if (stat[0]  < 10)   
+       
+       //make them a parameter for unusable. 
+       //The higher the size limit, the more lower quality image will be considered usable.
+       //The lower the number limit , the more lower quality image will be considered usable.
+       if ((stat[1] > 30*maxSynapseSize)|| (stat[0] < 10))  
        {
-          IJ.log("This image only contains a few synapses. It is probably because the original image was not usable (e.g. excessive density or very smeared).");
-	  return;
+     	   //the biggest one is huge, probably due to excessive intensity, usually break using a trial.
+   	   IJ.log("Excessively bright or smeared.  Not usable.");
+	   return;
        }
+       
+  
        //else  get  a segmented image before removing unnessary areas.
-       segmentedSynapseImage.show();
+       //ONLY NEEDED DURING DEBUG   4/7/13
+       //segmentedSynapseImage.show();
 		
        //STEP 3:  REMOVAL OF TOO BIG AREAS. conservative:  just remove large synapses;
        //go through the returned components,  for each component,  check size, and apply mask to clear it.
@@ -186,7 +180,23 @@ public class Puncta_Counter_ImageCleaner implements PlugIn { //, AdjustmentListe
        
 
        //Do the counting using segmentedSyanpseImage again. 
+       segmentedSynapseImage.getProcessor().invert();
+       setCalibration(imp);
+       Analyzer.setRedirectImage(imp);
+       ResultsTable res= new ResultsTable();
+	//NOTE:  THIS ALSO SETS A LIMIT ON COUNTING COMPONENTS!  ALL BIG ONES ARE NOT COUNTED!!
+	//report: number, size, average intensity
+	//ParticleAnalyzer pa = new ParticleAnalyzer(ParticleAnalyzer.SHOW_OUTLINES|ParticleAnalyzer.SHOW_MASKS|ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES|ParticleAnalyzer.SHOW_SUMMARY|ParticleAnalyzer.SHOW_RESULTS, Measurements.AREA|Measurements.MEAN|Measurements.CENTER_OF_MASS, res, minSynapseSize, maxSynapseSize);
+	ParticleAnalyzer pa = new ParticleAnalyzer(ParticleAnalyzer.SHOW_OUTLINES|ParticleAnalyzer.SHOW_MASKS|ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES|ParticleAnalyzer.SHOW_RESULTS, Measurements.AREA|Measurements.MEAN|Measurements.CENTER_OF_MASS, res, minSynapseSize, maxSynapseSize);
+    	boolean success = pa.analyze(segmentedSynapseImage); 
+	if (success == false)
+		IJ.log("There is a problem in analyzing the segmented synpases.");
 
+	//report results
+	IJ.log("OVERALL RESULT:");
+	IJ.log("Entire Area (in pixels): "  + (Width*Height));
+       	IJ.log("Total Number of Synapses: " + res.getCounter());
+        IJ.log("Synapse Density (#/area): " + ((double) res.getCounter())/(Width*Height)); 
 
     }
 
@@ -201,64 +211,17 @@ public class Puncta_Counter_ImageCleaner implements PlugIn { //, AdjustmentListe
         double pixelResolution = ((double) pixelResolutionInNM)/1000.0;
         cal.pixelWidth = cal.pixelHeight = pixelResolution;
 	cal.setUnit("micron");
-        IJ.log("Set pixel resolution to "+ pixelResolution + " micron.");
+        //IJ.log("Set pixel resolution to "+ pixelResolution + " micron.");
 
 	img.setCalibration(cal);
     }
 
 
-    /*
-    //use neuron channel to segment soma, return a binary mask image
-    public void segmentSoma(ImagePlus mapImage, ImagePlus synapseImage)
-    {
-	ImageProcessor mapip = mapImage.getProcessor();    
-	BackgroundSubtracter bs = new BackgroundSubtracter();
-	//Parameters: ImageProcessor ip, double radius, boolean createBackground, boolean lightBackground, boolean useParaboloid, boolean doPresmooth, boolean correctCorners
-	bs.rollingBallBackground(mapip, backgroundSubtractionRadius, true, false, false, false, false);
-	//segment soma
-	mapip.threshold(thrValSoma); //, BLACK_AND_WHITE_LUT);
-	mapip.invert();
-	for(int i = 0; i < dilateSomaTimes; i++)
-	   mapip.dilate();
-
-	//subtract soma from synpase
-	mapip.invert();
-	ImageProcessor synapseIp = synapseImage.getProcessor();
-	synapseIp.copyBits(mapip, 0, 0, Blitter.SUBTRACT);
-    }
-
-    //use neuron channel to segment neurites (after removing soma), return a binary mask image
-    public void segmentDendrite(ImagePlus mapImage, ImagePlus somaImage, ImagePlus synapseImage)
-    {
-	//subtract soma
-	ImageProcessor mapIp = mapImage.getProcessor();
-	mapIp.copyBits(somaImage.getProcessor(), 0, 0, Blitter.SUBTRACT);
-	
-	//despeckle and enhance
-	//Remove noise with despeckle : median filter with radius 1
-	RankFilters filter = new RankFilters();
-	filter.rank(mapIp, 1, RankFilters.MEDIAN);
-	HistogramEq.run(mapImage, 127, 256, 3.00f, null, null);
-	//binarize
-	mapIp.threshold(thrValDendrite);  //set black as background?
-	//how to convert to mask?
-	mapIp.invert();
-	//despeckle again
-	filter.rank(mapIp, 1, RankFilters.MEDIAN);
-	//dilate
-	for(int i = 0; i < dilateDendriteTimes; i++)
-	   mapIp.dilate();      //white gets smaller if not inverting mapIp??????!!!!!
-	mapImage.show();
-
-	//mask onto synpase
-	mapIp.invert();  //convert back before mask ont synapse!
-	ImageProcessor synapseIp = synapseImage.getProcessor();
-	synapseIp.copyBits(mapIp, 0, 0, Blitter.AND);
-    } */
- 
  
     //segment synapse image to get the foreground
-    //return  a) max size of all the components;  b) total number of all the components
+    //Assume the image argument is  black background.   
+    //return  a) max size of all the components;  b) total number of all the components  c) the segmented image (before inverting)
+    //
     public ImagePlus segmentSynapse(ImagePlus synapseImage, int[] stat, int th)
     {
 	//semgment    
@@ -271,40 +234,46 @@ public class Puncta_Counter_ImageCleaner implements PlugIn { //, AdjustmentListe
 	ImagePlus resImg = segmentedImage.duplicate(); //keep a copy before inverting
 	segmentedImage.getProcessor().invert();
 
-	//count
-	//set to the original synapseImage
-	//run("Set Measurements...", "area center redirect=[" + title_Synapse_dup + "] decimal=3");
-	//run("Analyze Particles...", "size=0-" + maxSynpaseSize + " circularity=0.00-1.00 show=[Bare Outlines] display exclude summarize");
-	//ParticleAnalyzer(int options, int measurements, ResultsTable rt, double minSize, double maxSize) 
-
-	//setCalibration(synapseImage);
-	Analyzer.setRedirectImage(synapseImage); //redirect to the original gray scale for measure
-	int options = Prefs.getInt("ap.options",ParticleAnalyzer.SHOW_OUTLINES+ParticleAnalyzer.DISPLAY_SUMMARY+ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES+ParticleAnalyzer.SHOW_RESULTS);  //See ParticleAnalyzer for full list of options
-	int systemMeasurements = Prefs.getInt("measurements",Analyzer.AREA); //See Analyzer for full list of measurements
+	setCalibration(synapseImage);
+	Analyzer.setRedirectImage(synapseImage);
 	ResultsTable res= new ResultsTable();
-	ParticleAnalyzer pa = new ParticleAnalyzer(options, systemMeasurements, res, minSynapseSize, maxSynapseSize);
-	pa.analyze(segmentedImage); 
+	
+	//NOTE:  THIS ALSO SET A LIMIT ON COUNTING COMPONENTS!  ALL BIG ONES ARE NOT COUNTED!!
+	//ParticleAnalyzer pa = new ParticleAnalyzer(ParticleAnalyzer.SHOW_OUTLINES|ParticleAnalyzer.SHOW_MASKS|ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES, Measurements.AREA, res, minSynapseSize, 2*maxSynapseSize);
+	ParticleAnalyzer pa = new ParticleAnalyzer(ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES, Measurements.AREA, res, 0, 99999);
+
+	boolean success = pa.analyze(segmentedImage); 
+	if (success == false)
+		IJ.log("There is a problem in analyzing the segmented synpases.");
 
 	//go through objects in the results table, calculate # and maxSize .. TOBEDONE.
 	int colNumForSize = 0;
 	int totalColumn = res.getLastColumn(); 
-        IJ.log("number of columns:" + res.getLastColumn() + " number of rows:" + res.getCounter()); 
-	double maxSize = res.getValueAsDouble(colNumForSize,0);  //first column, first row
-	double cellValue;
-	for(int i=1; i< res.getCounter(); i++)
-	{
-	  cellValue = res.getValueAsDouble(colNumForSize, i);
-  	  IJ.log("cell value: " +cellValue);
-          if ( cellValue > maxSize)
-       		maxSize = cellValue;
-	}
+	//ONLY NEEDED DURING DEBUGGING
+        //IJ.log("number of columns:" + res.getLastColumn() + " number of rows:" + res.getCounter()); 
 	stat[0] = res.getCounter();
-	stat[1] = (int) maxSize;
 
+	if (res.getCounter() == 0)
+	{ //no component is less than 99999 at all.  The image is too bright.
+	  stat[1] = 99999;  
+	}
+	else
+	{
+	  double maxSize = res.getValueAsDouble(colNumForSize,0);  //first column, first row
+	  double cellValue;
+	  for(int i=1; i< res.getCounter(); i++)
+	  {
+	    cellValue = res.getValueAsDouble(colNumForSize, i);
+  	    //IJ.log("cell value: " +cellValue);
+            if ( cellValue > maxSize)
+       		maxSize = cellValue;
+	  }
+	  stat[1] = (int) maxSize;
+	}
 
-	IJ.log("Number: "+stat[0]+" max: " +stat[1]);
-
+	IJ.log("Searching... Current iteration (without limiting size) -- Number of components: "+stat[0]+" max size: " +stat[1]);
 	return resImg;
+	//return segmentedImage;
     }
 
     //Calculate the avg intensity of the image that are considered as foreground
