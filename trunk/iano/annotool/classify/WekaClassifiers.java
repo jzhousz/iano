@@ -51,43 +51,69 @@ public class WekaClassifiers implements SavableClassifier {
 
 		if (classifierType.equalsIgnoreCase("W_Tree"))
 		{
-				m_Classifier = new J48();
-			   if("1".equals(para.get(UP_TREE)))
+			   m_Classifier = new J48();
+			   if(para.containsKey(UP_TREE))
+			   {
+			    if("1".equals(para.get(UP_TREE)))
 				   ((J48) m_Classifier).setUnpruned(true);
-			   else
+			    else
 				   ((J48)  m_Classifier).setUnpruned(false);
-			   int k = Integer.parseInt(para.get(K_TREE));
-			   ((J48) m_Classifier).setMinNumObj(k);
+			   }
+			   if(para.containsKey(K_TREE))
+			   {   
+			     int k = Integer.parseInt(para.get(K_TREE));
+			    ((J48) m_Classifier).setMinNumObj(k);
+			   }
 		}
 		else if (classifierType.equalsIgnoreCase("W_NaiveBayes"))
 		{
 			   m_Classifier = new NaiveBayes();
-			   if("1".equals(para.get(KE_NB)))
+			   if(para.containsKey(KE_NB))
+			   {
+			     if("1".equals(para.get(KE_NB)))
 				   ((NaiveBayes)m_Classifier).setUseKernelEstimator(true);
-			   else
+			     else
 				   ((NaiveBayes)m_Classifier).setUseKernelEstimator(false);
-			   if("1".equals(para.get(SD_NB)))
+			   }
+			   if(para.containsKey(SD_NB))
+			   {
+			     if("1".equals(para.get(SD_NB)))
 				   ((NaiveBayes)m_Classifier).setUseSupervisedDiscretization(true);
-			   else
+			    else
 				   ((NaiveBayes)m_Classifier).setUseSupervisedDiscretization(false);
+			   }
 		}
 		else if (classifierType.equalsIgnoreCase("W_RandomForest"))
 		{
-			int k = Integer.parseInt(para.get(K_RF));
-			int f = Integer.parseInt(para.get(F_RF));
-
 			m_Classifier = new weka.classifiers.trees.RandomForest();
-			((weka.classifiers.trees.RandomForest) m_Classifier).setNumTrees(k);
-			((weka.classifiers.trees.RandomForest) m_Classifier).setNumFeatures(f);
+
+			if(para.containsKey(K_RF))
+			{
+			  int k = Integer.parseInt(para.get(K_RF));
+			 ((weka.classifiers.trees.RandomForest) m_Classifier).setNumTrees(k);
+			}
+			if(para.containsKey(F_RF))
+			{
+			  int f = Integer.parseInt(para.get(F_RF));
+			  ((weka.classifiers.trees.RandomForest) m_Classifier).setNumFeatures(f);
+			}
 	    }
 		else if (classifierType.equalsIgnoreCase("W_NearestNeighbor"))
 	    {
-			//get parameters for KNN.
-			int k = Integer.parseInt(para.get(K_KNN));
-			m_Classifier = new weka.classifiers.lazy.IBk(k);
+			if(para.containsKey(K_KNN))
+			{
+			  //get parameters for KNN.
+			  int k = Integer.parseInt(para.get(K_KNN));
+			  m_Classifier = new weka.classifiers.lazy.IBk(k);
+			}
+			else
+			{
+			  m_Classifier = new weka.classifiers.lazy.IBk();
+			}
+
 		}
 		else
-				System.err.println("Not a classifier support by WekaClassifiers.");
+			System.err.println("Not a classifier support by WekaClassifiers.");
 
 	}
 
