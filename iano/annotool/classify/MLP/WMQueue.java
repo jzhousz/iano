@@ -5,8 +5,10 @@ import java.util.Queue;
 import java.io.Serializable;
 
 
-public class WMQueue implements Serializable  {
+public class WMQueue implements Serializable  
+{
 
+	private static final long serialVersionUID = 1470832280607056013L;
 	private Queue<Double> q = new LinkedList<Double>();
 	private Double sum = (double) 0;
 	private int window;

@@ -1,7 +1,6 @@
 package annotool.classify.MLP;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 
 
@@ -28,6 +27,7 @@ public class StandardBP extends Algorithm
 	//for window momentum
 	ArrayList<WMQueue>[] H_Delta;
 	ArrayList<WMQueue>[] I_Delta;
+	int Window_Size = 1; //if Size is 1, it is the same as normal BP.
 	
 	/**
 	 * Constructor.  Sets up the standard BP algorithm and hooks
@@ -39,9 +39,6 @@ public class StandardBP extends Algorithm
 	{
 		thenet = net;
 		bpns = net.bpns;
-		
-
-
 	}
 	
 
@@ -162,10 +159,9 @@ private int backpropagation(int numsample)
 						delta = deltaout[i]*hid[j];
 						momentumTerm = alpha*(thenet.bpns.outweight[j][i] - lastoutweight[j][i]);
 					   
-					    //H_Delta[j].get(i).push(momentumTerm); // added for windowed momentum
-					   	lastoutweight[j][i] = thenet.bpns.outweight[j][i];
-					   	thenet.bpns.outweight[j][i] +=  (delta + momentumTerm); 
-						//thenet.bpns.outweight[j][i] += (delta + ( H_Delta[j].get(i).sum() / H_Delta[j].get(i).QSize() ));  //use the windowed momentum
+					    H_Delta[j].get(i).push(momentumTerm); // added for windowed momentum
+					   	lastoutweight[j][i] = thenet.bpns.outweight[j][i]; 
+						thenet.bpns.outweight[j][i] += (delta + ( H_Delta[j].get(i).sum() / H_Delta[j].get(i).QSize() ));  //use the windowed momentum
 				   }
 				   //offset of output layer is not adjusted in this version, since is may be a simple summation.
 			   }
@@ -187,10 +183,9 @@ private int backpropagation(int numsample)
 						delta = deltahid[i]*sample[n][j]; 
 						momentumTerm = alpha*(thenet.bpns.weight[j][i] - lastweight[j][i]);
 	
-						//I_Delta[j].get(i).push(momentumTerm);
+						I_Delta[j].get(i).push(momentumTerm);
 					   	lastweight [j][i] = thenet.bpns.weight[j][i];
-					   	thenet.bpns.weight[j][i] +=  (delta + momentumTerm); //normal momentum
-						//thenet.bpns.weight[j][i] +=  (delta + ( I_Delta[j].get(i).sum() / I_Delta[j].get(i).QSize() ));//for windowed momentum
+						thenet.bpns.weight[j][i] +=  (delta + ( I_Delta[j].get(i).sum() / I_Delta[j].get(i).QSize() ));//for windowed momentum
 				   }
 			  
 				   	//adjust offsets
@@ -230,11 +225,11 @@ private int backpropagation(int numsample)
 				lastoutweight[i][j]= rand.nextDouble()-0.5;
 
 
-				/*
+				
 		 // Windowed Momentum
-         final int WINDOW_SIZE = 1; //if Size is 1, it is the same as normal BP.
 		 H_Delta = new ArrayList[thenet.bpns.hnodes];
 		 I_Delta = new ArrayList[thenet.bpns.inodes];
+		 System.out.println("Window Size: " + Window_Size);
 		 
 		 for(i=0; i< thenet.bpns.hnodes; i++)
 		   {
@@ -243,7 +238,7 @@ private int backpropagation(int numsample)
 			   
 			   for(j=0; j<thenet.bpns.onodes; j++)
 			   {
-				   H_Delta[i].add(new WMQueue(WINDOW_SIZE));
+				   H_Delta[i].add(new WMQueue(Window_Size));
 			   }
 		   }
 		   
@@ -254,9 +249,9 @@ private int backpropagation(int numsample)
 			   
 			   for(j=0; j<thenet.bpns.hnodes; j++)
 			   {
-				   I_Delta[i].add(new WMQueue(WINDOW_SIZE));
+				   I_Delta[i].add(new WMQueue(Window_Size));
 			   }
-		   } */
+		   } 
 	}
   	
 
@@ -337,11 +332,21 @@ private int backpropagation(int numsample)
    	 isTraining = true;
    	 isInterrupted = false;
 	 int i = 0;
-	// int autochange = 2;
 	 
+	 System.out.println( numsample * .3 + " " + hasWM );
+	 
+	 if( (int) ( numsample * .3 ) > 1 && hasWM )
+	 {
+		 Window_Size = (int) ( numsample * .3 );
+	 }
+	 else
+	 {
+		 Window_Size = 1;
+	 }
 	 
 	 initwei();
 	 inittempwei();
+	 
 	 
 	 if( sample == null || code == null )
 	     throw new Exception("data is not set properly for the BP classifier");
