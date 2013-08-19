@@ -45,6 +45,7 @@ public abstract class Algorithm implements Serializable
 	double lastoutweight[][] = null;
 	double lastc[][] = null;
 	int iterations = 1; 
+	boolean hasWM = true;
 
 	// The PrintWriter to send the output to (default should be set to System.out)
 	PrintWriter clientWriter;
