@@ -21,6 +21,8 @@ import annotool.io.DataInput;
  * Ref: "A neural network classifier capable of recognizing the patterns of all major subcellular
  *    structures in fluorescence microscope images of HeLa cells",  M.V. Boland and R. F. Murphy
  *    Bioinfomratics, 2001.
+ *
+ *  9/2013:  toggle the isObjectPixel to assume white-on-black image (consistent with ObjectStat3D).
  */
 public class ObjectStatistics implements FeatureExtractor {
 
@@ -250,7 +252,7 @@ public class ObjectStatistics implements FeatureExtractor {
 			for(x = 0; x < width; x++) {
 				//get value
 				value = getValue(imgData, arrayIndex);
-				if(value < threshold)
+				if(value > threshold) //assume a white-on-black image (toggle)
 					isObjPixel[arrayIndex] = true;
 				else
 					isObjPixel[arrayIndex] = false;
@@ -405,8 +407,8 @@ public class ObjectStatistics implements FeatureExtractor {
 				value = getValue(imgData, arrayIndex);
 				sumvaluex +=value*x;
 				sumvaluey +=value*y;
-				sumx += x;
-				sumy += y;
+				sumx += value; //change 
+				sumy += value;
 				arrayIndex++;
 			}
 		}
