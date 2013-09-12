@@ -48,8 +48,18 @@ import annotool.io.DataInput;
  *               is grounded in the background intensity, if mixed background images are used,  
  *               then bg pixels are interpreted as one object.	Flipping threshold comparison during 
  *               Binarization can select for light/dark bg color.
- *     5/14/13 - 
- *			 
+ *     9/05/13 - cleaned up output, prep for release version.
+ *               Fixed progress indication command line output to be consistent. 
+ *     9/10/13 - began optimizing CoM calculations to reduce image iterations.  
+ *             - remove vestigial sum calculations from CoM logic 
+ *	   9/11/13 - new problem discovered, object IDs are not sequential, because of minimization
+ *               therefore, an array of IDs != to IDs in order, need to recode getTagData().
+ *             - added helper class ObjData to contain the data for each extracted object, currently
+ *               only implemented for CoM calculations, needs to be added to size and tagCount funtions.
+ *     9/12/13 - calculation time of features 5,6,7 improved by many orders of magnitude. now calculates
+ *               almost instantly instead of ~10-15 min per. total operation time on 1296x2333x59 image 
+ *               dropped from ~ 30 mins to under 7.
+ *             - Finished converting to only one hashmap, memory usage improved.
  */
 public class ObjectStatistics3D implements FeatureExtractor {
 
@@ -112,7 +122,8 @@ public class ObjectStatistics3D implements FeatureExtractor {
 	{
 		Object data;
 		short[] tag;  //tag of objects for each pixel
-		HashMap<Integer, Integer> tagCount;  //the size in # of pixels for each object 
+		int[] center; //center of mass of image as (x,y,z)
+		HashMap<Integer, ObjData> tagData; // the center of mass of each tag
 		java.util.Set<Integer> keySet;
 		ij.ImagePlus iplus;
 
@@ -142,97 +153,93 @@ public class ObjectStatistics3D implements FeatureExtractor {
 			
 			//iplus.getProcessor(slice) will get from that slice.
 			//getImageStackSize() will get the number of slices.
-			//
-			//
 			// for now:
 			iplus = problem.getImagePlus(image_num);
 			int threshold = getThreshold(iplus);
 
 			//get objects for current image
 			tag = getObjectsInImage(image_num, width, height, depth, threshold);
-			//System.out.println("tag: " + Arrays.toString(tag));
-		    
-			/*
-			//diag print out every pixel tag
-			System.out.print("[ " );
-		    for(int i = 0; i < (width*height*depth); i++) {
-		      if( i %width == 0 && i !=0)
-		        System.out.print("\n");    
-              System.out.printf("%1$-4S", tag[i]+ ", " );
-		    }
-		    System.out.print("] \n" );
-		    */
+            //process the raw tag data         
+			tagData = getTagData(image_num, width, height, depth, tag);
+			keySet = tagData.keySet();
+			center = getCofM(image_num, width, height, depth);
 			
-			tagCount = getTagCount(tag, width, height, depth);
-			keySet = tagCount.keySet();
-			
-			int[] center = getCofM(image_num, width, height, depth);
-			System.out.println("center: " + Arrays.toString(center));
+
 
 			//set the features
-			features[image_num][0] =  calcNumberOfObjects(tagCount);
-			features[image_num][1] =  calcAvgSizeOfObjects(tagCount);
-			features[image_num][2] =  calcVarSizeOfObjects(tagCount, features[image_num][1]);
-			features[image_num][3] =  calcRatioBigToSmallOfObjects(tagCount);
-			features[image_num][4] =  calcAvgDistanceToCoM(image_num, width, height, depth, keySet, tag, center);
-			features[image_num][5] =  calcVarDistanceToCoM(image_num, width, height, depth, keySet, tag, center, features[image_num][4]);
-			features[image_num][6] =  calcRatioFurthestToClosestToCoM(image_num, width, height, depth, keySet, tag, center);
+			System.out.println("Calculating Feature 1...");
+			features[image_num][0] =  calcNumberOfObjects(tagData);
+			System.out.println("Calculating Feature 2...");
+			features[image_num][1] =  calcAvgSizeOfObjects(tagData);
+			System.out.println("Calculating Feature 3...");
+			features[image_num][2] =  calcVarSizeOfObjects(tagData, features[image_num][1]);
+			System.out.println("Calculating Feature 4...");
+			features[image_num][3] =  calcRatioBigToSmallOfObjects(tagData);
+			System.out.println("Calculating Feature 5...");
+			features[image_num][4] =  calcAvgDistanceToCoM(tagData, keySet, center);
+			System.out.println("Calculating Feature 6...");
+			features[image_num][5] =  calcVarDistanceToCoM(tagData, keySet, center, features[image_num][4]);
+            System.out.println("Calculating Feature 7...");
+			features[image_num][6] =  calcRatioFurthestToClosestToCoM(tagData, keySet, center);
 		}
+		
 		return features;
 	}
 
 	//Object is the data of a 2D image. It can be byte[] or short[] for float[] depending on image type
-	private float calcNumberOfObjects(HashMap<Integer, Integer>tagCount)
+	private float calcNumberOfObjects(HashMap<Integer, ObjData> tagCount)
 	{
 		return tagCount.size();
 	}
 
 	//The average number of above-threshold pixel per object
-	private float calcAvgSizeOfObjects(HashMap<Integer, Integer> tagCount)
+	private float calcAvgSizeOfObjects(HashMap<Integer, ObjData> tagCount)
 	{
 		int totalSize = 0;
 		int count = 0;
 		int sizeThreshold = 1; //the min size to include in calculation
 		//Get tags that are within threshold
 		for(Integer key : tagCount.keySet()) {
-			if(tagCount.get(key) >= sizeThreshold)
+			if(tagCount.get(key).getSize() >= sizeThreshold)
 			{
-				totalSize += tagCount.get(key);
+				totalSize += tagCount.get(key).getSize();
 				count ++;
 			}
 		}		
 		return (float) totalSize/(float) count;
 	}
 
-	private float calcVarSizeOfObjects(HashMap<Integer, Integer> tagCount, float avg)
+	private float calcVarSizeOfObjects(HashMap<Integer, ObjData> tagCount, float avg)
 	{
 		float totalDiff = 0;
 		int sizeThreshold = 0;
 		int count = 0;
+		int size = 0;
 		for(Integer key : tagCount.keySet()) {
-			if(tagCount.get(key) >= sizeThreshold)
+			if(tagCount.get(key).getSize() >= sizeThreshold)
 			{
-				totalDiff += (tagCount.get(key) - avg)*(tagCount.get(key) - avg);
+				size = tagCount.get(key).getSize();
+				totalDiff += (size - avg)*(size - avg);
 				count ++;
 			}
 		}		
 		return (totalDiff/(count -1));
 	}
 
-	private float calcVarSizeOfObjects(HashMap<Integer, Integer> tagCount)
+	private float calcVarSizeOfObjects(HashMap<Integer, ObjData> tagCount)
 	{
 		float avg = calcAvgSizeOfObjects(tagCount);
 		return calcVarSizeOfObjects(tagCount, avg);
 	}
 
 
-	private float calcRatioBigToSmallOfObjects(HashMap<Integer, Integer> tagCount)
+	private float calcRatioBigToSmallOfObjects(HashMap<Integer, ObjData> tagCount)
 	{
 		int aKey = tagCount.keySet().iterator().next();
-		int maxCount = tagCount.get(aKey);
-		int minCount = tagCount.get(aKey);
+		int maxCount = tagCount.get(aKey).getSize();
+		int minCount = maxCount;
 		for(Integer key : tagCount.keySet()) {
-			int value = tagCount.get(key);
+			int value = tagCount.get(key).getSize();
 			if(value > maxCount) {
 				maxCount = value;
 			}
@@ -245,46 +252,43 @@ public class ObjectStatistics3D implements FeatureExtractor {
 
 	//calculate the (square of) distance of each object's CoM to the CoM of entire image
 	// the CoM of entire image is passed in
-	private float calcAvgDistanceToCoM(int imgNum, int width, int height, int depth, java.util.Set<Integer> keySet, short[] tag, int[] center) 
+	private float calcAvgDistanceToCoM(HashMap<Integer, ObjData> tagData, java.util.Set<Integer> keySet, int[] center) 
 	{
 		int[] objectCoM;
 		float totaldist = 0;
 		for(Integer key : keySet) 
 		{
-			objectCoM = getCofM(imgNum, width, height, depth, tag, key);
+			objectCoM = getCofM(tagData, key);
 			totaldist += calc3DDist(objectCoM, center);
 		}
 		return totaldist/keySet.size();
 	}
 
-	private float calcVarDistanceToCoM(int imgNum, int width, int height, int depth, java.util.Set<Integer> keySet, short[] tag, int[] center, float avgDist) 
+	private float calcVarDistanceToCoM(HashMap<Integer, ObjData> tagData, java.util.Set<Integer> keySet, int[] center, float avgDist) 
 	{
 		int[] objectCoM;
 		float dist = 0, totalDist = 0;
 		for(Integer key : keySet) 
 		{
-			objectCoM = getCofM(imgNum, width, height, depth, tag, key);
+			objectCoM = getCofM(tagData, key);
 			dist = calc3DDist(objectCoM, center);
 			totalDist +=  (dist - avgDist)*(dist - avgDist); 
 		}
 		return totalDist/keySet.size();
 	}
 
-	private float calcRatioFurthestToClosestToCoM(int imgNum, int width, int height, int depth, java.util.Set<Integer> keySet, short[] tag, int[] center) 
+	private float calcRatioFurthestToClosestToCoM(HashMap<Integer, ObjData> tagData, java.util.Set<Integer> keySet, int[] center) 
 	{
 		float furthest = -1, closest = 999;
 		float dist;
 		int[] objectCoM;
 		for(Integer key : keySet) 
 		{
-			objectCoM = getCofM(imgNum, width, height, depth, tag, key);
+			objectCoM = getCofM(tagData, key);
 			dist = calc3DDist(objectCoM, center);
 			if (dist > furthest)  furthest = dist;
 			if (dist < closest) closest = dist;
 		}
-		
-		//System.out.println("furthest: "+ furthest);
-		//System.out.println("closest : "+ closest);
 		
 		return furthest/closest;
 
@@ -325,23 +329,6 @@ public class ObjectStatistics3D implements FeatureExtractor {
 			}
 		}
 		
-		
-		//System.out.println("Printing pixel tags, initial binarization... ");
-		//System.out.println("tag: " + Arrays.toString(tag));
-		
-		/*
-		System.out.print("[ " );
-		for(int i = 0; i < (width*height*depth); i++) {
-		  if( i %width == 0 && i !=0)
-		    System.out.print("\n");    
-          System.out.printf("%1$-4S", tag[i]+ ", " );
-		}
-		System.out.print("] \n" );
-		*/
-		System.out.println("Threshold = " + threshold);
-		
-		
-		
 		short tagvois;
 		short ID = 1;
 		arrayIndex = 0;
@@ -376,7 +363,6 @@ public class ObjectStatistics3D implements FeatureExtractor {
 							}
 						}
 						tag[arrayIndex] = minTag;
-						//System.out.println("tag[arrayIndex]: " + tag[arrayIndex]);
 						if (minTag == ID)
 						{	//If current pixel was given the new tag, increment tag number for next run
 							ID++;
@@ -432,13 +418,6 @@ public class ObjectStatistics3D implements FeatureExtractor {
 				}
 			}
 		}
-		/*
-		System.out.println("Printing some tags != -1... ");
-		for( i = 0; i < (width*height*depth); i++) {
-		  if( tag[i] >= 0)
-           System.out.println("tag = " + tag[i]);
-		}
-		*/
 		return tag;
 	}
 
@@ -450,7 +429,7 @@ public class ObjectStatistics3D implements FeatureExtractor {
 		if (imageType == DataInput.GRAY8 || imageType ==  DataInput.COLOR_RGB)
 			value = (int) (((byte[])imgData)[arrayIndex] & mask);
 		else if (imageType == DataInput.GRAY16)
-			value = (int) (((short[])imgData)[arrayIndex] & longmask);	
+			value = (int) (((short[])imgData)[arrayIndex] & longmask);
 		return value;
 	}
 
@@ -487,50 +466,15 @@ public class ObjectStatistics3D implements FeatureExtractor {
 		for (int i=0; i < tag.length; i++) 
 			if (tag[i] == m) tag[i] = n;
 	}
-
-	private HashMap<Integer, Integer> getTagCount(short[] tag, int width, int height, int depth) {
-		//Key: ID, value: pixel count
-		HashMap<Integer, Integer> tagCount = new HashMap<Integer, Integer>();
-
-		System.out.println("getting hashmap of tags...");
-		
-		int arrayIndex = 0;
-		int inttag; 
-		int count;
-		for(int z=1; z <= depth; z++) { 
-			for(int y=0; y < height; y++) {
-				for(int x = 0; x < width; x++) {
-					if(tag[arrayIndex] > -1) {
-						count = 0;
-						inttag = (int) tag[arrayIndex]; //type cast from short to int
-						if(tagCount.containsKey(inttag)) {
-						    //System.out.println("tagCount contains inttag: " + inttag);
-							count = tagCount.get(inttag);
-						}
-
-						count++;
-						
-						//System.out.println("put into hashmap inttag: " + inttag + "  count: " + count);
-						
-						tagCount.put(inttag, count);
-					}
-
-					arrayIndex++;
-				}
-			}
-		}
-
-		return tagCount;
-	}
-
-
+	
 	//get  the coordinates of center of mass
 	private int[] getCofM(int imgNum, int width, int height, int depth)
 	{
 		int arrayIndex = 0;
-		int sumx = 0, sumvaluex = 0;
-		int sumy = 0, sumvaluey = 0;
-		int sumz = 0, sumvaluez = 0;
+		int sumvalue = 0;
+		int sumvaluex = 0;
+		int sumvaluey = 0;
+		int sumvaluez = 0;
 		int value;
 		
 		for(int z = 1; z <= depth; z++) {
@@ -540,54 +484,88 @@ public class ObjectStatistics3D implements FeatureExtractor {
 					sumvaluex +=value*x;
 					sumvaluey +=value*y;
 					sumvaluez +=value*(z-1);
-					sumx += value;
-					sumy += value;
-					sumz += value;
+					sumvalue += value;
 					arrayIndex++;
 				}
 			}
 		}
 			
 		int[] center = new int[3];
-		center[0] = ((sumx != 0) ? sumvaluex/sumx : 0);
-		center[1] = ((sumy != 0) ? sumvaluey/sumy : 0);
-		center[2] = ((sumz != 0) ? sumvaluez/sumz : 0);
+		center[0] = ((sumvalue != 0) ? sumvaluex/sumvalue : 0);
+		center[1] = ((sumvalue != 0) ? sumvaluey/sumvalue : 0);
+		center[2] = ((sumvalue != 0) ? sumvaluez/sumvalue : 0);
 		
 		return center;
 	}
-
+	
+	
 	//get CofM for a particular object
-	private int[] getCofM(int imgNum, int width, int height, int depth, short[] tag, int index) 
-	{
-		int arrayIndex = 0;
-		int sumx = 0, sumvaluex = 0;
-		int sumy = 0, sumvaluey = 0;
-		int sumz = 0, sumvaluez = 0;
-		int value;
-		for(int z = 1; z <= depth; z++) { 
-			for(int y = 0; y < height; y++) {
+	private int[] getCofM(HashMap<Integer, ObjData> tagData, int index) 
+	{   
+        ObjData obj;
+        obj = tagData.get(index);
+		int[] center = new int[3];
+        center[0] = obj.getIntX();
+        center[1] = obj.getIntY();
+        center[2] = obj.getIntZ();
+           
+		return center;
+	}
+	
+	
+	//get the CofM of all tags as hashmap indexed by the tags
+	private HashMap<Integer, ObjData> getTagData(int imgNum, int width, int height, int depth, short[] tag) {
+        
+        System.out.println("Starting CoM calculations...");
+	    
+		HashMap<Integer, ObjData> tagData = new HashMap<Integer, ObjData>();
+        
+        int value;
+        int arrayIndex = 0;
+		int inttag; 
+        ObjData obj;
+
+		for(int z=1; z <= depth; z++) { 
+			for(int y=0; y < height; y++) {
 				for(int x = 0; x < width; x++) {
-					if(tag[arrayIndex] == index)
-					{
+					if(tag[arrayIndex] > 0) {
+						
+						inttag = (int) tag[arrayIndex]; //type cast from short to int
 						value = getValue3D(imgNum, z, arrayIndex);
-						sumvaluex +=value*x;
-						sumvaluey +=value*y;
-						sumvaluez +=value*(z-1);
-						sumx += value;
-						sumy += value;
-						sumz += value;
+                                              
+						//get the correct ObjData from hashmap
+						//if non there, then create an entry
+						if(tagData.containsKey(inttag))					
+							obj = tagData.get(inttag);
+						else {
+							obj = new ObjData();
+							tagData.put(inttag, obj);
+							}
+							
+                        obj.addX(value*x);
+                        obj.addY(value*y);
+                        obj.addZ(value*(z-1));
+                        obj.addValue(value);
+                        obj.addSize(1);
+						
 					}
+
 					arrayIndex++;
 				}
 			}
+            
 		}
-
-		int[] center = new int[3];
-		center[0] = ((sumx != 0) ? sumvaluex/sumx : 0);
-		center[1] = ((sumy != 0) ? sumvaluey/sumy : 0);
-		center[2] = ((sumz != 0) ? sumvaluez/sumz : 0);
-			
-		return center;
+		
+		//crunch the values stored in each ObjData to result in a CoM calculation
+        System.out.println("Finalizing CoM calculations...");
+        for( int key : tagData.keySet()) {
+             obj = tagData.get(key); //get a ref to the object to avoid accessing the map many times
+             obj.setX(obj.getX() / obj.getValueTot());
+             obj.setY(obj.getY() / obj.getValueTot());
+             obj.setZ(obj.getZ() / obj.getValueTot());
+             
+        }
+		return tagData;
 	}
 
 	//get a better autothreshold than the first slice only that has 
@@ -608,8 +586,11 @@ public class ObjectStatistics3D implements FeatureExtractor {
 	//Testing main() and diagnostic console output
 	public static void main(String[] args)
 	{
-		String directory = "J:\\BioCAT\\Work\\Image Sets\\to_zj_080925_3DImages\\";
-		//String directory =  "F:\\BioCAT\\Work\\Image Sets\\testSet2\\";
+        String directory = null;
+		if(args.length <= 0)
+          directory = "J:\\BioCAT\\Work\\Image Sets\\K150 Image Set_dirTree\\";
+        else
+          directory =  "F:\\BioCAT\\Work\\Image Sets\\" + args[0] +"\\";
 		String ext = ".tif";
 		String ch = "g";	
 
@@ -617,15 +598,25 @@ public class ObjectStatistics3D implements FeatureExtractor {
 		{
 			annotool.io.DataInput problem = new annotool.io.DataInput(directory, ext, ch, true);
 			FeatureExtractor fe = new ObjectStatistics3D();
+            
 			//print out
+            System.out.println("Directory: " + directory);
 			System.out.println("Begin feature extraction!");
 			float[][] features = fe.calcFeatures(problem);
+            
 			System.out.println();
+           
+            //print header
+            System.out.print("features: ");
+            for(int j=0; j< features[0].length; j++)
+					System.out.printf("%-10s", j);
+            System.out.println();
+            //print features
 			for(int i = 0; i < features.length; i++)
 			{
 				System.out.print("Image #" + i + ": ");
 				for(int j=0; j< features[i].length; j++)
-					System.out.print(features[i][j]+" ");
+					System.out.printf("%-10s", features[i][j]+" ");
 				System.out.println();
 			}
 		}catch(Exception e)
@@ -636,3 +627,47 @@ public class ObjectStatistics3D implements FeatureExtractor {
 	}
 
 }
+
+
+/* helper class to store a center as a 3d point.
+*/
+class ObjData
+{   
+	private double  x, y, z;
+    private int valueTot, size;   
+	
+    public ObjData() {   
+        x=0;
+        y=0;
+        z=0;
+        valueTot=0;
+        size=0;
+    }
+    
+    //accessor/mutators
+    public double getX() { return x;}
+    public double getY() { return y;}
+    public double getZ() { return z;}
+    public int getValueTot() { return valueTot;}
+    public int getSize() { return size;}
+    public void setX(double i) { x=i;}
+    public void setY(double i) { y=i;}
+    public void setZ(double i) { z=i;} 
+    public void setValueTot(int i) { valueTot = i;}
+    public void setSize(int i) { size = i;}
+
+    //helpers
+    public int getIntX() { return (int) Math.round(x);}
+    public int getIntY() { return (int) Math.round(y);}
+    public int getIntZ() { return (int) Math.round(z);}
+    public void addX(double i) { x += i;}
+    public void addY(double i) { y += i;}
+    public void addZ(double i) { z += i;}
+    public void addValue(int i) { valueTot += i;}
+    public void addSize(int i) { size += i;}
+    public double getAvgValue() { 
+        return valueTot/size;
+    }
+    public String printString() { return ("[" + x + ", " + y + ", " + z + ", " + size + "]");}
+    
+} // endClass Point3D
