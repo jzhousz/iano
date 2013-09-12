@@ -433,8 +433,8 @@ public class ObjectStatistics implements FeatureExtractor {
 					value = getValue(imgData, arrayIndex);
 					sumvaluex +=value*x;
 					sumvaluey +=value*y;
-					sumx += x;
-					sumy += y;
+					sumx += value; //change too
+					sumy += value;
 				}
 				arrayIndex++;
 			}
