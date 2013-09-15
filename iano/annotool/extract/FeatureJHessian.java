@@ -170,7 +170,7 @@ public class FeatureJHessian implements FeatureExtractor {
         	
         	//Testing
         	//if(imageIndex == (this.length - 1))
-        		//img.imageplus().show();
+        	//	img.imageplus().show();
 		}
 		
 		return features;

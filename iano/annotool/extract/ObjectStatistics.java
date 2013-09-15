@@ -6,6 +6,11 @@ import java.util.HashMap;
 import annotool.ImgDimension;
 import annotool.io.DataInput;
 
+
+/**
+  @deprecated as of Sept 12 2013.  Replaced by ObjectStatistics3D for a better implementation and consistency
+*/
+
 /*
  * Statistics regarding objects in the image
  * 
@@ -23,8 +28,10 @@ import annotool.io.DataInput;
  *    Bioinfomratics, 2001.
  *
  *  9/2013:  toggle the isObjectPixel to assume white-on-black image (consistent with ObjectStat3D).
+ *
+ *
  */
-public class ObjectStatistics implements FeatureExtractor {
+@Deprecated public class ObjectStatistics implements FeatureExtractor {
 
 	protected float[][] features = null;
 	int length;

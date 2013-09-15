@@ -348,9 +348,10 @@ public class Annotator
     	//check if it is the right type of feature extractor (2D or 3D)
     	int stackSize = problem.getStackSize();
     	int depth = problem.getDepth();
-    	if ((stackSize == 1 && extractor.is3DExtractor()) || (stackSize > 1 && depth !=1 && (!extractor.is3DExtractor())))
+    	//It is not ok to run a 2D extractor on 3D.  The other way is supposedly ok.
+    	if (stackSize > 1 && depth !=1 && (!extractor.is3DExtractor()))
     	{
-            System.out.println("invalid stack size for the corresponding feature extractor");
+            System.out.println("Invalid stack size for the corresponding feature extractor. Need a 3D extractor.");
             System.exit(1);
     	}
     	return extractor.calcFeatures(problem);	
@@ -635,7 +636,8 @@ public class Annotator
 
     	//check if it is the right type of feature extractor (2D or 3D)
     	int stackSize = problem.getStackSize();
-    	if ((stackSize == 1 && extractor.is3DExtractor()) || (stackSize > 1 && (!extractor.is3DExtractor())))
+    	//It is not ok to run a 2D extractor on 3D.  The other way is supposedly ok.
+    	if (stackSize > 1 && (!extractor.is3DExtractor()))
     	{
             System.out.println("invalid stack size for the corresponding feature extractor");
             System.exit(1);
