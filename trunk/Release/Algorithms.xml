@@ -187,7 +187,12 @@
 	<Algorithm type="2DExtractor">
 		<Name>Object Statistics</Name>
 		<Desc>Statistics of Objects (Connected Components)</Desc>
-		<ClassName>annotool.extract.ObjectStatistics</ClassName>
+		<ClassName>annotool.extract.ObjectStatistics3D</ClassName>
+	</Algorithm>
+	<Algorithm type="3DExtractor">
+		<Name>Object Statistics 3D</Name>
+		<Desc>Statistics of 3D Objects (Connected Components)</Desc>
+		<ClassName>annotool.extract.ObjectStatistics3D</ClassName>
 	</Algorithm>
 	<Algorithm type="3DExtractor">
 		<Name>3D Moments</Name>
@@ -222,12 +227,90 @@
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="Classifier">
-		<Name>Weka</Name>
+		<Name>Classification Tree J48</Name>
 		<ClassName>annotool.classify.WekaClassifiers</ClassName>
 		<Parameter type="String">
 			<Name>CLASSIFIER_TYPE</Name>
-			<Domain>W_Tree,W_NaiveBayes,W_RandomForest,W_NearestNeighbor</Domain>
+			<Domain>W_Tree</Domain>
 			<Default>W_Tree</Default>
 		</Parameter>
+		<Parameter type="Boolean">
+			<Name>Use Unpruned Tree</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>Min Number of Samples (Images) Per Leaf</Name>
+			<Default>2</Default>
+			<Min>1</Min>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="Classifier">
+		<Name>Naive Bayes</Name>
+		<ClassName>annotool.classify.WekaClassifiers</ClassName>
+		<Parameter type="String">
+			<Name>CLASSIFIER_TYPE</Name>
+			<Domain>W_NaiveBayes</Domain>
+			<Default>W_NaiveBayes</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>Use Kernel Estimation</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>Use Supervised Discretization</Name>
+			<Default>0</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="Classifier">
+		<Name>Random Forest</Name>
+		<ClassName>annotool.classify.WekaClassifiers</ClassName>
+		<Parameter type="String">
+			<Name>CLASSIFIER_TYPE</Name>
+			<Domain>W_RandomForest</Domain>
+			<Default>W_RandomForest</Default>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>Number of Trees in the Forest</Name>
+			<Default>10</Default>
+			<Min>2</Min>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>Number of Features to Consider</Name>
+			<Default>1</Default>
+			<Min>1</Min>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="Classifier">
+		<Name>Neareast Neighbor</Name>
+		<ClassName>annotool.classify.WekaClassifiers</ClassName>
+		<Parameter type="String">
+			<Name>CLASSIFIER_TYPE</Name>
+			<Domain>W_NearestNeighbor</Domain>
+			<Default>W_NearestNeighbor</Default>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>Number of Nearest Neighbors</Name>
+			<Default>1</Default>
+			<Min>1</Min>
+		</Parameter>
+	</Algorithm>
+        <Algorithm type="Classifier">
+		<Name>Multilayer Perceptron</Name>
+		<Desc>Artificial Neural Network (Multilayer Perceptron Trained by BP)</Desc>
+		<ClassName>annotool.classify.MLP.MLPClassifier</ClassName>
+		<Parameter type="Integer">
+				<Name>Hidden Nodes</Name>
+				<Default>50</Default>
+				<Min>1</Min>
+			</Parameter>
+			<Parameter type="Integer">
+				<Name>Uplimit of Iterations</Name>
+				<Default>3000</Default>
+				<Min>1</Min>
+			</Parameter>
+			<Parameter type="Boolean">
+				<Name>Windowed Momentum</Name>
+				<Default>0</Default>
+			</Parameter>
 	</Algorithm>
 </Algorithms>
