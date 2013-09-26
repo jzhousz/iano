@@ -1,3 +1,12 @@
+9/25/2013
+1. Added ObjectStatistics3D and ObjecStatisticsFast
+2. Added MultilayerPercepton classifier
+3. Added a parameter for Random Forest classifier
+
+3/21/2013
+1. Added/Edited several buttons on the Multiple comparison mode.
+2. Added the functionality of reading Vaa3D landmark files as ROI input.
+
 11/29/2012
 1. Added several GUI enhancements.
 2. Implemented Object Territory for annotation purposes.
