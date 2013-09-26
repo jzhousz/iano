@@ -8,27 +8,15 @@ import annotool.io.DataInput;
 
 
 /**
-  @deprecated as of Sept 12 2013.  Replaced by ObjectStatistics3D for a better implementation and consistency
-*/
-
+  @deprecated as of Sept 2013.  A better alternative is ObjectStatiticsFast.
+*/  
 /*
- * Statistics regarding objects in the image
  * 
- * 1. The number of objects
- * 2. The average number of above-threshold pixel per object
- * 3. The variance of the number of above-threshold pixels per object
- * 4. The ratio of the size of the largest object to the smallest.
- * 5. The average object distance to the CenterOfMass (CoM)
- * 6. The variance of the object distance from the image CoM.
- * 7. The ratio of the largest to the smallest object to image CoM.
+ * Seven statistics regarding objects in the image such as the number of objects 
+ *   and the average number of above-threshold pixel per object etc. 
+ *
+ * This is a rolled-back version for result reproducibility. 
  * 
- * Other: Euler # 
- * Ref: "A neural network classifier capable of recognizing the patterns of all major subcellular
- *    structures in fluorescence microscope images of HeLa cells",  M.V. Boland and R. F. Murphy
- *    Bioinfomratics, 2001.
- *
- *  9/2013:  toggle the isObjectPixel to assume white-on-black image (consistent with ObjectStat3D).
- *
  *
  */
 @Deprecated public class ObjectStatistics implements FeatureExtractor {
@@ -259,7 +247,7 @@ import annotool.io.DataInput;
 			for(x = 0; x < width; x++) {
 				//get value
 				value = getValue(imgData, arrayIndex);
-				if(value > threshold) //assume a white-on-black image (toggle)
+				if(value < threshold) 
 					isObjPixel[arrayIndex] = true;
 				else
 					isObjPixel[arrayIndex] = false;
@@ -414,8 +402,8 @@ import annotool.io.DataInput;
 				value = getValue(imgData, arrayIndex);
 				sumvaluex +=value*x;
 				sumvaluey +=value*y;
-				sumx += value; //change 
-				sumy += value;
+				sumx += x;  
+				sumy += y;
 				arrayIndex++;
 			}
 		}
@@ -440,8 +428,8 @@ import annotool.io.DataInput;
 					value = getValue(imgData, arrayIndex);
 					sumvaluex +=value*x;
 					sumvaluey +=value*y;
-					sumx += value; //change too
-					sumy += value;
+					sumx += x;
+					sumy += y;
 				}
 				arrayIndex++;
 			}
