@@ -187,7 +187,7 @@
 	<Algorithm type="2DExtractor">
 		<Name>Object Statistics</Name>
 		<Desc>Statistics of Objects (Connected Components)</Desc>
-		<ClassName>annotool.extract.ObjectStatistics3D</ClassName>
+		<ClassName>annotool.extract.ObjectStatisticsFast</ClassName>
 	</Algorithm>
 	<Algorithm type="3DExtractor">
 		<Name>Object Statistics 3D</Name>
@@ -273,11 +273,6 @@
 			<Name>Number of Trees in the Forest</Name>
 			<Default>10</Default>
 			<Min>2</Min>
-		</Parameter>
-		<Parameter type="Integer">
-			<Name>Number of Features to Consider</Name>
-			<Default>1</Default>
-			<Min>1</Min>
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="Classifier">
