@@ -18,6 +18,7 @@ import annotool.gui.model.ModelFilter;
 import annotool.gui.model.ModelSaver;
 import annotool.gui.model.Selector;
 import annotool.io.AlgoXMLParser;
+import annotool.AlgorithmValidation;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ import annotool.ComboFeatures;
  *
  */
 public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListener, Runnable {
+	private static final int DIMUPPERBOUND = 100000;
 	private JTabbedPane tabPane;
 	private JPanel pnlMain,
 				   pnlAlgo,
@@ -51,6 +53,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 	private JComboBox cbExtractor, cbSelector, cbClassifier;
 	
 	private String channel;
+	
+	private int dimension;
 	
 	protected JProgressBar bar = null; 
 	
@@ -213,11 +217,57 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		buildClassParameterPanel();
 	}
 	public void actionPerformed(ActionEvent e) {
-		if(e.getSource() == btnRun) {			
+		if(e.getSource() == btnRun) {		
 			if (thread == null)  {
-	            thread = new Thread(this);
-	            isRunning = true;
-	            thread.start();
+				
+				//Set the dimension of the problem.
+				try {
+					dimension = trainingProblem.getWidth() * trainingProblem.getHeight() * trainingProblem.getStackSize();
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+				
+				//Get the currently selected extractor and selector
+				extractor = (Algorithm)cbExtractor.getSelectedItem();			
+				selector = (Algorithm)cbSelector.getSelectedItem();	
+				
+				// If the dimension is out of bounds and there is no extractor or selector, have a pop up dialogue
+				// for the user.
+				if (!(AlgorithmValidation.isWithinBounds( dimension, DIMUPPERBOUND, extractor, selector)) )
+				{
+					// Prints out the dimension to the console
+					System.out.println("Dimension: " + dimension);
+					
+					String message = "The dimension is too high and might cause a heap space error. \nIt is recomended that you add an extractor or a selector to avoid this. Continue?";
+					
+					// The actual pop up dialog. 
+					int diag_result = JOptionPane.showConfirmDialog(null, message);
+					
+					// If yes, then continue normally.
+					if (diag_result == JOptionPane.YES_OPTION)
+					{
+						thread = new Thread(this);
+		            	isRunning = true;
+		            	thread.start();
+					}
+					// If no, don't do anything.
+					else if (diag_result == JOptionPane.NO_OPTION)
+					{
+						return;
+					}
+					// Also don't do anything. 
+					else
+					{
+						return;
+					}
+				}
+				// Continue normally.
+	            else
+	            {
+					thread = new Thread(this);
+	            	isRunning = true;
+	            	thread.start();
+	            }
 	        }
 	    }
 		else if (e.getSource() == btnSaveModel) {
@@ -289,8 +339,8 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		btnAnnotate.setEnabled(false);
 		
 		//Get algorithm and parameters from GUI
-		extractor = (Algorithm)cbExtractor.getSelectedItem();			
-		selector = (Algorithm)cbSelector.getSelectedItem();			
+		//extractor = (Algorithm)cbExtractor.getSelectedItem();			
+		//selector = (Algorithm)cbSelector.getSelectedItem();			
 		classifier = (Algorithm)cbClassifier.getSelectedItem();
 		
 		//HashMap of parameter and corresponding values
