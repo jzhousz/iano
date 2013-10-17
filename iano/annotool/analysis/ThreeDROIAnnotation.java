@@ -224,6 +224,8 @@ public class ThreeDROIAnnotation {
 						indexForCube = 0;
 						if (!useRaw)	imageStacks.clear();
 						for (int zi = cz - rz; zi <= cz + rz; zi++) {
+							if (zi < 0 || zi > totaldepth)
+								continue; // check bound
 							// get current stack, stack starts from 1.
 							ImageProcessor currentip = imp.getStack()
 									.getProcessor(zi + 1);
@@ -233,18 +235,22 @@ public class ThreeDROIAnnotation {
 							{
 								for (int yi = cy - ry; yi <= cy + ry; yi++) 
 								{
-									if (!useRaw)
-									{
+									if (checkBound(xi, yi, zi, totalwidth, totalheight,
+											totaldepth))
+									{	
+									   if (!useRaw)
+									   {
 										indexsmall = (yi - (cy - ry))
 												* (2 * rx + 1)
 												+ (xi - (cx - rx));
 										oneframe[indexsmall] = (float) currentip
 													.getPixel(xi, yi);
-									}
-									fea[indexForCube] = (float) currentip
+									   }
+									   fea[indexForCube] = (float) currentip
 												.getPixel(xi, yi);
-									//System.out.print(fea[indexForCube] + " ");
-									indexForCube++;
+									   //System.out.print(fea[indexForCube] + " ");
+									   indexForCube++;
+									}
 								} //end yi
 							} //end xi
 						    if (!useRaw) {//add current slice to the stacks
