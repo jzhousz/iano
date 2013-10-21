@@ -86,7 +86,7 @@ public class ThreeDROIAnnotation {
 			// data for one ROI
 			ArrayList imageStacks = new ArrayList(2 * rz + 1);
 			for (int zi = cz - rz; zi <= cz + rz; zi++) {
-				if (zi < 0 || zi > totaldepth)
+				if (zi < 0 || zi >= totaldepth)
 					continue; // check bound
 				// get current stack, stack starts from 1.
 				ImageProcessor currentip = imp.getStack().getProcessor(zi + 1);
@@ -224,7 +224,7 @@ public class ThreeDROIAnnotation {
 						indexForCube = 0;
 						if (!useRaw)	imageStacks.clear();
 						for (int zi = cz - rz; zi <= cz + rz; zi++) {
-							if (zi < 0 || zi > totaldepth)
+							if (zi < 0 || zi >= totaldepth)
 								continue; // check bound
 							// get current stack, stack starts from 1.
 							ImageProcessor currentip = imp.getStack()
