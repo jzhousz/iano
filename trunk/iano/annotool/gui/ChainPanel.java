@@ -1,6 +1,8 @@
 package annotool.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Desktop;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
@@ -8,14 +10,22 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -26,6 +36,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
@@ -68,7 +80,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	private JButton btnNew, btnRemove, 
 	btnSaveChain, btnLoadChain, 
 	btnRun, btnSaveModel,
-	btnApplyModel, btnCopyChain, btnStop;
+	btnApplyModel, btnCopyChain, btnStop, btnTips;
 
 	private JCheckBox checkSelect;
 	private ChainTableModel tableModel = new ChainTableModel();
@@ -177,6 +189,9 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnApplyModel = new JButton("Annotate");
 		btnApplyModel.setEnabled(false);
 		btnApplyModel.addActionListener(this);
+		btnTips = new JButton("Tips");
+		btnTips.setEnabled(true);
+		btnTips.addActionListener(this);
 		
 		btnCopyChain = new JButton("Copy Selected");
 		btnCopyChain.addActionListener(this);
@@ -184,8 +199,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnStop = new JButton("Stop");
 		btnStop.addActionListener(this);
 		btnStop.setEnabled(false);
-		
-		pnlButton = new JPanel(new GridLayout(4, 2));
+
+		pnlButton = new JPanel(new GridLayout(6, 2)); // Rows by columns (6, 2)
 		pnlButton.add(btnNew);
 		pnlButton.add(btnRemove);
 		pnlButton.add(btnSaveChain);
@@ -193,6 +208,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		pnlButton.add(btnRun);
 		pnlButton.add(btnSaveModel);
 		pnlButton.add(btnApplyModel);
+		pnlButton.add(btnTips);
 
 		pnlButton.add(btnCopyChain);
 		pnlButton.add(btnStop);
@@ -451,6 +467,67 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			else {
 				JOptionPane.showMessageDialog(null, "The chains are not running!");
 			}
+		}
+		else if(ev.getSource().equals(btnTips)) {
+			// Create the new editor pane for the tips
+            final JEditorPane editorPane = new JEditorPane();
+            
+            // The popup
+			JPopupMenu popup = new JPopupMenu();
+            popup.setLayout(new BorderLayout());
+            popup.add(new JScrollPane(editorPane));
+            
+            // Get the preferred size.
+            Dimension d = popup.getPreferredSize();
+            
+            // Set the URI of the file
+            final String biocat_help = "resources/biocat_help.html";
+            java.net.URL page = this.getClass().getResource("/"+biocat_help);
+            String set_editor_pane = null;
+            try {
+				if (page != null)
+					set_editor_pane = page.toURI().toURL().toString();
+				else
+					set_editor_pane = biocat_help;
+			} catch (MalformedURLException e1) {
+				e1.printStackTrace();
+			} catch (URISyntaxException e1) {
+				e1.printStackTrace();
+			}
+            
+            popup.setPopupSize(500, 300);
+            Dimension s = btnTips.getSize();
+            editorPane.setEditable(false);
+            editorPane.setEnabled(true);
+            editorPane.setContentType("text/html");
+            
+            // Try to set the editor pane to the file.
+            try {
+				editorPane.setPage(set_editor_pane);
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+            
+            // Show the popup
+            popup.show(btnTips, s.width / 2, s.height / 2);
+            
+            // Add a hyperlink listener to the links in the editor pane.
+            editorPane.addHyperlinkListener(new HyperlinkListener() {
+            	@Override
+            	public void hyperlinkUpdate(HyperlinkEvent hle) {
+            		if (HyperlinkEvent.EventType.ACTIVATED.equals(hle.getEventType())) {
+                        System.out.println(hle.getURL());
+                        Desktop desktop = Desktop.getDesktop();
+                        try {
+                            desktop.browse(hle.getURL().toURI());
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+            		}
+            	}
+            });
 		}
 	}
 	private void setButtonState() {
