@@ -1,7 +1,7 @@
 package annotool.analysis;
 
-import ij.process.ImageProcessor;
 import ij.ImagePlus;
+import ij.process.ImageProcessor;
 import annotool.io.DataInput;
 
 public class Utility {
@@ -197,36 +197,36 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 
     meanv = sum / num;
 
-    int numIteration = 2;
+    int numIteration = 20; //set the iteration number here
     for(int it = 0; it < numIteration; it++) {
-    float sum1 = 0, sum2 = 0;
-    int num1 = 0, num2 = 0;
-
-    for(int z = 0; z < depth; z++) {
-    	currentimagep = imp.getStack().getProcessor(z+1);
-    	for(int y = 0; y < height; y++) {
-    		for(int x = 0; x < width; x++) {
-    			
-				if (imageType != DataInput.COLOR_RGB)
-				     pixelvalue = currentimagep.get(x,y);
-					else
-					 pixelvalue = (currentimagep.getPixel(x,y, null))[channel];
-
-    			if(pixelvalue > meanv) {
-    				sum1 += pixelvalue;
-    				num1++;
-    			}
-    			else if(pixelvalue > lowth) {
-    				sum2 += pixelvalue;
-    				num2++;
-    			}
-    		} //End of x
-    	} //End of y
-    } //End of z
-
-    //Adjust new threshold
-    meanv = (int)(0.5 * (sum1/num1 + sum2/num2)); //Is typecasting necessary?
-
+	    float sum1 = 0, sum2 = 0;
+	    int num1 = 0, num2 = 0;
+	
+	    for(int z = 0; z < depth; z++) {
+	    	currentimagep = imp.getStack().getProcessor(z+1);
+	    	for(int y = 0; y < height; y++) {
+	    		for(int x = 0; x < width; x++) {
+	    			
+					if (imageType != DataInput.COLOR_RGB)
+					     pixelvalue = currentimagep.get(x,y);
+						else
+						 pixelvalue = (currentimagep.getPixel(x,y, null))[channel];
+	
+	    			if(pixelvalue > meanv) {
+	    				sum1 += pixelvalue;
+	    				num1++;
+	    			}
+	    			else if(pixelvalue > lowth) {
+	    				sum2 += pixelvalue;
+	    				num2++;
+	    			}
+	    		} //End of x
+	    	} //End of y
+	    } //End of z
+	
+	    //Adjust new threshold
+	    meanv = (int)(0.5 * (sum1/num1 + sum2/num2)); //Is typecasting necessary?
+	    System.out.println("meanv = " + meanv);
    } //End of iteration
 
    System.out.println("dilation ..");
