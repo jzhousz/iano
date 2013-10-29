@@ -1,7 +1,20 @@
+10/29/2013
+1. Added "tips" button which provides some guidance in multiple comparison mode.
+2. Changed behaviour on multiple comparison mode to allow loading of multiple chain files.
+
+9/25/2013
+1. Added ObjectStatistics3D and ObjecStatisticsFast
+2. Added MultilayerPercepton classifier
+3. Added a parameter for Random Forest classifier
+
+3/21/2013
+1. Added/Edited several buttons on the Multiple comparison mode.
+2. Added the functionality of reading Vaa3D landmark files as ROI input.
+
 11/29/2012
 1. Added several GUI enhancements.
 2. Implemented Object Territory for annotation purposes.
-3. Bux fix with the way Algorithms.xml is read for boolean values.
+3. Bug fix with the way Algorithms.xml is read for boolean values.
 4. Updated some Feature Extractors for reading sets of various sizes.
 
 10/17/2012
@@ -9,7 +22,7 @@ Several enhancements on performance and bug fix.
 
 9/20/2012
 1. Change the "simple" and "Auto Comparison" buttons to "single and "Multiple" for clarification.
-2. Bug fix in cross-validtion mode and ROI offset in visualization.
+2. Bug fix in cross-validation mode and ROI offset in visualization.
 3. Add scrollbars for some screens.
 
 8/23/2012
@@ -24,7 +37,7 @@ Several enhancements on performance and bug fix.
 
 1. Introduced two new modes for taking input. In addition to the target file mode, now there are ROI mode and directory structure mode.
 2. 3D images are displayed in 3D volume viewer.
-3. Legend dialog added to ROI annotation.
+3. Legend dialogue added to ROI annotation.
 4. Summary of classes are added to result report for multilabel annotation.
 
 12/06/2011
@@ -46,7 +59,7 @@ New features:
 6.  All algorithms and parameters are configured using easy-to-edit property files, based on which GUI is dynamically created.
 7.  Learned chain and models can be saved and loaded in later annotation sessions, or directly applied in current session.
 8.  Integrated single-label Image set classification, multiple-label image annotation and ROI annotation.
-9.  Detailed and savalble reports of model selection results.
+9.  Detailed and savable reports of model selection results.
 10. Detailed and savable reports of annotation results.
 11. Simple algorithms interfaces for programmers to extend to more algorithms.
 
