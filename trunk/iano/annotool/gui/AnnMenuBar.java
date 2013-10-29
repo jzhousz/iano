@@ -319,9 +319,9 @@ public class AnnMenuBar implements ActionListener {
 	public void displayAbout()
 	{
 		String aboutString =  "BioCAT (Biological Image Classification and Annotation Tool)\n\n" +
-		"Version: 1.2.0\n\n" +
+		"Version: 1.2.9\n\n" +
 		"Jie Zhou, Hanchuan Peng, Santosh Lamichhane and other contributors\n" +
-		"2009 - 2012.  All rights reserved.\n\n" +
+		"2009 - 2013.  All rights reserved.\n\n" +
 		"This tool uses software below:\n" +
 		"mRMR -- \thttp://research.janelia.org/peng/proj/mRMR/ \n" +
 		"ImageJ -- \thttp://rsbweb.nih.gov/ij \n" +
@@ -330,10 +330,8 @@ public class AnnMenuBar implements ActionListener {
 		"Weka -- \thttp://www.cs.waikato.ac.nz/ml/weka/ \n\n" +
 		"jFreeChart -- \thttp://www.jfree.org/jfreechart/ \n" +
 		"iText -- \thttp://itextpdf.com/ \n\n" +
-		"Toolbar icons -- \thttp://www.famfamfam.com/lab/icons/silk/\n";
-//		"Reference:\n" +
-//	"Jie Zhou and Hanchuan Peng, \"Automatic recognition and annotation of gene expression \n"+
-//		   "patterns of fly embryos,\" Bioinformatics, 23(5):589-596, 2007.";
+		"Toolbar icons -- \thttp://www.famfamfam.com/lab/icons/silk/\n" +
+		"FeatureJ -- \thttp://www.imagescience.org/meijering/software/featurej/\n";
 
 		javax.swing.JOptionPane.showMessageDialog(null,aboutString);
 
