@@ -29,4 +29,23 @@ public class AlgorithmValidation {
 			return true;
 		}
 	}
+
+	public static boolean isWithinBounds(int dimension, int upperbound,
+			boolean extractor, boolean selector) {
+		if (dimension <= upperbound)
+		{
+			// If the dimension is lower than the upper bound, return true
+			return true;
+		}
+		else if( !(extractor || selector) )
+		{
+			// If there is no extractor or selector and it is higher than the upperbound, then return false
+			return false;
+		}
+		else
+		{
+			// All other cases return true
+			return true;
+		}
+	}
 }

@@ -45,6 +45,7 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableModel;
 
+import annotool.AlgorithmValidation;
 import annotool.Annotation;
 import annotool.Annotator;
 import annotool.ComboFeatures;
@@ -58,6 +59,7 @@ import annotool.gui.model.ModelFilter;
 import annotool.gui.model.ModelSaver;
 import annotool.gui.model.Selector;
 import annotool.gui.model.Utils;
+import annotool.io.Algorithm;
 import annotool.io.ChainIO;
 import annotool.io.ChainModel;
 import annotool.io.DataInput;
@@ -76,7 +78,9 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	pnlSouth;
 	private JTable tblChain = null;
 	private JScrollPane scrollPane = null;
-
+	
+	private static final int DIMUPPERBOUND = 100000;
+	
 	private JButton btnNew, btnRemove, 
 	btnSaveChain, btnLoadChain, 
 	btnRun, btnSaveModel,
@@ -315,17 +319,29 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			}
 		}
 		else if(ev.getSource().equals(btnLoadChain)) {
+			int size = tblChain.getRowCount();
+			if (size > 0)
+			{
+				Chain lastChain = (Chain)tblChain.getValueAt(size - 1, COL_CHAIN);
+				if(!lastChain.isComplete()) {
+					JOptionPane.showMessageDialog(this,
+							"The last chain is not yet complete. Classifier is required.", 
+							"Incomplete Chain",
+							JOptionPane.INFORMATION_MESSAGE);
+					return;
+				}
+			}
 			fileChooser.resetChoosableFileFilters();
 			fileChooser.addChoosableFileFilter(new ChainFilter());
 			int returnVal = fileChooser.showOpenDialog(this);
 
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
 				File file = fileChooser.getSelectedFile();
-
+			
 				ChainIO chainLoader = new ChainIO();
 				try {
 					ArrayList<Chain> chainList = chainLoader.load(file);
-					tableModel.removeAll();
+					//tableModel.removeAll();
 					taDetail.setText("");
 					for(Chain chain : chainList) {
 						Object[] rowData = {new Boolean(false), chain.getName(), chain};		//TODO: load and use chain names also
@@ -358,6 +374,73 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 					return;
 				}
 
+				// Check to make sure that there are no same names
+				for (int i = 0; i < size; i++)
+				{
+					for ( int j = 0; j < size; j++)
+					{
+						if (i != j)
+						{	
+							String name1 = (String)tblChain.getValueAt(i, COL_NAME);
+							String name2 = (String)tblChain.getValueAt(j, COL_NAME);
+							if ( name1.equals(name2) )
+							{
+								JOptionPane.showMessageDialog(this,
+										"Two or more chains have the same name, rename them to continue.", 
+										"Conflicting Chains",
+										JOptionPane.INFORMATION_MESSAGE);
+								return;
+							}
+						}
+					}
+				}
+				
+				/*
+				// Check the chains for dimension issues.
+				int dimension = 0;
+				for (int i = 0; i < size; i++)
+				{
+					//Set the dimension of the problem.
+					try {
+						dimension = gui.trainingProblem.getWidth() * gui.trainingProblem.getHeight() * gui.trainingProblem.getStackSize();
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
+					
+					//Get the currently selected extractor and selector
+					boolean extractor = ((Chain)tblChain.getValueAt(i, COL_CHAIN)).hasExtractors();			
+					boolean selector = ((Chain)tblChain.getValueAt(i, COL_CHAIN)).hasSelectors();	
+					
+					// If the dimension is out of bounds and there is no extractor or selector, have a pop up dialogue
+					// for the user.
+					if (!(AlgorithmValidation.isWithinBounds( dimension, DIMUPPERBOUND, extractor, selector)) )
+					{
+						// Prints out the dimension to the console
+						System.out.println("Dimension: " + dimension);
+						
+						String message = "The dimension is too high and might cause a heap space error. \nIt is recomended that you add an extractor or a selector to avoid this. Continue?";
+						
+						// The actual pop up dialog. 
+						int diag_result = JOptionPane.showConfirmDialog(null, message);
+						
+						// If yes, then continue normally.
+						if (diag_result == JOptionPane.YES_OPTION)
+						{
+			            	break;
+						}
+						// If no, don't do anything.
+						else if (diag_result == JOptionPane.NO_OPTION)
+						{
+							return;
+						}
+						// Also don't do anything. 
+						else
+						{
+							return;
+						}
+					}
+				}*/
+				
 				if (thread == null)  {
 					thread = new Thread(this);
 					isRunning = true;
