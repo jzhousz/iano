@@ -79,7 +79,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	private JTable tblChain = null;
 	private JScrollPane scrollPane = null;
 	
-	private static final int DIMUPPERBOUND = 100000;
+	private static final int DIMUPPERBOUND = 600000;
 	
 	private JButton btnNew, btnRemove, 
 	btnSaveChain, btnLoadChain, 
