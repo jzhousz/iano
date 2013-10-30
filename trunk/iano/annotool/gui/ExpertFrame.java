@@ -40,7 +40,7 @@ import annotool.ComboFeatures;
  *
  */
 public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListener, Runnable {
-	private static final int DIMUPPERBOUND = 100000;
+	private static final int DIMUPPERBOUND = 600000;
 	private JTabbedPane tabPane;
 	private JPanel pnlMain,
 				   pnlAlgo,
