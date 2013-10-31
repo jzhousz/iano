@@ -170,6 +170,12 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
     int[] rgbpixelvalue;
     ImageProcessor currentimagep = null; 
     
+    int sum1, sum2;
+    int num1, num2;
+    float meanvLast;
+    int convergeCheck = 0;
+    int iterationCount = 0, iterationCap = 50;
+    
     System.out.println("calculating mean ..");
     //iteratively find the valley of histogram
 	//Adding all pixels
@@ -238,6 +244,7 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
     		break;    
 
    } //End of iteration
+    
    System.out.println("Threshold calculation converged at: " + meanv + " after " + iterationCount + " iterations.");
     
 
