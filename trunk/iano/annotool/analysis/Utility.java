@@ -197,17 +197,17 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 
     meanv = sum / num;
 
-    int numIteration = 20; //set the iteration number here
-    for(int it = 0; it < numIteration; it++) {
-	    float sum1 = 0, sum2 = 0;
-	    int num1 = 0, num2 = 0;
+    //loop until meanv converges
+    while(true){
+	    sum1 = 0; sum2 = 0;
+	    num1 = 0; num2 = 0;
 	
 	    for(int z = 0; z < depth; z++) {
 	    	currentimagep = imp.getStack().getProcessor(z+1);
 	    	for(int y = 0; y < height; y++) {
 	    		for(int x = 0; x < width; x++) {
 	    			
-					if (imageType != DataInput.COLOR_RGB)
+					if(imageType != DataInput.COLOR_RGB)
 					     pixelvalue = currentimagep.get(x,y);
 						else
 						 pixelvalue = (currentimagep.getPixel(x,y, null))[channel];
@@ -224,10 +224,22 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 	    	} //End of y
 	    } //End of z
 	
+	    //store old meanv.
 	    //Adjust new threshold
+	    meanvLast = meanv;
 	    meanv = (int)(0.5 * (sum1/num1 + sum2/num2)); //Is typecasting necessary?
-	    System.out.println("meanv = " + meanv);
+	    iterationCount++;
+	    
+	    //check to end iteration
+	    if(meanv == meanvLast)
+	    	convergeCheck++;  
+	    //run until meanv stays constant for 3 iterations or reaches hard cap
+    	if((convergeCheck >= 2) || (iterationCount >= iterationCap))
+    		break;    
+
    } //End of iteration
+   System.out.println("Threshold calculation converged at: " + meanv + " after " + iterationCount + " iterations.");
+    
 
    System.out.println("dilation ..");
    int max = 0;
