@@ -1,6 +1,6 @@
-10/29/2013
+11/04/2013
 1. Added "tips" button which provides some guidance in multiple comparison mode.
-2. Changed behavior on multiple comarison mode to allow loading of multiple chain files.
+2. Changed behaviour on multiple comparison mode to allow loading of multiple chain files.
 
 9/25/2013
 1. Added ObjectStatistics3D and ObjecStatisticsFast
@@ -38,7 +38,7 @@ Several enhancements on performance and bug fix.
 1. Introduced two new modes for taking input. In addition to the target file mode, now there are ROI mode and directory structure mode.
 2. 3D images are displayed in 3D volume viewer.
 3. Legend dialogue added to ROI annotation.
-4. Summary of classes are added to result report for multilabel annotation.
+4. Summary of classes are added to result report for multi-label annotation.
 
 12/06/2011
 
