@@ -552,10 +552,18 @@ public class Annotator
         {
            if (cpath != null)
            {   
-         	   java.net.URL[] urls = new java.net.URL[1];
+        	   //paths need to be separated using ";"  
+        	   //<Path>ANNClassifier/MLPClassifier.jar;ANNClassifier/</Path>
+        	   String[] urlPaths = cpath.split(";");  
+        	   java.net.URL[] urls = new java.net.URL[urlPaths.length];
+         	   for(int i = 0; i < urlPaths.length; i++)
+         		  urls[i] = new java.net.URL("file:"+urlPaths[i]);
+         	   
+        	   /*java.net.URL[] urls = new java.net.URL[1];
          	   //urls[0] = new java.net.URL("file:E:/IANO/plugins/DummyFeatureExtractor/dummy.jar");
           	   //urls[0] = new java.net.URL("file:plugins/DummyFeatureExtractor/");
         	   urls[0] = new java.net.URL("file:"+cpath);
+        	   */
      	       loader = new java.net.URLClassLoader(urls);
            }
      	   else //if null, use the default loader
