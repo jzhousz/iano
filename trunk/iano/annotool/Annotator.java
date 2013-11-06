@@ -1,6 +1,7 @@
 package annotool;
 
 import javax.swing.SwingUtilities;
+
 import java.util.*;
 
 import annotool.gui.AnnOutputPanel;
@@ -556,8 +557,10 @@ public class Annotator
         	   //<Path>ANNClassifier/MLPClassifier.jar;ANNClassifier/</Path>
         	   String[] urlPaths = cpath.split(";");  
         	   java.net.URL[] urls = new java.net.URL[urlPaths.length];
-         	   for(int i = 0; i < urlPaths.length; i++)
-         		  urls[i] = new java.net.URL("file:"+urlPaths[i]);
+        	   urls[0] = new java.net.URL("file:"+urlPaths[0]); //already has "plugins" added to path in AlgoXMLParser
+         	   for(int i = 1; i < urlPaths.length; i++)
+         		  urls[i] = new java.net.URL("file:"+PluginScanner.PLUGIN_PATH + "/" + urlPaths[i]);
+         	  
          	   
         	   /*java.net.URL[] urls = new java.net.URL[1];
          	   //urls[0] = new java.net.URL("file:E:/IANO/plugins/DummyFeatureExtractor/dummy.jar");
