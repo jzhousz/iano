@@ -6,15 +6,42 @@ import java.util.HashMap;
 import annotool.ImgDimension;
 import annotool.io.DataInput;
 
-//updated 8/13/2012 to handle various image size
+/**
+    This code is part of the BIOCAT platform:
+    http://faculty.cs.niu.edu/~zhou/tool/biocat/
+    Reference for BIOCAT: J. Zhou, S. Lamichhane, G. Sterne, B. Ye, H. C. Peng, "BIOCAT: a Pattern Recognition Platform 
+           for Customizable Biological Image Classification and Annotation", BMC Bioinformatics , 2013, 14:291 
+                        
+    BIOCAT Terms and Conditions:
+
+    The use of this package, in source and binary forms, with or without modification, are permitted provided 
+    that the copyright notice is retained and the use is for academic and research purpose. Neither name of 
+    copyright holders nor the names of its contributors may be used to endorse or promote products derived 
+    from this software without specific prior written permission. You agree to appropriately cite this work 
+    in your related studies and publications. The commercial use of software is not allowed without contacting 
+    the copyright holders (Jie Zhou) to obtain permission. The software is provided by the copyright holders 
+    and contributors "AS IS". In no event shall the copyright owner or contributors be liable for any direct, 
+    indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, 
+    procurement of substitute goods or services; loss of use, data, or profits; reasonable royalties; or 
+    business interruption) however caused and on any theory of liability, whether in contract, strict liability,
+     or tort (including negligence or otherwise) arising in any way out of the use of this software, even if 
+     advised of the possibility of such damage. 
+     
+     
+    This class calculates a set of five 3D image moments that are invariant to size, position and orientation. 
+    Reference: F. A. Sadjadi and E. L. Hall, ‘‘Three-Dimensional Moment Invariants,’’ IEEE Transactions on 
+    Pattern Analysis and Machine Intelligence, vol. PAMI-2, no. 2, pp. 127-136, March 1980.
+
+*/
+
 public class ImageMoments3D implements FeatureExtractor {
 	protected float[][] features = null;
 	int length;
-	int imageType;              //the type of image (defined in DataInput)
+	int imageType;  //the type of image (defined in DataInput)
 	int stackSize;
 	
 	DataInput problem = null;
-	ArrayList all3DData = null;
+	ArrayList all3DData = null; //the generic type of ArrayList is not used because different image types have different data types.
 	
 	ImgDimension dim = new ImgDimension();
 
@@ -40,10 +67,6 @@ public class ImageMoments3D implements FeatureExtractor {
      */
 	public float[][] calcFeatures(DataInput problem) throws Exception {
 
-		//check if the extractor can handle this problem.
-		//if (problem.ofSameSize() == false)
-		//	throw new Exception("The ImageMoments 3D feature extractor has to work with images of same dimension.");
-
 		this.problem = problem;
 		this.length = problem.getLength();
 		
@@ -54,13 +77,8 @@ public class ImageMoments3D implements FeatureExtractor {
 		}
 
 		this.imageType = problem.getImageType();
-
-		//8/8/2012 If ROI, need to get ROI depth instead of image stacksize.
-		if(problem.getMode() == problem.ROIMODE)
-			this.stackSize = problem.getDepth();
-		else
-		    this.stackSize  = problem.getStackSize();
-
+		//getDepth() is preferred over getStackSize(), which takes care both cases of 3D ROI and entire image.
+		this.stackSize = problem.getDepth();
 		features = new float[length][numFeatures];
 		
 		return calcFeatures();
@@ -133,7 +151,7 @@ public class ImageMoments3D implements FeatureExtractor {
 			mean_y = M_010 / M_000;
 			mean_z = M_001 / M_000;
 			
-			//Calcualte central moments
+			//Calculate central moments
 			System.out.println("Calculating central moments...");
 			mu_200 = mu_pqr(currentImage, 2, 0, 0, mean_x, mean_y, mean_z, dim);
 			mu_020 = mu_pqr(currentImage, 0, 2, 0, mean_x, mean_y, mean_z, dim);
