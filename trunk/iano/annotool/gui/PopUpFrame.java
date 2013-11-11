@@ -22,7 +22,6 @@ public class PopUpFrame extends JFrame implements WindowListener {
 	protected DataInput testingProblem = null;
 
 
-
 	public PopUpFrame(String arg0, DataInput trainingProblem, DataInput testingProblem, String channel, boolean channelFlag) {
 		super(arg0);
 		if (channelFlag == false)
@@ -41,6 +40,7 @@ public class PopUpFrame extends JFrame implements WindowListener {
 	public void pullThePlug() {
         WindowEvent wev = new WindowEvent(this, WindowEvent.WINDOW_CLOSING);
         java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
+        System.out.println("Testing cpull the plug method...");
 	}
 
 	public boolean isApplyModelFired() {
@@ -67,18 +67,17 @@ public class PopUpFrame extends JFrame implements WindowListener {
 	@Override
 	public void windowActivated(WindowEvent arg0) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void windowClosed(WindowEvent arg0) {
-		// TODO Auto-generated method stub
-		System.gc();
+		System.out.println("Testing closing method...");
 	}
 
 	@Override
 	public void windowClosing(WindowEvent arg0) {
-		// TODO Auto-generated method stub
+		System.out.println("Testing closed method...");
 	}
 
 	@Override
