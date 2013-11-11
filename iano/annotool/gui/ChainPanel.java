@@ -241,6 +241,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 
 		this.add(pnlMain, BorderLayout.CENTER);
 		this.add(pnlSouth, BorderLayout.SOUTH);
+		
+		
 	}
 
 	public void actionPerformed(ActionEvent ev) {
@@ -540,8 +542,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 										"Stop", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 			
 				if (selection == 0) {
-					System.out.println("Stopping the thread");
-					isRunning = false;
+						stopChains();
 				}
 				else if (selection == 1) {
 					System.out.println("Nothing happens");
@@ -613,6 +614,24 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
             });
 		}
 	}
+	
+	public void stopChains() {
+		if (thread != null)
+		{
+			isRunning = false;
+			// We are using this deprecated method because there is no data shared among the chains.
+			// We never plan on restarting this thread, so it really doesn't have much effect.
+			try 
+			{ 
+				thread.stop();
+			}
+			catch (ThreadDeath td) 
+			{
+				System.out.println("Killing the thread...");
+			}
+		}
+	}
+	
 	private void setButtonState() {
 		if(tableModel.getRowCount() > 0) {
 			btnRemove.setEnabled(true);

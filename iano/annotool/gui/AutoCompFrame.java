@@ -65,6 +65,8 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 	public AutoCompFrame(String arg0, boolean is3D, String channel,  DataInput trainingProblem, DataInput testingProblem, boolean channelFlag) {
 		super(arg0, trainingProblem, testingProblem, channel, channelFlag);
 		
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
 		pnlMain = new JPanel();
 		pnlMain.setLayout(new BoxLayout(pnlMain, BoxLayout.Y_AXIS));
 		pnlMain.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -167,16 +169,20 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 		pnlAlgo.add(pnlExt);
 		pnlAlgo.add(pnlSel);
 		pnlAlgo.add(pnlClass);		
-		
-		
 		pnlMain.add(pnlAlgo);
 		pnlMain.add(pnlOutput);
-	
 			
 		//Build parameter panels for default selection
 		buildExParameterPanel();
 		buildSelParameterPanel();
-		buildClassParameterPanel();		
+		buildClassParameterPanel();
+		
+		this.addWindowListener(new WindowAdapter() {
+	        public void windowClosing(WindowEvent e) {
+	        	System.out.println("Closing...");
+	        	pnlChain.stopChains();
+	        }
+		});
 	}
 	public void actionPerformed(ActionEvent e) {
 		//Add buttons
