@@ -275,6 +275,8 @@ public class MLPClassifier  implements SavableClassifier, Serializable {
 			pro_index++;
 		}
 		
+		pro_index = 0;
+		
 		return rec;
 	
 	}
