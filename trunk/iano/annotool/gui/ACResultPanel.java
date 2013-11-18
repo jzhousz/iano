@@ -84,6 +84,8 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	String channelName = null, mode = null,
 		   imageSet = null, testSet = null;
 	int imgWidth, imgHeight;
+	private float[][] rates;
+	private ArrayList<String> labels;
 	
 	public ACResultPanel(JTabbedPane parentPane, int imgWidth, int imgHeight, String channel, ArrayList<Chain> selectedChains, boolean cFlag) {
 	   	this.parentPane = parentPane;
@@ -198,7 +200,11 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	private void showChart(float[][] rates, ArrayList<String> labels, ArrayList<Chain> selectedChains) {
 		// create the dataset...
         final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-
+        
+        this.rates = rates;
+        this.labels = labels;
+        this.selectedChains = selectedChains;
+        
         for(int i=0; i < rates.length; i++){			//Each chain 
         	for(int j=0; j < rates[i].length; j++) {	//Each label
         		dataset.addValue(100.0*rates[i][j], labels.get(j), selectedChains.get(i).getName());
@@ -346,24 +352,25 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	 * Creates and return table of chain information for the passed in chain
 	 */
 	private PdfPTable createChainTable(Chain chain) throws DocumentException {
-		PdfPTable table = new PdfPTable(3);
+		PdfPTable table = new PdfPTable(4);
 		table.setWidthPercentage(100);
 		table.setSpacingBefore(5);
 		table.setSpacingAfter(5);
 		
 		//First row for chain name
 		PdfPCell titleCell = new PdfPCell(new Phrase("Chain: " + chain.getName(), Styles.FONT_TABLE_TITLE));
-		titleCell.setColspan(3);
+		titleCell.setColspan(4);
 		titleCell.setMinimumHeight(24f);
 		titleCell.setPadding(4);
 		titleCell.setBackgroundColor(Styles.COLOR_TITLE);
 		titleCell.setBorderColor(Styles.COLOR_BORDER);
 		
 		//Second row has three column titles
-		PdfPCell exTitleCell, selTitleCell, classTitleCell;
+		PdfPCell exTitleCell, selTitleCell, classTitleCell, rateTitleCell;
 		exTitleCell = new PdfPCell(new Phrase("Extractor(s)", Styles.FONT_TABLE_TITLE2));
 		selTitleCell = new PdfPCell(new Phrase("Selector(s)", Styles.FONT_TABLE_TITLE2));
 		classTitleCell = new PdfPCell(new Phrase("Classifier", Styles.FONT_TABLE_TITLE2));
+		rateTitleCell = new PdfPCell(new Phrase("Recognition Rate", Styles.FONT_TABLE_TITLE2));
 		exTitleCell.setBorderColor(Styles.COLOR_BORDER);
 		exTitleCell.setPadding(3);
 		exTitleCell.setBackgroundColor(Styles.COLOR_TITLE2);
@@ -373,32 +380,61 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		classTitleCell.setBorderColor(Styles.COLOR_BORDER);
 		classTitleCell.setPadding(3);
 		classTitleCell.setBackgroundColor(Styles.COLOR_TITLE2);
+		rateTitleCell.setBorderColor(Styles.COLOR_BORDER);
+		rateTitleCell.setPadding(3);
+		rateTitleCell.setBackgroundColor(Styles.COLOR_TITLE2);
 		
 		//Lastly, the content for each column
-		PdfPCell exCell, selCell, classCell;
+		PdfPCell exCell, selCell, classCell, rateCell;
 		exCell = new PdfPCell(getExtractorInfo(chain));
 		selCell = new PdfPCell(getSelectorInfo(chain));
 		classCell = new PdfPCell(getClassifierInfo(chain));
+		rateCell = new PdfPCell(getRateInfo(chain));
 		exCell.setBorderColor(Styles.COLOR_BORDER);
 		exCell.setPadding(3);
 		selCell.setBorderColor(Styles.COLOR_BORDER);
 		selCell.setPadding(3);
 		classCell.setBorderColor(Styles.COLOR_BORDER);
 		classCell.setPadding(3);
+		rateCell.setBorderColor(Styles.COLOR_BORDER);
+		rateCell.setPadding(3);
 		
 		//Add title cells to table
 		table.addCell(titleCell);
 		table.addCell(exTitleCell);
 		table.addCell(selTitleCell);
 		table.addCell(classTitleCell);
+		table.addCell(rateTitleCell);
 		
 		//Add content cells
 		table.addCell(exCell);
 		table.addCell(selCell);
-		table.addCell(classCell);		
+		table.addCell(classCell);
+		table.addCell(rateCell);
 		
 		return table;
 	}
+	
+	/*
+	 *  Creates and returns the paragraph of recognition rate info
+	 */
+	private Paragraph getRateInfo(Chain chain) {
+		Paragraph info = new Paragraph();
+		
+		for (int i = 0; i < rates.length; i++) {
+			for (int j = 0; j < rates[i].length; j++){
+				if (selectedChains.get(i).getName().equals(chain.getName())) {
+					double rate = (100.0*rates[i][j]);
+					String rate_str = String.valueOf(rate);
+					info.add(rate_str);
+					break;
+				}
+			}
+		}
+		
+		return info;
+	}
+	
 	/*
 	 * Creates and returns the paragraph of extractor info for passed in chain
 	 */
@@ -478,6 +514,18 @@ public class ACResultPanel extends JPanel implements ActionListener{
 					taChainDetail.setText(taChainDetail.getText() + parameter + "=" +chain.getClassParams().get(parameter) + "\n");
 		    	}
 			}
+			for (int i = 0; i < rates.length; i++) {
+				for (int j = 0; j < rates[i].length; j++){
+					if (selectedChains.get(i).getName().equals(chain.getName())) {
+						double rate = (100.0*rates[i][j]);
+						String rate_str = String.valueOf(rate);
+						taChainDetail.setText(taChainDetail.getText() + "\nRecognition Rate: ");
+						taChainDetail.setText(taChainDetail.getText() + rate_str + "\n");
+						break;
+					}
+				}
+			}
+			
 			taChainDetail.setText(taChainDetail.getText() + "\n\n\n");
 		}
 	}
