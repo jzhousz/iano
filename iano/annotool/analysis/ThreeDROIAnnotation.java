@@ -189,16 +189,20 @@ public class ThreeDROIAnnotation {
 			System.out.println();
 		}
 
-		//classifier = new SVMClassifier((2 * rz + 1) * (2 * ry + 1) * (2 * rx + 1));
+		/*
+		 * a variety of classifiers to use, 
+		 * for Weka classifiers, wrapper class invoked, and specific classifier 
+		 * indicated by a parameter.
+		 */
+		classifier = new SVMClassifier((2 * rz + 1) * (2 * ry + 1) * (2 * rx + 1));
 		//classifier = new MLPClassifier();
 		
 		//set the type of the weka classifier.
-		HashMap<String,String> params = new HashMap<String, String>();
-		params.put("W_RandomForest", "W_RandomForest");
+		//HashMap<String,String> params = new HashMap<String, String>();
+		//params.put("W_RandomForest", "W_RandomForest");
 	
-		classifier = new WekaClassifiers();
-		classifier.setParameters(params);
-		//System.out.println("m_Classifier = " + (String)classifier.getModel());
+		//classifier = new WekaClassifiers();
+		//classifier.setParameters(params);
 		
 		try {
 			classifier.trainingOnly(extractedFea, target);
@@ -395,14 +399,14 @@ public class ThreeDROIAnnotation {
 			BufferedWriter marker = new BufferedWriter(new FileWriter(file));
 			
 		    //write each to file
-			int i=1;
 			System.out.println("Vaa3D file output format:");
 			System.out.println("x,y,z,radius,shape,name,comment,color_r,color_g,color_b");//v3d marker .csv format
-		    for(Point3D p : detectedCenters)
+			int i=1;
+			for(Point3D p : detectedCenters)
 			{
 		    	int tmpy=totalheight-p.y;
-				System.out.println((p.x+1) + ", " + tmpy + ", " + (p.z+1) + ", 0,1,detected center " + i + ",no comment,255,50,25"); //echo to console
-				marker.write((p.x+1) + ", " + tmpy + ", " + (p.z+1) + ", 0,1,detected center " + i + ",no comment,255,50,25");
+				System.out.println((p.x+1) + ", " + tmpy + ", " + (p.z+1) + ", 0,1,detected center " + i + "," + fmat.format(date) + ",255,50,25"); //echo to console
+				marker.write((p.x+1) + ", " + tmpy + ", " + (p.z+1) + ", 0,1,detected center " + i + "," + fmat.format(date) + ",255,50,25");
 				marker.newLine();
 				i++;
 	
