@@ -6,12 +6,16 @@ import ij.plugin.frame.RoiManager;
 import ij.process.*;
 
 import java.awt.Color;
+import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 
 import annotool.Annotation;
 import annotool.extract.*;
 import annotool.classify.*;
+import annotool.classify.MLP.MLPClassifier;
 import annotool.io.DataInput;
 
 /*
@@ -31,17 +35,33 @@ import annotool.io.DataInput;
  //the extractor, I need to change the imageType correspondingly.
  //Is there another way to do it?
  */
+
+/*
+ * CHANGE LOG Jon Sanders
+ * 11/03/13 - provide utility for output to file for object quantification
+ *            to facilitate better detected.marker generation.
+ * 11/04/13 - file writing for v3D file type.
+ *          - file saving for generated local maxima image as .tif
+ * 11/10/13 - fix missing else in test3DRoi, either use isRaw settings or not, not both.
+ * 11/15/13 - rework get3DFeaturesViaHaar into a more general name, get3DFeaViaExtrator,
+ *            and able to call other FEs.
+ * 11/18/13 - adjust logic in test3droi to ignore edge pixels.
+ * 11/20/13 - adjust logic in train3droi to ignore edge pixels.
+ *          - switch classifier type to weka W_RandomForest.
+ */
+
 public class ThreeDROIAnnotation {
 
 	static SavableClassifier classifier = null;
-	static boolean useRaw = true;
+	static boolean useRaw = false;
 
-	// anisotropic microsopic image cube: 9*9*3
+	// anisotropic microscopic image cube: 9*9*3
 	static int rx = 4, ry = 4;
 	static int rz = 1;
 	//
 	//int positiveIndex = 17; //for cd7  17/11
 	static int positiveIndex =7;  //for axon synapse   7/6
+	
 
 	// will be called by ROITagger "train3droi button"
 	public static SavableClassifier train3droi(ImagePlus imp) {
@@ -57,6 +77,8 @@ public class ThreeDROIAnnotation {
 		int totalheight = ip.getHeight();
 		int totaldepth = imp.getStackSize();
 		int imageType = imp.getType();
+		
+		//System.out.println("image type: " + imageType);//debug
 
 		if (imageType == DataInput.COLOR_RGB) {
 			System.out.println("Only grayscale supported");
@@ -85,27 +107,41 @@ public class ThreeDROIAnnotation {
 
 			// data for one ROI
 			ArrayList imageStacks = new ArrayList(2 * rz + 1);
+			boolean cubeComplete = true;//true if we can get complete cube data, (i.e. false if the pixel is too close to boundary)
 			for (int zi = cz - rz; zi <= cz + rz; zi++) {
-				if (zi < 0 || zi >= totaldepth)
-					continue; // check bound
+				if (zi < 0 || zi >= totaldepth) {//check z bound
+					cubeComplete = false;
+					break; //stop getting data for this whole slice
+				}
+				if (!cubeComplete){ //xi or yi out of bounds
+					break;
+				}
 				// get current stack, stack starts from 1.
 				ImageProcessor currentip = imp.getStack().getProcessor(zi + 1);
 				float[] oneframe = new float[(2 * rx + 1) * (2 * ry + 1)];
 				int indexsmall = 0;
-				for (int xi = cx - rx; xi <= cx + rx; xi++)
+				for (int xi = cx - rx; xi <= cx + rx; xi++) {
+					if(!cubeComplete) break;//break from xi
 					for (int yi = cy - ry; yi <= cy + ry; yi++) {
-						indexsmall = (yi - (cy - ry)) * (2 * rx + 1)
-								+ (xi - (cx - rx));
-						if (checkBound(xi, yi, zi, totalwidth, totalheight,
-								totaldepth)) {
-							oneframe[indexsmall] = (float) currentip.getPixel(
-									xi, yi);
-							System.out.print(oneframe[indexsmall] + " ");
-						} else
-							oneframe[indexsmall] = 0; // fill 0?
-					}
+						if (!checkBound(xi, yi, zi, totalwidth, totalheight,totaldepth )) {
+							cubeComplete = false;
+							break;//break one layer of yi
+						} else {
+							indexsmall = (yi - (cy - ry)) * (2 * rx + 1) + (xi - (cx - rx));
+							if (checkBound(xi, yi, zi, totalwidth, totalheight,totaldepth)) {
+								oneframe[indexsmall] = (float) currentip.getPixel(xi, yi);
+								System.out.print(oneframe[indexsmall] + " ");
+							} else {
+								oneframe[indexsmall] = 0; // fill 0?
+							}
+						}
+					}//end yi				
+				}//end xi
 				imageStacks.add(oneframe);
 			}// end of zi
+			
+			if(!cubeComplete) continue;//ignore this pixel and the cube around it if near bound.
+			
 			System.out.println();
 			alldata.add(imageStacks);
 		}// end of roi list
@@ -127,7 +163,15 @@ public class ThreeDROIAnnotation {
 				}
 			}
 		} else {
-			extractedFea = get3DFeaViaHaar(alldata);
+			extractedFea = get3DFeaViaExtrator(alldata,  imageType);
+			
+		    System.out.println("Extracted features:");
+		    for(int i=0; i<(alldata.size()); i++ ) { //debug
+		      System.out.println("");
+		      for(int j=0; j<(2 * rx + 1); j++){
+		    	  System.out.print(extractedFea[i][j] + ", ");
+		      }
+		    }
 		}
 
 		// set up training targets
@@ -145,8 +189,17 @@ public class ThreeDROIAnnotation {
 			System.out.println();
 		}
 
-		classifier = new SVMClassifier((2 * rz + 1) * (2 * ry + 1)
-				* (2 * rx + 1));
+		//classifier = new SVMClassifier((2 * rz + 1) * (2 * ry + 1) * (2 * rx + 1));
+		//classifier = new MLPClassifier();
+		
+		//set the type of the weka classifier.
+		HashMap<String,String> params = new HashMap<String, String>();
+		params.put("W_RandomForest", "W_RandomForest");
+	
+		classifier = new WekaClassifiers();
+		classifier.setParameters(params);
+		//System.out.println("m_Classifier = " + (String)classifier.getModel());
+		
 		try {
 			classifier.trainingOnly(extractedFea, target);
 		} catch (Exception e) {
@@ -177,6 +230,8 @@ public class ThreeDROIAnnotation {
 		int totalheight = ip.getHeight();
 		int totaldepth = imp.getStackSize();
 		int imageType = imp.getType();
+		
+		//if incorrect image type
 		if (imageType != DataInput.GRAY8) {
 			System.out.println("Only grayscale 8 supported");
 			return;
@@ -184,7 +239,7 @@ public class ThreeDROIAnnotation {
 
 		/*// flatten into an array for local maximum detection
 		// not necessary if pass imp to local_maximum method. 
-		// Will rewrite utiliy later using getPixel
+		// Will rewrite utility later using getPixel
 		// note the order of data storage.
 		System.out.println("flattening ... will remove later");
 		float[] data = new float[totalwidth * totalheight * totaldepth];
@@ -199,7 +254,8 @@ public class ThreeDROIAnnotation {
 		boolean[] isMaxima = Utility.getLocalMaxima(data, totalwidth,
 				totalheight, totaldepth, 3, 3, 2);
 		*/
-		// use a window of 3*3*2 to get local maxim
+		
+		// use a window of 3*3*2 (radius, 7*7*5 actual) to get local maxim
 		System.out.println("get localmaxima");
 		boolean[] isMaxima = Utility.getLocalMaxima(imp, 0, 3, 3, 2); //2nd arg is channel
 		draw(isMaxima, imp, totaldepth, totalheight, totalwidth);
@@ -212,20 +268,30 @@ public class ThreeDROIAnnotation {
 		double[] prob = new double[2]; // actually only need 1 spot
 		int index = 0;
 		int indexForCube = 0; // used for the cube
-		// storage for haar extraction
+		// storage for extraction
 		ArrayList imageStacks = new ArrayList(2 * rz + 1);
 		float[] oneframe = new float[(2 * rx + 1) * (2 * ry + 1)];
 		int indexsmall = 0;
+		boolean cubeComplete = true; //indicates if we can get complete cube data (i.e. the pixel is not too close to boundary)
+		//System.out.println("getting cube around each feature..."); //debug
 		for (int cz = 0; cz < totaldepth; cz++) {
 			for (int cy = 0; cy < totalheight; cy++) {
 				for (int cx = 0; cx < totalwidth; cx++) {
 					if (isMaxima[index++]) {
+						cubeComplete = true;
 						// get the cube round it, order needs to be the same as training
 						indexForCube = 0;
 						if (!useRaw)	imageStacks.clear();
 						for (int zi = cz - rz; zi <= cz + rz; zi++) {
-							if (zi < 0 || zi >= totaldepth)
-								continue; // check bound
+							if (zi < 0 || zi >= totaldepth) // check bound on z
+							{
+								cubeComplete = false;
+								break; //stop getting more data for this cube for the slice. Ignore the pixels that are too close to z-boundary
+							}
+							if (!cubeComplete) //due to xi or yi being out of boundary
+							{ 
+								break;  //break out of xi
+							}
 							// get current stack, stack starts from 1.
 							ImageProcessor currentip = imp.getStack()
 									.getProcessor(zi + 1);
@@ -233,23 +299,32 @@ public class ThreeDROIAnnotation {
 								indexsmall = 0;
 							for (int xi = cx - rx; xi <= cx + rx; xi++)
 							{
-								for (int yi = cy - ry; yi <= cy + ry; yi++) 
+								if (!cubeComplete) 
+								{ 
+									break;  //break out of xi
+								}
+								for (int yi = cy - ry; yi < cy + ry; yi++) 
 								{
-									if (checkBound(xi, yi, zi, totalwidth, totalheight,
-											totaldepth))
+									if (!checkBound(xi, yi, zi, totalwidth, totalheight,totaldepth))
+									{
+										cubeComplete = false;
+										break; //one layer break out of yi.
+									}
+									else
 									{	
 									   if (!useRaw)
 									   {
 										indexsmall = (yi - (cy - ry))
 												* (2 * rx + 1)
 												+ (xi - (cx - rx));
-										oneframe[indexsmall] = (float) currentip
-													.getPixel(xi, yi);
+										oneframe[indexsmall] = (float) currentip.getPixel(xi, yi);
 									   }
-									   fea[indexForCube] = (float) currentip
-												.getPixel(xi, yi);
-									   //System.out.print(fea[indexForCube] + " ");
+									   else {
+										   fea[indexForCube] = (float) currentip.getPixel(xi, yi);
+									  
+									   //System.out.print(fea[indexForCube] + " ");//debug
 									   indexForCube++;
+									   }
 									}
 								} //end yi
 							} //end xi
@@ -257,13 +332,25 @@ public class ThreeDROIAnnotation {
 							  imageStacks.add(oneframe);
 						   }
 						}// end of zi
+						
+						if (!cubeComplete)
+						{
+							continue;   //ignore this pixel (and the cube around it) if it is too close to the boundary
+						}
+						
+						//now do extraction (if not using raw data) and classification on the cube	
 						if(!useRaw)
 						{
 						  // pass in an arraylist of an arraylist of an array
 						  ArrayList list = new ArrayList();
 						  list.add(imageStacks);
-						  float[][] fea3D = get3DFeaViaHaar(list);
+						  float[][] fea3D = get3DFeaViaExtrator(list,  imageType);
 						  fea = fea3D[0];
+						  
+						  System.out.println("Extracted features:"); //debug
+						  for(int i=0; i<fea.length; i++ ) { //debug
+							  System.out.print(fea[i] + ", ");
+						  }
 						}
 						try {
 							int result = classifier.classifyUsingModel(
@@ -295,18 +382,67 @@ public class ThreeDROIAnnotation {
 		System.out.println("total detected positive:"+total);
 		System.out.println("total detected positive after mean-shifting:"+detectedCenters.size());
 		
+		
+		//for file saving and naming convention
+		Date date = new Date();
+		SimpleDateFormat fmat =new SimpleDateFormat("_MM_dd_yyyy_hhmmss" );
+		
 		// output result to a file as  V3D marker file
-		for(Point3D p : detectedCenters)
-		{
-			int tmpy=totalheight-p.y;
-			System.out.println((p.x+1) + ", " + tmpy + ", " + (p.z+1) + ", 0,1,unknow,,,,");
-		}
-
+		try{
+			
+			String v3DFileName = new String("V3D_detected" + fmat.format(date) + ".marker");
+			File file = new File(v3DFileName);
+			BufferedWriter marker = new BufferedWriter(new FileWriter(file));
+			
+		    //write each to file
+			int i=1;
+			System.out.println("Vaa3D file output format:");
+			System.out.println("x,y,z,radius,shape,name,comment,color_r,color_g,color_b");//v3d marker .csv format
+		    for(Point3D p : detectedCenters)
+			{
+		    	int tmpy=totalheight-p.y;
+				System.out.println((p.x+1) + ", " + tmpy + ", " + (p.z+1) + ", 0,1,detected center " + i + ",no comment,255,50,25"); //echo to console
+				marker.write((p.x+1) + ", " + tmpy + ", " + (p.z+1) + ", 0,1,detected center " + i + ",no comment,255,50,25");
+				marker.newLine();
+				i++;
+	
+			}
+		    
+		    System.out.println("written to file: " + v3DFileName);
+		    
+			marker.close();
+			
+		} catch(IOException e){
+			System.out.println("error writing to file.");
+		  	
+		} 
+        		
 		//output result to a file as input for object quantification. No change to coordinate is needed.
-		for(Point3D p : detectedCenters)
-		{
-			System.out.println(p.x + " " + p.y + " " + p.z);
-		}
+		try{
+			String markerFileName = new String("detected" + fmat.format(date) + ".marker");
+			File file = new File(markerFileName);
+			BufferedWriter marker = new BufferedWriter(new FileWriter(file));
+			
+		    //write each to file
+			System.out.println("general marker file output format:");
+			System.out.println("x,y,z,");//.marker csv format
+		    for(Point3D p : detectedCenters)
+			{
+				System.out.println(p.x + " " + p.y + " " + p.z); //echo to console
+				marker.write(p.x + " " + p.y + " " + p.z);
+				marker.newLine();
+	
+			}
+		    
+		    System.out.println("written to file: " + markerFileName);
+		    
+			marker.close();
+			
+		} catch(IOException e){
+			System.out.println("error writing to file.");
+		  	
+		} 
+		
 	}
 	
 	
@@ -382,14 +518,18 @@ public class ThreeDROIAnnotation {
 	public static boolean searchForIt(java.util.HashSet<Point3D> detectedCenters, Point3D input)
 	{
 	  for(Point3D p : detectedCenters)
-		if (p.equals(input)) return true;
+		//if (p.equals(input)) return true;
+		  if (p.closesTo(input, rx, ry, rz)) return true;
 	  return false;
 	}
 
 	
-	public static float[][] get3DFeaViaHaar(ArrayList alldata) {
+	public static float[][] get3DFeaViaExtrator(ArrayList alldata,  int imageType) {
 		float[][] extractedFea = null;
-		StackSimpleHaarFeatureExtractor ex = new StackSimpleHaarFeatureExtractor();
+		//StackSimpleHaarFeatureExtractor ex = new StackSimpleHaarFeatureExtractor();
+		//ImageMoments3D ex = new ImageMoments3D();
+		FeatureJEdges3D ex = new FeatureJEdges3D();
+		
 		// override default if needed.
 		// HashMap<String, String> parameter = new HashMap<String, String>();
 		// parameter.put(..,..); //ex.setParameter(parameter);
@@ -397,12 +537,17 @@ public class ThreeDROIAnnotation {
 		dim.height = 2 * ry + 1;
 		dim.width = 2 * rx + 1;
 		dim.depth = 2 * rz + 1;
+		
 		try {
 			// trick the HaarFeatureExtractor to take float
 			// this is a bit weird. because calFeatures usually takes raw data
 			// Object
-			int imageType = DataInput.GRAY32;
-			extractedFea = ex.calcFeatures(alldata, imageType, dim);
+			int changedImageType = DataInput.GRAY32;
+			extractedFea = ex.calcFeatures(alldata, changedImageType, dim);
+			
+			//extractedFea = ex.calcFeatures(alldata, imageType, dim);
+			
+			
 		} catch (Exception e) {
 			e.getStackTrace();
 		}
@@ -468,11 +613,21 @@ public class ThreeDROIAnnotation {
         			  ip.fillOval(x - 1, y - 1, 2, 2);
                     //    ip.setValue(col);
                     //    ip.drawPixel(x, y);
+        			 
                     }
                 }
             }
         }
     centers.show();
+    
+	//for file saving and naming convention
+	Date date = new Date();
+	SimpleDateFormat fmat =new SimpleDateFormat("_MM_dd_yyyy_hhmmss" );
+    
+    //save local maxima image fior inspection.
+    System.out.println("saving local maxima image...");
+    String imgFileName = new String("local_maxima" + fmat.format(date) +".tiff" );
+    IJ.save(centers, imgFileName);
     
   }
 	
