@@ -148,87 +148,79 @@ public class FeatureJStatistics3D implements FeatureExtractor {
 		
 		ImagePlus combinedImage = null;
 		Image img = null;
-        ImageStack stack;
+        
 		Statistics stats = new Statistics();
 
 		int currentHeight = 0, currentWidth = 0;
 		int stackSize;
-		
+		ImageStack stack;
+        
+        ArrayList currentImage = null;
 		for(int imageIndex = 0; imageIndex < length; imageIndex++) {
 		
-			System.out.println("Processing image number " + (imageIndex + 1));
 			currentWidth = this.width;
 			currentHeight = this.height;
 			
-			if (problem !=null)
-			{
-				if (!problem.ofSameSize()) 
-				{
-				currentWidth = problem.getWidthList()[imageIndex];
-				currentHeight = problem.getHeightList()[imageIndex];
-				  
+			if (problem !=null){
+				if (!problem.ofSameSize()) {
+				  throw new Exception("3D edge features requires the images to be of the same size");
 				}
-				
-				if(problem.getMode() == problem.ROIMODE)
-					stackSize = problem.getDepth();
-				else
-				    stackSize = problem.getStackSize();
-				
-				stack = new ImageStack(this.width, this.height);
+			}
+			else if (data !=null){
+				 currentImage = (ArrayList) data.get(imageIndex);
+			}
+	
+			stack = new ImageStack(this.width, this.height);
+    		stackSize = this.depth;
                 
-                //for each slice of a 3D image
-                for(int imageSlice = 1; imageSlice <= stackSize; imageSlice++)
-                {
-                    ImageProcessor ip = null;
-				
-                    if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
-                        if (data != null)
-                            ip = new ByteProcessor(currentWidth, currentHeight, (byte[])data.get(imageIndex), null);
-                        else 
-                        {
-                            ip = new ByteProcessor(currentWidth, currentHeight, (byte[])problem.getData(imageIndex, imageSlice), null);
-                        }
-                    }
-                    else if(imageType == DataInput.GRAY16) {
-                        if (data != null)
-                            ip = new ShortProcessor(currentWidth, currentHeight, (short[])data.get(imageIndex), null);
-                        else
-                            ip = new ShortProcessor(currentWidth, currentHeight, (short[])problem.getData(imageIndex, imageSlice), null);
-                    }   
-                    else if(imageType == DataInput.GRAY32) {
-                        if (data != null)
-                            ip = new FloatProcessor(currentWidth, currentHeight, (float[])data.get(imageIndex), null);
-                        else
-                            ip = new FloatProcessor(currentWidth, currentHeight, (float[])problem.getData(imageIndex, imageSlice), null);
-                    }
-                    else {
-                        throw new Exception("Unsupported image type");
-                    }
-
-                    stack.addSlice("", ip);
-                    
+            //for each slice of a 3D image
+            for(int imageSlice = 1; imageSlice <= stackSize; imageSlice++)
+            {
+                ImageProcessor ip = null;
+            
+                if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
+                    if (data != null)
+                        ip = new ByteProcessor(currentWidth, currentHeight, (byte[])currentImage.get(imageSlice-1), null);
+                    else 
+                        ip = new ByteProcessor(currentWidth, currentHeight, (byte[])problem.getData(imageIndex, imageSlice), null);
+                }
+                else if(imageType == DataInput.GRAY16) {
+                    if (data != null)
+                        ip = new ShortProcessor(currentWidth, currentHeight, (short[])currentImage.get(imageSlice-1), null);
+                    else
+                        ip = new ShortProcessor(currentWidth, currentHeight, (short[])problem.getData(imageIndex, imageSlice), null);
+                }   
+                else if(imageType == DataInput.GRAY32) {
+                    if (data != null)
+                        ip = new FloatProcessor(currentWidth, currentHeight, (float[])currentImage.get(imageSlice-1), null);
+                    else
+                        ip = new FloatProcessor(currentWidth, currentHeight, (float[])problem.getData(imageIndex, imageSlice), null);
+                }
+                else {
+                    throw new Exception("Unsupported image type");
                 }
 
-                combinedImage = new ImagePlus("Combined", stack);
-                
-                img = Image.wrap(combinedImage);
-			
-                stats.run(img);
-                
-                //For testing purposes
-                //img.imageplus().show();
-                
-                System.out.println("Features for image: " + (imageIndex + 1));        	
-        	
-                for(int i=0, j=0; i < numFeatures; i++) {
-                    if(isSelectedFeature[i]) {
-                        features[imageIndex][j] = (float)stats.get(statKeys[i]);
-                        
-                        System.out.println(KEYS[i] + ": " + features[imageIndex][j]);        			
-                        j++;
-                    }
+                stack.addSlice("", ip);
+            }//end of slice
+
+            combinedImage = new ImagePlus("Combined", stack);
+            
+            img = Image.wrap(combinedImage);
+        
+            stats.run(img);
+            
+            //For testing purposes
+            //img.imageplus().show();   	
+        
+            for(int i=0, j=0; i < numFeatures; i++) {
+                if(isSelectedFeature[i]) {
+                    features[imageIndex][j] = (float)stats.get(statKeys[i]);
+                    
+                    System.out.println(KEYS[i] + ": " + features[imageIndex][j]);        			
+                    j++;
                 }
             }
+            
         }
 		
 		return features;
