@@ -4,6 +4,20 @@ import ij.ImagePlus;
 import ij.process.ImageProcessor;
 import annotool.io.DataInput;
 
+/*
+ * 
+ //This class contains the utilities needed for ThreeDROIAnnotation.java
+ //including boundry checking and local maxima detection 
+ */
+
+
+/*
+ * CHANGE LOG Jon Sanders
+ * 10/31/13 - updated meanv calculation for more dynamic thresholding.
+ * 
+ * 11/04/13 - fix bugs in meanv calculation: incorrect converge and rounding error.
+ * 
+ */
 public class Utility {
 	/**
 	 * Returns true if the given point is within the rectangular area, otherwise false
@@ -170,7 +184,7 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
     int[] rgbpixelvalue;
     ImageProcessor currentimagep = null; 
     
-    int sum1, sum2;
+    float sum1, sum2;
     int num1, num2;
     float meanvLast;
     int convergeCheck = 0;
@@ -236,15 +250,17 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 	    meanv = (int)(0.5 * (sum1/num1 + sum2/num2)); //Is typecasting necessary?
 	    iterationCount++;
 	    
+	    System.out.println("meanv: " + meanv);
 	    //check to end iteration
 	    if(meanv == meanvLast)
 	    	convergeCheck++;  
+	    else
+	    	convergeCheck = 0;
+	    
 	    //run until meanv stays constant for 3 iterations or reaches hard cap
     	if((convergeCheck >= 2) || (iterationCount >= iterationCap))
     		break;    
-
    } //End of iteration
-    
    System.out.println("Threshold calculation converged at: " + meanv + " after " + iterationCount + " iterations.");
     
 
@@ -254,6 +270,7 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 
    index =0;
    for(int z = 0; z < depth; z++) {
+	System.out.println("processing slice: " + (z+1));   
 	for(int y = 0; y < height; y++) {
 		for(int x = 0; x < width; x++) {
 			max = 0;
