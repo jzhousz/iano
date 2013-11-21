@@ -112,36 +112,33 @@ public class FeatureJEdges3D implements FeatureExtractor {
         ImageStack stack;
 		
         //iterate through each image
+		ArrayList currentImage = null;
 		for(int imageIndex = 0; imageIndex < length; imageIndex++) {
 		
 			System.out.println("Processing image number " + (imageIndex + 1));
 			currentWidth = this.width;
 			currentHeight = this.height;
 			
-			if (problem !=null)
-			{
-				if (!problem.ofSameSize()) 
-				{
-				currentWidth = problem.getWidthList()[imageIndex];
-				currentHeight = problem.getHeightList()[imageIndex];
-				  
+			if (problem !=null){
+				if (!problem.ofSameSize()) {
+				  throw new Exception("3D edge features requires the images to be of the same size");
 				}
-				
-				if(problem.getMode() == problem.ROIMODE)
-					stackSize = problem.getDepth();
-				else
-				    stackSize  = problem.getStackSize();
-				
-				stack = new ImageStack(this.width, this.height);
-                
-                //for each slice of a 3D image
-                for(int imageSlice = 1; imageSlice <= stackSize; imageSlice++)
-                {
+			}
+			else if (data !=null){
+				 currentImage = (ArrayList) data.get(imageIndex);
+			}
+	
+			stack = new ImageStack(this.width, this.height);
+    		stackSize = this.depth;
+			
+            //for each slice of a 3D image
+            for(int imageSlice = 1; imageSlice <= stackSize; imageSlice++)
+            {
                     ImageProcessor ip = null;
 				
                     if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
                         if (data != null)
-                            ip = new ByteProcessor(currentWidth, currentHeight, (byte[])data.get(imageIndex), null);
+                            ip = new ByteProcessor(currentWidth, currentHeight, (byte[])currentImage.get(imageSlice-1), null);
                         else 
                         {
                             ip = new ByteProcessor(currentWidth, currentHeight, (byte[])problem.getData(imageIndex, imageSlice), null);
@@ -149,14 +146,14 @@ public class FeatureJEdges3D implements FeatureExtractor {
                     }
                     else if(imageType == DataInput.GRAY16) {
                         if (data != null)
-                            ip = new ShortProcessor(currentWidth, currentHeight, (short[])data.get(imageIndex), null);
+                            ip = new ShortProcessor(currentWidth, currentHeight, (short[])currentImage.get(imageSlice-1), null);
                         else
                             ip = new ShortProcessor(currentWidth, currentHeight, (short[])problem.getData(imageIndex, imageSlice), null);
                     }   
                     else if(imageType == DataInput.GRAY32) {
-                        if (data != null)
-                            ip = new FloatProcessor(currentWidth, currentHeight, (float[])data.get(imageIndex), null);
-                        else
+                        if (data != null){
+                            ip = new FloatProcessor(currentWidth, currentHeight, (float[])currentImage.get(imageSlice-1), null);
+                        }else
                             ip = new FloatProcessor(currentWidth, currentHeight, (float[])problem.getData(imageIndex, imageSlice), null);
                     }
                     else {
@@ -164,7 +161,7 @@ public class FeatureJEdges3D implements FeatureExtractor {
                     }
 
                     stack.addSlice("", ip);
-                }
+                }//end of slice
 	
                 combinedImage = new ImagePlus("Combined", stack);
                 
@@ -188,7 +185,7 @@ public class FeatureJEdges3D implements FeatureExtractor {
                 }
 
             }
-		}
+		
 		return features;
 	}
 
