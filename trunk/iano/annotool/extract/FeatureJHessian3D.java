@@ -17,26 +17,18 @@ import java.util.HashMap;
 import annotool.ImgDimension;
 import annotool.io.DataInput;
 
-/**
- *  This class wraps a FeatureJ extractor:
- * 
- *  http://www.imagescience.org/meijering/software/featurej/
- *
- */
+
 public class FeatureJHessian3D implements FeatureExtractor {
 	protected float[][] features = null;
 	protected ArrayList data = null;
 	protected DataInput problem = null;
-	int length;
-	int width;
-	int height;
-    int depth;
+	int length, width, height, depth;
 	int imageType;
-	
+	double scale = 1.0;
+        
 	public final static int LARGESTEIGEN = 0;
 	public final static int SMALLESTEIGEN = 1;
-	
-	double sscale = 1.0;
+
 	int selectedEigenValue = LARGESTEIGEN;
 	boolean absolute = true;
 	
@@ -55,7 +47,7 @@ public class FeatureJHessian3D implements FeatureExtractor {
 	public void setParameters(HashMap<String, String> para) {
 		if (para != null) {
 		    if(para.containsKey(SMOOTHING_KEY)) 
-		    	sscale = Double.parseDouble(para.get(SMOOTHING_KEY));
+		    	scale = Double.parseDouble(para.get(SMOOTHING_KEY));
 		    
 		    if(para.containsKey(EIGENVALUE_KEY)) {
 		    	if(para.get(EIGENVALUE_KEY).equals("Largest"))
@@ -80,10 +72,13 @@ public class FeatureJHessian3D implements FeatureExtractor {
 	public float[][] calcFeatures(DataInput problem) throws Exception {
 		
 		this.problem = problem;
+        
 		this.length = problem.getLength();
+        
 		this.width = problem.getWidth();
 		this.height = problem.getHeight();
         this.depth = problem.getDepth();
+        
 		this.imageType = problem.getImageType();
 		
 		return calcFeatures();
@@ -103,9 +98,11 @@ public class FeatureJHessian3D implements FeatureExtractor {
 			ImgDimension dim) throws Exception {
 		this.data = data;
 		this.length = data.size();
+        
 		this.width = dim.width;
 		this.height = dim.height;
         this.depth = dim.depth;
+        
 		this.imageType = imageType;
 		
 		return calcFeatures();
@@ -116,8 +113,7 @@ public class FeatureJHessian3D implements FeatureExtractor {
 
 		Image img = null;
         ImagePlus combinedImage;
-        ImageStack stack;
-		
+        
 		Hessian hessian = new Hessian();
 		Coordinates startCO = new Coordinates(0, 0, 0);
 		
@@ -125,86 +121,78 @@ public class FeatureJHessian3D implements FeatureExtractor {
 
 		int currentHeight = 0, currentWidth = 0;
 		int stackSize;
+        ImageStack stack;
 		
+        ArrayList currentImage = null;
 		for(int imageIndex = 0; imageIndex < length; imageIndex++) {
 		
-			System.out.println("Processing image number " + (imageIndex + 1));
 			currentWidth = this.width;
 			currentHeight = this.height;
 			
-			if (problem !=null)
-			{
-				if (!problem.ofSameSize()) 
-				{
-				currentWidth = problem.getWidthList()[imageIndex];
-				currentHeight = problem.getHeightList()[imageIndex];
-				  
+			if (problem !=null){
+				if (!problem.ofSameSize()) {
+				  throw new Exception("3D edge features requires the images to be of the same size");
 				}
-				
-				if(problem.getMode() == problem.ROIMODE)
-					stackSize = problem.getDepth();
-				else
-				    stackSize = problem.getStackSize();
-				
-                stack = new ImageStack(this.width, this.height);
+			}
+			else if (data !=null){
+				 currentImage = (ArrayList) data.get(imageIndex);
+			}
+	
+			stack = new ImageStack(this.width, this.height);
+    		stackSize = this.depth;
                 
-                //for each slice of a 3D image
-                for(int imageSlice = 1; imageSlice <= stackSize; imageSlice++)
-                {
-                    ImageProcessor ip = null;
-				
-                    if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
-                        if (data != null)
-                            ip = new ByteProcessor(currentWidth, currentHeight, (byte[])data.get(imageIndex), null);
-                        else 
-                        {
-                            ip = new ByteProcessor(currentWidth, currentHeight, (byte[])problem.getData(imageIndex, imageSlice), null);
-                        }
-                    }
-                    else if(imageType == DataInput.GRAY16) {
-                        if (data != null)
-                            ip = new ShortProcessor(currentWidth, currentHeight, (short[])data.get(imageIndex), null);
-                        else
-                            ip = new ShortProcessor(currentWidth, currentHeight, (short[])problem.getData(imageIndex, imageSlice), null);
-                    }   
-                    else if(imageType == DataInput.GRAY32) {
-                        if (data != null)
-                            ip = new FloatProcessor(currentWidth, currentHeight, (float[])data.get(imageIndex), null);
-                        else
-                            ip = new FloatProcessor(currentWidth, currentHeight, (float[])problem.getData(imageIndex, imageSlice), null);
-                    }
-                    else {
-                        throw new Exception("Unsupported image type");
-                    }
-
-                    stack.addSlice("", ip);
-                    
+            //for each slice of a 3D image
+            for(int imageSlice = 1; imageSlice <= stackSize; imageSlice++)
+            {
+                ImageProcessor ip = null;
+            
+                if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
+                    if (data != null)
+                        ip = new ByteProcessor(currentWidth, currentHeight, (byte[])currentImage.get(imageSlice-1), null);
+                    else 
+                        ip = new ByteProcessor(currentWidth, currentHeight, (byte[])problem.getData(imageIndex, imageSlice), null);
+                }
+                else if(imageType == DataInput.GRAY16) {
+                    if (data != null)
+                        ip = new ShortProcessor(currentWidth, currentHeight, (short[])currentImage.get(imageSlice-1), null);
+                    else
+                        ip = new ShortProcessor(currentWidth, currentHeight, (short[])problem.getData(imageIndex, imageSlice), null);
+                }   
+                else if(imageType == DataInput.GRAY32) {
+                    if (data != null)
+                        ip = new FloatProcessor(currentWidth, currentHeight, (float[])currentImage.get(imageSlice-1), null);
+                    else
+                        ip = new FloatProcessor(currentWidth, currentHeight, (float[])problem.getData(imageIndex, imageSlice), null);
+                }
+                else {
+                    throw new Exception("Unsupported image type");
                 }
 
-                combinedImage = new ImagePlus("Combined", stack);
-                
-                img = Image.wrap(combinedImage);
-                img = hessian.run(img, sscale, absolute).get(selectedEigenValue);	//2D : index 1 - largest, index 2 - smallest
-                img.axes(Axes.X + Axes.Y + Axes.Z);
-	    
-                img.get(startCO, values);
-                
-                //For testing purposes
-                //img.imageplus().show();
+                stack.addSlice("", ip); 
+            }
+
+            combinedImage = new ImagePlus("Combined", stack);
             
-                int i = 0;
-                for(int z = 0; z < this.depth; z++)
-                {
+            img = Image.wrap(combinedImage);
+            
+            img = hessian.run(img, scale, absolute).get(selectedEigenValue);	//2D : index 1 - largest, index 2 - smallest
+            img.axes(Axes.X + Axes.Y + Axes.Z);
+            img.get(startCO, values);
+            
+            //For testing purposes
+            //img.imageplus().show();
+        
+            int i = 0;
+            for(int z = 0; z < this.depth; z++)
+            {
                 for(int y = 0; y < this.height; y++)
-                    //get pixel values from each slice of each image
                     for(int x = 0; x < this.width; x++) {
                         features[imageIndex][i] = (float)values[y][x][z];
-                        i++;}
-                        }
-        	
-			}
+                        i++;
+                    }
+            }
+        }
 
-		}
 		
 		return features;
 	}

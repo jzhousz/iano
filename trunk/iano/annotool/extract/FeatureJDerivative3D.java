@@ -86,7 +86,6 @@ public class FeatureJDerivative3D implements FeatureExtractor {
 
 		Image img = null;
 	    ImagePlus combinedImage;
-        ImageStack stack;
         
 		Differentiator differentiator = new Differentiator();
 		Coordinates startCO = new Coordinates(0, 0, 0);
@@ -95,91 +94,111 @@ public class FeatureJDerivative3D implements FeatureExtractor {
 		
 		int currentHeight = 0, currentWidth = 0;
 		int stackSize;
+        ImageStack stack;
 		
         //iterate through each image
+        ArrayList currentImage = null;
 		for(int imageIndex = 0; imageIndex < length; imageIndex++) {
 		
-			System.out.println("Processing image number " + (imageIndex + 1));
 			currentWidth = this.width;
-			currentHeight = this.height;
-			
-			if (problem !=null)
-			{
-				if (!problem.ofSameSize()) 
-				{
-				currentWidth = problem.getWidthList()[imageIndex];
-				currentHeight = problem.getHeightList()[imageIndex];
-				  
+            currentHeight = this.height;
+                
+			if (problem !=null){
+				if (!problem.ofSameSize()) {
+				  throw new Exception("3D edge features requires the images to be of the same size");
 				}
-				
-				if(problem.getMode() == problem.ROIMODE)
-					stackSize = problem.getDepth();
-				else
-				    stackSize  = problem.getStackSize();
-				
-				stack = new ImageStack(this.width, this.height);
-                
-                //for each slice of a 3D image
-                for(int imageSlice = 1; imageSlice <= stackSize; imageSlice++)
-                {
-                    ImageProcessor ip = null;
-				
-                    if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
-                        if (data != null)
-                            ip = new ByteProcessor(currentWidth, currentHeight, (byte[])data.get(imageIndex), null);
-                        else 
-                        {
-                            ip = new ByteProcessor(currentWidth, currentHeight, (byte[])problem.getData(imageIndex, imageSlice), null);
-                        }
-                    }
-                    else if(imageType == DataInput.GRAY16) {
-                        if (data != null)
-                            ip = new ShortProcessor(currentWidth, currentHeight, (short[])data.get(imageIndex), null);
-                        else
-                            ip = new ShortProcessor(currentWidth, currentHeight, (short[])problem.getData(imageIndex, imageSlice), null);
-                    }   
-                    else if(imageType == DataInput.GRAY32) {
-                        if (data != null)
-                            ip = new FloatProcessor(currentWidth, currentHeight, (float[])data.get(imageIndex), null);
-                        else
-                            ip = new FloatProcessor(currentWidth, currentHeight, (float[])problem.getData(imageIndex, imageSlice), null);
-                    }
-                    else {
-                        throw new Exception("Unsupported image type");
-                    }
-
-                    stack.addSlice("", ip);
-                    
-                }
-
-                combinedImage = new ImagePlus("Combined", stack);
-                
-                img = Image.wrap(combinedImage);
-                img = differentiator.run(img, scale, x_order, y_order, z_order);
-                img.axes(Axes.X + Axes.Y + Axes.Z);
-	    
-                img.get(startCO, values);
-                
-                //For testing purposes
-                //img.imageplus().show();
+			}
+			else if (data !=null){
+				 currentImage = (ArrayList) data.get(imageIndex);
+			}
             
-                int i = 0;
-                for(int z = 0; z < this.depth; z++)
-                {
+            stack = new ImageStack(this.width, this.height);
+            stackSize = this.depth;
+            
+            //for each slice of a 3D image
+            for(int imageSlice = 1; imageSlice <= stackSize; imageSlice++)
+            {
+                ImageProcessor ip = null;         
+                        
+                if(imageType == DataInput.GRAY8 || imageType == DataInput.COLOR_RGB) {
+                    if (data != null)
+                        ip = new ByteProcessor(currentWidth, currentHeight, (byte[])currentImage.get(imageSlice-1), null);
+                    else 
+                        ip = new ByteProcessor(currentWidth, currentHeight, (byte[])problem.getData(imageIndex, imageSlice), null);
+                }
+                else if(imageType == DataInput.GRAY16) {
+                    if (data != null)
+                        ip = new ShortProcessor(currentWidth, currentHeight, (short[])currentImage.get(imageSlice-1), null);
+                    else
+                        ip = new ShortProcessor(currentWidth, currentHeight, (short[])problem.getData(imageIndex, imageSlice), null);
+                }   
+                else if(imageType == DataInput.GRAY32) {
+                    if (data != null)
+                        ip = new FloatProcessor(currentWidth, currentHeight, (float[])currentImage.get(imageSlice-1), null);
+                    else
+                        ip = new FloatProcessor(currentWidth, currentHeight, (float[])problem.getData(imageIndex, imageSlice), null);
+                }
+                else {
+                    throw new Exception("Unsupported image type");
+                }
+                               
+                stack.addSlice("", ip); 
+            } //end of slice
+            
+            combinedImage = new ImagePlus("Combined", stack);
+            
+            img = Image.wrap(combinedImage);
+            
+            img = differentiator.run(img, scale, x_order, y_order, z_order);
+            img.axes(Axes.X + Axes.Y + Axes.Z);
+            img.get(startCO, values);
+            
+            //For testing purposes
+            //img.imageplus().show();
+        
+            int i = 0;
+            for(int z = 0; z < this.depth; z++)
+            {
                 for(int y = 0; y < this.height; y++)
-                    //get pixel values from each slice of each image
                     for(int x = 0; x < this.width; x++) {
                         features[imageIndex][i] = (float)values[y][x][z];
-                        i++;}
-                }
-			}	
+                        i++;
+                    }
+            }	
 		}
+        
     	return features;
-}
+    }
 	
 	@Override
 	public boolean is3DExtractor() {
 		return true;
 	}
 	
+        public static void main(String[] args)
+    {
+            String directory = "C:\\Users\\Colleen\\Desktop\\various_images\\";
+            String ext = ".tif";
+            String ch = "g";
+
+            try
+            {
+                    annotool.io.DataInput problem = new annotool.io.DataInput(directory, ext, ch, true);
+                    FeatureExtractor fe = new FeatureJDerivative3D();
+                    //print out
+                    float[][] features = fe.calcFeatures(problem);
+                    System.out.println();
+                    for(int i = 0; i < features.length; i++)
+                    {
+                            System.out.print("Image #" + i + ": ");
+                            for(int j=0; j< features[i].length; j++)
+                                    System.out.print(features[i][j]+" ");
+                            System.out.println();
+                    }
+            }catch(Exception e)
+            {
+                    e.printStackTrace();
+                    System.out.println(e.getMessage());
+            }
+    }
 }
