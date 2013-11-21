@@ -60,7 +60,7 @@ public class ThreeDROIAnnotation {
 	static int rz = 1;
 	//
 	//int positiveIndex = 17; //for cd7  17/11
-	static int positiveIndex =7;  //for axon synapse   7/6
+	static int positiveIndex = 20;  //for axon synapse large set.
 	
 
 	// will be called by ROITagger "train3droi button"
