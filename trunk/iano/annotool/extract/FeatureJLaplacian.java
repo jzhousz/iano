@@ -133,7 +133,7 @@ public class FeatureJLaplacian implements FeatureExtractor {
 		 	//resize if needed
 			if (problem !=null && !problem.ofSameSize())
 			  if (currentHeight != this.height || currentWidth != this.width)
-						ip.resize(this.width, this.height);
+						ip = ip.resize(this.width, this.height);
 			
 			img = Image.wrap(new ImagePlus("Image", ip));
 			img = laplacian.run(img, scale);
