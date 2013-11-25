@@ -14,6 +14,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -84,7 +86,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	private JButton btnNew, btnRemove, 
 	btnSaveChain, btnLoadChain, 
 	btnRun, btnSaveModel,
-	btnApplyModel, btnCopyChain, btnStop, btnTips;
+	btnApplyModel, btnCopyChain, btnStop, btnTips,
+	btnDefaultChains;
 
 	private JCheckBox checkSelect;
 	private ChainTableModel tableModel = new ChainTableModel();
@@ -203,6 +206,10 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		btnStop = new JButton("Stop");
 		btnStop.addActionListener(this);
 		btnStop.setEnabled(false);
+		btnDefaultChains = new JButton("Default Chains");
+		btnDefaultChains.setToolTipText("Load the default chains into the table.");
+		btnDefaultChains.addActionListener(this);
+		btnDefaultChains.setEnabled(true);
 
 		pnlButton = new JPanel(new GridLayout(6, 2)); // Rows by columns (6, 2)
 		pnlButton.add(btnNew);
@@ -216,6 +223,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 
 		pnlButton.add(btnCopyChain);
 		pnlButton.add(btnStop);
+		pnlButton.add(btnDefaultChains);
 
 		pnlControl = new JPanel();
 		pnlControl.setLayout(new FlowLayout());
@@ -274,14 +282,29 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			setButtonState();
 		}
 		else if(ev.getSource().equals(btnRemove)) {
-			int currentRow = tblChain.getSelectedRow();
-			tableModel.removeRow(tblChain.getSelectedRow());
+			// Check if there is a checked chain.
+			// If there is, then remove it.
+			if (hasSelectedChain()) {
+				int i = tblChain.getRowCount() - 1;
+				for (; i >= 0; i--)
+				{
+					if ((boolean) tblChain.getValueAt(i, COL_CHECK))
+					{
+						System.out.println("Removing row: " + i);
+						tableModel.removeRow(i);
+					}
+				}
+				tca.adjustColumns();
 
-			tca.adjustColumns();
+				taDetail.setText("");
+				setButtonState();
+			}
+			// If there is no chain checked, pop up a message box.
+			else {
+				String message = "There is no chain selected for removal, select one and try again.";
+				JOptionPane.showMessageDialog(null, message, "Select Chain", JOptionPane.INFORMATION_MESSAGE);
+			}
 
-			taDetail.setText("");
-			setButtonState();
-			tblChain.changeSelection(currentRow - 1, COL_CHAIN, false, false);
 		}
 		else if(ev.getSource().equals(btnSaveChain)) {
 			//Save chains to file
@@ -612,6 +635,66 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
             		}
             	}
             });
+		}
+		else if(ev.getSource().equals(btnDefaultChains)) {
+			// Make sure that the last chain is completed
+			int size = tblChain.getRowCount();
+			if (size > 0)
+			{
+				Chain lastChain = (Chain)tblChain.getValueAt(size - 1, COL_CHAIN);
+				if(!lastChain.isComplete()) {
+					JOptionPane.showMessageDialog(this,
+							"The last chain is not yet complete. Classifier is required.", 
+							"Incomplete Chain",
+							JOptionPane.INFORMATION_MESSAGE);
+					return;
+				}
+			}
+			
+			// If it is 3D then imgStackSize will be > 1
+			// Else set to 2D
+			String default_chain = "";
+			if (imgStackSize > 1)
+				default_chain = "resources/DEFAULT_CHAINS_3D.ichn";
+			else
+				default_chain = "resources/DEFAULT_CHAINS_2D.ichn";
+			
+			java.net.URL page = this.getClass().getResource(default_chain);
+			File file = null;
+			
+			// Try and open the default chain file.
+			try {
+				if (page != null) {
+					file = new File(this.getClass().getResource("/"+page).toURI());
+				}
+				else {
+					file = new File(this.getClass().getResource("/"+default_chain).toURI());
+				}
+			} 
+			catch (Exception e) { e.printStackTrace(); }
+			
+			
+			// Open the chains and put them in the table.
+			ChainIO chainLoader = new ChainIO();
+			try {
+				ArrayList<Chain> chainList = chainLoader.load(file);
+				taDetail.setText("");
+				for(Chain chain : chainList) {
+					Object[] rowData = {new Boolean(false), chain.getName(), chain};
+					tableModel.insertNewRow(rowData);	        			
+				}
+				pnlOutput.setOutput("Chain successfully loaded.");
+				}
+			catch (Exception ex) {
+				System.out.println("Exception thrown while loading chain list from file.");
+				ex.printStackTrace();
+				pnlOutput.setOutput("ERROR: Load failed.");
+			}
+			
+			tca.adjustColumns();
+			
+			//Enable/disable buttons based on whether has rows or not
+			setButtonState();
 		}
 	}
 	
