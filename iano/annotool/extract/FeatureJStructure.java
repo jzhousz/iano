@@ -152,7 +152,7 @@ public class FeatureJStructure implements FeatureExtractor {
 		 	//resize if needed
 			if (problem !=null && !problem.ofSameSize())
 			  if (currentHeight != this.height || currentWidth != this.width)
-						ip.resize(this.width, this.height);
+						ip = ip.resize(this.width, this.height);
 	
 			img = Image.wrap(new ImagePlus("Image", ip));
 			img = structure.run(img, sscale, iscale).get(selectedEigenValue);	//2D : index 1 - largest, index 2 - smallest
