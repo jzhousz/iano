@@ -1,0 +1,136 @@
+[CHAIN_START]
+Name=Chain 1
+[FEATURE_EXTRACTOR]
+Name=FeatureJ Statistics
+ClassName=annotool.extract.FeatureJStatistics
+Path=null
+[PARAMETER_START]
+SDEVIATION=1
+MINIMUM=1
+MEAN=1
+VARIANCE=1
+AVERAGE ABSOLUTE DEVIATION=1
+SKEWNESS=1
+MAXIMUM=1
+ELEMENTS=1
+MEDIAN=1
+L1NORM=1
+MODE=1
+MASS=1
+L2NORM=1
+KURTOSIS=1
+[PARAMETER_END]
+[CLASSIFIER]
+Name=Neareast Neighbor
+ClassName=annotool.classify.WekaClassifiers
+Path=null
+[PARAMETER_START]
+CLASSIFIER_TYPE=W_NearestNeighbor
+Number of Nearest Neighbors=1
+[PARAMETER_END]
+[CHAIN_END]
+[CHAIN_START]
+Name=Chain 2
+[FEATURE_EXTRACTOR]
+Name=2D Hu Moments
+ClassName=annotool.extract.ImageMoments
+Path=null
+[PARAMETER_START]
+[PARAMETER_END]
+[FEATURE_EXTRACTOR]
+Name=FeatureJ Statistics
+ClassName=annotool.extract.FeatureJStatistics
+Path=null
+[PARAMETER_START]
+SDEVIATION=1
+MINIMUM=1
+MEAN=1
+VARIANCE=1
+AVERAGE ABSOLUTE DEVIATION=1
+SKEWNESS=1
+MAXIMUM=1
+ELEMENTS=1
+MEDIAN=1
+L1NORM=0
+MODE=1
+MASS=1
+L2NORM=1
+KURTOSIS=1
+[PARAMETER_END]
+[CLASSIFIER]
+Name=Random Forest
+ClassName=annotool.classify.WekaClassifiers
+Path=null
+[PARAMETER_START]
+Number of Trees in the Forest=10
+CLASSIFIER_TYPE=W_RandomForest
+[PARAMETER_END]
+[CHAIN_END]
+[CHAIN_START]
+Name=Chain 3
+[FEATURE_EXTRACTOR]
+Name=2D Hu Moments
+ClassName=annotool.extract.ImageMoments
+Path=null
+[PARAMETER_START]
+[PARAMETER_END]
+[FEATURE_EXTRACTOR]
+Name=FeatureJ Statistics
+ClassName=annotool.extract.FeatureJStatistics
+Path=null
+[PARAMETER_START]
+SDEVIATION=1
+MINIMUM=1
+MEAN=1
+VARIANCE=1
+AVERAGE ABSOLUTE DEVIATION=1
+SKEWNESS=1
+MAXIMUM=1
+ELEMENTS=1
+MEDIAN=1
+L1NORM=1
+MODE=1
+MASS=1
+KURTOSIS=1
+L2NORM=1
+[PARAMETER_END]
+[CLASSIFIER]
+Name=Neareast Neighbor
+ClassName=annotool.classify.WekaClassifiers
+Path=null
+[PARAMETER_START]
+CLASSIFIER_TYPE=W_NearestNeighbor
+Number of Nearest Neighbors=1
+[PARAMETER_END]
+[CHAIN_END]
+[CHAIN_START]
+Name=Chain 4
+[FEATURE_EXTRACTOR]
+Name=FeatureJ Statistics
+ClassName=annotool.extract.FeatureJStatistics
+Path=null
+[PARAMETER_START]
+SDEVIATION=1
+MINIMUM=1
+MEAN=1
+VARIANCE=1
+AVERAGE ABSOLUTE DEVIATION=1
+SKEWNESS=1
+MAXIMUM=1
+ELEMENTS=1
+MEDIAN=1
+L1NORM=1
+MODE=1
+MASS=1
+KURTOSIS=1
+L2NORM=1
+[PARAMETER_END]
+[CLASSIFIER]
+Name=Random Forest
+ClassName=annotool.classify.WekaClassifiers
+Path=null
+[PARAMETER_START]
+Number of Trees in the Forest=10
+CLASSIFIER_TYPE=W_RandomForest
+[PARAMETER_END]
+[CHAIN_END]
