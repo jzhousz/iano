@@ -56,17 +56,17 @@ public class MLPClassifier  implements SavableClassifier, Serializable {
 	private int pro_index = 0;
 	
 	/* Changeable settings */
-	private int iterations = 100;
+	private int iterations = 3000;
 	private double alpha = 0.8, eita = 0.5, gamma = 0.5, thvalue = 0.0;
 	
 	/* node */
-	private int hiddenNodes;
+	private int hiddenNodes = 50;
 	
 	/* If train only */
 	private boolean trainedOnly = true;
 	
 	/* Windowed Momentum*/
-	boolean wm = true;
+	boolean wm = false;
 	
 	/* XML Cons */
 	public static final String
