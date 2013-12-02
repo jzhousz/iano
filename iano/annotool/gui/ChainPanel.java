@@ -123,13 +123,14 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	int imgHeight;
 	int imgDepth = 1;  //for 3D ROI 8/13/12
 	int imgStackSize; //for 3D image
+	boolean is3d;
 
-	public ChainPanel(AutoCompFrame gui, String channel, AnnOutputPanel pnlOutput, boolean chFlag) {
+	public ChainPanel(AutoCompFrame gui, String channel, AnnOutputPanel pnlOutput, boolean chFlag, boolean is3D) {
 		this.channel = channel;		
 		this.gui = gui;
 		gui.setButtonsEnabled(false);
 		this.pnlOutput = pnlOutput;
-
+		is3d = is3D;
 		cFlag = chFlag;
 
 		fileChooser = new JFileChooser();
@@ -654,7 +655,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			// If it is 3D then imgStackSize will be > 1
 			// Else set to 2D
 			String default_chain = "";
-			if (imgStackSize > 1)
+			if (is3d)
 				default_chain = "resources/DEFAULT_CHAINS_3D.ichn";
 			else
 				default_chain = "resources/DEFAULT_CHAINS_2D.ichn";
@@ -908,9 +909,17 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			if(imgStackSize > 1)
 			{
 				if (trainingProblem.getMode() == DataInput.ROIMODE)	
+					{
+					System.out.println("Inside if...");
 					imgDepth = trainingProblem.getDepth();
+					System.out.println("imgDepth: " + imgDepth);
+					}
 				else
+					{
+					System.out.println("Inside else...");
 					imgDepth = imgStackSize;
+					System.out.println("imgDepth: " + imgDepth);
+					}
 			}
 		} catch (Exception e) {
 			pnlOutput.setOutput("Failed to read width/height/depth/stackSize from the problem.");
@@ -931,7 +940,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			pnlOutput.setOutput("ERROR: " + t.getMessage());
 			t.printStackTrace();
 		}
-
+		
 		isRunning = false;
 		thread = null;
 
@@ -986,7 +995,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			chainModels[i].setChannel(channel);
 			chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
 			chainModels[i].setClassNames(classNames);
-			if(imgStackSize > 1)
+
+			if(is3d)
 				chainModels[i].setImageSize(imgWidth + "x" + imgHeight + "x" + imgDepth);
 			else
 				chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
@@ -1014,7 +1024,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 
 		//Display result
 		if(executed)	//Display result if at least one chain is executed
-			gui.addTab("Auto Comparison Results", rates, anno.getAnnotationLabels(), selectedChains, imgWidth, imgHeight, channel, cFlag);
+			gui.addTab("Auto Comparison Results", rates, anno.getAnnotationLabels(), selectedChains, imgWidth, imgHeight, imgDepth, is3d, channel, cFlag);
 	}
 
 	//process one chain
@@ -1267,7 +1277,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			chainModels[i].setChannel(channel);
 			chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
 			chainModels[i].setClassNames(classNames);
-			if(imgStackSize > 1)
+			if(is3d)
 				chainModels[i].setImageSize(imgWidth + "x" + imgHeight + "x" + imgDepth);
 			else
 				chainModels[i].setImageSize(imgWidth + "x" + imgHeight);
@@ -1437,10 +1447,10 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 
 			chainCount++;
 		}//End of loop for chains
-
+		
 		//Display result
 		if(executed)	//Display result if at least one chain is executed
-			gui.addTab("Auto Comparison Results", rates, anno.getAnnotationLabels(), selectedChains, imgWidth, imgHeight, channel, cFlag);
+			gui.addTab("Auto Comparison Results", rates, anno.getAnnotationLabels(), selectedChains, imgWidth, imgHeight, imgDepth, is3d, channel, cFlag);
 	}
 	/*
 	 * The method has 2 purposes:

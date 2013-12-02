@@ -83,15 +83,16 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	//Data members
 	String channelName = null, mode = null,
 		   imageSet = null, testSet = null;
-	int imgWidth, imgHeight;
+	int imgWidth, imgHeight, imgDepth;
+	boolean is3d;
 	private float[][] rates;
 	private ArrayList<String> labels;
 	
-	public ACResultPanel(JTabbedPane parentPane, int imgWidth, int imgHeight, String channel, ArrayList<Chain> selectedChains, boolean cFlag) {
+	public ACResultPanel(JTabbedPane parentPane, int imgWidth, int imgHeight, int imgDepth, boolean is3d, String channel, ArrayList<Chain> selectedChains, boolean cFlag) {
 	   	this.parentPane = parentPane;
 	   	this.tabIndex = parentPane.getTabCount();
 	   	this.selectedChains = selectedChains;
-	   	
+	   	this.imgDepth = imgDepth;
 	   	this.setLayout(new BorderLayout());
 	   	this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 	   	
@@ -118,7 +119,7 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	   	
 	   	this.imgWidth = imgWidth;
 	   	this.imgHeight = imgHeight;
-	   	
+	   	this.is3d = is3d;
 	   	taChainDetail.setEditable(false);
 	   	taChainDetail.setMargin(new Insets(10,10,10,10));
 	}
@@ -142,8 +143,14 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		//Labels
 		lbImgSet = new JLabel("<html><b>Image Set: </b>" + imageSet + "</html>");
 		lbImgExt = new JLabel("<html><b>Image Extension: </b>" + Annotator.ext + "</html>");
-		lbImgSize = new JLabel("<html><b>Image Size: </b>" + imgWidth + "x" + imgHeight + "</html>");
-		
+		if (is3d)
+		{
+			lbImgSize = new JLabel("<html><b>Image Size: </b>" + imgWidth + "x" + imgHeight + "x" + imgDepth + "</html>");
+		}
+		else
+		{
+			lbImgSize = new JLabel("<html><b>Image Size: </b>" + imgWidth + "x" + imgHeight + "</html>");
+		}
 		if(Annotator.output.equals(Annotator.TT)) {
 			lbTestSet = new JLabel("<html><b>Testing Image Set: </b>" + testSet + "</html>");
 			lbTestExt = new JLabel("<html><b>Test Image Extension: </b>" + Annotator.testext + "</html>");
@@ -324,7 +331,12 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		}
 		
 		info.add(new Chunk("Image Size: ", Styles.FONT_LABEL));
-		info.add(new Chunk(imgWidth + "x" + imgHeight));
+		if ( is3d ) {
+			info.add(new Chunk(imgWidth + "x" + imgHeight + "x" + imgDepth));
+		}
+		else {
+			info.add(new Chunk(imgWidth + "x" + imgHeight));
+		}
 		info.add(Chunk.NEWLINE);
 		
 		return info;

@@ -829,7 +829,7 @@ public class DataInput
 			 ImagePlus imgp = new ImagePlus(directory+children[0]);
 			 stackSize = imgp.getStackSize();
 			}
-			return stackSize;	
+			return stackSize;
 		}
 			
 	}
