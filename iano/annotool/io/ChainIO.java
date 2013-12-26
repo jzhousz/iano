@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -176,18 +177,20 @@ public class ChainIO {
 	/*
 	 * Reads the algorithm chains from the specified file and returns an arraylist of read chains
 	 */
-	public ArrayList<Chain> load(File file) throws FileNotFoundException, Exception{
+
+	public ArrayList<Chain> load(Object resourceAsStream) throws FileNotFoundException, Exception{
 		ArrayList<Chain> chainList = new ArrayList<Chain>();
 		
 		Scanner scanner = null;
-		try {
-			scanner = new Scanner(file);
+		if(resourceAsStream instanceof InputStream)
+		{
+			scanner = new Scanner( (InputStream) resourceAsStream);
 		}
-		catch (FileNotFoundException e) {
-			System.out.println("Target file not found.");
-			e.printStackTrace();
-			throw e;
+		else if( resourceAsStream instanceof File )
+		{
+			scanner = new Scanner( (File) resourceAsStream);
 		}
+
 		while(scanner.hasNextLine()) {
 			String line = scanner.nextLine();
 			if(line.startsWith("#")) {
@@ -344,7 +347,7 @@ public class ChainIO {
 									chain.addClassifierParam(params[0], params[1]);
 								else
 									throw new Exception("Invalid classifier parameter.");
-							}
+							}	
 						}//End classifier parameters
 					}//End classifier
 				}
@@ -352,7 +355,7 @@ public class ChainIO {
 				chainList.add(chain);
 			}//END CHAIN_START
 		}
-		
+		scanner.close();
 		return chainList;
 	}
 }

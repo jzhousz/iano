@@ -9,7 +9,10 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -18,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Scanner;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -594,7 +598,9 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
             String set_editor_pane = null;
             try {
 				if (page != null)
+				{
 					set_editor_pane = page.toURI().toURL().toString();
+				}
 				else
 					set_editor_pane = biocat_help;
 			} catch (MalformedURLException e1) {
@@ -654,31 +660,19 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			
 			// If it is 3D then imgStackSize will be > 1
 			// Else set to 2D
+			
+
 			String default_chain = "";
 			if (is3d)
 				default_chain = "resources/DEFAULT_CHAINS_3D.ichn";
 			else
 				default_chain = "resources/DEFAULT_CHAINS_2D.ichn";
-			
-			java.net.URL page = this.getClass().getResource(default_chain);
-			File file = null;
-			
-			// Try and open the default chain file.
-			try {
-				if (page != null) {
-					file = new File(this.getClass().getResource("/"+page).toURI());
-				}
-				else {
-					file = new File(this.getClass().getResource("/"+default_chain).toURI());
-				}
-			} 
-			catch (Exception e) { e.printStackTrace(); }
-			
-			
+
 			// Open the chains and put them in the table.
 			ChainIO chainLoader = new ChainIO();
 			try {
-				ArrayList<Chain> chainList = chainLoader.load(file);
+				
+				ArrayList<Chain> chainList = chainLoader.load(this.getClass().getResourceAsStream("/" + default_chain));
 				taDetail.setText("");
 				for(Chain chain : chainList) {
 					Object[] rowData = {new Boolean(false), chain.getName(), chain};
@@ -692,11 +686,16 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 				pnlOutput.setOutput("ERROR: Load failed.");
 			}
 			
+		
 			tca.adjustColumns();
 			
 			//Enable/disable buttons based on whether has rows or not
 			setButtonState();
+			
+			
 		}
+		
+		
 	}
 	
 	public void stopChains() {
