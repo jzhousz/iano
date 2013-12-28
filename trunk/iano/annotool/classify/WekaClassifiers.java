@@ -422,6 +422,16 @@ public class WekaClassifiers implements SavableClassifier {
 
         	java.io.ObjectOutputStream filestream = new java.io.ObjectOutputStream(new java.io.FileOutputStream(model_file_name));
     		filestream.writeObject(m_Classifier);
+    		
+    		/* Added 12/28/2013 */
+    		
+    		filestream.writeObject(dimension );
+    		filestream.writeObject(m_Data);
+    		filestream.writeObject(targetList);	
+    		
+    		/**/
+    		
+    		
     		filestream.close();
      }
 
@@ -442,6 +452,16 @@ public class WekaClassifiers implements SavableClassifier {
         	try
         	{
         		model = (weka.classifiers.Classifier) filestream.readObject();
+        		
+        		/* Added 12/28/2013 */
+        		
+        		dimension = (int) filestream.readObject();
+        		m_Data = (Instances) filestream.readObject();
+        		targetList = (java.util.ArrayList<Integer>) filestream.readObject();
+        		
+        		/**/
+        		
+        		
         	}catch(ClassNotFoundException ce)
         	{
         		System.err.println("Class Not Found in Loading SVM model");
