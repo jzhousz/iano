@@ -143,6 +143,10 @@ public class FeatureJStatistics3D implements FeatureExtractor {
 	}
 	
 	protected float[][] calcFeatures() throws Exception {
+		
+		if (selectedCount == 0)
+			  throw new Exception("No feature has been selected.");
+
 		//Initialize features array
 		features = new float[length][selectedCount];
 		
