@@ -12,8 +12,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+
 import annotool.Annotation;
+import annotool.Annotator;
 import annotool.extract.*;
+import annotool.gui.model.Utils;
 import annotool.classify.*;
 import annotool.classify.MLP.MLPClassifier;
 import annotool.io.DataInput;
@@ -60,10 +65,64 @@ public class ThreeDROIAnnotation {
 	static int rz = 1;
 	//
 	//int positiveIndex = 17; //for cd7  17/11
-	static int positiveIndex = 20;  //for axon synapse large set.
+	static int positiveIndex = 7;  //for axon synapse large set.
+	
+	
+	//***********************
+	// new variables for conversion to DataInput
+	ImagePlus imp;
+	int depth = 1, width = 1, height = 1;
+	annotool.io.DataInput problem = null;
+	int problemLength;
 	
 
+	public void buildDataFromROI(String[] roiPaths) throws Exception
+	{
+		HashMap classMap;
+		HashMap roiList;
+		
+		//isRoiInput = true;
+		//this.imp = new ImagePlus(imagePath);
+		//displayImage = new ImagePlus(imagePath);	//Once closed, the image is flushed, we don't want that for our original image because we need the data
+		//displayImage.setIgnoreFlush(true);
+		//this.imagePath = imagePath;					//To reconstruct display image if it has been flushed
+		
+		classMap = new HashMap<String, String>();
+		roiList = new HashMap<String, Roi>();
+		
+		for(String path : roiPaths) {
+			
+			
+			if(path.endsWith("marker"))
+			{
+			 String className = Utils.removeExtension(path.substring(path.lastIndexOf(File.separator) + 1));
+			 Utils.openRoiMarker(path, roiList, classMap, className);
+			}
+			else //ROI zip file
+			{
+			 String className = Utils.removeExtension(path.substring(path.lastIndexOf(File.separator) + 1));
+			 Utils.openRoiZip(path, roiList, classMap, className);
+			}
+		}
+		
+		if(roiList.size() < 1){
+			System.out.println("ERROR: No rois specified.");
+		}
+		this.problem = new DataInput(imp, roiList, classMap, Annotator.channel, depth, width, height);
+		
+		
+		problemLength = this.problem.getLength();
+		//children = problem.getChildren();
+		
+		//annotations = problem.getAnnotations();
+		//numOfAnno = annotations.size();
+		//classNames = problem.getClassNames();
+		
+	}
+	
+	
 	// will be called by ROITagger "train3droi button"
+	//* DEPRACATED 01/25/14
 	public static SavableClassifier train3droi(ImagePlus imp) {
 		// read ROIm -- ROITAGGER
 		RoiManager manager = RoiManager.getInstance();
@@ -194,12 +253,12 @@ public class ThreeDROIAnnotation {
 		 * for Weka classifiers, wrapper class invoked, and specific classifier 
 		 * indicated by a parameter.
 		 */
-		classifier = new SVMClassifier((2 * rz + 1) * (2 * ry + 1) * (2 * rx + 1));
-		//classifier = new MLPClassifier();
+		//classifier = new SVMClassifier((2 * rz + 1) * (2 * ry + 1) * (2 * rx + 1));
+		classifier = new MLPClassifier();
 		
 		//set the type of the weka classifier.
-		//HashMap<String,String> params = new HashMap<String, String>();
-		//params.put("W_RandomForest", "W_RandomForest");
+		HashMap<String,String> params = new HashMap<String, String>();
+		params.put("W_RandomForest", "W_RandomForest");
 	
 		//classifier = new WekaClassifiers();
 		//classifier.setParameters(params);
@@ -390,11 +449,12 @@ public class ThreeDROIAnnotation {
 		//for file saving and naming convention
 		Date date = new Date();
 		SimpleDateFormat fmat =new SimpleDateFormat("_MM_dd_yyyy_hhmmss" );
+		String extraName = "";
 		
 		// output result to a file as  V3D marker file
 		try{
 			
-			String v3DFileName = new String("V3D_detected" + fmat.format(date) + ".marker");
+			String v3DFileName = new String("V3D_detected" + "_"+ fmat.format(date)+ "_" + extraName + ".marker");
 			File file = new File(v3DFileName);
 			BufferedWriter marker = new BufferedWriter(new FileWriter(file));
 			
@@ -423,7 +483,7 @@ public class ThreeDROIAnnotation {
         		
 		//output result to a file as input for object quantification. No change to coordinate is needed.
 		try{
-			String markerFileName = new String("detected" + fmat.format(date) + ".marker");
+			String markerFileName = new String("detected" + "_" + fmat.format(date) + "_" + extraName + ".marker");
 			File file = new File(markerFileName);
 			BufferedWriter marker = new BufferedWriter(new FileWriter(file));
 			
@@ -530,9 +590,9 @@ public class ThreeDROIAnnotation {
 	
 	public static float[][] get3DFeaViaExtrator(ArrayList alldata,  int imageType) {
 		float[][] extractedFea = null;
-		//StackSimpleHaarFeatureExtractor ex = new StackSimpleHaarFeatureExtractor();
+		StackSimpleHaarFeatureExtractor ex = new StackSimpleHaarFeatureExtractor();
 		//ImageMoments3D ex = new ImageMoments3D();
-		FeatureJEdges3D ex = new FeatureJEdges3D();
+		//FeatureJEdges3D ex = new FeatureJEdges3D();
 		
 		// override default if needed.
 		// HashMap<String, String> parameter = new HashMap<String, String>();
@@ -558,6 +618,41 @@ public class ThreeDROIAnnotation {
 
 		return extractedFea;
 	}
+	
+	// new logic using DataInput 1/27/14
+	public static float[][] get3DFeaViaExtrator(DataInput problem) {
+		float[][] extractedFea = null;
+		StackSimpleHaarFeatureExtractor ex = new StackSimpleHaarFeatureExtractor();
+		//ImageMoments3D ex = new ImageMoments3D();
+		//FeatureJEdges3D ex = new FeatureJEdges3D();
+		
+		// override default if needed.
+		// HashMap<String, String> parameter = new HashMap<String, String>();
+		// parameter.put(..,..); //ex.setParameter(parameter);
+		annotool.ImgDimension dim = new annotool.ImgDimension();
+		dim.height = 2 * ry + 1;
+		dim.width = 2 * rx + 1;
+		dim.depth = 2 * rz + 1;
+		
+		try {
+			// trick the HaarFeatureExtractor to take float
+			// this is a bit weird. because calFeatures usually takes raw data
+			// Object
+			//int changedImageType = DataInput.GRAY32;
+			extractedFea = ex.calcFeatures(problem);
+			
+			//extractedFea = ex.calcFeatures(alldata, imageType, dim);
+			
+			
+		} catch (Exception e) {
+			e.getStackTrace();
+		}
+
+		return extractedFea;
+		
+		
+	}
+	
 
 	static boolean checkBound(int xi, int yi, int zi, int totalwidth,
 			int totalheight, int totaldepth) {
@@ -633,9 +728,133 @@ public class ThreeDROIAnnotation {
     String imgFileName = new String("local_maxima" + fmat.format(date) +".tiff" );
     IJ.save(centers, imgFileName);
     
-  }
+    }
 	
-}
+	
+	// return the number of ROIS in this instance
+	private int getLength(){
+		return problemLength;
+	}
+	
+	//command line version of code
+	//takes args: image file path, positive roi, negative roi, roi depth, width, height, chain file 
+	public static void main(String[] args){
+		ThreeDROIAnnotation anno = new ThreeDROIAnnotation();
+		
+		String[] roiPaths;
+		String chainPath;
+		
+		//check for null args
+		if( args == null || args.length == 0 || args.length > 7){
+			System.out.println("Correct usage: java ThreeDROIAnnotation imagePath, pos ROI, neg ROI, ROI depth, width, height, chain file ");
+		}
+		
+		roiPaths = new String[2];
+		//set vars
+		try{
+			anno.imp = new ImagePlus( args[0]);     anno.imp.show();
+			roiPaths[0] = args[1];					System.out.println(roiPaths[0]);
+			roiPaths[1] = args[2];					System.out.println(roiPaths[1]);
+			anno.depth = Integer.parseInt(args[3]);	System.out.println(anno.depth);
+			anno.width = Integer.parseInt(args[4]);	System.out.println(anno.width);
+			anno.height = Integer.parseInt(args[5]);System.out.println(anno.height);
+			chainPath = args[6];					System.out.println(chainPath);
+		} catch(Exception argsE){
+			System.out.println("Error parsing args");
+			return;
+		}
+		
+		System.out.println("success parsing args...");
+	
+		try{
+		anno.buildDataFromROI(roiPaths);
+		} catch( Exception e){
+			System.out.println("ERROR: Problem building data from ROI");
+			return;
+		}
+		System.out.println("success building data...");
+		
+		/******************************************
+	    new train3DROI() logic, temp here in main;
+	    *//////////////////////////////////////////
+		
+		// feature extraction, selection
+		float[][] extractedFea = null;
+
+		extractedFea = get3DFeaViaExtrator(anno.problem);
+		
+	    System.out.println("Extracted features:");
+		for (int m = 0; m < extractedFea.length; m++) {
+			for (int n = 0; n < extractedFea[0].length; n++)
+				System.out.print(extractedFea[m][n] + " ");
+				System.out.println();
+		}
+		
+	    
+		// set up training targets
+		int[] target = new int[anno.getLength()];
+		target = anno.problem.getTargets()[0];
+		
+		/*
+		  for (int i = 0; i < positiveIndex; i++)
+		 
+			target[i] = 1;
+		for (int i = positiveIndex ; i < anno.getLength(); i++)
+			target[i] = 0;
+
+		// new classifier */
+		/*
+		 * a variety of classifiers to use, 
+		 * for Weka classifiers, wrapper class invoked, and specific classifier 
+		 * indicated by a parameter.
+		 */
+
+		//classifier = new SVMClassifier((2 * rz + 1) * (2 * ry + 1) * (2 * rx + 1));
+		classifier = new MLPClassifier();
+		
+		//set the type of the weka classifier.
+		HashMap<String,String> params = new HashMap<String, String>();
+		params.put("W_RandomForest", "W_RandomForest");
+	
+		//classifier = new WekaClassifiers();
+		//classifier.setParameters(params);
+		
+		try {
+			classifier.trainingOnly(extractedFea, target);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		Annotation[] ann = new Annotation[extractedFea.length];
+		for (int i = 0; i < ann.length; i++)
+			ann[i] = new Annotation();
+		try {
+			float rate = (new Validator()).classify(extractedFea, extractedFea,
+					target, target, classifier, ann);
+			System.out.println("rate" + rate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		System.out.println("C :: T");
+		for (int i = 0; i < ann.length; i++)
+			System.out.println(ann[i].anno + " :: "+ target[i]);
+
+		//return classifier;
+
+		
+
+		
+		BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in)); 
+		try {
+			stdin.readLine();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+}//endclass ThreeDROIAnnotation
 
 class Point3D
 {
