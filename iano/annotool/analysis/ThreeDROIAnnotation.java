@@ -18,9 +18,10 @@ import javax.swing.JTable;
 import annotool.Annotation;
 import annotool.Annotator;
 import annotool.extract.*;
-import annotool.gui.model.Utils;
+import annotool.gui.model.*;
 import annotool.classify.*;
 import annotool.classify.MLP.MLPClassifier;
+import annotool.io.ChainIO;
 import annotool.io.DataInput;
 
 /*
@@ -53,6 +54,13 @@ import annotool.io.DataInput;
  * 11/18/13 - adjust logic in test3droi to ignore edge pixels.
  * 11/20/13 - adjust logic in train3droi to ignore edge pixels.
  *          - switch classifier type to weka W_RandomForest.
+ *          
+ * 01/22/14 - begin overhaul conversion to DataInput style
+ * 01/25/14 - implement new buildDataFromRoi() loic copied from annImageTable
+ * 01/28/14 - write main() to take command args and run without gui.
+ * 			- NOTE: all gui dependent and alldata code to be deprecated soon.
+ * 01/29/14	- Loading from chain files. a little scattered though, but works.
+ * 			- EXCEPT for getting a savable classifier by name.
  */
 
 public class ThreeDROIAnnotation {
@@ -60,13 +68,16 @@ public class ThreeDROIAnnotation {
 	static SavableClassifier classifier = null;
 	static boolean useRaw = false;
 
+	
+	/////////////////////
+	// deprecated in command line version
 	// anisotropic microscopic image cube: 9*9*3
 	static int rx = 4, ry = 4;
 	static int rz = 1;
 	//
 	//int positiveIndex = 17; //for cd7  17/11
 	static int positiveIndex = 7;  //for axon synapse large set.
-	
+	//////////////////////
 	
 	//***********************
 	// new variables for conversion to DataInput
@@ -74,8 +85,9 @@ public class ThreeDROIAnnotation {
 	int depth = 1, width = 1, height = 1;
 	annotool.io.DataInput problem = null;
 	int problemLength;
+	ArrayList<Chain> chainList;
 	
-
+	//parse ROI files and construct a DataInput object to encapsulate data
 	public void buildDataFromROI(String[] roiPaths) throws Exception
 	{
 		HashMap classMap;
@@ -122,7 +134,7 @@ public class ThreeDROIAnnotation {
 	
 	
 	// will be called by ROITagger "train3droi button"
-	//* DEPRACATED 01/25/14
+	//* DEPRACATED 01/25/14 (still functional)
 	public static SavableClassifier train3droi(ImagePlus imp) {
 		// read ROIm -- ROITAGGER
 		RoiManager manager = RoiManager.getInstance();
@@ -587,7 +599,7 @@ public class ThreeDROIAnnotation {
 	  return false;
 	}
 
-	
+	//old logic, not loading from file.
 	public static float[][] get3DFeaViaExtrator(ArrayList alldata,  int imageType) {
 		float[][] extractedFea = null;
 		StackSimpleHaarFeatureExtractor ex = new StackSimpleHaarFeatureExtractor();
@@ -620,29 +632,39 @@ public class ThreeDROIAnnotation {
 	}
 	
 	// new logic using DataInput 1/27/14
-	public static float[][] get3DFeaViaExtrator(DataInput problem) {
+	public static float[][] get3DFeaViaExtrator(DataInput problem, ArrayList<Chain> chainList, Annotator a) {
 		float[][] extractedFea = null;
-		StackSimpleHaarFeatureExtractor ex = new StackSimpleHaarFeatureExtractor();
-		//ImageMoments3D ex = new ImageMoments3D();
-		//FeatureJEdges3D ex = new FeatureJEdges3D();
-		
-		// override default if needed.
-		// HashMap<String, String> parameter = new HashMap<String, String>();
-		// parameter.put(..,..); //ex.setParameter(parameter);
-		annotool.ImgDimension dim = new annotool.ImgDimension();
-		dim.height = 2 * ry + 1;
-		dim.width = 2 * rx + 1;
-		dim.depth = 2 * rz + 1;
+		//StackSimpleHaarFeatureExtractor ex = new StackSimpleHaarFeatureExtractor();
 		
 		try {
 			// trick the HaarFeatureExtractor to take float
 			// this is a bit weird. because calFeatures usually takes raw data
 			// Object
 			//int changedImageType = DataInput.GRAY32;
+			/* System.out.println("Extracting old way:");//debug
+			
 			extractedFea = ex.calcFeatures(problem);
 			
-			//extractedFea = ex.calcFeatures(alldata, imageType, dim);
+		    System.out.println("Extracted features:");//debug
+			for (int m = 0; m < extractedFea.length; m++) {
+				for (int n = 0; n < extractedFea[0].length; n++)
+					System.out.print(extractedFea[m][n] + " ");
+					System.out.println();
+			}
+			*/
 			
+			
+			//load from only first specified chain, others ignored
+			 System.out.println("Extracting new way:");//debug
+			ArrayList<Extractor> extractors = chainList.get(0).getExtractors();
+			extractedFea = a.extractWithMultipleExtractors(problem, extractors);
+		    System.out.println("Extracted features:");//debug
+			for (int m = 0; m < extractedFea.length; m++) {
+				for (int n = 0; n < extractedFea[0].length; n++)
+					System.out.print(extractedFea[m][n] + " ");
+					System.out.println();
+			}
+					
 			
 		} catch (Exception e) {
 			e.getStackTrace();
@@ -653,7 +675,7 @@ public class ThreeDROIAnnotation {
 		
 	}
 	
-
+	//maybe deprecated, possible use in testing logic. 1/29/14
 	static boolean checkBound(int xi, int yi, int zi, int totalwidth,
 			int totalheight, int totaldepth) {
 		if (xi < 0 || xi >= totalwidth)
@@ -750,9 +772,9 @@ public class ThreeDROIAnnotation {
 		}
 		
 		roiPaths = new String[2];
-		//set vars
+		//set vars from args
 		try{
-			anno.imp = new ImagePlus( args[0]);     anno.imp.show();
+			anno.imp = new ImagePlus( args[0]);     anno.imp.show(); //show original image
 			roiPaths[0] = args[1];					System.out.println(roiPaths[0]);
 			roiPaths[1] = args[2];					System.out.println(roiPaths[1]);
 			anno.depth = Integer.parseInt(args[3]);	System.out.println(anno.depth);
@@ -766,13 +788,25 @@ public class ThreeDROIAnnotation {
 		
 		System.out.println("success parsing args...");
 	
-		try{
+		try{ //build a DataInput object to encapsulate data
 		anno.buildDataFromROI(roiPaths);
 		} catch( Exception e){
 			System.out.println("ERROR: Problem building data from ROI");
 			return;
 		}
-		System.out.println("success building data...");
+		
+		//load the chain file as an ArrayList
+		ChainIO chainLoader = new ChainIO();
+		try {
+			anno.chainList = chainLoader.load(new File(chainPath));
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		
+		
+		System.out.println("success building data...\n");
 		
 		/******************************************
 	    new train3DROI() logic, temp here in main;
@@ -780,28 +814,16 @@ public class ThreeDROIAnnotation {
 		
 		// feature extraction, selection
 		float[][] extractedFea = null;
+		Annotator annotator = new Annotator();
 
-		extractedFea = get3DFeaViaExtrator(anno.problem);
-		
-	    System.out.println("Extracted features:");
-		for (int m = 0; m < extractedFea.length; m++) {
-			for (int n = 0; n < extractedFea[0].length; n++)
-				System.out.print(extractedFea[m][n] + " ");
-				System.out.println();
-		}
+		extractedFea = get3DFeaViaExtrator(anno.problem, anno.chainList, annotator);
 		
 	    
 		// set up training targets
 		int[] target = new int[anno.getLength()];
 		target = anno.problem.getTargets()[0];
 		
-		/*
-		  for (int i = 0; i < positiveIndex; i++)
-		 
-			target[i] = 1;
-		for (int i = positiveIndex ; i < anno.getLength(); i++)
-			target[i] = 0;
-
+		
 		// new classifier */
 		/*
 		 * a variety of classifiers to use, 
@@ -810,16 +832,18 @@ public class ThreeDROIAnnotation {
 		 */
 
 		//classifier = new SVMClassifier((2 * rz + 1) * (2 * ry + 1) * (2 * rx + 1));
-		classifier = new MLPClassifier();
+		//classifier = new MLPClassifier();
 		
-		//set the type of the weka classifier.
-		HashMap<String,String> params = new HashMap<String, String>();
-		params.put("W_RandomForest", "W_RandomForest");
-	
-		//classifier = new WekaClassifiers();
-		//classifier.setParameters(params);
-		
+		//get classifier from chain file. first only, ignore rest
 		try {
+			String classi = anno.chainList.get(0).getClassifier();
+			HashMap<String,String> params = anno.chainList.get(0).getClassParams();
+			//classifier =  annotator.getSavableClassifierGivenName(classi, anno.chainList.get(0).getClassifierExternalPath(), params);
+			//**** not able to get a savable classifier!
+			classifier = new MLPClassifier();
+			
+			
+		
 			classifier.trainingOnly(extractedFea, target);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -836,13 +860,16 @@ public class ThreeDROIAnnotation {
 			e.printStackTrace();
 		}
 		
-		System.out.println("C :: T");
+		
+		//int[] results;
+		//results = 
+		
+					System.out.println("C :: T");
 		for (int i = 0; i < ann.length; i++)
 			System.out.println(ann[i].anno + " :: "+ target[i]);
 
 		//return classifier;
 
-		
 
 		
 		BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in)); 
