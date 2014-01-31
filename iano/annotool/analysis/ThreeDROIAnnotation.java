@@ -758,9 +758,11 @@ public class ThreeDROIAnnotation {
 		return problemLength;
 	}
 	
-	//command line version of code
+	//command line version of code. currently only for testing
 	//takes args: image file path, positive roi, negative roi, roi depth, width, height, chain file 
 	public static void main(String[] args){
+		
+		
 		ThreeDROIAnnotation anno = new ThreeDROIAnnotation();
 		
 		String[] roiPaths;
@@ -796,6 +798,7 @@ public class ThreeDROIAnnotation {
 		}
 		
 		//load the chain file as an ArrayList
+			//convert this to funtion anno.loadChain(chainpath)?
 		ChainIO chainLoader = new ChainIO();
 		try {
 			anno.chainList = chainLoader.load(new File(chainPath));
@@ -810,6 +813,7 @@ public class ThreeDROIAnnotation {
 		
 		/******************************************
 	    new train3DROI() logic, temp here in main;
+	    * again, convert to function in annotator that trains its model and maybe returns features?
 	    *//////////////////////////////////////////
 		
 		// feature extraction, selection
@@ -867,19 +871,24 @@ public class ThreeDROIAnnotation {
 					System.out.println("C :: T");
 		for (int i = 0; i < ann.length; i++)
 			System.out.println(ann[i].anno + " :: "+ target[i]);
-
-		//return classifier;
-
-
 		
+		
+		System.out.println("Finished model training... \npress any key to test.");
+
+		//pause execution for testing diagnostics
 		BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in)); 
 		try {
 			stdin.readLine();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}
+		
+		
+		//run the test logic here, to be broken up back into class methods
+		
+		
+		
+	}//end main
 	
 }//endclass ThreeDROIAnnotation
 
