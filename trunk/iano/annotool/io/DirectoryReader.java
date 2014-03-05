@@ -17,7 +17,7 @@ import java.util.HashMap;
  *
  */
 public class DirectoryReader {
-	private int length;	//Number of files
+	//private int length;	//Number of files
 	
 	ArrayList<String> annotations = null;
 	HashMap<String, String> classNames = new HashMap<String, String>();

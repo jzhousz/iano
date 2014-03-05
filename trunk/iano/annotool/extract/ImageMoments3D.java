@@ -120,8 +120,8 @@ public class ImageMoments3D implements FeatureExtractor {
 		
 		//Normalized central moments for scale invariance
 		double nu_200, nu_020, nu_002,
-		   	   nu_011, nu_101, nu_110,
-		   	   nu_100;
+		   	   nu_011, nu_101, nu_110;
+		   	  // nu_100;
 		
 		double J1, J2, J3, I1, I2;
 		
@@ -169,7 +169,7 @@ public class ImageMoments3D implements FeatureExtractor {
 			nu_011 = nu_pqr(mu_011, 0, 1, 1, M_000);
 			nu_101 = nu_pqr(mu_101, 1, 0, 1, M_000);
 			nu_110 = nu_pqr(mu_110, 1, 1, 0, M_000);
-			nu_100 = nu_pqr(mu_100, 1, 0, 0, M_000);
+			//nu_100 = nu_pqr(mu_100, 1, 0, 0, M_000);
 			
 			
 			System.out.println("Calculating moment invariants...");

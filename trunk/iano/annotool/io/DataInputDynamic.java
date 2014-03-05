@@ -214,7 +214,7 @@ public class DataInputDynamic {
 		if (children == null)
 		{
 			System.out.println("Read the images to get info.");
-			String[] children = getChildren();
+			//String[] children = getChildren();
 		}
 			
 		return children.length;

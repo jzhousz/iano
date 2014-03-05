@@ -21,7 +21,6 @@ import javax.swing.border.SoftBevelBorder;
 import javax.swing.border.TitledBorder;
 
 import annotool.Annotator;
-import annotool.io.DataInput;
 
 /**
  * This is the panel of the load image dialog for selecting input problem in directory tree mode.

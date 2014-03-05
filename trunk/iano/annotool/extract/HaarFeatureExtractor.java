@@ -1,7 +1,6 @@
 package annotool.extract;
 
 import annotool.ImgDimension;
-import ij.process.ImageProcessor;
 
 import java.util.ArrayList;
 import annotool.Util;

@@ -207,9 +207,9 @@ public class AnnMenuBar implements ActionListener {
 			frame.initModelSelectWizard();
 		else if(command.equals(TRAINONLY))
 			frame.initTrainOnly();
-		else if(command.equals(ROITAG)) {
-			ROITagger tagger = new ROITagger(frame, "ROI Tagger", false);
-		}
+		//else if(command.equals(ROITAG)) {
+			//ROITagger tagger = new ROITagger(frame, "ROI Tagger", false);
+		//}
 		else if(command.equals(IMGANNO))
 			frame.initAnnotate();
 		else if(command.equals(ROIANNO))

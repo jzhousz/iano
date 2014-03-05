@@ -4,12 +4,14 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import javax.swing.JFileChooser;
-import javax.swing.SwingUtilities;
 
 import annotool.Annotation;
 import annotool.Annotator;
+//import annotool.ensemble.*;
+import annotool.classify.Classifier;
 import annotool.classify.SavableClassifier;
+import annotool.ensemble.ComEnsemble;
+import annotool.ensemble.Ensemble;
 import annotool.gui.AnnOutputPanel;
 import annotool.gui.ImageReadyPanel;
 import annotool.gui.ROIParameterPanel;
@@ -222,7 +224,7 @@ public class ModelLoader implements Runnable {
 			System.err.println("Parameter panel is null");
 			return;
 		}
-		
+		/*
 		int interval = pnlROIParam.getSelectedInterval();
 		int mode = pnlROIParam.getSelectedMode();
 		String channel = pnlImages.getSelectedChannel();
@@ -231,8 +233,8 @@ public class ModelLoader implements Runnable {
 		boolean isMaximaOnly = pnlROIParam.isLocalMaximaOnly();
 		
 		int[] selectedImages = pnlImages.getTablePanel().getAnnotationTable().getSelectedRows();
-		
-		ROIAnnotator roiAnnotator = new ROIAnnotator(interval, mode, channel, chainModels, selectedImages, exportDir, isExport, isMaximaOnly,  this.pnlImages);
+		*/
+		//ROIAnnotator roiAnnotator = new ROIAnnotator(interval, mode, channel, chainModels, selectedImages, exportDir, isExport, isMaximaOnly,  this.pnlImages);
 	}
 	
 	/**
@@ -326,7 +328,35 @@ public class ModelLoader implements Runnable {
 	        
 	        //Classify using model
 	        pnlStatus.setOutput("Classifying ... ");
+	       
 	        
+	        //Added 1/20/2014
+	        Ensemble ens = new ComEnsemble(); //new Ensemble();
+	        int k = 0;
+	        for(Classifier cal : model.getClassifier())
+	        {
+	        	System.out.println("Running Classifier " + model.getClassifierChain().get(k).getClassName());
+	        	SavableClassifier classifier = (SavableClassifier) cal;
+	        	supportsProb[modelIndex] = classifier.doesSupportProbability();
+	        	try {
+	        	anno.classifyGivenAMethod(classifier, features, annotations[modelIndex]);
+	        	ens.addResult(annotations[modelIndex]);
+	        	} catch (Exception ex) {
+					pnlStatus.setOutput("Classification using model failed.");
+					ex.printStackTrace();
+				}
+	        	k++;
+	        }
+	        int i = 0;
+	        for( int result :  ens.classify() )
+	        {
+	        	//System.out.println(i);
+	        	annotations[modelIndex][i].anno = result;
+	        	i++;
+	        }
+	        
+	        
+	        /* Removed 1/20/2014
 	        SavableClassifier classifier = (SavableClassifier)model.getClassifier();
 	        supportsProb[modelIndex] = classifier.doesSupportProbability();
 	        try {
@@ -335,6 +365,7 @@ public class ModelLoader implements Runnable {
 				pnlStatus.setOutput("Classification using model failed.");
 				ex.printStackTrace();
 			}
+		    */    
 		        
         }//End of loop for models
         

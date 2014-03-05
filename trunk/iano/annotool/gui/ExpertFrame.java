@@ -13,6 +13,7 @@ import java.awt.event.*;
 import annotool.classify.Classifier;
 import annotool.classify.SavableClassifier;
 import annotool.classify.Validator;
+import annotool.gui.model.ClassifierChain;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.ModelFilter;
 import annotool.gui.model.ModelSaver;
@@ -176,6 +177,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
 		pnlClassMain.add(cbClassifier);
 		
 		pnlClass.add(pnlClassMain, BorderLayout.NORTH);
+		
 		
 		//Add to container
 		pnlAlgo.add(pnlExt);
@@ -579,11 +581,23 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	//chainModels[i].setSelectedIndices(combo.getSelectedIndices());//moved up
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
         	chainModels[i].setClassNames(classNames);
-        	chainModels[i].setClassifierName(classifierChoice);
-        	chainModels[i].setClassifierClass(classifier.getClassName());
-        	chainModels[i].setClassifierPath(classifier.getExternalPath());
-        	chainModels[i].setClassifier(classifierObj);
-        	chainModels[i].setClassParams(classParams);            
+        	
+        	//added 1/20/2014
+        	ClassifierChain cal =  new ClassifierChain(classifierChoice);
+        	cal.setClassName(classifier.getClassName());
+        	cal.setExternalPath(classifier.getExternalPath());
+        	cal.setParams(classParams);
+        	
+        	chainModels[i].addClassifierChain(cal);
+        	chainModels[i].addClassifier(classifierObj);
+        	
+        	//Removed 1/20/2014
+        	
+        	//chainModels[i].setClassifierName(classifierChoice);
+        	//chainModels[i].setClassifierClass(classifier.getClassName());
+        	//chainModels[i].setClassifierPath(classifier.getExternalPath());
+        	//chainModels[i].addClassifier(classifierObj);
+        	//chainModels[i].setClassParams(classParams);            
             
             if (!setProgress(50 + (i + 1) * 50 / numOfAnno)) {
                 return;
@@ -739,11 +753,23 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
         	chainModels[i].setClassNames(classNames);
         	chainModels[i].setResult(rate);
+        	
+        	//Added 1/20/2014
+        	ClassifierChain cal =  new ClassifierChain(classifierChoice);
+        	cal.setClassName(classifier.getClassName());
+        	cal.setExternalPath(classifier.getExternalPath());
+        	cal.setParams(classParams);
+        	
+        	chainModels[i].addClassifierChain(cal);
+        	chainModels[i].addClassifier(classifierObj);
+        	
+        	/* Removed 1/20/2014
         	chainModels[i].setClassifierName(classifierChoice);
         	chainModels[i].setClassifierClass(classifier.getClassName());
         	chainModels[i].setClassifierPath(classifier.getExternalPath());
         	chainModels[i].setClassifier(classifierObj);
         	chainModels[i].setClassParams(classParams);
+            */ 
             
             //Display result
             ResultPanel pnlResult = new ResultPanel(tabPane);
@@ -932,12 +958,23 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	chainModels[i].setLabel(anno.getAnnotationLabels().get(i));
         	chainModels[i].setClassNames(classNames);
         	chainModels[i].setResult(recograte[K]);
+        	
+        	//Added 1/20/2014
+        	ClassifierChain cal =  new ClassifierChain(classifierChoice);
+        	cal.setClassName(classifier.getClassName());
+        	cal.setExternalPath(classifier.getExternalPath());
+        	cal.setParams(classParams);
+        	
+        	chainModels[i].addClassifierChain(cal);
+        	chainModels[i].addClassifier(classifierObj);
+        	
+        	/* Removed 1/20/2014
         	chainModels[i].setClassifierName(classifierChoice);
         	chainModels[i].setClassifierClass(classifier.getClassName());
         	chainModels[i].setClassifierPath(classifier.getExternalPath());
         	chainModels[i].setClassifier(classifierObj);
         	chainModels[i].setClassParams(classParams);
-            
+            */
             //Display result
             ResultPanel pnlResult = new ResultPanel(tabPane);
             tabPane.addTab("Result - " + anno.getAnnotationLabels().get(i), pnlResult);

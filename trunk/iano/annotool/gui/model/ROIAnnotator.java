@@ -20,7 +20,6 @@ import annotool.analysis.Utility;
 import annotool.classify.SavableClassifier;
 import annotool.gui.AnnOutputPanel;
 import annotool.gui.ImageReadyPanel;
-import annotool.gui.LegendDialog;
 import annotool.gui.ROIParameterPanel;
 import annotool.io.ChainModel;
 import annotool.io.DataInput;
@@ -90,7 +89,7 @@ public class ROIAnnotator {
 			this.classNames = model.getClassNames();	//Retrieve class names to export annotated pixels
 			annotate(problem, model, selectedImages);
 			
-			LegendDialog ld = new LegendDialog("Legends", colorMasks, classNames);
+			//LegendDialog ld = new LegendDialog("Legends", colorMasks, classNames);
 		}
 	}
 	
@@ -298,7 +297,7 @@ public class ROIAnnotator {
 				} catch (Exception ex) {
 					System.out.println("Classification using model failed.");
 					ex.printStackTrace();
-					this.pnlStatus.setOutput("Classification exception! Classifier=" + model.getClassifierName());
+					this.pnlStatus.setOutput("Classification exception!"); //Changed 1/20/2014
 				}
 			}//	end of j
 	      } //end of i
@@ -413,7 +412,7 @@ public class ROIAnnotator {
     public void markResultsOnImage(ImagePlus imp, int[] predictions, int roiWidth, int roiHeight, boolean[] isMaxima,
     		int startCol, int startRow, int endCol, int endRow)
     {  
-    	String imageName = imp.getTitle();
+    	//String imageName = imp.getTitle();
     	
     	int imageType = imp.getType();
     	if(imageType != ImagePlus.COLOR_RGB) {

@@ -33,9 +33,7 @@ public class AnnCompareVisualPanel extends JPanel {
 
 		//show a final recognition rate, error rate
 		java.awt.Font font = new java.awt.Font("Kaufmann", java.awt.Font.BOLD, 15);
-		java.awt.FontMetrics fm = g.getFontMetrics();
 		g.setFont(font);
-		int fontHei = fm.getHeight();
 		String s = "Recognition rates of all classifiers:";
 		int textHeight = g.getFontMetrics().getHeight() + 10;
 		g.drawString(s, 0, textHeight);

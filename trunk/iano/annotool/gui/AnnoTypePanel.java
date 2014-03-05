@@ -3,7 +3,6 @@ package annotool.gui;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-import annotool.Annotator;
 import annotool.gui.model.Utils;
 
 import java.awt.BorderLayout;

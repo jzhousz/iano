@@ -3,7 +3,6 @@ package annotool.gui;
 import java.awt.event.WindowEvent;
 
 import javax.swing.JFrame;
-import javax.swing.JProgressBar;
 
 import annotool.io.ChainModel;
 import annotool.io.DataInput;

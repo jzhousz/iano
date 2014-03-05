@@ -51,7 +51,7 @@ public class DataInputROI {
 	//ArrayList contains single object for 2D image,
 	//otherwise, each object in the arraylist is a stack of the 3D image
 	public ArrayList<Object> getROIData(int x, int y, int z) {		
-		int stackSize = getStackSize();
+		//int stackSize = getStackSize();
 		
 		//x, y, z +- roiDimension.width/2,height/2,depth/2 must be within the image
 		//but the ROI information from the James_mouse_36z set has roi points on 2D stack

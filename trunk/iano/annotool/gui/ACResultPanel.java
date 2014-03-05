@@ -35,6 +35,7 @@ import org.jfree.data.category.DefaultCategoryDataset;
 
 import annotool.Annotator;
 import annotool.gui.model.Chain;
+import annotool.gui.model.ClassifierChain;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
 import annotool.gui.model.Styles;
@@ -86,7 +87,7 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	int imgWidth, imgHeight, imgDepth;
 	boolean is3d;
 	private float[][] rates;
-	private ArrayList<String> labels;
+	//private ArrayList<String> labels;
 	
 	public ACResultPanel(JTabbedPane parentPane, int imgWidth, int imgHeight, int imgDepth, boolean is3d, String channel, ArrayList<Chain> selectedChains, boolean cFlag) {
 	   	this.parentPane = parentPane;
@@ -209,7 +210,7 @@ public class ACResultPanel extends JPanel implements ActionListener{
         final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         
         this.rates = rates;
-        this.labels = labels;
+        //this.labels = labels;
         this.selectedChains = selectedChains;
         
         for(int i=0; i < rates.length; i++){			//Each chain 
@@ -481,6 +482,20 @@ public class ACResultPanel extends JPanel implements ActionListener{
 	 * Creates and returns the paragraph of classifier info for passed in chain
 	 */
 	private Paragraph getClassifierInfo(Chain chain) {
+		
+		/* Added 1/16/2014 */
+		Paragraph info = new Paragraph();
+		for(ClassifierChain Class : chain.getClassifier()) {
+			info.add(new Chunk(Class.getName()));
+			info.add(Chunk.NEWLINE);
+			for (String parameter : Class.getParams().keySet()) {
+				info.add(new Chunk(parameter + "=" + Class.getParams().get(parameter)));
+				info.add(Chunk.NEWLINE);
+        	}
+		}
+		return info;
+		
+		/* Remove 1/16/2014
 		Paragraph info = new Paragraph();		
 		info.add(new Chunk(chain.getClassifier()));
 		info.add(Chunk.NEWLINE);
@@ -489,6 +504,7 @@ public class ACResultPanel extends JPanel implements ActionListener{
 			info.add(Chunk.NEWLINE);
     	}
 		return info;
+		*/
 	}
 	
 	/*
@@ -519,6 +535,20 @@ public class ACResultPanel extends JPanel implements ActionListener{
 					taChainDetail.setText(taChainDetail.getText() + "\n");
 				}
 			}
+			
+			/* added 1/16/2014 */
+			if(chain.getClassifier().size() > 0) {
+				taChainDetail.setText(taChainDetail.getText() + "Classifier(s):\n");
+				for(ClassifierChain Class : chain.getClassifier()) {
+					taChainDetail.setText(taChainDetail.getText() + Class.getName() + "\n");
+					for (String parameter : Class.getParams().keySet()) {
+						taChainDetail.setText(taChainDetail.getText() + parameter + "=" + Class.getParams().get(parameter) + "\n");
+		        	}
+					taChainDetail.setText(taChainDetail.getText() + "\n");
+				}
+			}
+			
+			/* Removed 1/16/2014
 			if(chain.getClassifier() != null) {
 				taChainDetail.setText(taChainDetail.getText() + "Classifier:\n");
 				taChainDetail.setText(taChainDetail.getText() + chain.getClassifier() + "\n");
@@ -526,6 +556,8 @@ public class ACResultPanel extends JPanel implements ActionListener{
 					taChainDetail.setText(taChainDetail.getText() + parameter + "=" +chain.getClassParams().get(parameter) + "\n");
 		    	}
 			}
+			*/
+			
 			for (int i = 0; i < rates.length; i++) {
 				for (int j = 0; j < rates[i].length; j++){
 					if (selectedChains.get(i).getName().equals(chain.getName())) {

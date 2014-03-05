@@ -2,7 +2,6 @@ package annotool.select;
 
 import annotool.select.FeatureSelector;
 //import weka.filters.supervised.attribute.*;
-import weka.filters.Filter;
 import weka.attributeSelection.*;
 import weka.core.*;
 

@@ -1,6 +1,5 @@
 package annotool.select;
 
-import java.util.HashMap;
 
 /*
   parameters for mRMR:

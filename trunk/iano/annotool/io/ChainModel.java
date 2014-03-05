@@ -15,6 +15,7 @@ import javax.swing.SwingUtilities;
 import annotool.Annotator;
 import annotool.classify.Classifier;
 import annotool.classify.SavableClassifier;
+import annotool.gui.model.ClassifierChain;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
 import annotool.gui.model.Utils;
@@ -37,17 +38,28 @@ public class ChainModel {
 	private HashMap<String, String> classNames = null;
 	private ArrayList<Extractor> extractors = null;
 	private ArrayList<Selector> selectors = null;
-	private String classifierName = null;
-	private Classifier classifier = null;
-	private HashMap<String, String> classParams = null;
-	private String classifierPath = null;	//If external classifier (i.e. from plugin), path needs to be saved
-	private String classifierClass = null;
+	
+	private ArrayList<Classifier> classifiers = null; //added 1/16/2014
+	private ArrayList<ClassifierChain> classifierChain = null; //added 1/16/2014
+	
+	//private String ensembleName = null;
+	private HashMap<String, String> ensParams = null;
+	//private String ensemblePath = null;
+	//private String ensembleClass = null;
+	
+	//private String classifierName = null; //removed 1/16/2014
+	//private Classifier classifier = null;  //removed 1/16/2014
+	//private HashMap<String, String> classParams = null; //removed 1/16/2014
+	//private String classifierPath = null;	//If external classifier (i.e. from plugin), path needs to be saved removed 1/16/2014
+	//private String classifierClass = null; //removed 1/16/2014
 	
 	JProgressBar bar = null;
 	
 	public ChainModel() {
 		extractors = new ArrayList<Extractor>();
 		selectors = new ArrayList<Selector>();
+		classifierChain = new ArrayList<ClassifierChain>(); // Added 1/16/2014
+		classifiers = new ArrayList<Classifier>(); // Added 1/16/2014
 	}
 	
 	/*
@@ -122,6 +134,44 @@ public class ChainModel {
         	
         	setProgress(30);
         	
+        	
+        	//Write classifier
+        	int calNum = 0;
+        	for(Classifier cal : classifiers) 
+        	{
+        		writer.write("[CLASSIFIER]" + newLine);
+        		writer.write("Name=" + classifierChain.get(calNum).getName() + newLine);
+        		writer.write("ClassName=" + classifierChain.get(calNum).getClassName() + newLine);
+        		writer.write("Path=" + classifierChain.get(calNum).getExternalPath() + newLine); //External classifier (i.e. plugin) or null
+        	
+        		//Write classifier parameters
+            	writer.write("[PARAMETER_START]" + newLine);
+            	for (String parameter :  classifierChain.get(calNum).getParams().keySet()) {
+            		writer.write(parameter + "=" + classifierChain.get(calNum).getParams().get(parameter) + newLine);
+            	}
+            	writer.write("[PARAMETER_END]" + newLine);
+            	
+            	String modelfileName = getUniqueFileName(file.getParent(), fileName + "_" + label + "_model");
+        		String modelPath = file.getParent() + File.separatorChar + modelfileName;            	
+        		((SavableClassifier)cal).saveModel(((SavableClassifier)cal).getModel(), modelPath);
+        		writer.write("Path=" + modelfileName + newLine);
+        		calNum++;
+            	
+        	}
+        	/*
+        	//Write Ensemble
+        	writer.write("[Ensemble]" + newLine);
+        	writer.write("Name=" + ensembleName + newLine);
+        	writer.write("EnsName=" + ensembleClass + newLine);
+        	writer.write("Path=" + ensemblePath + newLine); //External Ensemble (i.e. plugin) or null
+        	//Write classifier parameters
+        	writer.write("[PARAMETER_START]" + newLine);
+        	for (String parameter : ensParams.keySet()) {
+        		writer.write(parameter + "=" + ensParams.get(parameter) + newLine);
+        	}
+        	writer.write("[PARAMETER_END]" + newLine);
+        	*/
+        	/* Removed 1/16/2014
         	//Write classifier
         	writer.write("[CLASSIFIER]" + newLine);
         	writer.write("Name=" + classifierName + newLine);
@@ -143,6 +193,7 @@ public class ChainModel {
 	        		writer.write("Path=" + modelfileName + newLine);
         		}
         	}
+        	*/
         	
         	setProgress(80);
         	
@@ -176,12 +227,14 @@ public class ChainModel {
 		Scanner scanner = null;
 		try {
 			scanner = new Scanner(file);
+			
 		}
 		catch (FileNotFoundException e) {
 			System.out.println("Target file not found.");
 			e.printStackTrace();
 			throw e;
 		}
+		
 		while(scanner.hasNextLine()) {
 			String line = scanner.nextLine();
 			if(line.startsWith("#")) {
@@ -219,7 +272,10 @@ public class ChainModel {
 					ex = new Extractor(line.replaceFirst("Name=", ""));
 				}
 				else
+				{
+					scanner.close();
 					throw new Exception("Invalid model file.");
+				}
 				//End extractor name
 				
 				//Read class name
@@ -228,7 +284,10 @@ public class ChainModel {
 					ex.setClassName(line.replaceFirst("ClassName=", ""));
 				}
 				else
+				{
+					scanner.close();
 					throw new Exception("Invalid model file.");
+				}
 				
 				//Read path
 				line = scanner.nextLine();
@@ -238,7 +297,11 @@ public class ChainModel {
 						ex.setExternalPath(path);
 				}
 				else
+				{
+					scanner.close();
 					throw new Exception("Invalid model file.");
+				}
+					
 				
 				//Read extractor parameters
 				line = scanner.nextLine();
@@ -251,7 +314,10 @@ public class ChainModel {
 						if(params.length == 2)
 							ex.addParams(params[0], params[1]);
 						else
+						{
+							scanner.close();
 							throw new Exception("Invalid extractor parameter.");
+						}
 					}
 				}//End extractor parameters	
 				extractors.add(ex);
@@ -267,7 +333,10 @@ public class ChainModel {
 					sel = new Selector(line.replaceFirst("Name=", ""));
 				}
 				else
+				{
+					scanner.close();
 					throw new Exception("Invalid model file.");
+				}
 				
 				//Read selected indices
 				line = scanner.nextLine();
@@ -287,7 +356,117 @@ public class ChainModel {
 				}				
 				selectors.add(sel);
 			}//End Feature Selector
+
+		
 			
+			while(line.equals("[CLASSIFIER]")) 
+			{
+				//First line after this tag should be name of the Classifier
+				line = scanner.nextLine();
+
+				System.out.println(line);
+				
+				ClassifierChain cal = null;
+				//Read Classfier name
+				if(line.startsWith("Name=")) {
+					cal = new ClassifierChain(line.replaceFirst("Name=", ""));
+					
+					line = scanner.nextLine();
+					cal.setClassName(line.replaceFirst("ClassName=", ""));
+					
+					line = scanner.nextLine();
+					cal.setExternalPath(line.replaceFirst("Path=", ""));
+					
+					line = scanner.nextLine();
+					if(line.equals("[PARAMETER_START]")) {
+						while(scanner.hasNextLine()) {
+							line = scanner.nextLine();
+							if(line.equals("[PARAMETER_END]"))
+								break;
+							String params[] = line.split("=");
+							if(params.length == 2)
+								cal.addParams(params[0], params[1]);
+							else
+							{
+								scanner.close();
+								throw new Exception("Invalid classifier parameter.");
+							}
+						}
+							line = scanner.nextLine();
+						
+							//System.out.println(line);
+							
+							classifierChain.add(cal);
+							
+							Classifier classifier = null;
+							
+							String path = line.replaceFirst("Path=", "");;
+							path = file.getParent() + File.separatorChar + path; 
+							classifier = (new Annotator()).getClassifierGivenName(cal.getClassName(), cal.getExternalPath(), cal.getParams());
+							if(classifier instanceof SavableClassifier)
+								((SavableClassifier)classifier).setModel(((SavableClassifier)classifier).loadModel(path));
+							
+							classifiers.add(classifier);
+							if(scanner.hasNext())
+								line = scanner.nextLine();
+						
+				}	
+				else
+				{
+					scanner.close();
+					throw new Exception("Invalid model file.");
+				}
+			
+				}				
+			}//End Classifier
+			
+			/*
+			
+			if(line.equals("[Ensemble]")) {
+				line = scanner.nextLine();
+				//Read classifier name
+				if(line.startsWith("Name=")) {
+					ensembleName = line.replaceFirst("Name=", "");
+				}
+				else
+					throw new Exception("Invalid model file.");
+				
+				//Read class name
+				line = scanner.nextLine();
+				if(line.startsWith("EnsName=")) {
+					ensembleClass = line.replaceFirst("ClassName=", "");
+				}
+				else
+					throw new Exception("Invalid model file.");
+				
+				//Read path
+				line = scanner.nextLine();
+				if(line.startsWith("Path=")) {
+					String path = line.replaceFirst("Path=", "");
+					if(!path.equals("null"))
+						ensemblePath = path;
+				}
+				else
+					throw new Exception("Invalid model file.");
+				
+				//Read classifier parameters
+				line = scanner.nextLine();
+				if(line.equals("[PARAMETER_START]")) {
+					ensParams = new HashMap<String, String>();
+					while(scanner.hasNextLine()) {
+						line = scanner.nextLine();
+						if(line.equals("[PARAMETER_END]"))
+							break;
+						String params[] = line.split("=");
+						if(params.length == 2)
+							ensParams.put(params[0], params[1]);
+						else
+							throw new Exception("Invalid Ensemble parameter.");
+					}
+				}
+			}//End Ensemble parameters
+			*/
+			/* Removed 1/16/2014
 			if(line.equals("[CLASSIFIER]")) {
 				line = scanner.nextLine();
 				//Read classifier name
@@ -331,6 +510,7 @@ public class ChainModel {
 					}
 				}//End classifier parameters
 				
+			
 				line = scanner.nextLine();
 				//Read classifier model path
 				if(line.startsWith("Path=")) {
@@ -340,18 +520,32 @@ public class ChainModel {
 					if(classifier instanceof SavableClassifier)
 						((SavableClassifier)classifier).setModel(((SavableClassifier)classifier).loadModel(path));
 				}
+				
 			}
+			*/
+			
 		}
+		scanner.close();
 	}
 	
 	/*
 	 * Used for testing that the loaded model is valid. It is valid if there is at least a classifier model
 	 */
 	public boolean isValid() {
-		if(classifier instanceof SavableClassifier) {
-			if(((SavableClassifier)classifier).getModel() != null)
-				return true;
-		}		
+	if(classifiers.size() > 0)
+	{
+		if(classifiers.get(0) instanceof SavableClassifier) {
+				if(((SavableClassifier)classifiers.get(0)).getModel() != null)
+						return true;
+		}
+	}
+		
+		
+		//removed 1/20/2014
+	//	if(classifier instanceof SavableClassifier) {
+	//		if(((SavableClassifier)classifier).getModel() != null)
+	//			return true;
+	//	}		
 		return false;
 	}
 	
@@ -392,6 +586,14 @@ public class ChainModel {
 	}
 	public void addSelector(Selector sel) {
 		this.selectors.add(sel);
+	}
+	
+	public void addClassifierChain(ClassifierChain cal) {
+		this.classifierChain.add(cal);
+	}
+	
+	public void addClassifier(Classifier cal) {
+		this.classifiers.add(cal);
 	}
 	
 	//Getters and setters
@@ -462,6 +664,59 @@ public class ChainModel {
 	public void setSelectors(ArrayList<Selector> selectors) {
 		this.selectors = selectors;
 	}
+	
+	public ArrayList<Classifier> getClassifier() {
+		return classifiers;
+	}
+	
+	public void setClassifier( /*ArrayList<ClassifierChain> classifierChain,*/ ArrayList<Classifier> classifiers) {
+		
+		//this.classifierChain = classifierChain;
+		this.classifiers = classifiers;
+		
+	}
+
+	public ArrayList<ClassifierChain> getClassifierChain() {
+		
+		return classifierChain;
+		
+	}
+	
+	
+	public void setClassifierChain( ArrayList<ClassifierChain> classifierChain) {
+		
+		this.classifierChain = classifierChain;
+		
+	}
+	
+	public void setBar(JProgressBar bar) {
+		this.bar = bar;
+	}
+
+	/*
+	public String getEnsembleName() {
+		return ensembleName;
+	}
+	public void setEnsembleName(String EnsembleName) {
+		this.ensembleName = EnsembleName;
+	}
+	 */
+	public HashMap<String, String> getEnsParams() {
+		return ensParams;
+	}
+	public void setEnsParams(HashMap<String, String> ensParams) {
+		this.ensParams = ensParams;
+	}
+	/*
+	public void setEnsemblePath(String path) {
+		this.ensemblePath = path;
+	}
+
+	public void setEnsembleClass(String ensembleClass) {
+		this.ensembleClass = ensembleClass;
+	}
+	*/
+	/* Removed 1/16/2014 
 	public String getClassifierName() {
 		return classifierName;
 	}
@@ -480,9 +735,7 @@ public class ChainModel {
 	public void setClassParams(HashMap<String, String> classParams) {
 		this.classParams = classParams;
 	}
-	public void setBar(JProgressBar bar) {
-		this.bar = bar;
-	}
+
 	public void setClassifierPath(String path) {
 		this.classifierPath = path;
 	}
@@ -490,4 +743,6 @@ public class ChainModel {
 	public void setClassifierClass(String classifierClass) {
 		this.classifierClass = classifierClass;
 	}
+	*/
+	
 }

@@ -5,10 +5,7 @@ import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
-import imagescience.feature.Laplacian;
 import imagescience.feature.Statistics;
-import imagescience.image.Axes;
-import imagescience.image.Coordinates;
 import imagescience.image.Image;
 
 import java.util.ArrayList;
@@ -150,7 +147,7 @@ public class FeatureJStatistics implements FeatureExtractor {
 		Image img = null;
 		Statistics stats = new Statistics();
 
-		int currentHeight = 0, currentWidth = 0;
+		//int currentHeight = 0, currentWidth = 0;
 		for(int imageIndex = 0; imageIndex < length; imageIndex++) {
 	     	if (problem !=null)
         	{

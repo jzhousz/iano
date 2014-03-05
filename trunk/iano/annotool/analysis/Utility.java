@@ -177,11 +177,11 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 	float sum = 0;
 	int num = 0;
 	int index = 0;
-	int offsetj = 0;
-	int offsetk = 0;
+	//int offsetj = 0;
+	//int offsetk = 0;
 	float meanv; 
     int pixelvalue;
-    int[] rgbpixelvalue;
+    //int[] rgbpixelvalue;
     ImageProcessor currentimagep = null; 
     
     float sum1, sum2;

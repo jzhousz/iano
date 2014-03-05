@@ -2,7 +2,6 @@ package annotool.gui;
 
 import javax.swing.*;
 
-import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -11,24 +10,18 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.*;
 
-import annotool.classify.Validator;
 import annotool.gui.model.Chain;
+import annotool.gui.model.ClassifierChain;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
 import annotool.io.AlgoXMLParser;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import annotool.io.Algorithm;
-import annotool.io.ChainModel;
 import annotool.io.DataInput;
 import annotool.io.Parameter;
-import annotool.Annotation;
-import annotool.Annotator;
-import annotool.ComboFeatures;
-
 /**
  * This class is for auto comparison mode. 
  * It contains algorithm selection screen similar to ExpertFrame(Simple mode) in the left.
@@ -42,16 +35,16 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 	private JPanel pnlMainOuter,
 				   pnlMain,
 				   pnlAlgo,
-				   pnlExt, pnlSel, pnlClass,
-				   pnlExtMain, pnlSelMain, pnlClassMain,
-				   pnlExtBtn, pnlSelBtn, pnlClassBtn;
+				   pnlExt, pnlSel, pnlClass,//, pnlEns,
+				   pnlExtMain, pnlSelMain, pnlClassMain,// pnlEnsMain,
+				   pnlExtBtn, pnlSelBtn, pnlClassBtn;//, pnlEnsBtn;
 	
 	private ChainPanel pnlChain;
 	
-	private JButton btnAddEx, btnAddSel, btnAddClass;
+	private JButton btnAddEx, btnAddSel, btnAddClass;//, btnAddEns;
 	
-	private JLabel lbExtractor, lbSelector, lbClassifier;
-	private JComboBox cbExtractor, cbSelector, cbClassifier;
+	private JLabel lbExtractor, lbSelector, lbClassifier;//, lbEns;
+	private JComboBox cbExtractor, cbSelector, cbClassifier;//, cbEns;
 	
 	int tabNumber = 1; //Initial number of tabs
 	
@@ -59,6 +52,7 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 	HashMap<String, JComponent> exParamControls = null;			//For extractor parameters
 	HashMap<String, JComponent> selParamControls = null;		//For selector parameters
 	HashMap<String, JComponent> classParamControls = null;		//For classifier parameters
+	//HashMap<String, JComponent> EnsParamControls = null;		//For Ensemble parameters
 	
 	AnnOutputPanel pnlOutput = null;
 	
@@ -76,9 +70,12 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 		btnAddEx = new JButton("Add");
 		btnAddSel = new JButton("Add");
 		btnAddClass = new JButton("Add");
+		//btnAddEns = new JButton("Add");
 		btnAddEx.addActionListener(this);
 		btnAddSel.addActionListener(this);
 		btnAddClass.addActionListener(this);
+		//btnAddEns.addActionListener(this);
+		//btnAddEns.setEnabled(false);
 		//Add buttons to panels
 		pnlExtBtn = new JPanel(new FlowLayout(FlowLayout.TRAILING));
 		pnlExtBtn.add(btnAddEx);
@@ -86,6 +83,8 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 		pnlSelBtn.add(btnAddSel);
 		pnlClassBtn = new JPanel(new FlowLayout(FlowLayout.TRAILING));
 		pnlClassBtn.add(btnAddClass);
+		//pnlEnsBtn = new JPanel(new FlowLayout(FlowLayout.TRAILING));
+		//pnlEnsBtn.add(btnAddEns);
 				
 		pnlOutput = new AnnOutputPanel(this);
 		
@@ -117,6 +116,7 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 			lbExtractor = new JLabel("2D Feature Extractor");
 		lbSelector = new JLabel("Feature Selector");
 		lbClassifier = new JLabel("Classifier");
+		//lbEns = new JLabel("Ensemble");
 		
 		//Combo boxes
 		if(is3D)
@@ -126,11 +126,13 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 		
 		cbSelector = new JComboBox(parser.getSelectorsAr());
 		cbClassifier = new JComboBox(parser.getClassifiersAr());
+		//cbEns = new JComboBox(parser.getEnsemblesAr());
 		
 		//Add item listeners to combo boxes
 		cbExtractor.addItemListener(this);
 		cbSelector.addItemListener(this);
 		cbClassifier.addItemListener(this);
+		//cbEns.addItemListener(this);
 		
 		//Extractor panel
 		pnlExt = new JPanel(new BorderLayout());
@@ -164,11 +166,23 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 		
 		pnlClass.add(pnlClassMain, BorderLayout.NORTH);
 		pnlClass.add(pnlClassBtn, BorderLayout.SOUTH);
-		
+		/*
+		//Ensemble panel
+		pnlEns = new JPanel(new BorderLayout());
+		pnlEns.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+				
+		pnlEnsMain = new JPanel(new GridLayout(1, 2));
+		pnlEnsMain.add(lbEns);
+		pnlEnsMain.add(cbEns);
+				
+		pnlEns.add(pnlEnsMain, BorderLayout.NORTH);
+		pnlEns.add(pnlEnsBtn, BorderLayout.SOUTH);
+		*/
 		//Add to container
 		pnlAlgo.add(pnlExt);
 		pnlAlgo.add(pnlSel);
 		pnlAlgo.add(pnlClass);		
+		//pnlAlgo.add(pnlEns);
 		pnlMain.add(pnlAlgo);
 		pnlMain.add(pnlOutput);
 			
@@ -176,6 +190,7 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 		buildExParameterPanel();
 		buildSelParameterPanel();
 		buildClassParameterPanel();
+		//buildEnsParameterPanel();
 		
 		this.addWindowListener(new WindowAdapter() {
 	        public void windowClosing(WindowEvent e) {
@@ -202,10 +217,39 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 			sel.setParams(getParameterList(selector, "Selector"));
 	        pnlChain.addSelector(sel);
 		}
+		
+		//Added 1/16/2014
+		else if(e.getSource() ==  btnAddClass) {
+			Algorithm classifier = (Algorithm)cbClassifier.getSelectedItem();
+			ClassifierChain Class = new ClassifierChain(classifier.getName());
+			Class.setClassName(classifier.getClassName());
+			Class.setExternalPath(classifier.getExternalPath());
+			Class.setParams(getParameterList(classifier, "Classifier"));
+	        pnlChain.addClassifier(Class);
+			if(pnlChain.getClassifier().size() == 2)
+			{
+				//btnAddEns.setEnabled(true);
+				//Message Box
+				JOptionPane.showMessageDialog(this,
+						"More than one Classifier has been added to the chain, Ensembles Mode Activated", 
+						"Ensembles Mode Activated",
+						JOptionPane.INFORMATION_MESSAGE);
+				//
+			}
+		}
+		/*
+		else if(e.getSource() == btnAddEns) {
+			Algorithm Ensemble = (Algorithm)cbEns.getSelectedItem();	        
+
+			pnlChain.addEnsemble( Ensemble.getName(), getParameterList( Ensemble, "Ensemble"), Ensemble.getClassName(), Ensemble.getExternalPath());
+		}
+		*/
+		/* Removed 1/16/2014
 		else if(e.getSource() == btnAddClass) {
 			Algorithm classifier = (Algorithm)cbClassifier.getSelectedItem();	        
 	        pnlChain.addClassifier(classifier.getName(), getParameterList(classifier, "Classifier"), classifier.getClassName(), classifier.getExternalPath());
 		}
+		*/
 	}
 	
 	/**
@@ -230,6 +274,8 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
         		control = selParamControls.get(param.getParamName());
         	else if(type.equals("Classifier"))
         		control = classParamControls.get(param.getParamName());
+        	//else if(type.equals("Ensemble"))
+        	//	control = EnsParamControls.get(param.getParamName());
         		
         	if(control instanceof JTextField)
         		value = ((JTextField) control).getText().trim();
@@ -316,6 +362,27 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 	}
 	
 	/*
+     * Builds the panel for Ensemble parameters 
+     */
+	/*
+	private void buildEnsParameterPanel()
+	{
+		//Get the currently selected extractor
+		Algorithm al = (Algorithm)cbEns.getSelectedItem();
+		
+		EnsParamControls = new HashMap<String, JComponent>();
+		
+		BorderLayout layout = (BorderLayout)pnlEns.getLayout();
+		java.awt.Component centerComp = layout.getLayoutComponent(BorderLayout.CENTER);
+		if(centerComp != null)
+			pnlEns.remove(centerComp); //Remove center component from pnlSel
+		
+		pnlEns.add(buildDynamicPanel(al, EnsParamControls), BorderLayout.CENTER);
+		
+		pnlEns.revalidate();
+	}
+	*/
+	/*
 	 * Creates the panel with controls for algorithm parameters
 	 * 
 	 * Algorithm al : Selected algorithm from the combo box
@@ -399,6 +466,13 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 		btnAddEx.setEnabled(flag);
 		btnAddSel.setEnabled(flag);
 		btnAddClass.setEnabled(flag);
+		//if(!flag)
+		//{
+		//	btnAddEns.setEnabled(flag);
+		//}
+		
+
+
 	}
 	
 	public void addTab(String title, float[][] rates, ArrayList<String> labels, ArrayList<Chain> selectedChains, int imgWidth, int imgHeight, int imgDepth, boolean is3d, String channel, boolean cFlag) {

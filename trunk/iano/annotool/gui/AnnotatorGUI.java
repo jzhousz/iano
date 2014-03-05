@@ -45,7 +45,7 @@ public class AnnotatorGUI extends JFrame
 		splash.showSplashScreen();
 		try 
 		{
-            Thread.currentThread().sleep(1000);
+            Thread.sleep(1000);
         } 
 		catch(InterruptedException ex) 
 		{
@@ -114,6 +114,7 @@ public class AnnotatorGUI extends JFrame
 		Annotator.output = Annotator.TT;
 		LoadImageDialog loadDialog = new LoadImageDialog(this, pnlLanding, Annotator.TT);
 	}
+	
 	public void initTrainOnly() {
 		Annotator.output = Annotator.TO;
 		LoadImageDialog loadDialog = new LoadImageDialog(this, pnlLanding, Annotator.TO);

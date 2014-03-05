@@ -7,15 +7,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Scanner;
-
-import annotool.Annotator;
-import annotool.classify.Classifier;
-import annotool.classify.SavableClassifier;
+import annotool.gui.model.ClassifierChain;
 import annotool.gui.model.Chain;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
+
 
 /**
  * Saves and loads the list of algorithm chains for comparison mode.
@@ -67,6 +64,22 @@ public class ChainIO {
 		        	writer.write("[PARAMETER_END]" + newLine);
 	        	}
 	        	
+	    		
+	    		/* added 1/16/2014 */
+	    		for(ClassifierChain Class : chain.getClassifier()) {
+	    			//Write classifier
+		        	writer.write("[CLASSIFIER]" + newLine);
+		        	writer.write("Name=" + Class.getName() + newLine);
+		        	writer.write("ClassName=" + Class.getClassName() + newLine);
+		        	writer.write("Path=" + Class.getExternalPath() + newLine);
+		        	writer.write("[PARAMETER_START]" + newLine);
+		        	for (String parameter : Class.getParams().keySet()) {
+		        		writer.write(parameter + "=" + Class.getParams().get(parameter) + newLine);
+		        	}
+		        	writer.write("[PARAMETER_END]" + newLine);
+	        	}
+	    		
+	    		/* Removed 1/16/2014
 	        	if(chain.getClassifier() != null) {
 		        	//Write classifier
 		        	writer.write("[CLASSIFIER]" + newLine);
@@ -80,7 +93,7 @@ public class ChainIO {
 		        	}
 		        	writer.write("[PARAMETER_END]" + newLine); 
 	        	}
-	        	
+	        	*/
 	        	writer.write("[CHAIN_END]" + newLine);
 			}//End of for loop
 	
@@ -138,6 +151,23 @@ public class ChainIO {
 		        	writer.write("[PARAMETER_END]" + newLine);
 	        	}
 	        	
+	    		
+	    		/* added 1/16/2014 */
+	    		for(ClassifierChain Class : chain.getClassifier()) {
+	    			//Write classifier
+		        	writer.write("[CLASSIFIER]" + newLine);
+		        	writer.write("Name=" + Class.getName() + newLine);
+		        	writer.write("ClassName=" + Class.getClassName() + newLine);
+		        	writer.write("Path=" + Class.getExternalPath() + newLine);
+		        	writer.write("[PARAMETER_START]" + newLine);
+		        	for (String parameter : Class.getParams().keySet()) {
+		        		writer.write(parameter + "=" + Class.getParams().get(parameter) + newLine);
+		        	}
+		        	writer.write("[PARAMETER_END]" + newLine);
+	        	}
+	    		
+	    		/* Removed 1/16/2014
+	    		
 	        	if(chain.getClassifier() != null) {
 		        	//Write classifier
 		        	writer.write("[CLASSIFIER]" + newLine);
@@ -151,6 +181,7 @@ public class ChainIO {
 		        	}
 		        	writer.write("[PARAMETER_END]" + newLine); 
 	        	}
+	        	*/
 	        	
 	        	
 	        	if(rates != null) {
@@ -308,6 +339,55 @@ public class ChainIO {
 						chain.addSelector(sel);
 					}//End Feature Selector
 					
+					/* added 1/16/2014 */
+					if(line.equals("[CLASSIFIER]")) {
+						//First line after this tag should be name of the CLASSIFIER
+						line = scanner.nextLine();
+						
+						//Read CLASSIFIER
+						ClassifierChain Class = null;
+						if(line.startsWith("Name=")) {
+							Class = new ClassifierChain(line.replaceFirst("Name=", ""));	//Create CLASSIFIER object from name
+						}
+						else
+							throw new Exception("Invalid chain file.");
+						
+						//Read class name
+						line = scanner.nextLine();
+						if(line.startsWith("ClassName=")) {
+							Class.setClassName(line.replaceFirst("ClassName=", ""));
+						}
+						else
+							throw new Exception("Invalid chain file.");
+						
+						//Read class path
+						line = scanner.nextLine();
+						if(line.startsWith("Path=")) {
+							String path = line.replaceFirst("Path=", "");
+							if(!path.equals("null"))
+								Class.setExternalPath(path);
+						}
+						else
+							throw new Exception("Invalid chain file.");
+						
+						//Read Classifier parameters
+						line = scanner.nextLine();
+						if(line.equals("[PARAMETER_START]")) {
+							while(scanner.hasNextLine()) {
+								line = scanner.nextLine();
+								if(line.equals("[PARAMETER_END]"))
+									break;
+								String params[] = line.split("=");
+								if(params.length == 2)
+									Class.addParams(params[0], params[1]);
+								else
+									throw new Exception("Invalid Classifier parameter.");
+							}
+						}//End extractor parameters
+						chain.addClassifier(Class);
+					}//End Classifier
+					
+					/* removed 1/16/2014
 					if(line.equals("[CLASSIFIER]")) {
 						line = scanner.nextLine();
 						//Read classifier name
@@ -350,6 +430,7 @@ public class ChainIO {
 							}	
 						}//End classifier parameters
 					}//End classifier
+				*/
 				}
 				
 				chainList.add(chain);
