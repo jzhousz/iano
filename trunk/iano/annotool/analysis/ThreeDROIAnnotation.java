@@ -2,7 +2,7 @@ package annotool.analysis;
 
 import ij.*;
 import ij.gui.Roi;
-import ij.plugin.frame.RoiManager;
+//import ij.plugin.frame.RoiManager;
 import ij.process.*;
 
 import java.awt.Color;
@@ -11,16 +11,18 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
+//import javax.swing.JScrollPane;
+//import javax.swing.JTable;
+
 
 import annotool.Annotation;
 import annotool.Annotator;
 import annotool.extract.*;
 import annotool.gui.model.*;
 import annotool.classify.*;
-import annotool.classify.MLP.MLPClassifier;
+//import annotool.classify.MLP.MLPClassifier;
 import annotool.io.ChainIO;
 import annotool.io.DataInput;
 
@@ -65,33 +67,56 @@ import annotool.io.DataInput;
  * 			- fix opaque data passing and poor function calls from main
  * 02/03/14 - begin refactoring all logic to be contained inside class, not main
  * 			- edit all currently used by command line code to load assets dynamically
- * 
+ * 02/12/14 - fix last magic numbers, edit out now defunct code blocks
+ * 02/17/14 - move exception handling to throws in most methods, let plugin handle exceptions where smart
+ * 			- renamed test3DRoi to annotate and made non static			
+ * 02/20/14 - draw static method now returns Imageplus, need to write a public access for it
+ * 			- annotate private, new public version to also handle file saving 
+ * 02/24/14	- file saving now handled by various methods, not in private annotate
+ * 			- trainAndtest returns rate now, for gui access
  */
 
+ /*TODO
+  * generalize code to give control to plugins
+  * -dont draw in here, pass back ImagePlus from draw()?
+  * -dont abuse System.out, pass back data structures of results for better display?
+  * -edge case and error handling
+  * -still need to use both ArrayList Alldata AND DataInput Problem, do not like. fix?
+  * 	-requires contrived get3DFeaturesViaExtractor overloads.
+  * -is width x or y? double check for rx ry calc
+  */
 public class ThreeDROIAnnotation {
+	
+	//file output modes
+	static final int NONE = 0;
+	static final int MARKER_ONLY = 1;
+	static final int VAA3D_ONLY = 2;
+	static final int MARKER_VAA3D_BOTH = 3;
+	
 	
 	//data members
 	static SavableClassifier	classifier = null;
-	ImagePlus 					imp;
+	ImagePlus 					imp, localMax;
 	int 						depth = 1, width = 1, height = 1;
+	int 						synapseChannel = 0;
 	annotool.io.DataInput 		problem = null;
 	ArrayList<Chain> 			chainList;
+	double  					trainingRate = 0;
+	float[][] 					extractedFea = null;
+	HashSet<Point3D>  detectedCenters;
+	
+	
 
 	
 	/////////////////////
 	// deprecated in command line version
 	// anisotropic microscopic image cube: 9*9*3
-	static boolean useRaw = false;
-	static int rx = 4, ry = 4;
-	static int rz = 1;
-	//
-	//int positiveIndex = 17; //for cd7  17/11
-	static int positiveIndex = 7;  //for axon synapse large set.
-	//////////////////////
+	static boolean useRaw = false; //still need for annotate.
+
 
 	//constructor
 	//assign members and build data into DataInput type
-	public ThreeDROIAnnotation(ImagePlus im, String[] rp, int d, int w, int h, String ch)
+	public ThreeDROIAnnotation(ImagePlus im, String[] rp, int d, int w, int h, String chains) throws Exception 
 	{
 		//simple assignments
 		imp = im;
@@ -101,55 +126,20 @@ public class ThreeDROIAnnotation {
 		
 		try{ //build a DataInput object to encapsulate data
 			problem = buildDataFromROI(im, rp, d, w, h);
-			} catch( Exception e){
-				System.out.println("ERROR: Problem building data from ROI");
-				return;
-			}		
+		} catch( Exception e){
+			throw new Exception("ERROR: Problem building data from ROI", e);
+		}		
 		
 		ChainIO chainLoader = new ChainIO();
-		try {
-			chainList = chainLoader.load(new File(ch));
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
+			chainList = chainLoader.load(new File(chains));
 		
 	}//end constructor
 	
-	//parse ROI files and construct a DataInput object to encapsulate data
-	private static DataInput buildDataFromROI(ImagePlus imp, String[] roiPaths, int d, int w, int h) throws Exception
-	{
-		HashMap classMap = new HashMap<String, String>();
-		HashMap roiList= new HashMap<String, Roi>();
-		
-		for(String path : roiPaths) {
-			
-			
-			if(path.endsWith("marker"))
-			{
-			 String className = Utils.removeExtension(path.substring(path.lastIndexOf(File.separator) + 1));
-			 Utils.openRoiMarker(path, roiList, classMap, className);
-			}
-			else //ROI .zip file
-			{
-			 String className = Utils.removeExtension(path.substring(path.lastIndexOf(File.separator) + 1));
-			 Utils.openRoiZip(path, roiList, classMap, className);
-			}
-		}
-		
-		if(roiList.size() < 1){
-			System.out.println("ERROR: No rois specified.");
-		}
-		
-		return new DataInput(imp, roiList, classMap, Annotator.channel, d, w, h);
-		
-	}
-	
-	public void trainAndTest()
+
+	public float trainAndTest() throws Exception
 	{
 		// feature extraction, selection
-		float[][] extractedFea = null;
+		extractedFea = null;
 		Annotator annotator = new Annotator();
 
 		extractedFea = get3DFeaViaExtrator(problem, chainList);
@@ -162,35 +152,32 @@ public class ThreeDROIAnnotation {
 		
 		// get classifier 
 		classifier = getSavableClassifier(chainList);
-		try {
-			classifier.trainingOnly(extractedFea, target);
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
-
+		classifier.trainingOnly(extractedFea, target);
 		
 		//test classifier
 		Annotation[] ann = new Annotation[extractedFea.length];
-		for (int i = 0; i < ann.length; i++)
+		for (int i = 0; i < ann.length; i++){
 			ann[i] = new Annotation();
-		try {
-			float rate = (new Validator()).classify(extractedFea, extractedFea,
-					target, target, classifier, ann);
-			System.out.println("rate" + rate);
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
+
+		float rate = (new Validator()).classify(extractedFea, extractedFea,
+			target, target, classifier, ann);
+		System.out.println("rate" + rate);
+
 		
 		
 		System.out.println("C :: T");
-		for (int i = 0; i < ann.length; i++)
+		for (int i = 0; i < ann.length; i++){
 			System.out.println(ann[i].anno + " :: "+ target[i]);
+		}
 		
-	}
+		return rate;
+	}//end trainAndTest
 	
 
-	//new "test3droi" self contained logic using DataInput
-	//incomplete
+	//"test3droi" self contained logic using DataInput
+	//incomplete, not going to use for now
+	/*
 	public void annotate(ImagePlus image)
 	{
 		int totalDepth  = image.getStackSize();
@@ -212,9 +199,11 @@ public class ThreeDROIAnnotation {
 		//
 		
 	}//end annotate
+	*/
 	
 	// will be called by ROITagger "train3droi button"
 	//* DEPRACATED 01/25/14 (still functional)
+	/*
 	public static SavableClassifier train3droi(ImagePlus imp)
 	{
 		// read ROIm -- ROITAGGER
@@ -341,11 +330,6 @@ public class ThreeDROIAnnotation {
 			System.out.println();
 		}
 
-		/*
-		 * a variety of classifiers to use, 
-		 * for Weka classifiers, wrapper class invoked, and specific classifier 
-		 * indicated by a parameter.
-		 */
 		//classifier = new SVMClassifier((2 * rz + 1) * (2 * ry + 1) * (2 * rx + 1));
 		classifier = new MLPClassifier();
 		
@@ -377,10 +361,48 @@ public class ThreeDROIAnnotation {
 
 		return classifier;
 
+	}//end train3DROI
+	*/
+	
+
+	//public access for annotate, handles annotation and file saving
+	public void annotate(ImagePlus imp, String fileName, int fileMode) throws Exception
+	{
+		//do the annotation
+		detectedCenters = annotate(imp);
+		
+		//handle file saving
+		//based on mode.
+		writeToFile(detectedCenters, imp.getHeight(), fileName, fileMode);
+		
+		
+		
+		
+	}
+	private static void writeToFile(HashSet<Point3D> centers, int height, String fileName, int fileMode) throws Exception 
+	{
+		
+		//for file saving and naming convention
+		//Date date = new Date();
+		//SimpleDateFormat fmat =new SimpleDateFormat("_MM_dd_yyyy_hhmmss");
+		
+		
+		switch (fileMode) {
+			case MARKER_ONLY: 	writeMarkerFile(centers, fileName);
+								break;
+			case VAA3D_ONLY:  	writeVaa3DFile(centers, fileName, height);
+								break;
+			case MARKER_VAA3D_BOTH: writeMarkerFile(centers, fileName);
+								writeVaa3DFile(centers, fileName, height);
+								break;
+			default: 			break;
+		}
+		
 	}
 
-	//DEPRECATED 2/4/14 *still functional*
-	public static void test3droi(ImagePlus imp) //not testing, annotating (need to remname)
+
+	//older logic, but keeping this over re-writing the code from Annotator
+	private HashSet<Point3D> annotate(ImagePlus imp) throws Exception
 	{ 
 		// get data from imp
 		ImageProcessor ip = imp.getProcessor();
@@ -389,37 +411,24 @@ public class ThreeDROIAnnotation {
 		int totaldepth = imp.getStackSize();
 		int imageType = imp.getType();
 		
+		HashSet<Point3D> centers = new HashSet<Point3D>();
+		
 		//if incorrect image type
 		if (imageType != DataInput.GRAY8) {
 			System.out.println("Only grayscale 8 supported");
-			return;
+			return centers;
 		}
 
-		/*// flatten into an array for local maximum detection
-		// not necessary if pass imp to local_maximum method. 
-		// Will rewrite utility later using getPixel
-		// note the order of data storage.
-		System.out.println("flattening ... will remove later");
-		float[] data = new float[totalwidth * totalheight * totaldepth];
-		int index = 0;
-		for (int zi = 0; zi < totaldepth; zi++) {
-			ImageProcessor currentstackip = imp.getStack().getProcessor(zi+1);
-			for (int yi = 0; yi < totalheight; yi++)
-				for (int xi = 0; xi < totalwidth; xi++) {
-					data[index++] = currentstackip.get(xi, yi);
-				}
-		}
-		boolean[] isMaxima = Utility.getLocalMaxima(data, totalwidth,
-				totalheight, totaldepth, 3, 3, 2);
-		*/
+		int rx, ry, rz;
+		rx = calcHalfDim(width);
+		ry = calcHalfDim(height);
+		rz = calcHalfDim(depth);
 		
 		// use a window of 3*3*2 (radius, 7*7*5 actual) to get local maxim
 		System.out.println("get localmaxima");
-		boolean[] isMaxima = Utility.getLocalMaxima(imp, 0, 3, 3, 2); //2nd arg is channel
+		boolean[] isMaxima = Utility.getLocalMaxima(imp, synapseChannel, 3, 3, 2); //2nd arg is channel
 		draw(isMaxima, imp, totaldepth, totalheight, totalwidth);
-
 		// get cube around local maxima, send to classifier
-		java.util.HashSet<Point3D> detectedCenters = new java.util.HashSet<Point3D>();
 		int total =0;
 		int cubeDimension = (2 * rz + 1) * (2 * rx + 1) * (2 * ry + 1);
 		float[] fea = new float[cubeDimension];
@@ -502,7 +511,7 @@ public class ThreeDROIAnnotation {
 						  // pass in an arraylist of an arraylist of an array
 						  ArrayList list = new ArrayList();
 						  list.add(imageStacks);
-						  float[][] fea3D = get3DFeaViaExtrator(list,  imageType);
+						  float[][] fea3D = get3DFeaViaExtrator(list, imageType, height, width, depth, chainList );
 						  fea = fea3D[0];
 						  
 						 // System.out.println("Extracted features:"); //debug
@@ -523,8 +532,8 @@ public class ThreeDROIAnnotation {
 								//remove duplicates or those that are close enough
 								//contains() not useful unless override hashcode.
 								//linear search, or use a boolean map to search neighborhood 5*5*3
-								if(!(searchForIt(detectedCenters,shifted)))
-									detectedCenters.add(shifted);
+								if(!(searchForIt(centers,shifted, rx, ry, rz)))
+									centers.add(shifted);
 							}
 
 						} catch (Exception e) {
@@ -538,8 +547,9 @@ public class ThreeDROIAnnotation {
 
 		//linear search to remove duplicate
 		System.out.println("total detected positive:"+total);
-		System.out.println("total detected positive after mean-shifting:"+detectedCenters.size());
+		System.out.println("total detected positive after mean-shifting:"+centers.size());
 		
+		/*
 		
 		//for file saving and naming convention
 		Date date = new Date();
@@ -557,7 +567,7 @@ public class ThreeDROIAnnotation {
 			System.out.println("Vaa3D file output format:");
 			System.out.println("x,y,z,radius,shape,name,comment,color_r,color_g,color_b");//v3d marker .csv format
 			int i=1;
-			for(Point3D p : detectedCenters)
+			for(Point3D p : centers)
 			{
 		    	int tmpy=totalheight-p.y;
 				System.out.println((p.x+1) + ", " + tmpy + ", " + (p.z+1) + ", 0,1,detected center " + i + "," + fmat.format(date) + ",255,50,25"); //echo to console
@@ -585,7 +595,7 @@ public class ThreeDROIAnnotation {
 		    //write each to file
 			System.out.println("general marker file output format:");
 			System.out.println("x,y,z,");//.marker csv format
-		    for(Point3D p : detectedCenters)
+		    for(Point3D p : centers)
 			{
 				System.out.println(p.x + " " + p.y + " " + p.z); //echo to console
 				marker.write(p.x + " " + p.y + " " + p.z);
@@ -601,8 +611,114 @@ public class ThreeDROIAnnotation {
 			System.out.println("error writing to file.");
 		  	
 		} 
+		*/
+		return centers;
+	}
+	
+	//write out to filename as a IJ marker file formatted text file.
+	private static void writeMarkerFile(HashSet<Point3D> centers, String fileName ){
+		try{
+			//append extension and label
+			fileName+= "_IJ.marker";
+			File file = new File(fileName);
+			BufferedWriter marker = new BufferedWriter(new FileWriter(file));
+			
+		    //write each to file
+			System.out.println("general marker file output format:");
+			System.out.println("x,y,z,");//.marker csv format
+		    for(Point3D p : centers)
+			{
+				System.out.println(p.x + " " + p.y + " " + p.z); //echo to console
+				marker.write(p.x + " " + p.y + " " + p.z);
+				marker.newLine();
+	
+			}
+		    
+		    System.out.println("written to file: " + fileName);
+		    
+			marker.close();
+		
+		} catch(IOException e){
+			System.out.println("error writing to file.");
+	  	
+		} 
 		
 	}
+	
+	//write out to file as a Vaa3D formatted text file.
+	private static void writeVaa3DFile(HashSet<Point3D> centers, String fileName, int totalHeight ){
+		
+		// output result to a file as  V3D marker file
+		try{
+			//append extension and label
+			fileName+="_v3d.marker";
+			File file = new File(fileName);
+			BufferedWriter marker = new BufferedWriter(new FileWriter(file));
+			
+		    //write each to file
+			System.out.println("Vaa3D file output format:");
+			System.out.println("x,y,z,radius,shape,name,comment,color_r,color_g,color_b");//v3d marker .csv format
+			int i=1;
+			for(Point3D p : centers)
+			{
+		    	int tmpy=totalHeight-p.y;
+				System.out.println((p.x+1) + ", " + tmpy + ", " + (p.z+1) + ", 0,1,detected center " + i + "," + 0 + ",255,50,25"); //echo to console
+				marker.write((p.x+1) + ", " + tmpy + ", " + (p.z+1) + ", 0,1,detected center " + i + "," + 0 + ",255,50,25");
+				marker.newLine();
+				i++;
+	
+			}
+		    
+		    System.out.println("written to file: " + fileName);
+		    
+			marker.close();
+			
+		} catch(IOException e){
+			System.out.println("error writing to file.");
+		  	
+		} 
+	}
+	
+	//calculate the correct diameters from roi dimensions for use in annotate().
+	private int calcHalfDim(int x) {
+		if (x == 1) return x;//dont return a 0 value, just use 1 instead
+		
+		if((x & 1) == 0){//then even
+			return x/2;
+		} else { //odd then offset down
+			return (x-1)/2;
+		}
+	}
+
+	//parse ROI files and construct a DataInput object to encapsulate data
+	private static DataInput buildDataFromROI(ImagePlus imp, String[] roiPaths, int d, int w, int h) throws Exception
+	{
+		HashMap classMap = new HashMap<String, String>();
+		HashMap roiList= new HashMap<String, Roi>();
+		
+		for(String path : roiPaths) {
+			
+			
+			if(path.endsWith("marker"))
+			{
+			 String className = Utils.removeExtension(path.substring(path.lastIndexOf(File.separator) + 1));
+			 Utils.openRoiMarker(path, roiList, classMap, className);
+			}
+			else //ROI .zip file
+			{
+			 String className = Utils.removeExtension(path.substring(path.lastIndexOf(File.separator) + 1));
+			 Utils.openRoiZip(path, roiList, classMap, className);
+			}
+		}
+		
+		if(roiList.size() < 1){
+			System.out.println("ERROR: No rois specified.");
+		}
+		
+		return new DataInput(imp, roiList, classMap, Annotator.channel, d, w, h);
+		
+	}
+	
 	
 	
 	// 3D mean shift algorithm to get to center of mass
@@ -674,7 +790,7 @@ public class ThreeDROIAnnotation {
 		 return new Point3D(movedx,movedy, movedz);
 	}
 
-	private static boolean searchForIt(java.util.HashSet<Point3D> detectedCenters, Point3D input)
+	private static boolean searchForIt(HashSet<Point3D> detectedCenters, Point3D input, int rx, int ry, int rz)
 	{
 	  for(Point3D p : detectedCenters)
 		//if (p.equals(input)) return true;
@@ -682,17 +798,39 @@ public class ThreeDROIAnnotation {
 	  return false;
 	}
 
-	//old logic, not loading from file.
-	//DEPRECATED 2/4/14
-	private static float[][] get3DFeaViaExtrator(ArrayList alldata,  int imageType) {
+	//old logic,
+	//still need for annotate, messy parallel code now
+	private static float[][] get3DFeaViaExtrator(ArrayList alldata, int imageType, int h, int w, int d, ArrayList<Chain> chainList  ) throws Exception
+	{
 		float[][] extractedFea = null;
-		StackSimpleHaarFeatureExtractor ex = new StackSimpleHaarFeatureExtractor();
-		//ImageMoments3D ex = new ImageMoments3D();
-		//FeatureJEdges3D ex = new FeatureJEdges3D();
+		Annotator a = new Annotator();
 		
-		// override default if needed.
-		// HashMap<String, String> parameter = new HashMap<String, String>();
-		// parameter.put(..,..); //ex.setParameter(parameter);
+			//sort of hack using logic from Annotator, to load from file AND use arraylist allData style, 
+		    //this is not supported in modern Annotator logic, but we need it here.
+			ArrayList<Extractor> extractors = chainList.get(0).getExtractors(); //get the list of extractors
+			Extractor e = extractors.get(0); //
+			FeatureExtractor extractor = a.getExtractorGivenName(e.getClassName(), e.getExternalPath(), e.getParams());
+			
+					
+					
+			annotool.ImgDimension dim = new annotool.ImgDimension(); //set up dimensions
+			dim.height = h;
+			dim.width = w;
+			dim.depth = d;
+			
+			//extractedFea = extractor.calcFeatures(alldata, imageType, dim);
+			extractedFea = extractor.calcFeatures(alldata, DataInput.GRAY32, dim); //force image tyoe 
+		    System.out.println("Extracted features:");//debug
+			for (int m = 0; m < extractedFea.length; m++) {
+				for (int n = 0; n < extractedFea[0].length; n++)
+					System.out.print(extractedFea[m][n] + " ");
+					System.out.println();
+			}
+					
+
+		
+		
+		/*
 		annotool.ImgDimension dim = new annotool.ImgDimension();
 		dim.height = 2 * ry + 1;
 		dim.width = 2 * rx + 1;
@@ -711,12 +849,14 @@ public class ThreeDROIAnnotation {
 		} catch (Exception e) {
 			e.getStackTrace();
 		}
-
+		 */
+		
 		return extractedFea;
 	}
 	
 	// new logic using DataInput 1/27/14
-	private static float[][] get3DFeaViaExtrator(DataInput problem, ArrayList<Chain> chainList) 
+	// compatible with multiple extractors, but this is useless because annotate() logic is not. 
+	private static float[][] get3DFeaViaExtrator(DataInput problem, ArrayList<Chain> chainList) throws Exception
 	{
 		
 		float[][] extractedFea = null;
@@ -735,7 +875,7 @@ public class ThreeDROIAnnotation {
 					
 			
 		} catch (Exception e) {
-			e.getStackTrace();
+			throw new Exception("Error extracting features with dataInput.", e);
 		}
 
 		return extractedFea;
@@ -743,27 +883,25 @@ public class ThreeDROIAnnotation {
 		
 	}
 	
-	private static SavableClassifier getSavableClassifier(ArrayList<Chain> chainList) 
+	//wrapper method to safelty get the classifier parsed from the chain file
+	private static SavableClassifier getSavableClassifier(ArrayList<Chain> chainList) throws Exception
 	{
-		try {
-			Annotator a = new Annotator();
-			String classi = chainList.get(0).getClassifierClassName();
-			HashMap<String,String> params = chainList.get(0).getClassParams();
-			Classifier c;
-			c = a.getClassifierGivenName(classi, chainList.get(0).getClassifierExternalPath(), params);
-			if(c instanceof SavableClassifier){
-				classifier = (SavableClassifier) c;
-				//classifier.trainingOnly(extractedFea, target);
-			}
-			else throw new Exception("classifier not savable");
-		} catch (Exception e) {
-			e.printStackTrace();
+		Annotator a = new Annotator();
+		String classi = chainList.get(0).getClassifierClassName();
+		HashMap<String,String> params = chainList.get(0).getClassParams();
+		Classifier c;
+		c = a.getClassifierGivenName(classi, chainList.get(0).getClassifierExternalPath(), params);
+		if(c instanceof SavableClassifier){
+			classifier = (SavableClassifier) c;
+			//classifier.trainingOnly(extractedFea, target);
 		}
+		else throw new Exception("classifier not savable");
 		
 		return classifier;
 	}
 
-	//maybe deprecated, possible use in testing logic. 1/29/14
+	
+	//still used in annotate, but highly parallel and redundant 1/29/14
 	private static boolean checkBound(int xi, int yi, int zi, int totalwidth, int totalheight, int totaldepth) 
 	{
 		if (xi < 0 || xi >= totalwidth)
@@ -775,7 +913,8 @@ public class ThreeDROIAnnotation {
 		return true;
 	}
 
-	private static void draw(boolean[] isMaxima, ImagePlus imp, int totaldepth, int totalheight, int totalwidth)
+	// return an imagePlus of the localmaxima mask.
+	private static ImagePlus draw(boolean[] isMaxima, ImagePlus imp, int totaldepth, int totalheight, int totalwidth)
 	{
 	  /*//draw on the original image
   	  ImageConverter ic = new ImageConverter(imp);
@@ -827,7 +966,7 @@ public class ThreeDROIAnnotation {
                 }
             }
         }
-    centers.show();
+    //centers.show();
     
 	//for file saving and naming convention
 	Date date = new Date();
@@ -836,22 +975,16 @@ public class ThreeDROIAnnotation {
     //save local maxima image for inspection.
     System.out.println("saving local maxima image...");
     String imgFileName = new String("local_maxima" + fmat.format(date) +".tiff" );
-    IJ.save(centers, imgFileName);
+    //IJ.save(centers, imgFileName);
     
+    return centers;
     }
 	
 	
 	// return the number of ROIS in this instance
-	private int getLength()
+	private int getLength() throws Exception
 	{
-		int len;
-		try {
-		  len = problem.getLength();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return 0;
-		}
-		return len;
+		return problem.getLength();		 
 	}
 	
 	//command line version of code. currently only for testing
@@ -893,30 +1026,35 @@ public class ThreeDROIAnnotation {
 		
 		System.out.println("success parsing args...");
 	
-		//construct
-		anno = new ThreeDROIAnnotation(imp, roiPaths, depth, width, height, chainPath);		
-		System.out.println("success building data...\n");
-		
-		//train test model
-		anno.trainAndTest();		
-		System.out.println("Finished model training... \nEnter a new image path to annotate, leave blank to use same image.");
-		
-		//pause execution for testing diagnostics
-		
-		BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in)); 
-		String newImagePath = "";
-		try {
-			newImagePath = stdin.readLine();
-		} catch (IOException e) {
+		try{
+			//construct
+			anno = new ThreeDROIAnnotation(imp, roiPaths, depth, width, height, chainPath);		
+			System.out.println("success building data...\n");
+			
+			//train test model
+			anno.trainAndTest();		
+			System.out.println("Finished model training... \nEnter a new image path to annotate, leave blank to use same image.");
+			
+			//pause execution for testing diagnostics
+			
+			BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in)); 
+			String newImagePath = "";
+			try {
+				newImagePath = stdin.readLine();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			//annotate with model, use new image if provided
+			if(!newImagePath.isEmpty())
+			{
+				imp = new ImagePlus(newImagePath);		
+			}
+			anno.annotate(imp, "test_file", ThreeDROIAnnotation.MARKER_VAA3D_BOTH);
+		}
+		catch(Exception e) {
 			e.printStackTrace();
 		}
-		
-		//annotate with model, use new image if provided
-		if(!newImagePath.isEmpty())
-		{
-			imp = new ImagePlus(newImagePath);		
-		}
-		anno.test3droi(imp);
 		
 		
 	}//end main
