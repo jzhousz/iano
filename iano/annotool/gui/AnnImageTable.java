@@ -9,16 +9,14 @@ import ij.process.ImageProcessor;
 import ij.process.MedianCut;
 import ij.process.ShortProcessor;
 import ij.process.StackConverter;
-import ij3d.Content;
 import ij3d.Image3DUniverse;
 
 import java.awt.Component;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Hashtable;
+
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -548,7 +546,7 @@ public class AnnImageTable {
 			Image3DUniverse univ = new Image3DUniverse();
 			
 			// Add the image as an isosurface
-			Content c = univ.addVoltex(imp);
+			//Content c = univ.addVoltex(imp);
 			
 			//Show
 			univ.show();

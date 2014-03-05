@@ -1,7 +1,6 @@
 package annotool.classify;
 
-import weka.classifiers.bayes.NaiveBayes;
-import weka.classifiers.trees.J48;
+
 import weka.core.*;
 /**
 * This classifier uses Weka's implementation of C4.5 tree called J48

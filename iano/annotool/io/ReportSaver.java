@@ -1,14 +1,8 @@
 package annotool.io;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.TreeMap;
-
-import javax.swing.BoxLayout;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
 
 import annotool.Annotation;
 import annotool.gui.model.Styles;
@@ -22,7 +16,6 @@ import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfWriter;
 
 /**
  * This class is used for saving pdf report containing annotation results.
@@ -38,7 +31,7 @@ public class ReportSaver {
 		
 		Document document = new Document(PageSize.LETTER, 50, 50, 50, 50);
 		try {
-			PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(file));
+			//PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(file));
 			document.open();
 			Paragraph title = new Paragraph("ANNOTATION REPORT", Styles.FONT_TITLE);
 			title.setAlignment(Element.ALIGN_CENTER);
@@ -150,10 +143,10 @@ public class ReportSaver {
 			document.close();		
 			System.out.println("Report saved: " + file.getAbsolutePath());
 			return true;
-		} catch (FileNotFoundException e) {
-			System.out.println("Failed to write to the file specified.");
-			e.printStackTrace();
-			return false;
+		//} catch (FileNotFoundException e) {
+		//	System.out.println("Failed to write to the file specified.");
+		//	e.printStackTrace();
+		//	return false;
 		} catch (DocumentException e) {
 			System.out.println("Operation failed.");
 			e.printStackTrace();

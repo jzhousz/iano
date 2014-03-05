@@ -1,12 +1,13 @@
 package annotool;
 
-import javax.swing.SwingUtilities;
 
 import java.util.*;
 
 import annotool.gui.AnnOutputPanel;
 import annotool.gui.model.Extractor;
 import annotool.io.*;
+import annotool.ensemble.ComEnsemble;
+import annotool.ensemble.Ensemble;
 import annotool.extract.*;
 import annotool.select.*;
 import annotool.classify.*;
@@ -261,6 +262,44 @@ public class Annotator
         return rate;
         
     }
+    
+    /*****************************
+     * This method is used if the user would like to run the Muti CLassifiers
+     * This method has the ensemble that can be used.
+     * 
+     * 
+     * @param chosenClassifiers         Selected Classifers to be apart of the ensemble
+     * @param selectedTrainingFeatures  Features of Training Set
+     * @param selectedTestingFeatures   Features of testing set
+     * @param trainingtargets           training data
+     * @param testingtargets            testing data
+     * @param annotations               Perdiction Array
+     * @return rate                     Number of correct perdictions             
+     * @throws Exception   Thrown if K value is greater than the number of observations
+     ********************************/
+    public float classifyGivenAMethod(ArrayList<Classifier> chosenClassifiers, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) throws Exception {
+    	 
+    	Ensemble ens = new ComEnsemble();
+    	
+    	for(Classifier classifier : chosenClassifiers )
+    	{
+    		(new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
+    		ens.addResult(annotations);
+    	}
+    		
+    	int[] resutls = ens.classify();
+    	int correct = 0;
+    	
+    	 for(int i=0; i< testingtargets.length; i++)
+         {
+    		 if(resutls[i] == testingtargets[i])
+  	           correct ++;
+         }
+    	
+    	 return (float) correct/testingtargets.length;
+
+    }
+    
     /*
      *  A classifier that takes Classifier object as a particular classification algorithm and returns
      *   recognition rate. 
@@ -284,7 +323,7 @@ public class Annotator
         results = classifier.classifyUsingModel(classifier.getModel(), testingFeatures, prob);
         for(int i=0; i<testingFeatures.length; i++)
         {
-        	  annotations[i].anno = results[i];
+        	  annotations[i].anno = results[i]; //Made ensumble
               annotations[i].prob = prob[i];
         }
         return results;
@@ -331,11 +370,10 @@ public class Annotator
     		if(!problem.ofSameSize())
     			throw new Exception("When no extractor is selected, the images or ROIs must be of the same size.");
 
-    		int stackSize = 0;
-    		if (problem.getMode() == DataInput.ROIMODE) //8/6/12
-    			stackSize = problem.getDepth();
-    		else 
-    			stackSize = problem.getStackSize();
+    		//int stackSize = 0;
+    		//if (problem.getMode() == DataInput.ROIMODE) //8/6/12
+    		//	stackSize = problem.getDepth();
+    		//	stackSize = problem.getStackSize();
             int imageSize = problem.getHeight()*problem.getWidth();
             int imageType = problem.getImageType();
             

@@ -161,11 +161,13 @@ import annotool.io.DataInput;
 		return (totalDiff/(count -1));
 	}
 
+	/*
 	private float calcVarSizeOfObjects(HashMap<Integer, Integer> tagCount)
 	{
 		float avg = calcAvgSizeOfObjects(tagCount);
 		return calcVarSizeOfObjects(tagCount, avg);
 	}
+	*/
 
 
 	private float calcRatioBigToSmallOfObjects(HashMap<Integer, Integer> tagCount)
@@ -259,7 +261,7 @@ import annotool.io.DataInput;
 		int ID = 1;
 		arrayIndex = 0;
 		int minTag;
-		int i, offset;
+		int /*i,*/ offset;
 		int nX = -1, nY = -1;
 
 		//First ID attribution
@@ -269,14 +271,14 @@ import annotool.io.DataInput;
 					tag[arrayIndex] = ID;
 					minTag = ID;
 
-					i = 0;
+					//i = 0;
 					//Find the minimum tag in the neighbors pixels
 					for (nY = y - 1; nY <= y + 1; nY++) {
 						for (nX = x - 1; nX <= x + 1; nX++) {
 							if(withinBounds(nX, nY, width, height)) {
 								offset = offset(nX, nY, width);
 								if(isObjPixel[offset]) {
-									i++;						//If neighbor pixel is object, increment neighbor object pixel count
+									//i++;						//If neighbor pixel is object, increment neighbor object pixel count
 									tagvois = tag[offset];
 									if (tagvois != 0 && tagvois < minTag) 	//If any neighbor object pixel is already tagged, use that
 										minTag = tagvois;

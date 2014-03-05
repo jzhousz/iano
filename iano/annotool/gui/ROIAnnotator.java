@@ -79,7 +79,7 @@ public class ROIAnnotator {
 			this.classNames = model.getClassNames();	//Retrieve class names to export annotated pixels
 			annotate(problem, model, selectedImages);
 			
-			LegendDialog ld = new LegendDialog("Legends", colorMasks, classNames);
+			//LegendDialog ld = new LegendDialog("Legends", colorMasks, classNames);
 		}
 	}
 	
@@ -215,7 +215,7 @@ public class ROIAnnotator {
 				} catch (Exception ex) {
 					System.out.println("Classification using model failed.");
 					ex.printStackTrace();
-					this.pnlStatus.setOutput("Classification exception! Classifier=" + model.getClassifierName());
+					this.pnlStatus.setOutput("Classification exception!"); //Classifier=" + model.getClassifierName()); Changed 1/20/2014
 				}
 			}//	end of j
 	    } //end of i

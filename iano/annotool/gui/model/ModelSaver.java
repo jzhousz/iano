@@ -7,7 +7,6 @@ import annotool.io.ChainModel;
 
 import javax.swing.JButton;
 import javax.swing.JProgressBar;
-import javax.swing.SwingUtilities;
 
 /**
  * This class saves the trained models into file system using separate thread of execution.
@@ -41,7 +40,7 @@ public class ModelSaver implements Runnable {
 		//Iterate through the chain models and write a file for each label
 		for(int i = 0; i < chainModels.length; i++) {
 			pnlOutput.setOutput("Saving model: " + (i + 1) + "/" + chainModels.length);	//Display which model is being saved
-			if(!(chainModels[i].getClassifier() instanceof annotool.classify.SavableClassifier)) {
+			if(!(chainModels[i].getClassifier().get(0) instanceof annotool.classify.SavableClassifier)) {
 				pnlOutput.setOutput("Classifier is not savable. Skipping model.");
 				continue;
 			}

@@ -22,7 +22,7 @@ public class AlgoXMLParser
 {
 	Document dom;
 	
-	ArrayList<Algorithm> extractors2D, extractors3D, selectors, classifiers;
+	ArrayList<Algorithm> extractors2D, extractors3D, selectors, classifiers;//, ensembles;
 	
 	public AlgoXMLParser()
 	{
@@ -33,6 +33,9 @@ public class AlgoXMLParser
 		selectors = new ArrayList<Algorithm>();
 		selectors.add(new Algorithm("None", "Selector", "None"));
 		classifiers = new ArrayList<Algorithm>();
+		classifiers.add(new Algorithm("None", "Classifier", "None"));
+		//ensembles = new ArrayList<Algorithm>();
+		
 		//classifiers.add(new Algorithm("Compare All", "Classifier"));
 	}
 	public void runParser()
@@ -111,6 +114,8 @@ public class AlgoXMLParser
 					selectors.add(al);
 				else if(al.getType().equals("Classifier"))
 					classifiers.add(al);
+				//else if(al.getType().equals("Ensemble"))
+				//	ensembles.add(al);
 			}
 		}
 	}
@@ -187,7 +192,12 @@ public class AlgoXMLParser
 	{
 		return classifiers;
 	}
-	
+	/*
+	public ArrayList<Algorithm> getEnsembles()
+	{
+		return ensembles;
+	}
+	*/
 	//Returns array of string
 	public Algorithm[] get2DExtractorsAr()
 	{
@@ -213,7 +223,14 @@ public class AlgoXMLParser
 		classifiers.toArray(classifiersAr);
 		return classifiersAr;
 	}
-	
+	/*
+	public Algorithm[] getEnsemblesAr()
+	{
+		Algorithm[] ensemblesAr = new Algorithm[ensembles.size()];
+		ensembles.toArray(ensemblesAr);
+		return ensemblesAr;
+	}
+	*/
 	/**
 	 * Take a xml element and the tag name, look for the tag and get
 	 * the text content 
@@ -243,6 +260,7 @@ public class AlgoXMLParser
 	 * @param tagName
 	 * @return
 	 */
+	/*
 	private int getIntValue(Element ele, String tagName) 
 	{
 		String value = getTextValue(ele,tagName);
@@ -261,4 +279,5 @@ public class AlgoXMLParser
 		}
 		return numValue;
 	}
+	*/
 }

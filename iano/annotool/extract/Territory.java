@@ -1,6 +1,5 @@
 package annotool.extract;
 
-import ij.IJ;
 import ij.plugin.filter.BackgroundSubtracter;
 import ij.plugin.filter.RankFilters;
 import ij.process.ByteProcessor;

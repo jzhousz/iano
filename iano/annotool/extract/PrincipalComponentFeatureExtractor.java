@@ -6,7 +6,6 @@ import Jama.EigenvalueDecomposition;
 import Jama.Matrix;
 import annotool.ImgDimension;
 import annotool.io.DataInput;
-import weka.attributeSelection.PrincipalComponents;
 import weka.core.Instances;
 
 /*
@@ -121,8 +120,8 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
     * @return             Array of features
     * @throws Exception 
     */
-	private float[][] calcFeatures(byte[][] data, ImgDimension dim) throws Exception
-	{
+	//private float[][] calcFeatures(byte[][] data, ImgDimension dim) throws Exception
+	//{
 		   /*length = data.length;
 		   width = dim.width;
 		   height = dim.height;
@@ -133,8 +132,8 @@ public class PrincipalComponentFeatureExtractor implements FeatureExtractor {
  		     for(int j = 0; j< width*height; j++)
 			       features[i][j] = data[i][j]&0xff;*/
 		
-	       return calcFeatures();
-	}
+	 //      return calcFeatures();
+	//}
 	   
 	
 	

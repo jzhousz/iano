@@ -38,7 +38,7 @@ public class AnnSplashScreen extends JWindow {
 		new Thread(new Runnable() {
 			public void run() {
 				try {
-					Thread.currentThread().sleep(5000); 
+					Thread.sleep(5000); 
 					setVisible(false);
 				} catch (InterruptedException ex) {
 				}

@@ -1,8 +1,6 @@
 package annotool.gui;
 
-import ij.ImagePlus;
-import ij.process.ColorProcessor;
-import ij.process.ImageProcessor;
+
 
 import java.awt.Dimension;
 import java.awt.Toolkit;

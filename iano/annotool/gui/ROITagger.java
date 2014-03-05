@@ -160,7 +160,7 @@ public class ROITagger extends JDialog implements ActionListener {
 				return;
 			}
 
-			boolean is3D = (imp.getStackSize() > 1);
+			//boolean is3D = (imp.getStackSize() > 1);
 
 			fileChooser.setMultiSelectionEnabled(false);
 			fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -202,13 +202,14 @@ public class ROITagger extends JDialog implements ActionListener {
 				if (scanner.hasNextLine()) {
 					classLine = scanner.nextLine();
 					Scanner lineScanner = new Scanner(classLine);
+					
 					while (lineScanner.hasNext()) {
 						String pair[] = lineScanner.next().split(":");
 						try {
 							key = Integer.parseInt(pair[0]);
 						} catch (NumberFormatException ex) {
-							pnlStatus
-									.setOutput("Existing target file is invalid.");
+							pnlStatus.setOutput("Existing target file is invalid.");
+							lineScanner.close();
 							return;
 						}
 						if (pair[1].equalsIgnoreCase(className)) {
@@ -220,6 +221,7 @@ public class ROITagger extends JDialog implements ActionListener {
 					}
 					lineScanner.close();
 				}
+				
 
 				// If class name already existed no need to update the class
 				// line, otherwise append new class key:value to the class line
@@ -355,10 +357,10 @@ public class ROITagger extends JDialog implements ActionListener {
 
 			pnlStatus.setOutput("Done");
 		} else if (ev.getSource() == btn3DROITrain) {
-			ImageProcessor ip = imp.getProcessor();
+			//ImageProcessor ip = imp.getProcessor();
 			annotool.analysis.ThreeDROIAnnotation.train3droi(imp);
 		} else if (ev.getSource() == btn3DROITest) {
-			ImageProcessor ip = imp.getProcessor();
+			//ImageProcessor ip = imp.getProcessor();
 			annotool.analysis.ThreeDROIAnnotation.test3droi(imp);
 		}
 

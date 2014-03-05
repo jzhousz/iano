@@ -2,7 +2,6 @@ package annotool.extract;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Arrays;
 
 import annotool.ImgDimension;
 import annotool.io.DataInput;
@@ -69,7 +68,7 @@ public class ObjectStatisticsFast implements FeatureExtractor {
 	//calculate and fill the result array
 	private float[][] calcFeatures() throws Exception
 	{
-		Object data;
+		//Object data;
 		short[] tag;  //tag of objects for each pixel
 		int[] center; //center of mass of image as (x,y,z)
 		HashMap<Integer, ObjDataFast> tagData; // the center of mass of each tag
@@ -91,10 +90,10 @@ public class ObjectStatisticsFast implements FeatureExtractor {
 				}
 			}
 			//get data
-			if (problem !=null)
-				data = problem.getData(image_num,1);
-			else  //alldata is not null
-				data = allData.get(image_num);
+			//if (problem !=null)
+			//	data = problem.getData(image_num,1);
+			//else  //alldata is not null
+			//	data = allData.get(image_num);
 
 			//get binarize threshold. More efficient approach without re-reading?
 			/*iplus = problem.getImagePlus(image_num);
@@ -173,12 +172,13 @@ public class ObjectStatisticsFast implements FeatureExtractor {
 		return (totalDiff/(count -1));
 	}
 
+	/*
 	private float calcVarSizeOfObjects(HashMap<Integer, ObjDataFast> tagCount)
 	{
 		float avg = calcAvgSizeOfObjects(tagCount);
 		return calcVarSizeOfObjects(tagCount, avg);
 	}
-
+	 */
 
 	private float calcRatioBigToSmallOfObjects(HashMap<Integer, ObjDataFast> tagCount)
 	{
@@ -280,7 +280,7 @@ public class ObjectStatisticsFast implements FeatureExtractor {
 		short ID = 1;
 		arrayIndex = 0;
 		short minTag;
-		int i, offset;
+		int /*i,*/ offset;
 		int nX = -1, nY = -1, nZ =-1;
 
 		//First ID attribution
@@ -292,7 +292,7 @@ public class ObjectStatisticsFast implements FeatureExtractor {
 						tag[arrayIndex] = ID;
 						minTag = ID;
 
-						i = 0;
+						//i = 0;
 						//Find the minimum tag in the neighbors pixels
 						for(nZ = z - 1; nZ <= z + 1; nZ++) {
 							for (nY = y - 1; nY <= y + 1; nY++) {
@@ -300,7 +300,7 @@ public class ObjectStatisticsFast implements FeatureExtractor {
 									if(withinBounds(nX, nY, nZ, width, height, depth)) {
 										offset = offset(nX, nY, nZ, width, height);
 										if(tag[offset] > -1) {
-											i++;						//If neighbor pixel is object, increment neighbor object pixel count
+											//i++;						//If neighbor pixel is object, increment neighbor object pixel count
 											tagvois = tag[offset];
 											if (tagvois > 0 && tagvois < minTag) 	//If any neighbor object pixel is already tagged, use that
 												minTag = tagvois;
@@ -421,10 +421,10 @@ public class ObjectStatisticsFast implements FeatureExtractor {
 		int sumvalue = 0;
         int sumX = 0;
         int sumY = 0;
-        int sumZ = 0;
+        //int sumZ = 0;
 		int sumvaluex = 0;
 		int sumvaluey = 0;
-		int sumvaluez = 0;
+		//int sumvaluez = 0;
 		int value;
 		
 		for(int z = 1; z <= depth; z++) {
@@ -433,7 +433,7 @@ public class ObjectStatisticsFast implements FeatureExtractor {
 					value = getValue3D(imgNum, z, arrayIndex);
 					sumvaluex +=value*x;
 					sumvaluey +=value*y;
-					sumvaluez +=value*(z-1);
+					//sumvaluez +=value*(z-1);
 					sumvalue += value;
                     sumX += x;
                     sumY += y;

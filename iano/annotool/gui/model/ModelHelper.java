@@ -47,10 +47,13 @@ public class ModelHelper {
 				strBuffer.append("None" + newLine);
 			
 			//Classifier
-			strBuffer.append("<b>Classifier: </b>" + newLine);	
-			strBuffer.append(chainModels.get(i).getClassifierName() + " : ");
-			for(String key : chainModels.get(i).getClassParams().keySet())
-				strBuffer.append(key + " = " + chainModels.get(i).getClassParams().get(key) + " ");
+			strBuffer.append("<b>Classifier: </b>" + newLine);
+			for(ClassifierChain cal : chainModels.get(i).getClassifierChain())
+				strBuffer.append(cal.getName() + newLine);
+			//removed 1/20/2014
+			//strBuffer.append(chainModels.get(i).getClassifierName() + " : ");
+			//for(String key : chainModels.get(i).getClassParams().keySet())
+				//strBuffer.append(key + " = " + chainModels.get(i).getClassParams().get(key) + " ");
 			
 			strBuffer.append(newLine);
 			strBuffer.append(newLine);

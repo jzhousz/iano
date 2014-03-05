@@ -1,6 +1,5 @@
 package annotool;
 
-import annotool.classify.SVMClassifier;
 
 public class Util {
 	

@@ -1,10 +1,13 @@
 package annotool.classify;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.SwingUtilities;
-
 import annotool.Annotation;
+import annotool.ensemble.ComEnsemble;
+import annotool.ensemble.Ensemble;
+import annotool.gui.model.ClassifierChain;
 
 /**
 * This helper class takes the fold number and all data to do cross validation,
@@ -161,8 +164,147 @@ public class Validator
       return (float) correct/length;
    }
 
+   /*****************************
+   * K fold CV, with K <= length. When K == length, it is leave one out (LOO) validation.
+   
+   * Pass in Array of classifiers, and parameter for classifiers in an array of ClassifierChain.
+   * It will split the data, and call the xxxGivenMethod in the Annotator class.
+   * Used for Ensemble
+   * 
+   * @param K                 the number of the fold
+   * @param data              two-dimensional array of the image features 
+   * @param targets           array of targets for the data
+   * @param chosenClassifiers array of classifiers to use
+   * @param classes           array of paras for the classifiers to use
+   * @param shuffle           whether or not the data needs shuffling
+   * @param results           annotations to compare against
+   * @return                  overall recognition rate
+   * @throws Exception        Thrown if K value is greater than the number of observations
+   ********************************/
+   public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] originalTargets, ArrayList<Classifier> chosenClassifiers, ArrayList<ClassifierChain> classes, boolean shuffle, Annotation[] results) throws Exception
+   {
+	   
+	   	  int length = data.length;
+		  int dimension = data[0].length;
+		  
+		  int[] targets = originalTargets; //the reference to targets,
+		  int[] idBeforeShuffle = null;
+		  if (shuffle)
+		  {
+			 //the original order of targets of the problem should be preserved in the case of shuffling
+			 idBeforeShuffle = new int[length]; 
+		     targets = shuffle(length, dimension, data, originalTargets, idBeforeShuffle);
+		  }
 
+		  float[][] testingPatterns;
+	      float[][] trainingPatterns;
+	      int[] trainingTargets;
+	      int[] testingTargets;
+	      Annotation[] annotedPredictions;
+	      //double[] prob;
+	      int testinglength, traininglength; //may vary for the last fold 
+	      int foldsize = length/K; //size per fold except the last one;
 
+	      if (K > length)
+		  {
+			  System.out.println("K-fold validation must have a K that is smaller than the total number of observations");
+			  throw new Exception("K-fold validation must have a K that is smaller than the total number of observations");
+	      }
+
+	      int correct = 0;
+	      float[] foldresults = new float[K+1];
+	      for (int k = 0; k < K; k++)
+	      {
+	    		 
+			 if (k == K-1)  //the last fold may have more testing samples than other folds.
+				    testinglength = length/K + length %  K;
+			 else
+				    testinglength = length/K;
+
+			  traininglength = length - testinglength;
+			  System.out.println("foldsize:" + foldsize + " testing length:"+ testinglength+" training length:" + traininglength + " dimension:" + dimension);
+		      testingPatterns = new float[testinglength][dimension];
+		      trainingPatterns = new float[traininglength][dimension];
+		      trainingTargets = new int[traininglength];
+		      testingTargets = new int[testinglength];
+		      annotedPredictions = new Annotation[testinglength];
+		      for(int m = 0; m < testinglength; m++)
+		    	  annotedPredictions[m] = new Annotation();
+				 
+			  //setup testing patterns
+			  for(int i=0; i<testinglength; i++)
+				  for(int j=0; j < dimension; j++)
+				  {
+				    testingPatterns[i][j] = data[k*foldsize+i][j];
+				    testingTargets[i] = targets[k*foldsize+i];
+			      }
+
+		      //setup training patterns before the testing samples
+			  for(int i=0; i< k*foldsize; i++)
+				 for(int j=0; j < dimension; j++)
+				  {
+				    trainingPatterns[i][j] = data[i][j];
+				    trainingTargets[i] = targets[i];
+			      }
+			  //the training samples after the testing samples
+		      for(int i= k*foldsize + testinglength; i< length; i++)
+				 for(int j=0; j < dimension; j++)
+				 {
+				    trainingPatterns[i-testinglength][j] = data[i][j];
+				    trainingTargets[i-testinglength] = targets[i];
+			     }
+		       Ensemble ens = new ComEnsemble();
+		       int ClassifierCnt = 0;
+			   for( Classifier classifer : chosenClassifiers)
+		       {
+				   System.out.println(classes.get(ClassifierCnt).getName());
+		    	   (new annotool.Annotator()).classifyGivenAMethod(classifer, classes.get(ClassifierCnt).getParams() , trainingPatterns, testingPatterns, trainingTargets, testingTargets, annotedPredictions);
+		    	   ens.addResult(annotedPredictions);
+		    	   ClassifierCnt++;
+		    	   
+		       }
+	    	  //compare the output prediction with the real targets on the testing set
+			 
+			 int currentFoldCorrect = 0;
+	    	 int ensResults[] = ens.classify();
+	         for(int i=0; i<testinglength; i++)
+	         {
+				System.out.println("predicted category:" + ensResults[i]);
+				System.out.println("actual category:" + testingTargets[i]);
+				results[k*foldsize+i].anno = ensResults[i];
+		        if(testingTargets[i] == ensResults[i])
+		        {
+		           correct ++;
+		           currentFoldCorrect ++;
+		        }
+		     }
+	         foldresults[k] = (float) currentFoldCorrect/testinglength;
+
+	      
+	   	   //if GUI, update 5 times unless K is small than 5
+	       if (bar != null)
+	       {
+	    		 if (K < 5) //update K times
+	    			    setProgress(startPos + (k+1)*totalRange/K);
+	    	     else if (k%(K/5) == 0)
+	    			    setProgress(startPos + totalRange/5*(k+1)/(K/5));
+	        }	 
+	      }//end of K
+
+	      //output the overall results of all folds
+	      System.out.println("overall recognition rate: " + (float)correct/length);
+	      foldresults[K] = (float) correct/length;
+	      
+	      if (shuffle)
+	        results = reverseShuffleOfResults(idBeforeShuffle, results);
+	      
+	      setProgress(startPos + totalRange);
+	      
+	      
+	      
+	      return foldresults;
+	   
+   }
  
    /*****************************
    * K fold CV, with K <= length. When K == length, it is leave one out (LOO) validation.
@@ -199,7 +341,7 @@ public class Validator
       int[] trainingTargets;
       int[] testingTargets;
       Annotation[] annotedPredictions;
-      double[] prob;
+      //double[] prob;
       int testinglength, traininglength; //may vary for the last fold 
       int foldsize = length/K; //size per fold except the last one;
 
@@ -330,7 +472,7 @@ public class Validator
       int[] trainingTargets;
       int[] testingTargets;
       Annotation[] annotedPredictions;
-      double[] prob;
+      //double[] prob;
       int testinglength, traininglength; //may vary for the last fold 
       int foldsize = length/K; //size per fold except the last one;
 

@@ -6,7 +6,6 @@ import weka.core.Instance;
 import weka.core.Instances;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.trees.J48;
-import weka.core.*;
 /**
 * This is a wrapper for a collection of some classifiers provided in Weka.
 * Weka: http://www.cs.waikato.ac.nz/ml/weka/
@@ -291,7 +290,8 @@ public class WekaClassifiers implements SavableClassifier {
 	}
 
 	//a useful utility method for getting target into
-    private int getTargetListSize(int[] targets)
+    /*
+	private int getTargetListSize(int[] targets)
     {
 		java.util.ArrayList<Integer> targetList = new java.util.ArrayList<Integer>();
 		for (int i=0; i < targets.length; i++)
@@ -300,7 +300,7 @@ public class WekaClassifiers implements SavableClassifier {
 
 		return targetList.size();
     }
-
+	*/
 
     private Integer[] getTargetList(int[] targets)
     {

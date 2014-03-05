@@ -1,7 +1,6 @@
 package annotool.io;
 
 import ij.ImagePlus;
-import ij.ImageStack;
 import ij.gui.Roi;
 import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
@@ -12,9 +11,7 @@ import ij.process.ShortProcessor;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.regex.Pattern;
 
 
@@ -186,7 +183,7 @@ public class DataInput
 		this.files = files;
 		this.ext = ext;
 		this.channel = channel;
-		this.depth = depth;
+		//this.depth = depth;
 	}
 	
 	/**
