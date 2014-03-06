@@ -358,10 +358,12 @@ public class ROITagger extends JDialog implements ActionListener {
 			pnlStatus.setOutput("Done");
 		} else if (ev.getSource() == btn3DROITrain) {
 			//ImageProcessor ip = imp.getProcessor();
-			annotool.analysis.ThreeDROIAnnotation.train3droi(imp);
+			pnlStatus.setOutput("This feature is moved out of BIOCAT.");
+			//annotool.analysis.ThreeDROIAnnotation.train3droi(imp);
 		} else if (ev.getSource() == btn3DROITest) {
 			//ImageProcessor ip = imp.getProcessor();
-			annotool.analysis.ThreeDROIAnnotation.test3droi(imp);
+			pnlStatus.setOutput("This feature is moved out of BIOCAT.");
+			//annotool.analysis.ThreeDROIAnnotation.test3droi(imp);
 		}
 
 	}

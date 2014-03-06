@@ -63,6 +63,7 @@ public class AnnMenuBar implements ActionListener {
 		itemTrainOnly.addActionListener(this);
 		itemROITag = new JMenuItem(ROITAG);
 		itemROITag.addActionListener(this);
+		itemROITag.setEnabled(false);  //disabled. 3/6/2014 
 		
 		annoMenu = new JMenu(ANNO);
 		JMenuItem imgAnnoItem = new JMenuItem(IMGANNO);
@@ -71,7 +72,6 @@ public class AnnMenuBar implements ActionListener {
 		annoMenu.add(roiAnnoItem);
 		imgAnnoItem.addActionListener(this);
 		roiAnnoItem.addActionListener(this);
-		
 
 		//load example data sets with configuration
 		JMenu loadexMenu = new JMenu(LOADEX);
@@ -207,9 +207,9 @@ public class AnnMenuBar implements ActionListener {
 			frame.initModelSelectWizard();
 		else if(command.equals(TRAINONLY))
 			frame.initTrainOnly();
-		//else if(command.equals(ROITAG)) {
-			//ROITagger tagger = new ROITagger(frame, "ROI Tagger", false);
-		//}
+		else if(command.equals(ROITAG)) {
+			ROITagger tagger = new ROITagger(frame, "ROI Tagger", false);
+		}
 		else if(command.equals(IMGANNO))
 			frame.initAnnotate();
 		else if(command.equals(ROIANNO))
