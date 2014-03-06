@@ -887,10 +887,18 @@ public class ThreeDROIAnnotation {
 	private static SavableClassifier getSavableClassifier(ArrayList<Chain> chainList) throws Exception
 	{
 		Annotator a = new Annotator();
+		/*
 		String classi = chainList.get(0).getClassifierClassName();
 		HashMap<String,String> params = chainList.get(0).getClassParams();
 		Classifier c;
 		c = a.getClassifierGivenName(classi, chainList.get(0).getClassifierExternalPath(), params);
+		*/
+		ArrayList<ClassifierChain> cc =  chainList.get(0).getClassifier();
+		String classi = cc.get(0).getClassName();
+		HashMap<String,String> params = cc.get(0).getParams();
+		Classifier c;
+		c = a.getClassifierGivenName(classi, cc.get(0).getExternalPath(), params);
+		
 		if(c instanceof SavableClassifier){
 			classifier = (SavableClassifier) c;
 			//classifier.trainingOnly(extractedFea, target);
