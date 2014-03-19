@@ -455,7 +455,7 @@ public class WekaClassifiers implements SavableClassifier {
         		
         		/* Added 12/28/2013 */
         		
-        		dimension = (int) filestream.readObject();
+        		dimension = ((Integer) filestream.readObject()).intValue();
         		m_Data = (Instances) filestream.readObject();
         		targetList = (java.util.ArrayList<Integer>) filestream.readObject();
         		
