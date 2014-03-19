@@ -282,7 +282,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 				int i = tblChain.getRowCount() - 1;
 				for (; i >= 0; i--)
 				{
-					if ((boolean) tblChain.getValueAt(i, COL_CHECK))
+					if (((Boolean) tblChain.getValueAt(i, COL_CHECK)).booleanValue())
 					{
 						System.out.println("Removing row: " + i);
 						tableModel.removeRow(i);
