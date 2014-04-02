@@ -224,7 +224,8 @@ public class ModelLoader implements Runnable {
 			System.err.println("Parameter panel is null");
 			return;
 		}
-		/*
+		
+		//uncommented to restore the ROI Annotator. 4/2/14
 		int interval = pnlROIParam.getSelectedInterval();
 		int mode = pnlROIParam.getSelectedMode();
 		String channel = pnlImages.getSelectedChannel();
@@ -233,8 +234,8 @@ public class ModelLoader implements Runnable {
 		boolean isMaximaOnly = pnlROIParam.isLocalMaximaOnly();
 		
 		int[] selectedImages = pnlImages.getTablePanel().getAnnotationTable().getSelectedRows();
-		*/
-		//ROIAnnotator roiAnnotator = new ROIAnnotator(interval, mode, channel, chainModels, selectedImages, exportDir, isExport, isMaximaOnly,  this.pnlImages);
+		
+		ROIAnnotator roiAnnotator = new ROIAnnotator(interval, mode, channel, chainModels, selectedImages, exportDir, isExport, isMaximaOnly,  this.pnlImages);
 	}
 	
 	/**
