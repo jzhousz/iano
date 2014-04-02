@@ -2,6 +2,7 @@ package annotool.classify;
 
 
 import libsvm.*;
+
 import java.util.StringTokenizer;
 
 /**
@@ -52,6 +53,12 @@ public class SVMClassifier implements SavableClassifier
     svm_model trainedModel = null;
     boolean supportProbability = false;
     
+	/* XML Cons */
+	public static final String
+	SVM_TYPE="Svm Type",
+	KERNEL_TYPE = "Kernel Type",
+    EPS_TER_CRI = "Epsilon Termination Criterion";
+    
    /**
    * Default constructor
    */
@@ -67,10 +74,52 @@ public class SVMClassifier implements SavableClassifier
     */
    public void setParameters(java.util.HashMap<String, String> para)
    {
-	   if(para != null && para.containsKey(KEY_PARA))
-	          initSVMParameters(para.get(KEY_PARA));
-	 	  else
-	 		initSVMParameters(annotool.Annotator.DEFAULT_SVM);
+	   
+	   String SvmParas = "";
+	   if(para != null )
+		{
+		   if(para.containsKey(SVM_TYPE))
+		   {
+			   
+			   if(((String) para.get(SVM_TYPE)).equalsIgnoreCase("C-SVC"))
+				   SvmParas = "-s " + "0";
+			   else if(((String) para.get(SVM_TYPE)).equalsIgnoreCase("nu-SVC"))
+				   SvmParas = "-s " + "1";
+			   else if(((String) para.get(SVM_TYPE)).equalsIgnoreCase("one-class SVM"))
+				   SvmParas = "-s " + "2";
+			   else if(((String) para.get(SVM_TYPE)).equalsIgnoreCase("epsilon-SVR"))
+				   SvmParas = "-s " + "3";
+			   else
+				   SvmParas = "-s " + "4";
+		   }
+		   
+		   if(para.containsKey(KERNEL_TYPE))
+		   {
+			   if(((String) para.get(KERNEL_TYPE)).equalsIgnoreCase("linear"))
+				   SvmParas += " -t " + "0";
+			   else if(((String) para.get(KERNEL_TYPE)).equalsIgnoreCase("polynomial"))
+				   SvmParas += " -t " + "1";
+			   else if(((String) para.get(KERNEL_TYPE)).equalsIgnoreCase("radial basis function"))
+				   SvmParas += " -t " + "2";
+			   else
+				   SvmParas += " -t " + "3";
+			   
+		   }
+		   
+		   if(para.containsKey(EPS_TER_CRI))
+		   {
+			   SvmParas += " -e " + ((String) para.get(EPS_TER_CRI));
+		   }
+		   
+		   
+		   if(SvmParas != "")
+		   {
+			  System.out.println(SvmParas);
+			   initSVMParameters(SvmParas);
+		   }
+		}
+	   else
+	 	initSVMParameters(annotool.Annotator.DEFAULT_SVM);
    }
  
    /**
