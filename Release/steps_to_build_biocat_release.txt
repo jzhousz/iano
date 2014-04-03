@@ -2,6 +2,9 @@ STEPS FOR BUILDING A BIOCAT RELEASE
 
 August 16, 2012
 
+0. Decide a release number.  Update the release number in: AnnMenuBar.java  displayAbout()
+                                     AnnotatorGUI.java main()
+
 1.  Generate biocat.jar 
     In Eclipse, "export...", 
 	choose: executable jar file;  put the needed libaraies next to the jar
