@@ -222,8 +222,19 @@
 		<ClassName>annotool.classify.SVMClassifier</ClassName>
 		<Desc>Support Vector Machine</Desc>
 		<Parameter type="String">
-			<Name>General Parameter</Name>
-			<Default>-t 0</Default>
+			<Name>Svm Type</Name>
+			<Domain>C-SVC,nu-SVC</Domain>
+			<Default>C-SVC</Default>
+		</Parameter>
+	    <Parameter type="String">
+			<Name>Kernel Type</Name>
+			<Domain>linear,polynomial,radial basis,sigmoid</Domain>
+			<Default>linear</Default>
+		</Parameter>
+		<Parameter type="Double">
+			<Name>Epsilon Termination Criterion</Name>
+			<Default>0.001</Default>
+			<Min>0</Min>
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="Classifier">
@@ -289,7 +300,7 @@
 			<Min>1</Min>
 		</Parameter>
 	</Algorithm>
-        <Algorithm type="Classifier">
+     <Algorithm type="Classifier">
 		<Name>Multilayer Perceptron</Name>
 		<Desc>Artificial Neural Network (Multilayer Perceptron Trained by BP)</Desc>
 		<ClassName>annotool.classify.MLP.MLPClassifier</ClassName>
@@ -307,5 +318,151 @@
 				<Name>Windowed Momentum</Name>
 				<Default>0</Default>
 			</Parameter>
+	</Algorithm> 
+	    <Algorithm type="3DExtractor">
+		<Name>FeatureJ Statistics 3D</Name>
+        <ClassName>annotool.extract.FeatureJStatistics3D</ClassName>
+        <Desc>Simple statistics using FeatureJ</Desc>
+		<Parameter type="Boolean">
+			<Name>AVERAGE ABSOLUTE DEVIATION</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>ELEMENTS</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>KURTOSIS</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>L1NORM</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>L2NORM</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MASS</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MAXIMUM</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MEAN</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MEDIAN</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MINIMUM</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>MODE</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>SDEVIATION</Name>
+			<Default>0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>SKEWNESS</Name>
+			<Default>1</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>VARIANCE</Name>
+			<Default>0</Default>
+		</Parameter>
+	</Algorithm>
+    <Algorithm type="3DExtractor">
+		<Name>FeatureJ Laplacian 3D</Name>
+		<ClassName>annotool.extract.FeatureJLaplacian3D</ClassName>
+		<Desc>Laplacian of input images</Desc>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>		
+	</Algorithm>
+	<Algorithm type="3DExtractor">
+		<Name>FeatureJ Edges</Name>
+		<ClassName>annotool.extract.FeatureJEdges3D</ClassName>
+		<Desc>Edge detection</Desc>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>Suppress Non-maximum Gradients</Name>
+			<Default>0</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="3DExtractor">
+		<Name>FeatureJ Derivatives 3D</Name>
+		<ClassName>annotool.extract.FeatureJDerivative3D</ClassName>
+		<Desc>Computes Gaussian Derivatives of Images</Desc>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>x-order</Name>
+			<Default>0</Default>
+			<Min>0</Min>
+			<Max>10</Max>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>y-order</Name>
+			<Default>0</Default>
+			<Min>0</Min>
+			<Max>10</Max>
+		</Parameter>
+		<Parameter type="Integer">
+			<Name>z-order</Name>
+			<Default>0</Default>
+			<Min>0</Min>
+			<Max>10</Max>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="3DExtractor">
+		<Name>FeatureJ Structure 3D</Name>
+		<ClassName>annotool.extract.FeatureJStructure3D</ClassName>
+		<Desc>Computes Structure Tensor Eigen Images</Desc>
+		<Parameter type="String">
+			<Name>Eigenvalue</Name>
+			<Domain>Largest,Smallest</Domain>
+			<Default>Largest</Default>
+		</Parameter>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>
+		<Parameter type="Real">
+			<Name>Integration Scale</Name>
+			<Default>3.0</Default>
+		</Parameter>
+	</Algorithm>
+	<Algorithm type="3DExtractor">
+		<Name>FeatureJ Hessian 3D</Name>
+		<ClassName>annotool.extract.FeatureJHessian3D</ClassName>
+		<Desc>Computes Hessian Eigen Images</Desc>
+		<Parameter type="String">
+			<Name>Eigenvalue</Name>
+			<Domain>Largest,Smallest</Domain>
+			<Default>Largest</Default>
+		</Parameter>
+		<Parameter type="Real">
+			<Name>Smoothing Scale</Name>
+			<Default>1.0</Default>
+		</Parameter>
+		<Parameter type="Boolean">
+			<Name>Absolute Eigen Value Comparison</Name>
+			<Default>1</Default>
+		</Parameter>
 	</Algorithm>
 </Algorithms>
