@@ -48,7 +48,7 @@ public class SVMClassifier implements SavableClassifier
     int dimension;
     int maxClassNum = 0;
     svm_parameter param = new svm_parameter();
-    public final static String KEY_PARA = "General Parameter";
+    //public final static String KEY_PARA = "General Parameter";
     public final static String DEFAULT_MODEL_FILE = "SVM_MODELFILE";
     svm_model trainedModel = null;
     boolean supportProbability = false;
@@ -57,8 +57,9 @@ public class SVMClassifier implements SavableClassifier
 	public static final String
 	SVM_TYPE="Svm Type",
 	KERNEL_TYPE = "Kernel Type",
-    EPS_TER_CRI = "Epsilon Termination Criterion";
-    
+    EPS_TER_CRI = "Epsilon Termination Criterion",
+	GEN_PARA = "General Parameter";
+	
    /**
    * Default constructor
    */
@@ -111,8 +112,12 @@ public class SVMClassifier implements SavableClassifier
 			   SvmParas += " -e " + ((String) para.get(EPS_TER_CRI));
 		   }
 		   
+		   if(para.containsKey(GEN_PARA))
+		   {
+			   SvmParas = ((String) para.get(GEN_PARA));
+		   }
 		   
-		   if(SvmParas != "")
+		   if(!SvmParas.equals(""))
 		   {
 			  System.out.println(SvmParas);
 			   initSVMParameters(SvmParas);
@@ -133,10 +138,16 @@ public class SVMClassifier implements SavableClassifier
     */
    public SVMClassifier(java.util.HashMap<String,String> parameters)
    {
-	  if(parameters != null && parameters.containsKey(KEY_PARA))
+	  
+	   setParameters(parameters);
+	   
+	   /*
+	   if(parameters != null && parameters.containsKey(KEY_PARA))
           initSVMParameters(parameters.get(KEY_PARA));
  	  else
  		initSVMParameters(annotool.Annotator.DEFAULT_SVM);
+	    */
+   
    }
 
    /**
@@ -168,6 +179,8 @@ public class SVMClassifier implements SavableClassifier
    //See details on LibSVM webpage.
    protected void initSVMParameters(String parameters)
    {
+	   System.out.println( parameters ); 
+	   
 		// default values
 		param.svm_type = svm_parameter.C_SVC;
 		param.kernel_type = svm_parameter.RBF;
