@@ -50,7 +50,8 @@ public class MLPClassifier  implements SavableClassifier, Serializable {
   
 	/* Internal model */
 	
-	private Object model = null;
+	//private Object model = null;
+     private BPNetTraining model = null;
 	
 	/* probability array index */
 	private int pro_index = 0;
@@ -63,7 +64,7 @@ public class MLPClassifier  implements SavableClassifier, Serializable {
 	private int hiddenNodes = 50;
 	
 	/* If train only */
-	private boolean trainedOnly = true;
+	//private boolean trainedOnly = true;
 	
 	/* Windowed Momentum*/
 	boolean wm = false;
@@ -98,10 +99,11 @@ public class MLPClassifier  implements SavableClassifier, Serializable {
 		int[] preHolder = null;
 		
 	
-		trainedOnly = false;
+		//trainedOnly = false;
 		
 		/*Trains the model */
-		model = trainingOnly(trainingpatterns, trainingtargets);
+		//model = trainingOnly(trainingpatterns, trainingtargets);
+		trainingOnly(trainingpatterns, trainingtargets);
 		
 		
 		/* Test the model */
@@ -143,8 +145,8 @@ public class MLPClassifier  implements SavableClassifier, Serializable {
 	public Object trainingOnly(float[][] trainingpatterns, int[] trainingtargets)
 			throws Exception {
 		
-		BPNetTraining Trainer;
-	
+		//BPNetTraining Trainer;
+	/*
 		Trainer = new BPNetTraining( trainingpatterns[0].length, hiddenNodes, trainingpatterns, trainingtargets  );
 		Trainer.algorithm.iterations = iterations;
 		Trainer.algorithm.thvalue = thvalue;
@@ -161,7 +163,21 @@ public class MLPClassifier  implements SavableClassifier, Serializable {
 			model = Trainer;
 		}
 		
-		return Trainer; 
+		return Trainer;
+		*/
+		
+		model = new BPNetTraining( trainingpatterns[0].length, hiddenNodes, trainingpatterns, trainingtargets  );
+		model.algorithm.iterations = iterations;
+		model.algorithm.thvalue = thvalue;
+		model.algorithm.alpha = alpha;
+		model.algorithm.eita = eita;
+		model.algorithm.gamma = gamma;
+		model.algorithm.hasWM = wm;
+
+		model.algorithm.sample = trainingpatterns;
+		model.startTrain( trainingpatterns.length );
+		
+		return model;
 	}
 
 	/** 							getModel
@@ -205,7 +221,7 @@ public class MLPClassifier  implements SavableClassifier, Serializable {
 	
 	public int classifyUsingModel(Object model , float[] testingPattern,
 			double[] prob) throws Exception {
-		
+		int result = -1;
 		BPNetTraining TrainModel = null;
 		if( model == null )
 			throw new Exception("Model passed in is null");
@@ -230,7 +246,11 @@ public class MLPClassifier  implements SavableClassifier, Serializable {
 		
 		Tester.algorithm.test = testingPattern;
 		
-		return Tester.algorithm.testModel( prob,  pro_index );
+		result = (Integer) TrainModel.targetmap.get(Tester.algorithm.testModel( prob,  pro_index )).intValue();
+		
+		System.out.println("MLP Classified as: " + result);
+		
+		return result;
 
 	}
 
@@ -256,21 +276,16 @@ public class MLPClassifier  implements SavableClassifier, Serializable {
 	{
 		
 		pro_index = 0;
-		
-		BPNetTraining TrainModel = null;
+	
 		if( model == null )
 			throw new Exception("Model passed in is null");
-		else
-		{
 
-			TrainModel = (BPNetTraining) model;
-		}
 		
 		int[] rec = new int[testingPatterns.length];
 		
 		for( int i = 0; i < testingPatterns.length; i++ )
 		{
-			rec[i]  = ((Integer) TrainModel.targetmap.get(classifyUsingModel( model, testingPatterns[i],  prob  ))).intValue();
+			rec[i]  = classifyUsingModel( model, testingPatterns[i],  prob );
 			
 			pro_index++;
 		}

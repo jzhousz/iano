@@ -425,7 +425,7 @@ public class WekaClassifiers implements SavableClassifier {
     		
     		/* Added 12/28/2013 */
     		
-    		filestream.writeObject(dimension );
+    		filestream.writeObject(dimension);
     		filestream.writeObject(m_Data);
     		filestream.writeObject(targetList);	
     		

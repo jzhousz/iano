@@ -11,7 +11,7 @@ import java.awt.GridLayout;
 import java.awt.event.*;
 
 import annotool.gui.model.Chain;
-import annotool.gui.model.ClassifierChain;
+import annotool.gui.model.ClassifierInfo;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
 import annotool.io.AlgoXMLParser;
@@ -221,12 +221,12 @@ public class AutoCompFrame extends PopUpFrame implements ActionListener, ItemLis
 		//Added 1/16/2014
 		else if(e.getSource() ==  btnAddClass) {
 			Algorithm classifier = (Algorithm)cbClassifier.getSelectedItem();
-			ClassifierChain Class = new ClassifierChain(classifier.getName());
+			ClassifierInfo Class = new ClassifierInfo(classifier.getName());
 			Class.setClassName(classifier.getClassName());
 			Class.setExternalPath(classifier.getExternalPath());
 			Class.setParams(getParameterList(classifier, "Classifier"));
-	        pnlChain.addClassifier(Class);
-			if(pnlChain.getClassifier().size() == 2)
+	        pnlChain.addClassifierInfo(Class);
+			if(pnlChain.getClassifierInfo().size() == 2)
 			{
 				//btnAddEns.setEnabled(true);
 				//Message Box

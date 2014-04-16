@@ -48,7 +48,7 @@ public class ModelHelper {
 			
 			//Classifier
 			strBuffer.append("<b>Classifier: </b>" + newLine);
-			for(ClassifierChain cal : chainModels.get(i).getClassifierChain())
+			for(ClassifierInfo cal : chainModels.get(i).getClassifierInfo())
 				strBuffer.append(cal.getName() + newLine);
 			//removed 1/20/2014
 			//strBuffer.append(chainModels.get(i).getClassifierName() + " : ");

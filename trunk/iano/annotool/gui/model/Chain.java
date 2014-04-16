@@ -2,6 +2,9 @@ package annotool.gui.model;
 
 import java.util.ArrayList;
 
+import annotool.classify.SavableClassifier;
+import annotool.classify.CommEns.CommitteeEnsemble;
+
 
 /**
  * Represents a single chain of algorithms.
@@ -15,7 +18,10 @@ public class Chain {
 	private ArrayList<Extractor> extractors = null;
 	private ArrayList<Selector> selectors = null;
 	//private String classifier = null; Removed 1/16/2014
-	private ArrayList<ClassifierChain> classifier = null;
+	ClassifierInfo currentInfo = null;
+	private ArrayList<ClassifierInfo> classifierInfo = null;
+	private SavableClassifier classifier = null; // Added to wrap Ensemble
+
 	/*
 	private String ensemble = null;
 	private String ensembleClassName = null;
@@ -35,7 +41,7 @@ public class Chain {
 		
 		extractors = new ArrayList<Extractor>();
 		selectors = new ArrayList<Selector>();
-		classifier =  new ArrayList<ClassifierChain>(); // added 1/16/2014
+		classifierInfo =  new ArrayList<ClassifierInfo>(); // added 1/16/2014
 		//classParams = new HashMap<String, String>(); Removed 1/16/2014
 		//ensParams = new HashMap<String, String>();
 	}
@@ -51,11 +57,12 @@ public class Chain {
 	public void addSelector(Selector sel) {
 		selectors.add(sel);
 	}
-	public void addClassifier(ClassifierChain Class) { //Added 1/16/2014
-		if(classifier.size() > 1)
-			EnsMode = true;
+	public void addClassifierInfo(ClassifierInfo Class) { //Added 1/16/2014
+		classifierInfo.add(Class);
 		
-		classifier.add(Class);
+		if(classifierInfo.size() > 1)
+			EnsMode = true;
+
 	}
 	public void clearExtractors() {
 		extractors.clear();
@@ -64,7 +71,7 @@ public class Chain {
 		selectors.clear();
 	}
 	public void clearClassifier() { //Added 1/16/2014
-		classifier.clear();
+		classifierInfo.clear();
 	}
 	/* Removed on 1/16/2014 
 	public void addClassifierParam(String key, String value) {
@@ -87,14 +94,14 @@ public class Chain {
 		return false;
 	}
 	public boolean hasClassifier() {
-		if (classifier.size() > 0)
+		if (classifierInfo.size() > 0)
 			return true;
 		return false;
 	}
 	public boolean isComplete() {
 		//Chain is complete when there is at least one classifier
 		//It is valid even if there is no extractor or selector because they should default to 'None'
-		if(classifier == null || classifier.isEmpty() ) /* classifier.equalsIgnoreCase("None")) */ /* Changed 1/16/14 */
+		if(classifierInfo == null || classifierInfo.isEmpty() ) /* classifier.equalsIgnoreCase("None")) */ /* Changed 1/16/14 */
 			return false;
 		return true;
 	}
@@ -118,12 +125,12 @@ public class Chain {
 		else
 			str.append("FS: NONE; ");
 		
-		if( classifier.size() > 0 )/*classifier != null) */ /* Changed 1/16/2014 */
+		if( classifierInfo.size() > 0 )/*classifier != null) */ /* Changed 1/16/2014 */
 		{
 			/* str.append("Classifier: " + classifier); */ /* Removed 1/16/2014 */
 			/* Added 1/16/2014 */
-			for(int i = 0; i < classifier.size(); i++) {
-				str.append("Classifier"+ (i+1) +": " + classifier.get(i).getName() + "; ");
+			for(int i = 0; i < classifierInfo.size(); i++) {
+				str.append("Classifier"+ (i+1) +": " + classifierInfo.get(i).getName() + "; ");
 			}
 		}
 		else
@@ -164,12 +171,50 @@ public class Chain {
 		this.selectors = selectors;
 	}
 
-	public ArrayList<ClassifierChain> getClassifier() { //Added 1/16/2014
-		return classifier;
+	public ArrayList<ClassifierInfo> getClassifierInfo() { //Added 1/16/2014
+		return classifierInfo;
 	}
 
-	public void setClassifier( ArrayList<ClassifierChain> classifier ) { /* String classifier) { */ /* Changed 1/16/2014 */
-		this.classifier = classifier;
+	public void setClassifier( ArrayList<ClassifierInfo> classifierInfo ) 
+	{
+		
+		this.classifierInfo = classifierInfo;
+		
+		if(classifierInfo.size() > 1)
+		{
+			classifier = new CommitteeEnsemble(classifierInfo);
+			
+			//currentInfo = new ClassifierInfo("CommitteeEnsemble");			
+			//currentInfo.setExternalPath("annotool.classify.CommEns.CommitteeEnsemble");
+			//currentInfo.setName("Committee Ensemble");
+			//currentInfo.setParams(null);
+			EnsMode = true;
+		} 
+		else
+		{
+			try 
+			{
+				classifier = (SavableClassifier) ( new annotool.Annotator()).getClassifierGivenName(classifierInfo.get(0).getClassName(), classifierInfo.get(0).getExternalPath(), classifierInfo.get(0).getParams());
+				//currentInfo = new ClassifierInfo(classifierInfo.get(0).getClassName());
+				//currentInfo.setExternalPath(classifierInfo.get(0).getExternalPath());
+				//currentInfo.setName(classifierInfo.get(0).getName());
+				//currentInfo.setParams(classifierInfo.get(0).getParams());
+				EnsMode = false;
+			} 
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+		public SavableClassifier getSavableClassifier() 
+		{ 
+		
+		if( classifier == null)
+		{
+			setClassifier(classifierInfo);
+		}
+		return classifier;
 	}
 	
 	/*
@@ -274,14 +319,14 @@ public class Chain {
 		this.setClassifierExternalPath(toBeCopied.getClassifierExternalPath());
 		*/
 		/* Added 1/16/2014 */
-		for (int i = 0; i < toBeCopied.classifier.size(); i++)
+		for (int i = 0; i < toBeCopied.classifierInfo.size(); i++)
 		{
-			ClassifierChain Class = new ClassifierChain(toBeCopied.classifier.get(i).getName());
-			Class.setClassName(toBeCopied.classifier.get(i).getClassName());
-			Class.setExternalPath(toBeCopied.classifier.get(i).getExternalPath());
-			Class.setParams(toBeCopied.classifier.get(i).getParams());
+			ClassifierInfo Class = new ClassifierInfo(toBeCopied.classifierInfo.get(i).getName());
+			Class.setClassName(toBeCopied.classifierInfo.get(i).getClassName());
+			Class.setExternalPath(toBeCopied.classifierInfo.get(i).getExternalPath());
+			Class.setParams(toBeCopied.classifierInfo.get(i).getParams());
 		
-			this.addClassifier(Class);
+			this.addClassifierInfo(Class);
 		}
 		
 		
