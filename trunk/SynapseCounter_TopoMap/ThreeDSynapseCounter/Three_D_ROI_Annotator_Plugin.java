@@ -7,10 +7,14 @@
  /* NOTES and TODO
   * 02/16/14 looking into awt file choosers from venkat
   * 02/18/14 implement rest of GUI, for now, add logic for annotation
+  * 04/14/14 added default paths for testing ease
+  *          save options added to gui
+  *          uses new AnnotatorUtility file
+  *          supports user threshold, complete with preview autothreshold         
   *
   * TODO
-  * add support to trainf first. report success to user, and run on new image
-  * fix file saving locations, can use similar logic, but requires rework of TDROIAnnotator code.
+  * add support to train first. report success to user, 
+  * report detected centers via an IJ results table
   */
   
  import ij.*;
@@ -29,6 +33,8 @@
     int width;
     int depth;
     int height;
+    int saveOption = 0;
+    int threshold = 0;
     String posRoiPath, negRoiPath, chainPath, savePath;
     HashSet<Point3D> centers;
     ThreeDROISynapseDriver anno;
@@ -48,10 +54,11 @@
     
     //gui elements
     GenericDialog gd;
-    Panel posChooser, negChooser, chainChooser, saveChooser, saveDirP, SaveNameP, optionsP;
-    Button posRoiB, negRoiB, chainB, saveB, trainB;
-    TextField posRoiField, negRoiField, chainField, saveLocField, saveNameField;
-    Checkbox imageCB;
+    Panel posChooser, negChooser, chainChooser, thresholdP, saveChooser, saveDirP, SaveNameP, optionsP;
+    Button posRoiB, negRoiB, chainB, saveB, trainB, thresholdB;
+    TextField posRoiField, negRoiField, chainField, saveLocField, saveNameField, thresholdField;
+    Checkbox saveIjCB, saveV3dCB, imageCB;
+    Label saveL, formatL;
  
     public int setup(String arg, ImagePlus imp) {
     
@@ -60,7 +67,7 @@
     
     public void run(ImageProcessor ip) {
     	
-    	System.out.println("debug test");//debug
+    	//System.out.println("debug test");//debug
         //setup gui
         if (! makeGUI()) return;
         //store data from gui fields
@@ -112,9 +119,26 @@
         chainChooser.add(chainB);
         chainChooser.add(chainField);
         
-        //browser for saveB location
+        //sliders are handled below, by IJ's GeneralDialog
+        
+        thresholdP = new Panel();
+            thresholdP.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0)); 
+        thresholdB = new Button("Auto Threshold");
+            thresholdB.addActionListener(listener);
+        thresholdField = new TextField(Prefs.get("batch.thresholdB",""), 5);
+        thresholdP.add(thresholdB);
+        thresholdP.add(thresholdField);
+        
+        
+        //browser and options for save location 
         saveChooser = new Panel();
             saveChooser.setLayout(new GridLayout(0,1));
+        
+        //formatL = new Label("Select save formats:");
+        saveIjCB = new Checkbox("IJ ");
+            saveIjCB.setState(true);
+        saveV3dCB = new Checkbox("V3D");
+            saveV3dCB.setState(true);
         saveB = new Button("Save Folder");
             saveB.addActionListener(listener);
         saveLocField = new TextField(Prefs.get("batch.saveB",""), 40);
@@ -127,10 +151,14 @@
         
         SaveNameP = new Panel();
             SaveNameP.setLayout(new FlowLayout(FlowLayout.LEFT,5,0));
-        Label saveL = new Label("File name:  ");
+        saveL = new Label("File name:  ");
         SaveNameP.add(saveL);
         SaveNameP.add(saveNameField);
         
+        
+            //add to saveChooser panel
+        saveChooser.add(saveIjCB);
+        saveChooser.add(saveV3dCB);
         saveChooser.add(saveDirP);
         saveChooser.add(SaveNameP);
         
@@ -155,12 +183,22 @@
         gd.addSlider("Roi width ", min_roi_width, max_roi_width, def_roi_width);
         gd.addSlider("Roi depth ", min_roi_depth, max_roi_depth, def_roi_depth);
         
-        gd.addMessage("\nSave Location and file name:");
+        gd.addMessage("\n Manual Threshold (leave 0 to use auto threshold)");
+        gd.addSlider("Threshold", 0, 255, 0);
+        gd.addPanel(thresholdP);
+        
+        gd.addMessage("\n\nSave formats, location and file name:");
         gd.addPanel(saveChooser);
         
-        gd.addMessage("\nOther options:");
+        gd.addMessage("\n\nOther options:");
         gd.addPanel(optionsP);
         
+        
+        
+        fillDefaults();
+        
+        
+        //show it after completion
         gd.showDialog();
         
         if(gd.wasCanceled())
@@ -171,7 +209,15 @@
 
     }//end makeGUI
     
+    //fill in some default strings for ease of testing.
+    private void fillDefaults() {
+        posRoiField.setText("F:\\URA\\Work\\roiAnnotator\\cropped_AxonTerminalSynapse_3DRoiSet_positive.zip");
+        negRoiField.setText("F:\\URA\\Work\\roiAnnotator\\cropped_AxonTerminalSynapse_3DRoiSet_negative.zip");
+        chainField.setText("F:\\URA\\Work\\roiAnnotator\\Synapse_Haar_SVM.ichn");
+        saveLocField.setText("");
     
+
+    }    
     //get all the data from the gui fields and put in vars
     //check for empty fields
     private boolean getDataFromFields() {
@@ -184,14 +230,24 @@
             width  = (int) gd.getNextNumber();
             depth  = (int) gd.getNextNumber();
             
+            threshold = (int) gd.getNextNumber();
+            
             savePath = (saveLocField.getText() + saveNameField.getText());
+            
+            
+            //decide on save options based on checkboxes
+            //0 for none, 1 for IJ, 2 for V3D, 3 for both
+            saveOption = 0;
+            if(saveIjCB.getState()) saveOption+=anno.MARKER_ONLY;
+            if(saveV3dCB.getState()) saveOption+=anno.VAA3D_ONLY;
     
+            //break if file paths not specified.
             if(posRoiPath.length()==0 || negRoiPath.length()==0 || chainPath.length()==0 || savePath.length()==0) 
                return false;
     
             //print param list to log
             String s = ", ";
-            IJ.log("PARAMS: " + height + s + width + s + depth + s + posRoiPath + s + negRoiPath + s + chainPath );
+            IJ.log("PARAMS: " + height + s + width + s + depth + s + posRoiPath + s + negRoiPath + s + chainPath + s + saveOption );
     
            return true;
     }//end getDataFromFields
@@ -235,7 +291,7 @@
             //annotate
             IJ.showStatus("Annotating...");
             IJ.log("Annotating...");
-			anno.annotate(annoImp, savePath, 3);
+			anno.annotate(annoImp, savePath, saveOption, threshold);
 
             IJ.log("Finished!");
             
@@ -265,6 +321,7 @@
         String path ="default";
         OpenDialog od;
         DirectoryChooser dc;
+        int num;
         
         if(source.equals(posRoiB)) {
             //IJ.log("posRoiB button press");
@@ -290,6 +347,9 @@
             if( path.equals(null)) return;
             saveLocField.setText(path);
             
+        } else if(source.equals(thresholdB)) {         
+            num = (int) AnnotatorUtility.calcThreshold(WindowManager.getCurrentImage(), 1);
+            thresholdField.setText(Integer.toString(num));
         }
         
         
