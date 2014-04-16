@@ -15,7 +15,7 @@ import annotool.Annotation;
 import annotool.Annotator;
 import annotool.extract.*;
 import annotool.gui.model.*;
-import annotool.analysis.Utility;
+//import annotool.analysis.Utility;
 import annotool.classify.*;
 import annotool.io.ChainIO;
 import annotool.io.DataInput;
@@ -69,6 +69,7 @@ import annotool.io.DataInput;
  * 02/24/14	- file saving now handled by various methods, not in private annotate
  * 			- trainAndtest returns rate now, for gui access
  * 02/26/14 - files now can be written to any path, will make necessary dirs
+ * 04/10/14 - supports passed in threshold on annotation
  */
 
  /*TODO
@@ -363,17 +364,19 @@ public class ThreeDROISynapseDriver {
 	*/
 	
 
-	//public access for annotate, handles annotation and file saving
-	public void annotate(ImagePlus imp, String fileName, int fileMode) throws Exception
+	//public access for annotate, handles annotation and file saving 
+	public void annotate(ImagePlus imp, String fileName, int fileMode, int thr) throws Exception
 	{
+        
 		//do the annotation
-		detectedCenters = annotate(imp);
+		detectedCenters = annotate(imp, thr);
 		
 		//handle file saving
 		//based on mode.
 		writeToFile(imp.getHeight(), fileName, fileMode);
 			
 	}
+    
 	
 	
 	//Write out the detected centers to a specified file.
@@ -413,7 +416,7 @@ public class ThreeDROISynapseDriver {
 	}
 
 	//older logic, but keeping this over re-writing the code from Annotator
-	private HashSet<Point3D> annotate(ImagePlus imp) throws Exception
+	private HashSet<Point3D> annotate(ImagePlus imp, int threshold) throws Exception
 	{ 
 		// get data from imp
 		ImageProcessor ip = imp.getProcessor();
@@ -437,7 +440,7 @@ public class ThreeDROISynapseDriver {
 		
 		// use a window of 3*3*2 (radius, 7*7*5 actual) to get local maxim
 		System.out.println("get localmaxima");
-		boolean[] isMaxima = Utility.getLocalMaxima(imp, synapseChannel, 3, 3, 2); //2nd arg is channel
+		boolean[] isMaxima = AnnotatorUtility.getLocalMaxima(imp, synapseChannel, 3, 3, 2, threshold); //2nd arg is channel
 		draw(isMaxima, imp, totaldepth, totalheight, totalwidth);
 		// get cube around local maxima, send to classifier
 		int total =0;
@@ -1083,7 +1086,7 @@ public class ThreeDROISynapseDriver {
 				}
 			}
 			//anno.annotate(imp, "C:\\Users\\LukeC\\Desktop\\ROI\\test\\file" , ThreeDROISynapseDriver.MARKER_VAA3D_BOTH);
-			anno.annotate(imp, "C:\\Users\\Sandahz\\Desktop\\ROIAnnotator\\testfile" , ThreeDROISynapseDriver.MARKER_VAA3D_BOTH);
+			anno.annotate(imp, "C:\\Users\\Sandahz\\Desktop\\ROIAnnotator\\testfile" , ThreeDROISynapseDriver.MARKER_VAA3D_BOTH, 0);
 			
 		}
 		catch(Exception e) {
