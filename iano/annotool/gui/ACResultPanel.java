@@ -35,7 +35,7 @@ import org.jfree.data.category.DefaultCategoryDataset;
 
 import annotool.Annotator;
 import annotool.gui.model.Chain;
-import annotool.gui.model.ClassifierChain;
+import annotool.gui.model.ClassifierInfo;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
 import annotool.gui.model.Styles;
@@ -485,11 +485,11 @@ public class ACResultPanel extends JPanel implements ActionListener{
 		
 		/* Added 1/16/2014 */
 		Paragraph info = new Paragraph();
-		for(ClassifierChain Class : chain.getClassifier()) {
-			info.add(new Chunk(Class.getName()));
+		for(ClassifierInfo classinfo : chain.getClassifierInfo()) {
+			info.add(new Chunk(classinfo.getName()));
 			info.add(Chunk.NEWLINE);
-			for (String parameter : Class.getParams().keySet()) {
-				info.add(new Chunk(parameter + "=" + Class.getParams().get(parameter)));
+			for (String parameter : classinfo.getParams().keySet()) {
+				info.add(new Chunk(parameter + "=" + classinfo.getParams().get(parameter)));
 				info.add(Chunk.NEWLINE);
         	}
 		}
@@ -537,12 +537,12 @@ public class ACResultPanel extends JPanel implements ActionListener{
 			}
 			
 			/* added 1/16/2014 */
-			if(chain.getClassifier().size() > 0) {
+			if(chain.getClassifierInfo() != null) {
 				taChainDetail.setText(taChainDetail.getText() + "Classifier(s):\n");
-				for(ClassifierChain Class : chain.getClassifier()) {
-					taChainDetail.setText(taChainDetail.getText() + Class.getName() + "\n");
-					for (String parameter : Class.getParams().keySet()) {
-						taChainDetail.setText(taChainDetail.getText() + parameter + "=" + Class.getParams().get(parameter) + "\n");
+				for(ClassifierInfo classInfo : chain.getClassifierInfo()) {
+					taChainDetail.setText(taChainDetail.getText() + classInfo.getName() + "\n");
+					for (String parameter : classInfo.getParams().keySet()) {
+						taChainDetail.setText(taChainDetail.getText() + parameter + "=" + classInfo.getParams().get(parameter) + "\n");
 		        	}
 					taChainDetail.setText(taChainDetail.getText() + "\n");
 				}

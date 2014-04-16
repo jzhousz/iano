@@ -49,7 +49,7 @@ import annotool.classify.Validator;
 import annotool.gui.model.Chain;
 import annotool.gui.model.ChainFilter;
 import annotool.gui.model.ChainTableModel;
-import annotool.gui.model.ClassifierChain;
+import annotool.gui.model.ClassifierInfo;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.ModelFilter;
 import annotool.gui.model.ModelSaver;
@@ -808,7 +808,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 	 * Adds the supplied Classifier to the currently selected chain.
 	 * @param Class
 	 */
-	public void addClassifier(ClassifierChain Class) {
+	public void addClassifierInfo(ClassifierInfo Class) {
 		int currentRow = tblChain.getSelectedRow();
 		if(currentRow < 0)
 			return;
@@ -817,9 +817,9 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			chain.clearClassifier();
 		
 		else
-			chain.addClassifier(Class);
+			chain.addClassifierInfo(Class);
 		
-
+		
 
 		tca.adjustColumns();
 
@@ -883,12 +883,21 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		showItemDetail();
 	}
 	*/
-	public ArrayList<ClassifierChain> getClassifier()
+	
+	public Boolean isEns()
 	{
 
 		Chain chain = (Chain)tblChain.getValueAt(tblChain.getSelectedRow(), COL_CHAIN);	
 		
-		return chain.getClassifier();
+		return chain.isEns();
+	}
+	
+	public ArrayList<ClassifierInfo> getClassifierInfo()
+	{
+
+		Chain chain = (Chain)tblChain.getValueAt(tblChain.getSelectedRow(), COL_CHAIN);	
+		
+		return chain.getClassifierInfo();
 	}
 	
 	/**
@@ -927,14 +936,14 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 		}
 		
 		//Added 1/16/2014
-		if(chain.getClassifier().size() > 0) {
+		if(chain.getClassifierInfo() != null) {
 			taDetail.setText(taDetail.getText() + "-------------------------------------------------------------------------------\n");
 			taDetail.setText(taDetail.getText() + "CLASSIFIER (S):\n");
 			taDetail.setText(taDetail.getText() + "-------------------------------------------------------------------------------\n");
-			for(ClassifierChain Class : chain.getClassifier()) {
-				taDetail.setText(taDetail.getText() + Class.getName() + "\n");
-				for (String parameter : Class.getParams().keySet()) {
-					taDetail.setText(taDetail.getText() + parameter + "=" + Class.getParams().get(parameter) + "\n");
+			for(ClassifierInfo cla : chain.getClassifierInfo()) {
+				taDetail.setText(taDetail.getText() +  cla.getName() + "\n");
+				for (String parameter :  cla.getParams().keySet()) {
+					taDetail.setText(taDetail.getText() + parameter + "=" +  cla.getParams().get(parameter) + "\n");
 				}
 				taDetail.setText(taDetail.getText() + "\n");
 			}
@@ -1281,19 +1290,19 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 				pnlOutput.setOutput("Classifying/Annotating...");
 
 			
-			ArrayList<Classifier> classifierObj = new ArrayList<Classifier>(); 
+			//ArrayList<Classifier> classifierObj = new ArrayList<Classifier>(); 
 			if(chain.hasClassifier())
 			{
 				try {
 				
-				for(ClassifierChain Class : chain.getClassifier()) {
-					classifierObj.add(anno.getClassifierGivenName(Class.getClassName(), Class.getExternalPath(), Class.getParams()));
-				}
+				//for(ClassifierInfo Class : chain.getClassifierInfo()) {
+				//	classifierObj.add(anno.getClassifierGivenName(Class.getClassName(), Class.getExternalPath(), Class.getParams()));
+				//}
 					//Supervised feature selectors need corresponding target data
 					
 						
 						
-						rate = anno.classifyGivenAMethod(classifierObj, selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
+						rate = anno.classifyGivenAMethod( chain.getSavableClassifier(), selectedTrainingFeatures, selectedTestingFeatures, trainingTargets[i], testingTargets[i], annotations[i]);
 						System.out.println("The rate get from classifyGivenAMethod:"+rate);
 						executed = true;
 						
@@ -1328,8 +1337,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 					chainModels[i].setExtractors(chain.getExtractors());//Can use extractors from chain because every annotation label shares the same extractors
 					chainModels[i].setSelectors(selectors);				//Cannot use selectors from chain because each annotation label needs separate selected indices
 
-					chainModels[i].setClassifier(classifierObj); //Added 1/28/2014
-					chainModels[i].setClassifierChain(chain.getClassifier()); //Added 1/28/2014
+					//chainModels[i].setClassifier(classifierObj); //Added 1/28/2014
+					chainModels[i].setClassifierInfo(chain.getClassifierInfo()); //Added 1/28/2014
 					/*
 					chainModels[i].setEnsembleName(chain.getEnsemble());
 					chainModels[i].setEnsembleClass(chain.getEnsembleClassName());
@@ -1533,39 +1542,25 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 				}
 
 				pnlOutput.setOutput("Classifying/Annotating ... ");
-				
-				
-				
-				
-				
-				
-				
-				//Ensemble in Valatdor, have it passed in
-				ArrayList<Classifier> classifierObj = new ArrayList<Classifier>(); 
-				
+
 				if(chain.hasClassifier())
 				{
-					
-					try {
-							for(ClassifierChain Class : chain.getClassifier()) 
-								classifierObj.add(anno.getClassifierGivenName(Class.getClassName(), Class.getExternalPath(), Class.getParams()));
-							
-							recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, selectedFeatures, targets[i], classifierObj, chain.getClassifier(), shuffle, results[i]);
+				
+							try {
+								recograte = (new Validator(bar, start, region)).KFoldGivenAClassifier(K, selectedFeatures, targets[i], chain.getSavableClassifier(), shuffle, results[i]);
+							} catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 							executed = true;
-							
-					} catch (Exception e) {
-						if(gui != null)
-							pnlOutput.setOutput("ERROR: Classifier failure! ");
-						e.printStackTrace();
-				}
-					
+			
 						
 					
 					/*
 					int j = 0;
 					
 					//Apply each classifier in the chain
-					for(ClassifierChain Class : chain.getClassifier()) {
+					for(ClassifierInfo Class : chain.getClassifier()) {
 						//Supervised feature selectors need corresponding target data
 						try {
 							if( !chain.isEns() )
@@ -1620,8 +1615,8 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 					chainModels[i].setExtractors(chain.getExtractors());
 					chainModels[i].setSelectors(selectors);
 					
-					chainModels[i].setClassifier( classifierObj); //Added 1/16/2014
-					chainModels[i].setClassifierChain(chain.getClassifier());
+					chainModels[i].setSavableClassifier( chain.getSavableClassifier() ); //Added 1/16/2014
+					chainModels[i].setClassifierInfo(chain.getClassifierInfo());
 					/*
 					chainModels[i].setEnsembleName(chain.getEnsemble());
 					chainModels[i].setEnsembleClass(chain.getEnsembleClassName());

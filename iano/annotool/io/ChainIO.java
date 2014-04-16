@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Scanner;
-import annotool.gui.model.ClassifierChain;
+import annotool.gui.model.ClassifierInfo;
 import annotool.gui.model.Chain;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.Selector;
@@ -66,15 +66,15 @@ public class ChainIO {
 	        	
 	    		
 	    		/* added 1/16/2014 */
-	    		for(ClassifierChain Class : chain.getClassifier()) {
+	    		for(ClassifierInfo cla : chain.getClassifierInfo()) {
 	    			//Write classifier
 		        	writer.write("[CLASSIFIER]" + newLine);
-		        	writer.write("Name=" + Class.getName() + newLine);
-		        	writer.write("ClassName=" + Class.getClassName() + newLine);
-		        	writer.write("Path=" + Class.getExternalPath() + newLine);
+		        	writer.write("Name=" +  cla.getName() + newLine);
+		        	writer.write("ClassName=" + cla.getClassName() + newLine);
+		        	writer.write("Path=" + cla.getExternalPath() + newLine);
 		        	writer.write("[PARAMETER_START]" + newLine);
-		        	for (String parameter : Class.getParams().keySet()) {
-		        		writer.write(parameter + "=" + Class.getParams().get(parameter) + newLine);
+		        	for (String parameter : cla.getParams().keySet()) {
+		        		writer.write(parameter + "=" + cla.getParams().get(parameter) + newLine);
 		        	}
 		        	writer.write("[PARAMETER_END]" + newLine);
 	        	}
@@ -153,15 +153,15 @@ public class ChainIO {
 	        	
 	    		
 	    		/* added 1/16/2014 */
-	    		for(ClassifierChain Class : chain.getClassifier()) {
+	    		for(ClassifierInfo cla : chain.getClassifierInfo()) {
 	    			//Write classifier
 		        	writer.write("[CLASSIFIER]" + newLine);
-		        	writer.write("Name=" + Class.getName() + newLine);
-		        	writer.write("ClassName=" + Class.getClassName() + newLine);
-		        	writer.write("Path=" + Class.getExternalPath() + newLine);
+		        	writer.write("Name=" +  cla.getName() + newLine);
+		        	writer.write("ClassName=" +  cla.getClassName() + newLine);
+		        	writer.write("Path=" +  cla.getExternalPath() + newLine);
 		        	writer.write("[PARAMETER_START]" + newLine);
-		        	for (String parameter : Class.getParams().keySet()) {
-		        		writer.write(parameter + "=" + Class.getParams().get(parameter) + newLine);
+		        	for (String parameter :  cla.getParams().keySet()) {
+		        		writer.write(parameter + "=" +  cla.getParams().get(parameter) + newLine);
 		        	}
 		        	writer.write("[PARAMETER_END]" + newLine);
 	        	}
@@ -345,9 +345,9 @@ public class ChainIO {
 						line = scanner.nextLine();
 						
 						//Read CLASSIFIER
-						ClassifierChain Class = null;
+						ClassifierInfo Class = null;
 						if(line.startsWith("Name=")) {
-							Class = new ClassifierChain(line.replaceFirst("Name=", ""));	//Create CLASSIFIER object from name
+							Class = new ClassifierInfo(line.replaceFirst("Name=", ""));	//Create CLASSIFIER object from name
 						}
 						else
 							throw new Exception("Invalid chain file.");
@@ -384,7 +384,7 @@ public class ChainIO {
 									throw new Exception("Invalid Classifier parameter.");
 							}
 						}//End extractor parameters
-						chain.addClassifier(Class);
+						chain.addClassifierInfo(Class);
 					}//End Classifier
 					
 					/* removed 1/16/2014

@@ -4,10 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.SwingUtilities;
+
 import annotool.Annotation;
-import annotool.ensemble.ComEnsemble;
-import annotool.ensemble.Ensemble;
-import annotool.gui.model.ClassifierChain;
+import annotool.gui.model.ClassifierInfo;
 
 /**
 * This helper class takes the fold number and all data to do cross validation,
@@ -181,7 +180,8 @@ public class Validator
    * @return                  overall recognition rate
    * @throws Exception        Thrown if K value is greater than the number of observations
    ********************************/
-   public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] originalTargets, ArrayList<Classifier> chosenClassifiers, ArrayList<ClassifierChain> classes, boolean shuffle, Annotation[] results) throws Exception
+   //public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] originalTargets, ArrayList<Classifier> chosenClassifiers, ArrayList<ClassifierInfo> classes, boolean shuffle, Annotation[] results) throws Exception
+   public float[]  KFoldGivenAClassifier(int K, float[][] data, int[] originalTargets, SavableClassifier chosenClassifiers,  boolean shuffle, Annotation[] results) throws Exception
    {
 	   
 	   	  int length = data.length;
@@ -253,7 +253,8 @@ public class Validator
 				    trainingPatterns[i-testinglength][j] = data[i][j];
 				    trainingTargets[i-testinglength] = targets[i];
 			     }
-		       Ensemble ens = new ComEnsemble();
+		      /* 
+		      Ensemble ens = new ComEnsemble();
 		       int ClassifierCnt = 0;
 			   for( Classifier classifer : chosenClassifiers)
 		       {
@@ -264,22 +265,39 @@ public class Validator
 		    	   
 		       }
 	    	  //compare the output prediction with the real targets on the testing set
-			 
-			 int currentFoldCorrect = 0;
-	    	 int ensResults[] = ens.classify();
-	         for(int i=0; i<testinglength; i++)
-	         {
-				System.out.println("predicted category:" + ensResults[i]);
-				System.out.println("actual category:" + testingTargets[i]);
-				results[k*foldsize+i].anno = ensResults[i];
-		        if(testingTargets[i] == ensResults[i])
-		        {
-		           correct ++;
-		           currentFoldCorrect ++;
-		        }
-		     }
-	         foldresults[k] = (float) currentFoldCorrect/testinglength;
+			 */
+		      (new annotool.Annotator()).classifyGivenAMethod(chosenClassifiers, null, trainingPatterns, testingPatterns, trainingTargets, testingTargets , annotedPredictions);
+		      
+		      
+			 //int currentFoldCorrect = 0;
+	    	 //int ensResults[] = ens.classify();
+	         //for(int i=0; i<testinglength; i++)
+	         //{
+			//	System.out.println("predicted category:" + ensResults[i]);
+			//	System.out.println("actual category:" + testingTargets[i]);
+			//	results[k*foldsize+i].anno = ensResults[i];
+		    //   if(testingTargets[i] == ensResults[i])
+		    //    {
+		    //       correct ++;
+		     //      currentFoldCorrect ++;
+		     //   }
+		     //}
+	         //foldresults[k] = (float) currentFoldCorrect/testinglength;
+		      int currentFoldCorrect = 0;
+		      for(int i=0; i<testinglength; i++)
+		         {
+					System.out.println("predicted category:" + annotedPredictions[i].anno);
+					System.out.println("actual category:" + testingTargets[i]);
+					results[k*foldsize+i].anno = annotedPredictions[i].anno;
+			        if(annotedPredictions[i].anno == testingTargets[i])
+			        {
+			           correct ++;
+			           currentFoldCorrect ++;
+			        }
+			     }
+		         foldresults[k] = (float) currentFoldCorrect/testinglength;
 
+		      
 	      
 	   	   //if GUI, update 5 times unless K is small than 5
 	       if (bar != null)

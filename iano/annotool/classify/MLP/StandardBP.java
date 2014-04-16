@@ -394,7 +394,7 @@ private int backpropagation(int numsample)
 				  eita = 0.3;
 		}
 		 
-	 	System.out.println(i + " & "+bpflag + " alpha:  " + alpha + " eita: " + eita );
+	 	//System.out.println(i + " & "+bpflag + " alpha:  " + alpha + " eita: " + eita );
 		
 	 }
 	

@@ -6,8 +6,6 @@ import java.util.*;
 import annotool.gui.AnnOutputPanel;
 import annotool.gui.model.Extractor;
 import annotool.io.*;
-import annotool.ensemble.ComEnsemble;
-import annotool.ensemble.Ensemble;
 import annotool.extract.*;
 import annotool.select.*;
 import annotool.classify.*;
@@ -277,16 +275,17 @@ public class Annotator
      * @return rate                     Number of correct perdictions             
      * @throws Exception   Thrown if K value is greater than the number of observations
      ********************************/
-    public float classifyGivenAMethod(ArrayList<Classifier> chosenClassifiers, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) throws Exception {
+    public float classifyGivenAMethod(Classifier chosenClassifier, float[][] selectedTrainingFeatures, float[][] selectedTestingFeatures, int[] trainingtargets, int[] testingtargets, Annotation[] annotations) throws Exception {
     	 
-    	Ensemble ens = new ComEnsemble();
+    	//Ensemble ens = new ComEnsemble();
     	
-    	for(Classifier classifier : chosenClassifiers )
-    	{
-    		(new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, classifier, annotations);
-    		ens.addResult(annotations);
-    	}
-    		
+    	//for(Classifier classifier : chosenClassifiers )
+    	//{
+    		return (new Validator()).classify(selectedTrainingFeatures, selectedTestingFeatures, trainingtargets, testingtargets, chosenClassifier, annotations);
+    		//ens.addResult(annotations);
+    	//}
+    	
+    		/*
     	int[] resutls = ens.classify();
     	int correct = 0;
     	
@@ -297,7 +296,7 @@ public class Annotator
          }
     	
     	 return (float) correct/testingtargets.length;
-
+	*/
     }
     
     /*
@@ -323,7 +322,7 @@ public class Annotator
         results = classifier.classifyUsingModel(classifier.getModel(), testingFeatures, prob);
         for(int i=0; i<testingFeatures.length; i++)
         {
-        	  annotations[i].anno = results[i]; //Made ensumble
+        	  annotations[i].anno = results[i]; 
               annotations[i].prob = prob[i];
         }
         return results;

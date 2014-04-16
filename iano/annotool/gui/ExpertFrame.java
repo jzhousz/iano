@@ -13,7 +13,7 @@ import java.awt.event.*;
 import annotool.classify.Classifier;
 import annotool.classify.SavableClassifier;
 import annotool.classify.Validator;
-import annotool.gui.model.ClassifierChain;
+import annotool.gui.model.ClassifierInfo;
 import annotool.gui.model.Extractor;
 import annotool.gui.model.ModelFilter;
 import annotool.gui.model.ModelSaver;
@@ -583,13 +583,13 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	chainModels[i].setClassNames(classNames);
         	
         	//added 1/20/2014
-        	ClassifierChain cal =  new ClassifierChain(classifierChoice);
+        	ClassifierInfo cal =  new ClassifierInfo(classifierChoice);
         	cal.setClassName(classifier.getClassName());
         	cal.setExternalPath(classifier.getExternalPath());
         	cal.setParams(classParams);
         	
-        	chainModels[i].addClassifierChain(cal);
-        	chainModels[i].addClassifier(classifierObj);
+        	chainModels[i].addClassifierInfo(cal);
+        	chainModels[i].setSavableClassifier( (SavableClassifier) classifierObj );
         	
         	//Removed 1/20/2014
         	
@@ -755,13 +755,13 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	chainModels[i].setResult(rate);
         	
         	//Added 1/20/2014
-        	ClassifierChain cal =  new ClassifierChain(classifierChoice);
+        	ClassifierInfo cal =  new ClassifierInfo(classifierChoice);
         	cal.setClassName(classifier.getClassName());
         	cal.setExternalPath(classifier.getExternalPath());
         	cal.setParams(classParams);
         	
-        	chainModels[i].addClassifierChain(cal);
-        	chainModels[i].addClassifier(classifierObj);
+        	chainModels[i].addClassifierInfo(cal);
+        	//chainModels[i].setClassifier(classifierObj);
         	
         	/* Removed 1/20/2014
         	chainModels[i].setClassifierName(classifierChoice);
@@ -960,13 +960,14 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	chainModels[i].setResult(recograte[K]);
         	
         	//Added 1/20/2014
-        	ClassifierChain cal =  new ClassifierChain(classifierChoice);
+        	ClassifierInfo cal =  new ClassifierInfo(classifierChoice);
         	cal.setClassName(classifier.getClassName());
         	cal.setExternalPath(classifier.getExternalPath());
         	cal.setParams(classParams);
         	
-        	chainModels[i].addClassifierChain(cal);
-        	chainModels[i].addClassifier(classifierObj);
+        	//Change functions to overload version:
+        	chainModels[i].addClassifierInfo(cal);
+        	//chainModels[i].setClassifier(classifierObj);
         	
         	/* Removed 1/20/2014
         	chainModels[i].setClassifierName(classifierChoice);
