@@ -221,20 +221,10 @@
 		<Name>SVM</Name>
 		<ClassName>annotool.classify.SVMClassifier</ClassName>
 		<Desc>Support Vector Machine</Desc>
-		<Parameter type="String">
-			<Name>Svm Type</Name>
-			<Domain>C-SVC,nu-SVC,one-class SVM,epsilon-SVR,nu-SVR</Domain>
-			<Default>C-SVC</Default>
-		</Parameter>
 	    <Parameter type="String">
 			<Name>Kernel Type</Name>
 			<Domain>linear,polynomial,radial basis,sigmoid</Domain>
 			<Default>linear</Default>
-		</Parameter>
-		<Parameter type="Double">
-			<Name>Epsilon Termination Criterion</Name>
-			<Default>0.001</Default>
-			<Min>0</Min>
 		</Parameter>
 	</Algorithm>
 	<Algorithm type="Classifier">
