@@ -917,21 +917,24 @@ public class ThreeDROISynapseDriver {
            c = a.getClassifierGivenName(classi, chainList.get(0).getClassifierExternalPath(), params);
            */
 		   
-           ArrayList<ClassifierChain> cc =  chainList.get(0).getClassifier();
+           /*ArrayList<ClassifierChain> cc =  chainList.get(0).getClassifier();
            String classi = cc.get(0).getClassName();
            HashMap<String,String> params = cc.get(0).getParams();
            Classifier c;
            c = a.getClassifierGivenName(classi, cc.get(0).getExternalPath(), params);
+		   */
+		   
+		   return chainList.get(0).getSavableClassifier();
            
           
-           if(c instanceof SavableClassifier){
+           /*if(c instanceof SavableClassifier){
                    classifier = (SavableClassifier) c;
                    //classifier.trainingOnly(extractedFea, target);
            }
            else throw new Exception("classifier not savable");
           
            return classifier;
-
+			*/
 	}
 
 	
