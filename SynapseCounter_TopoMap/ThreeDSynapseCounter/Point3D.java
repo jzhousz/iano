@@ -27,5 +27,10 @@ class Point3D
 		else return false; 
 	}
 
+	String convertToString() {
+	
+		return (""+x+","+y+","+z);
+	
+	}
 }
 
