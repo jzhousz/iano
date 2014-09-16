@@ -17,6 +17,9 @@
   * report detected centers via an IJ results table
   */
   
+  //09/06/14 NOTE: threshold dev hack, enter -1 in threshold field to 
+  //			invoke rats thresholding, even though the slider wont go below 0.
+  
  import ij.*;
  import ij.io.*;
  import ij.IJ;
@@ -56,7 +59,7 @@
     GenericDialog gd;
     Panel posChooser, negChooser, chainChooser, thresholdP, saveChooser, saveDirP, SaveNameP, optionsP;
     Button posRoiB, negRoiB, chainB, saveB, trainB, thresholdB;
-    TextField posRoiField, negRoiField, chainField, saveLocField, saveNameField, thresholdField;
+    TextField posRoiField, negRoiField, chainField, saveLocField, saveNameField, thresholdField, thresholdOptField;
     Checkbox saveIjCB, saveV3dCB, imageCB;
     Label saveL, formatL;
  
@@ -126,8 +129,11 @@
         thresholdB = new Button("Auto Threshold");
             thresholdB.addActionListener(listener);
         thresholdField = new TextField(Prefs.get("batch.thresholdB",""), 5);
+		thresholdOptField = new TextField("noise=4 lambda=3 min=64");
+		
         thresholdP.add(thresholdB);
         thresholdP.add(thresholdField);
+		thresholdP.add(thresholdOptField);
         
         
         //browser and options for save location 
@@ -183,7 +189,7 @@
         gd.addSlider("Roi width ", min_roi_width, max_roi_width, def_roi_width);
         gd.addSlider("Roi depth ", min_roi_depth, max_roi_depth, def_roi_depth);
         
-        gd.addMessage("\n Manual Threshold (leave 0 to use auto threshold)");
+        gd.addMessage("\n Manual Threshold (leave 0 to use auto threshold, -1 for RATS)");
         gd.addSlider("Threshold", 0, 255, 0);
         gd.addPanel(thresholdP);
         
@@ -291,7 +297,7 @@
             //annotate
             IJ.showStatus("Annotating...");
             IJ.log("Annotating...");
-			anno.annotate(annoImp, savePath, saveOption, threshold);
+			anno.annotate(annoImp, savePath, saveOption, threshold, thresholdOptField.getText());
 
             IJ.log("Finished!");
             

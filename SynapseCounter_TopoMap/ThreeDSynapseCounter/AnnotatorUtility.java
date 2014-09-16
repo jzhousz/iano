@@ -14,7 +14,8 @@ import annotool.io.DataInput;
  * CHANGE LOG Jon Sanders
  * 10/31/13 - updated meanv calculation for more dynamic thresholding.
  * 11/04/13 - fix bugs in meanv calculation: incorrect converge and rounding error.
- * 04/10/14 - supports passed in trheshold alternative to meanv calculation
+ * 04/10/14 - supports passed in threshold alternative to meanv calculation
+ * 09/05/15 - finally supports RATS (first draft, needs testing)
  */
 public class AnnotatorUtility {
 	/**
@@ -156,9 +157,16 @@ public class AnnotatorUtility {
 //only operates on bytes (int), not float comparison
 //Note that the order of storage is z, then y, then x
 
-public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int wY, int wZ, int threshold)
+public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int wY, int wZ, int threshold, String ratsOpt)
 {
 	ImageProcessor ip = imp.getProcessor();
+	
+	//new for rats	
+	RATSForAxon rats = null;
+	ImagePlus ratsMask = null;
+	ImageProcessor ratsImageP = null;
+	boolean ratsFlag = false;
+	
 	int width = ip.getWidth();
 	int height = ip.getHeight();
 	int depth = imp.getStackSize();
@@ -182,89 +190,29 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
     //int[] rgbpixelvalue;
     ImageProcessor currentimagep = null; 
 
-    float meanv;
+    float currentThresholdValue = 0;
     
     
     //get threshold, either from user or calculate
     if(threshold>0) {
-        meanv = (float) threshold;
-        System.out.println("User Specified meanv of: " + meanv);
+        currentThresholdValue = (float) threshold;
+        System.out.println("User Specified meanv of: " + currentThresholdValue);
         }
-    else{
-        meanv = calcThreshold(imp, channel);
-        /*System.out.println("calculating mean ..");
-        //iteratively find the valley of histogram
-        //Adding all pixels
-        for(int z = 0; z < depth; z++) {
-            currentimagep = imp.getStack().getProcessor(z+1);
-                //offsetk = z*width*height;		    
-            for(int y = 0; y < height; y++) 
-            {
-             //offsetj = y * width;
-                for(int x = 0; x < width; x++) {
-                    //index = offsetk + offsetj + x;
-                    if (imageType != DataInput.COLOR_RGB)
-                     pixelvalue = currentimagep.get(x,y);
-                    else
-                     pixelvalue = (currentimagep.getPixel(x,y, null))[channel];
-
-                    if(pixelvalue > lowth) 
-                    {
-                        sum += pixelvalue;
-                        num ++;
-                    }
-             } //End of x
-           } //End of y
-        } //End of z
-
-        meanv = sum / num;
-
-        //loop until meanv converges
-        while(true){
-            sum1 = 0; sum2 = 0;
-            num1 = 0; num2 = 0;
-        
-            for(int z = 0; z < depth; z++) {
-                currentimagep = imp.getStack().getProcessor(z+1);
-                for(int y = 0; y < height; y++) {
-                    for(int x = 0; x < width; x++) {
-                        
-                        if(imageType != DataInput.COLOR_RGB)
-                             pixelvalue = currentimagep.get(x,y);
-                            else
-                             pixelvalue = (currentimagep.getPixel(x,y, null))[channel];
-        
-                        if(pixelvalue > meanv) {
-                            sum1 += pixelvalue;
-                            num1++;
-                        }
-                        else if(pixelvalue > lowth) {
-                            sum2 += pixelvalue;
-                            num2++;
-                        }
-                    } //End of x
-                } //End of y
-            } //End of z
-        
-            //store old meanv.
-            //Adjust new threshold
-            meanvLast = meanv;
-            meanv = (int)(0.5 * (sum1/num1 + sum2/num2)); //Is typecasting necessary?
-            iterationCount++;
-            
-            System.out.println("meanv: " + meanv);
-            //check to end iteration
-            if(meanv == meanvLast)
-                convergeCheck++;  
-            else
-                convergeCheck = 0;
-            
-            //run until meanv stays constant for 3 iterations or reaches hard cap
-            if((convergeCheck >= 2) || (iterationCount >= iterationCap))
-                break;    
-       } //End of iteration
-       System.out.println("Threshold calculation converged at: " + meanv + " after " + iterationCount + " iterations.");
-       */
+	else if(threshold == -1) {
+		//do RATS currantThresholdValue will be updated each pixel
+		ratsMask = new ImagePlus();
+		ratsImageP = ratsMask.getProcessor();
+		currentThresholdValue = threshold;
+		if( ratsOpt.length() == 0) { //use defaults if blank
+			ratsOpt = "noise=5 lambda=3 min=5"; //test defaults for rats
+		}
+		System.out.println("Switching to RATS mode.");
+		System.out.println("using rats options: "+ratsOpt);
+		ratsFlag = true;
+	}
+    else if(threshold == 0) {
+		//use a global threshold
+        currentThresholdValue = calcThreshold(imp, channel);
     }
   
   
@@ -273,6 +221,13 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
    int max = 0;
    int val;
 
+    int xb;
+	int xe;
+	int yb;
+	int ye;
+	int zb;
+	int ze;
+	
    index =0;
    for(int z = 0; z < depth; z++) {
 	System.out.println("processing slice: " + (z+1));   
@@ -280,12 +235,12 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 		for(int x = 0; x < width; x++) {
 			max = 0;
 
-			int xb = x - wX; if(xb < 0) xb = 0;
-			int xe = x + wX; if(xe >= width - 1) xe = width - 1;
-			int yb = y - wY; if(yb < 0) yb = 0;
-			int ye = y + wY; if(ye >= height - 1) ye = height - 1;
-			int zb = z - wZ; if(zb < 0) zb = 0;
-			int ze = z + wZ; if(ze >= depth - 1) ze = depth - 1;
+			xb = x - wX; if(xb < 0) xb = 0;
+			xe = x + wX; if(xe >= width - 1) xe = width - 1;
+			yb = y - wY; if(yb < 0) yb = 0;
+			ye = y + wY; if(ye >= height - 1) ye = height - 1;
+			zb = z - wZ; if(zb < 0) zb = 0;
+			ze = z + wZ; if(ze >= depth - 1) ze = depth - 1;
 
 			for(int k = zb; k <= ze; k++) {
 				currentimagep = imp.getStack().getProcessor(k+1);
@@ -311,6 +266,33 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
     index = 0;
 	for(int z = 0; z < depth; z++) {
 		currentimagep = imp.getStack().getProcessor(z+1);
+		
+		//TEST RATS
+		if(ratsFlag == true) {
+			System.out.println("RATS on slice "+z);
+	
+			// use RATS, 
+			// generate a threshold mask
+			// if( maskValue > 0)
+			//		then same as "above threshold". isMaxima == true
+			//use ratsMask to store mask.
+			//then compare with IJ tools
+			
+			//new rats
+			// rats.setup("", ratsMask); 
+			// rats.run( imgprocessor, optString, );
+			ratsMask = new ImagePlus();
+			rats = new RATSForAxon();
+			//String opt = "noise=10 lambda=3 min=5";
+			rats.setup("", ratsMask); //can move these to threshold decision block? 
+									  //need to only create one rats, use run?
+			ratsMask = rats.run(currentimagep, ratsOpt);
+			
+			ratsMask.show();
+			
+			ratsImageP = ratsMask.getProcessor();
+		}
+		
 		for(int y = 0; y < height; y++) {
 			for(int x = 0; x < width; x++) {
 				//pixelvalue = currentimagep.get(x,y);
@@ -318,8 +300,19 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 				     pixelvalue = currentimagep.get(x,y);
 				else
 					pixelvalue = (currentimagep.getPixel(x,y, null))[channel];
-
-				if((pixelvalue == maxVal[index]) && (pixelvalue > meanv))
+				
+				//setting isMaxima for RATS mode
+				if(ratsFlag == true) {
+					currentThresholdValue = ratsImageP.get(x,y);//binary mask, 0 or 255
+					if((pixelvalue == maxVal[index]) && (currentThresholdValue > 0)) {
+						isMaxima[index] = true;
+						total ++;
+						
+					}
+				}
+				
+				//setting isMaxima for global threshold value
+				else if((pixelvalue == maxVal[index]) && (pixelvalue > currentThresholdValue))
 				{
 					isMaxima[index] = true;
 					total ++;
