@@ -3,16 +3,14 @@
 *		There is an included main() that can be run on the command line to perform the test.
 *       ARGUMENTS:  a folder containing the RDL ground truth regions subfolders with IJ (converted) marker and image files, 
 *					the IJ format result file from a whole image annotation with the plugin.
-*			          
+*    	USAGE: java SynapseValidator [ground truth dir] [anno Result File] [orig image width] [height]");			          
+*
 */
 
 ///////////////////////////////////////////////////////////////
 // NOTES:
 // -currently using file walker utilities available in jdk 7+
 // - 3d to 1d index = X + Y*width + Z*width*depth
-// 
-// TODO:
-// -precision recall
 // 
 //	map unique 1D value into hashmap
 // for(detected synapse)
@@ -44,7 +42,9 @@
 // 		for total count, just compare truth to list of detected within region.
 //
 
-
+/*
+C:\Users\Jonathan\Desktop\validator>java SynapseValidator c:\Users\Jonathan\Desktop\rdlGroundTruth C:\Users\Jonathan\Desktop\rdlGroundTruth\Results_rdlFull_HaarSVM_thr28_4-15-14_IJ.marker 2333 1296 59
+*/
 
 
 
@@ -72,11 +72,18 @@ public class SynapseValidator {
 	private ArrayList<ArrayList<Point3D>> gtRegionMarkers;//each region's markers
 	private ArrayList<RegionData> gtRegionData; 					//the location and dimension for each region
 	private double[][] valResults;					//validation results for each region
+		/*
+		* val results organization:
+		*	head row = region
+		*		0 = fraction 
+		*		1 = precision
+		*		2 = recall
+		*/
+
 	
 	//orig image dims
 	private int width;
 	private int height;
-	//private int depth;
 	
 	//****************************************
 	//CONSTRUCTORS
@@ -87,25 +94,20 @@ public class SynapseValidator {
 	public SynapseValidator( File gtDir, File arFile, int x, int y ) throws FileNotFoundException, IOException {
 		if(gtDir.exists()) {
 			groundTruthDir = gtDir;
-			//System.out.println("gtDir exists");
 			
 			if(arFile.exists()) {
 				annoResultFile = arFile;
-				//System.out.println("arFile exists");
 			}
 		} else {
 			throw new IOException("files not valid.");
 		}
 				
-		//valResults = new double[TEST_NUMBER];
-		//gtMarkers = new HashMap<Integer, Point3D>();
 		arMarkers = new HashMap<Integer, Point3D>();
 		gtRegionMarkers = new ArrayList<ArrayList<Point3D>>();
 		gtRegionData = new ArrayList<RegionData>();
 		
 		width  = x;
 		height = y;
-		//depth  = z;
 	
 	}
 	
@@ -153,13 +155,7 @@ public class SynapseValidator {
 		// use offsets based on efficiency?
 		// if possible is small, index each into the list of detected.
 		// see notes at head
-		/*
-		* val results organization:
-		*	head row = region
-		*		0 = correlation coefficient
-		*		1 = precision
-		*		2 = recall
-		*/
+
 		
 		System.out.println("\n*** Validation ***");
 		
@@ -176,7 +172,7 @@ public class SynapseValidator {
 		
 		//scan each region for markers from arMarkers that exist here.
 		for(RegionData rData : gtRegionData){
-			System.out.println("calculating correlation for region "+(regionIndex+1));
+			System.out.println("calculating fraction for region "+(regionIndex+1));
 			arMarkersInRegion.clear();
 			
 			//do total count. need to determine what results synapses fall in regions.
@@ -199,7 +195,7 @@ public class SynapseValidator {
 			//record results for detected over real
 			double fraction =  (double)arMarkersInRegion.size() / gtRegionMarkers.get(regionIndex).size();
 			valResults[regionIndex][0] = fraction;
-			System.out.println("\ncorrelation = "+ arMarkersInRegion.size() + " / " + gtRegionMarkers.get(regionIndex).size() + " = " + fraction );
+			System.out.println("\nfraction = "+ arMarkersInRegion.size() + " / " + gtRegionMarkers.get(regionIndex).size() + " = " + fraction );
 		
 		
 		
@@ -207,7 +203,8 @@ public class SynapseValidator {
 			// use current arraylist of markers in region
 			int preciseMarkers = 0;
 			double precision = 0;
-		
+			
+			
 			for(Point3D p : arMarkersInRegion) {
 				if(markerNear(p, rData, gtRegionMarkers.get(regionIndex), 7,7,5)) {
 					preciseMarkers++;
@@ -241,28 +238,33 @@ public class SynapseValidator {
 			System.out.println("...done");
 		}
 		
-		
-		//testing code
-		/*int count =0;
-		for( Entry<Integer, Point3D> entry : (Set<Entry>)arMarkers.entrySet()) {
-			System.out.print("<" + entry.getKey() +", " + entry.getValue().convertToString() + ">");
-			count++;
-		}
-		System.out.println();
-		*/
 	
 	}//end validate
 
 	
 	//find if there are any points in list nearby to p. if yes, return true
 	private Boolean markerNear(Point3D p, RegionData rd, ArrayList<Point3D> list, int w, int h, int d) {
-		//todo
 		
-		return false;
+		int xmin, xmax, ymin, ymax, zmin, zmax;
+			xmin = p.x - calcHalfDim(w);
+			xmax = p.x + calcHalfDim(w);
+			ymin = p.y - calcHalfDim(h);
+			ymax = p.y + calcHalfDim(h);
+			zmin = p.z - calcHalfDim(d);
+			zmax = p.z + calcHalfDim(d);
+			
 		
 		//if( insidebounds) return true;
-		for( Point3d p3d: 
-		//return false;
+		for( Point3D p3d: list ){
+			if(p3d.x>=xmin && p3d.x<=xmax && p3d.y>=ymin && p3d.y<=ymax && p3d.z>=zmin && p3d.z<=zmax ){
+				System.out.println(p.convertToString() + " is near " + p3d.convertToString());
+				
+				return true;
+			}
+		
+		}
+		
+		return false;
 	
 	}
 	
@@ -314,23 +316,18 @@ public class SynapseValidator {
 		BufferedReader in = new BufferedReader(new InputStreamReader(fstream));
 
 		//read
-		String line = in.readLine();
+		String line;
 		//Point3D p3d = null;
-		int count = 0;
+		int count = 1;
 		while((line = in.readLine()) != null) {
 
 				//discard comments and blank lines 
 				if(line.contains(""+"#") || line.length()<=1) {
 						line = in.readLine();//ignore comments and space
 				} else {
-					//System.out.println("Parser: " + line);//debug
-					
 					//store point in markers
 					markers.add(lineToPoint3D(line));
 					count++;
-					//p3d = lineToPoint3D(line);
-					//rawID = p3d.x + p3d.y*width + p3d.z*width*depth;
-					//markers.put(new Integer(rawID),lineToPoint3D(line));
 				}
 				
 		}
@@ -363,6 +360,7 @@ public class SynapseValidator {
 	}
 
 	
+	
 	//tokenize the raw file line and return a Point3D
 	private static Point3D lineToPoint3D(String l) {
 		int x,y,z;
@@ -381,6 +379,17 @@ public class SynapseValidator {
 		return x + y*w + z*w*h;
 	}
 	
+	//claculate the whole pixel value for half of a dimension
+	private int calcHalfDim(int x) {
+                if (x == 1) return x;//dont return a 0 value, just use 1 instead
+                
+                if((x & 1) == 0){//then even
+                        return x/2;
+                } else { //odd then offset down
+                        return (x-1)/2;
+                }
+        }
+	
 	//****************************************
 	//MAIN()
 	// 
@@ -393,12 +402,6 @@ public class SynapseValidator {
 			return;
 		}
 		
-		try{
-			
-			
-		}catch(Exception e) {
-			e.printStackTrace();
-		}
 		
 		
 		SynapseValidator validator;
@@ -407,6 +410,8 @@ public class SynapseValidator {
 			validator = new SynapseValidator(args[0], args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]));
 			
 			validator.validate(1);
+		
+			System.out.println("\n0: fraction \n1: Precision \n2: Recall");
 		
 			int regionCount = 1;
 			int resultCount = 0;
@@ -443,9 +448,7 @@ public class SynapseValidator {
 		//members
 		private int regionCounter = 0;
 		private Boolean regionFlag = false;
-		//private ArrayList<HashMap<Integer, Point3D>> regions = null;
 		private ArrayList<Point3D> tempMarkers = null;
-		//private Point3D offset = null;
 		private RegionData tempRegionData = null;
 		
 		
@@ -523,12 +526,13 @@ public class SynapseValidator {
 				//convert the markers to global coordinates
 				System.out.println("converting markers to full scale image.");
 				for( Point3D p3d : tempMarkers) {
-					p3d.x += tempRegionData.cornerX;
-					p3d.y += tempRegionData.cornerY;
-					p3d.z += tempRegionData.cornerZ;
-					//System.out.println("new point: " + p3d.convertToString());
+					
+					p3d.offsetPoint(tempRegionData.cornerX, tempRegionData.cornerY, tempRegionData.cornerZ);
+					
+					System.out.println("new point: " + p3d.convertToString());
 					
 				}
+				
 				
 				//record the markers
 				gtRegionMarkers.add(tempMarkers);
