@@ -1333,11 +1333,11 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 			if(gui != null) {
 				//If rate for this target(ith target) is better with this chain,
 				//then, save this as new best model
-				if(rate > chainModels[i].getResult()) {
+				if(rate >= chainModels[i].getResult()) {
 					chainModels[i].setExtractors(chain.getExtractors());//Can use extractors from chain because every annotation label shares the same extractors
 					chainModels[i].setSelectors(selectors);				//Cannot use selectors from chain because each annotation label needs separate selected indices
 
-					//chainModels[i].setClassifier(classifierObj); //Added 1/28/2014
+					chainModels[i].setSavableClassifier(chain.getSavableClassifier()); //Added 1/28/2014
 					chainModels[i].setClassifierInfo(chain.getClassifierInfo()); //Added 1/28/2014
 					/*
 					chainModels[i].setEnsembleName(chain.getEnsemble());
@@ -1611,7 +1611,7 @@ public class ChainPanel extends JPanel implements ActionListener, ListSelectionL
 
 				//If rate for this target(ith target) is better with this chain,
 				//then, save this as new best model
-				if(recograte[K] > chainModels[i].getResult()) {
+				if(recograte[K] >= chainModels[i].getResult()) {
 					chainModels[i].setExtractors(chain.getExtractors());
 					chainModels[i].setSelectors(selectors);
 					
