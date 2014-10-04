@@ -761,7 +761,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	cal.setParams(classParams);
         	
         	chainModels[i].addClassifierInfo(cal);
-        	//chainModels[i].setClassifier(classifierObj);
+        	chainModels[i].setSavableClassifier((SavableClassifier)classifierObj);
         	
         	/* Removed 1/20/2014
         	chainModels[i].setClassifierName(classifierChoice);
@@ -967,6 +967,7 @@ public class ExpertFrame extends PopUpFrame implements ActionListener, ItemListe
         	
         	//Change functions to overload version:
         	chainModels[i].addClassifierInfo(cal);
+        	chainModels[i].setSavableClassifier((SavableClassifier)classifierObj);
         	//chainModels[i].setClassifier(classifierObj);
         	
         	/* Removed 1/20/2014

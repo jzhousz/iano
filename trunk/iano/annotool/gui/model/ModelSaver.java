@@ -2,6 +2,7 @@ package annotool.gui.model;
 
 import java.io.File;
 
+import annotool.classify.SavableClassifier;
 import annotool.gui.AnnOutputPanel;
 import annotool.io.ChainModel;
 
@@ -40,7 +41,7 @@ public class ModelSaver implements Runnable {
 		//Iterate through the chain models and write a file for each label
 		for(int i = 0; i < chainModels.length; i++) {
 			pnlOutput.setOutput("Saving model: " + (i + 1) + "/" + chainModels.length);	//Display which model is being saved
-			if(!(chainModels[i].getClassifier() instanceof annotool.classify.SavableClassifier)) {
+			if(!(chainModels[i].getClassifier() instanceof SavableClassifier)) {
 				pnlOutput.setOutput("Classifier is not savable. Skipping model.");
 				continue;
 			}
