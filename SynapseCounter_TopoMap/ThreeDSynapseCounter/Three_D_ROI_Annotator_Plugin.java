@@ -38,9 +38,13 @@
     int height;
     int saveOption = 0;
     int threshold = 0;
+	int noise = 4;
+	int lambda = 3;
+	int minLeaf = 8; //dynamically set in run()
     String posRoiPath, negRoiPath, chainPath, savePath;
     HashSet<Point3D> centers;
     ThreeDROISynapseDriver anno;
+	boolean ratsOption = false;
     
     //static and default vairables
     public static int min_roi_height = 1;
@@ -57,11 +61,11 @@
     
     //gui elements
     GenericDialog gd;
-    Panel posChooser, negChooser, chainChooser, thresholdP, saveChooser, saveDirP, SaveNameP, optionsP;
+    Panel posChooser, negChooser, chainChooser, thresholdP, saveChooser, saveDirP, SaveNameP, optionsP, ratsP;
     Button posRoiB, negRoiB, chainB, saveB, trainB, thresholdB;
-    TextField posRoiField, negRoiField, chainField, saveLocField, saveNameField, thresholdField, thresholdOptField;
-    Checkbox saveIjCB, saveV3dCB, imageCB;
-    Label saveL, formatL;
+    TextField posRoiField, negRoiField, chainField, saveLocField, saveNameField, thresholdField, ratsNoiseField, ratsLambdaField, ratsMinLeafField;
+    Checkbox saveIjCB, saveV3dCB, imageCB, ratsCB;
+    Label saveL, formatL, ratsL;
  
     public int setup(String arg, ImagePlus imp) {
     
@@ -70,7 +74,18 @@
     
     public void run(ImageProcessor ip) {
     	
-    	//System.out.println("debug test");//debug
+    	//dynamically get RATS minleaf size
+		//code derived from RATSForAxon run();
+		int minW = ip.getWidth();
+		int minH = ip.getHeight();
+		minW = (int) minW/5;
+		minH = (int) minH/5;
+		if(minW < minH) {
+			minLeaf = minW;
+		} else {
+			minLeaf = minH;
+		}
+		
         //setup gui
         if (! makeGUI()) return;
         //store data from gui fields
@@ -124,16 +139,32 @@
         
         //sliders are handled below, by IJ's GeneralDialog
         
+		
+		//thresholding (global) panel
         thresholdP = new Panel();
             thresholdP.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0)); 
         thresholdB = new Button("Auto Threshold");
             thresholdB.addActionListener(listener);
-        thresholdField = new TextField(Prefs.get("batch.thresholdB",""), 5);
-		thresholdOptField = new TextField("noise=4 lambda=3 min=64");
+        thresholdField = new TextField(Prefs.get("batch.thresholdB", ""), 5);
 		
         thresholdP.add(thresholdB);
         thresholdP.add(thresholdField);
-		thresholdP.add(thresholdOptField);
+		
+		//thresholding (rats) panel
+		ratsP = new Panel();
+			ratsP.setLayout(new FlowLayout(FlowLayout.CENTER, 5,0));
+		
+		ratsCB = saveIjCB = new Checkbox("Use Rats");
+			ratsCB.setState(true);
+		
+		ratsNoiseField = new TextField("" + noise, 4);
+		ratsLambdaField= new TextField("" + lambda, 4);
+		ratsMinLeafField=new TextField("" + minLeaf, 4);
+		
+		ratsP.add(ratsCB);
+		ratsP.add(ratsNoiseField);
+		ratsP.add(ratsLambdaField);
+		ratsP.add(ratsMinLeafField);
         
         
         //browser and options for save location 
@@ -189,10 +220,13 @@
         gd.addSlider("Roi width ", min_roi_width, max_roi_width, def_roi_width);
         gd.addSlider("Roi depth ", min_roi_depth, max_roi_depth, def_roi_depth);
         
-        gd.addMessage("\n Manual Threshold (leave 0 to use auto threshold, -1 for RATS)");
+        gd.addMessage("\n Global Threshold (leave 0 to use auto threshold");
         gd.addSlider("Threshold", 0, 255, 0);
         gd.addPanel(thresholdP);
         
+		gd.addMessage("Rats Threshold \nOptions: noise, lambda, min-leaf");
+		gd.addPanel(ratsP);
+		
         gd.addMessage("\n\nSave formats, location and file name:");
         gd.addPanel(saveChooser);
         
@@ -240,7 +274,15 @@
             
             savePath = (saveLocField.getText() + saveNameField.getText());
             
-            
+            //get rats options
+			ratsOption= false;
+			if( ratsCB.getState() ) ratsOption = true;
+			
+			noise   = Integer.parseInt(ratsNoiseField.getText());
+			lambda  = Integer.parseInt(ratsLambdaField.getText());
+			minLeaf = Integer.parseInt(ratsMinLeafField.getText());
+			
+			
             //decide on save options based on checkboxes
             //0 for none, 1 for IJ, 2 for V3D, 3 for both
             saveOption = 0;
@@ -252,8 +294,9 @@
                return false;
     
             //print param list to log
-            String s = ", ";
-            IJ.log("PARAMS: " + height + s + width + s + depth + s + posRoiPath + s + negRoiPath + s + chainPath + s + saveOption );
+            String s = ", ", e = " ";
+            IJ.log("PARAMS: " + height + s + width + s + depth + s + posRoiPath + s + negRoiPath + s + chainPath + s + saveOption 
+			       + " RATS: " + noise + e + lambda + e + minLeaf);
     
            return true;
     }//end getDataFromFields
@@ -297,7 +340,8 @@
             //annotate
             IJ.showStatus("Annotating...");
             IJ.log("Annotating...");
-			anno.annotate(annoImp, savePath, saveOption, threshold, thresholdOptField.getText());
+			if(ratsOption) threshold = -1; //set to ratsmode
+			anno.annotate(annoImp, savePath, saveOption, threshold, noise, lambda, minLeaf);
 
             IJ.log("Finished!");
             
