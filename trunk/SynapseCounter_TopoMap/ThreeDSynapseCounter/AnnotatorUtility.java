@@ -1,5 +1,6 @@
 
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.process.ImageProcessor;
 import annotool.io.DataInput;
 
@@ -157,15 +158,13 @@ public class AnnotatorUtility {
 //only operates on bytes (int), not float comparison
 //Note that the order of storage is z, then y, then x
 
-public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int wY, int wZ, int threshold, String ratsOpt)
+public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int wY, int wZ, int threshold, int noise, int lambda, int minLeaf)
 {
 	ImageProcessor ip = imp.getProcessor();
 	
-	//new for rats	
-	RATSForAxon rats = null;
-	ImagePlus ratsMask = null;
-	ImageProcessor ratsImageP = null;
+	//new for rats	(defaults)
 	boolean ratsFlag = false;
+	RatsSliceProcessor ratsProcessor = null;
 	
 	int width = ip.getWidth();
 	int height = ip.getHeight();
@@ -180,14 +179,8 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 	boolean[] isMaxima = new boolean[size];
 	int[] maxVal = new int[size];
 
-	//int lowth = 3;
-	//float sum = 0;
-	//int num = 0;
 	int index = 0;
-	//int offsetj = 0;
-	//int offsetk = 0;
     int pixelvalue;
-    //int[] rgbpixelvalue;
     ImageProcessor currentimagep = null; 
 
     float currentThresholdValue = 0;
@@ -200,14 +193,14 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
         }
 	else if(threshold == -1) {
 		//do RATS currantThresholdValue will be updated each pixel
-		ratsMask = new ImagePlus();
-		ratsImageP = ratsMask.getProcessor();
+	//	ratsMask = new ImagePlus();
+	//	ratsImageP = ratsMask.getProcessor();
 		currentThresholdValue = threshold;
-		if( ratsOpt.length() == 0) { //use defaults if blank
-			ratsOpt = "noise=5 lambda=3 min=5"; //test defaults for rats
-		}
+	//	if( ratsOpt.length() == 0) { //use defaults if blank
+	//		ratsOpt = "noise=5 lambda=3 min=5"; //test defaults for rats
+	//	}
 		System.out.println("Switching to RATS mode.");
-		System.out.println("using rats options: "+ratsOpt);
+		System.out.println("using rats options: n:" + noise + " l:" + lambda + " m:" +minLeaf);
 		ratsFlag = true;
 	}
     else if(threshold == 0) {
@@ -264,6 +257,7 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
     System.out.println("setting flag ..");
     int total = 0;
     index = 0;
+	//ratsStack = new ImageStack(width, height);
 	for(int z = 0; z < depth; z++) {
 		currentimagep = imp.getStack().getProcessor(z+1);
 		
@@ -271,6 +265,10 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 		if(ratsFlag == true) {
 			System.out.println("RATS on slice "+z);
 	
+			ratsProcessor = new RatsSliceProcessor(noise, lambda, minLeaf, new ImagePlus("", currentimagep),0);
+			
+			//ratsProcessor.getMask().show();
+			
 			// use RATS, 
 			// generate a threshold mask
 			// if( maskValue > 0)
@@ -281,16 +279,14 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 			//new rats
 			// rats.setup("", ratsMask); 
 			// rats.run( imgprocessor, optString, );
-			ratsMask = new ImagePlus();
-			rats = new RATSForAxon();
+		//	ratsMask = new ImagePlus();
+		//	rats = new RATSForAxon();
 			//String opt = "noise=10 lambda=3 min=5";
-			rats.setup("", ratsMask); //can move these to threshold decision block? 
+		//	rats.setup("", ratsMask); //can move these to threshold decision block? 
 									  //need to only create one rats, use run?
-			ratsMask = rats.run(currentimagep, ratsOpt);
-			
-			ratsMask.show();
-			
-			ratsImageP = ratsMask.getProcessor();
+		//	ratsMask = rats.run(currentimagep, ratsOpt);
+		//	ratsImageP = ratsMask.getProcessor();
+		//	ratsStack.addSlice(ratsImageP);
 		}
 		
 		for(int y = 0; y < height; y++) {
@@ -303,16 +299,11 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 				
 				//setting isMaxima for RATS mode
 				if(ratsFlag == true) {
-					currentThresholdValue = ratsImageP.get(x,y);//binary mask, 0 or 255
-					if((pixelvalue == maxVal[index]) && (currentThresholdValue > 0)) {
-						isMaxima[index] = true;
-						total ++;
-						
-					}
+					currentThresholdValue = ratsProcessor.getMaskValue(x,y,0);//binary mask, 0 or 255
 				}
 				
 				//setting isMaxima for global threshold value
-				else if((pixelvalue == maxVal[index]) && (pixelvalue > currentThresholdValue))
+				if((pixelvalue == maxVal[index]) && (pixelvalue > currentThresholdValue))
 				{
 					isMaxima[index] = true;
 					total ++;
@@ -324,7 +315,13 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 		} //End of y
 	} //End of z
 
- System.out.println("total local maximum pixels:"+total);	
+ System.out.println("total local maximum pixels:"+total);
+
+ //show the mask image as a complete stack 
+ //if(ratsFlag == true){
+//	  ratsProcessor.getMask().show();
+ //}
+ 
  return isMaxima;
  }
   

@@ -365,11 +365,11 @@ public class ThreeDROISynapseDriver {
 	
 
 	//public access for annotate, handles annotation and file saving 
-	public void annotate(ImagePlus imp, String fileName, int fileMode, int thr, String thrOpt) throws Exception
+	public void annotate(ImagePlus imp, String fileName, int fileMode, int thr, int noise, int lambda, int minLeaf) throws Exception
 	{
         
 		//do the annotation
-		detectedCenters = annotate(imp, thr, thrOpt);
+		detectedCenters = annotate(imp, thr, noise, lambda, minLeaf);
 		
 		//handle file saving
 		//based on mode.
@@ -416,7 +416,7 @@ public class ThreeDROISynapseDriver {
 	}
 
 	//older logic, but keeping this over re-writing the code from Annotator
-	private HashSet<Point3D> annotate(ImagePlus imp, int threshold, String thrOpt) throws Exception
+	private HashSet<Point3D> annotate(ImagePlus imp, int threshold, int noise, int lambda, int minLeaf) throws Exception
 	{ 
 		// get data from imp
 		ImageProcessor ip = imp.getProcessor();
@@ -440,7 +440,7 @@ public class ThreeDROISynapseDriver {
 		
 		// use a window of 3*3*2 (radius, 7*7*5 actual) to get local maxim
 		System.out.println("get localmaxima");
-		boolean[] isMaxima = AnnotatorUtility.getLocalMaxima(imp, synapseChannel, 3, 3, 2, threshold, thrOpt); //2nd arg is channel
+		boolean[] isMaxima = AnnotatorUtility.getLocalMaxima(imp, synapseChannel, 3, 3, 2, threshold, noise, lambda, minLeaf); //2nd arg is channel
 		draw(isMaxima, imp, totaldepth, totalheight, totalwidth);
 		// get cube around local maxima, send to classifier
 		int total =0;
@@ -1089,7 +1089,7 @@ public class ThreeDROISynapseDriver {
 				}
 			}
 			//anno.annotate(imp, "C:\\Users\\LukeC\\Desktop\\ROI\\test\\file" , ThreeDROISynapseDriver.MARKER_VAA3D_BOTH);
-			anno.annotate(imp, "C:\\Users\\Sandahz\\Desktop\\ROIAnnotator\\testfile" , ThreeDROISynapseDriver.MARKER_VAA3D_BOTH, 0, "");
+			anno.annotate(imp, "C:\\Users\\Sandahz\\Desktop\\ROIAnnotator\\testfile" , ThreeDROISynapseDriver.MARKER_VAA3D_BOTH, 0, 5,3,8);
 			
 		}
 		catch(Exception e) {
