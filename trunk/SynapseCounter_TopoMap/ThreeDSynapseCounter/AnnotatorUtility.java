@@ -257,7 +257,7 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
     System.out.println("setting flag ..");
     int total = 0;
     index = 0;
-	//ratsStack = new ImageStack(width, height);
+	ImageStack ratsStack = new ImageStack(width, height);
 	for(int z = 0; z < depth; z++) {
 		currentimagep = imp.getStack().getProcessor(z+1);
 		
@@ -286,7 +286,8 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 									  //need to only create one rats, use run?
 		//	ratsMask = rats.run(currentimagep, ratsOpt);
 		//	ratsImageP = ratsMask.getProcessor();
-		//	ratsStack.addSlice(ratsImageP);
+		ratsStack.addSlice(ratsProcessor.getMask().getProcessor());
+		
 		}
 		
 		for(int y = 0; y < height; y++) {
@@ -300,17 +301,28 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 				//setting isMaxima for RATS mode
 				if(ratsFlag == true) {
 					currentThresholdValue = ratsProcessor.getMaskValue(x,y,0);//binary mask, 0 or 255
+					if((pixelvalue == maxVal[index]) && ( ratsProcessor.getMaskValue(x,y,0) > 0))
+					{
+						isMaxima[index] = true;
+						total ++;
+					}
+					else
+						isMaxima[index] = false;
+					index++;
 				}
 				
-				//setting isMaxima for global threshold value
-				if((pixelvalue == maxVal[index]) && (pixelvalue > currentThresholdValue))
-				{
-					isMaxima[index] = true;
-					total ++;
+				
+				else{//ratsFLag false
+					//setting isMaxima for global threshold value
+					if((pixelvalue == maxVal[index]) && (pixelvalue > currentThresholdValue))
+					{
+						isMaxima[index] = true;
+						total ++;
+					}
+					else
+						isMaxima[index] = false;
+					index++;
 				}
-				else
-					isMaxima[index] = false;
-				index++;
 			} //End of x
 		} //End of y
 	} //End of z
@@ -318,9 +330,10 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
  System.out.println("total local maximum pixels:"+total);
 
  //show the mask image as a complete stack 
- //if(ratsFlag == true){
-//	  ratsProcessor.getMask().show();
- //}
+ if(ratsFlag == true){
+    //ratsProcessor.getMask().show();
+	new ImagePlus("ratsMask" , ratsStack).show();
+ }
  
  return isMaxima;
  }
