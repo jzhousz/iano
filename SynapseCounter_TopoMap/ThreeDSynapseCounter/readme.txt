@@ -23,6 +23,10 @@ including:
 	Point3D.java				(helper class for using storign voxel locations)
 	Three_D_ROI_Annotator_Plugin.java	(IJ dependant GUI for annotator tool)
 	ThreeDSynapseDriver.java		(main annotator tool and logic. can be command line)
+	RatsSliceProcessor.java			(wrapper for RATSForAxon)
+	RATSForAxon.java			(main RATS code for 2D Image handling)
+	RATSQuadTree.java			(RATS dependancy)
+
 
 	biocat.jar				(BioCAT resources, chain reading, extraction/classification)
 	imagescience.jar			(FeatureJ resources, extractors)
@@ -37,7 +41,11 @@ including:
 
 6) Set desired ROI dimensions. 9x9x3 is generally suficient for synapse detection. 
 
-7) Set the desired threshold. leave slider at 0 to auto threshold.
+7a)Set the desired threshold. leave slider at 0 to auto threshold.
+7b)Otherwise, check the RATS option and supply rats parameters to use adaptive thresholding.
+	Noise level = estimated threshold level of bachground (low for mostly black images)
+	lambda      = scaling factor 
+	min leaf    = minimum quad tree elaf size (dynamically determined by plugin)
 
 8) Select desired save options and destination folder.
 	Check any desired file types.
@@ -47,4 +55,6 @@ including:
 
 10) Click "OK" to run the annotator. On larger images, completion time of the Annotation step may be very long.
   
-	
+TIP: execute IJ.jar from the command line to add more than IJ supported ram as well as see biocat output 
+     for diagnosing chain behavior.
+	java -Xms4g -jar IJ.jar	

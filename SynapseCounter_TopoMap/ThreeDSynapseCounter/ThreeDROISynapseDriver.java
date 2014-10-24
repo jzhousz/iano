@@ -126,6 +126,18 @@ public class ThreeDROISynapseDriver {
 			throw new Exception("ERROR: Problem building data from ROI", e);
 		}		
 		
+		//debugging check class names
+		HashMap<String, String> classNameCheck = new HashMap<String, String>();
+		classNameCheck = problem.getClassNames();
+		for(String key : classNameCheck.keySet()){
+			System.out.println("name is: " + classNameCheck.get(key) + " " + "key: " + key  );
+		}
+		
+		//debug pause
+		//new java.util.Scanner(System.in).nextInt();	
+			
+			
+			
 		ChainIO chainLoader = new ChainIO();
 		
 			chainList = chainLoader.load(new File(chains));
@@ -716,6 +728,7 @@ public class ThreeDROISynapseDriver {
 		HashMap classMap = new HashMap<String, String>();
 		HashMap roiList= new HashMap<String, Roi>();
 		
+		
 		for(String path : roiPaths) {
 			
 			
@@ -1003,7 +1016,7 @@ public class ThreeDROISynapseDriver {
                 }
             }
         }
-    //centers.show();
+    centers.show();
     
 	//for file saving and naming convention
 	Date date = new Date();
@@ -1070,7 +1083,7 @@ public class ThreeDROISynapseDriver {
 			
 			//train test model
 			anno.trainAndTest();		
-			System.out.println("Finished model training... \nEnter a new image path to annotate, leave blank to use same image.");
+			System.out.println("Finished model ... \nEnter a new image path to annotate, leave blank to use same image.");
 			
 			//pause execution if no annotate image supplied
 			if(args.length <= 7){

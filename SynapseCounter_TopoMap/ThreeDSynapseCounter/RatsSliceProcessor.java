@@ -42,7 +42,7 @@ public class RatsSliceProcessor {
 	* get the mask imagePlus
 	* 
 	*/
-	public ImagePlus getMask() { return ratsMask3D; };
+	public ImagePlus getMask() { return ratsMask3D.duplicate(); };
 	
 	/*
 	* getMaskValue()
