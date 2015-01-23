@@ -22,7 +22,7 @@ public class MarkerConverter {
         
         //do the conversion. requires image height to work.
         public static void convert(String f, int h) throws IOException, Exception{
-                ArrayList<String> outputArray =  new ArrayList<String>();
+				ArrayList<String> outputArray =  new ArrayList<String>();
 
                 //open file stream
                 FileInputStream fstream = new FileInputStream(f);

@@ -4,7 +4,18 @@
 *       ARGUMENTS:  a folder containing the RDL ground truth regions subfolders with IJ (converted) marker and image files, 
 *					the IJ format result file from a whole image annotation with the plugin.
 *    	USAGE: java SynapseValidator [ground truth dir] [anno Result File] [orig image width] [height]");			          
+*    
+*		CHANGELOG
+*		11/08/14 - added Fstat calculation
+*		11/10/14 - added rough file writing from main 
+*		11/22/14 - added averages
+*		11/24/14 - cleaned up decimals
+*        1/23/15 - fixed averaging error
 *
+*       TODO:
+*		-add marker output of results for each region so v3d can compare the two.
+*       -codify 'close enough' calculation.
+*		-something I forgot at the moment, will update. 
 */
 
 ///////////////////////////////////////////////////////////////
@@ -17,7 +28,6 @@
 //  	go through real
 //      	if(fall into neighborhood)
 //          	count it as +1
-
 //
 //
 // for fraction: go through entire detected list
@@ -41,6 +51,12 @@
 //
 // 		for total count, just compare truth to list of detected within region.
 //
+// for Fstat: combine precision and recall values.
+//
+//		Fstat = 2 * (Precision * recall) / (Precision + recall)		  
+//
+//
+//
 
 /*
 C:\Users\Jonathan\Desktop\validator>java SynapseValidator c:\Users\Jonathan\Desktop\rdlGroundTruth C:\Users\Jonathan\Desktop\rdlGroundTruth\Results_rdlFull_HaarSVM_thr28_4-15-14_IJ.marker 2333 1296 59
@@ -53,6 +69,9 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.text.DecimalFormat;
 
 public class SynapseValidator {
 	//****************************************
@@ -61,7 +80,7 @@ public class SynapseValidator {
 	//****************************************
 	
 	//constants
-	static final int TEST_NUMBER = 3;
+	static final int TEST_NUMBER = 4; //number of statistics to report
 	
 	//members
 	private File groundTruthDir;
@@ -191,19 +210,17 @@ public class SynapseValidator {
 				} 
 			}
 			
-			
-			//record results for detected over real
+			//fraction
+			// results for detected over real
 			double fraction =  (double)arMarkersInRegion.size() / gtRegionMarkers.get(regionIndex).size();
 			valResults[regionIndex][0] = fraction;
 			System.out.println("\nfraction = "+ arMarkersInRegion.size() + " / " + gtRegionMarkers.get(regionIndex).size() + " = " + fraction );
-		
 		
 		
 			// precision
 			// use current arraylist of markers in region
 			int preciseMarkers = 0;
 			double precision = 0;
-			
 			
 			for(Point3D p : arMarkersInRegion) {
 				if(markerNear(p, rData, gtRegionMarkers.get(regionIndex), 7,7,5)) {
@@ -232,6 +249,12 @@ public class SynapseValidator {
 			recall = (double)recallMarkers / gtRegionMarkers.get(regionIndex).size();
 			valResults[regionIndex][2] = recall;
 		
+			
+			//fStat
+			//as F= 2*(p*r)/(p+r)
+			double fStat;
+			fStat = 2 * (precision * recall ) / (precision + recall);
+			valResults[regionIndex][3] = fStat;
 	
 			//last in region loop
 			regionIndex++;
@@ -396,39 +419,108 @@ public class SynapseValidator {
 	//****************************************
 	
 	//main for execution on command line.
+	//
 	public static void main(String[] args) {
-		if( args.length == 0 ) {
+		if (args.length == 0 ) {
 			System.out.println("USAGE: java SynapseValidator [ground truth dir] [anno Result File] [orig image width] [height]");
 			return;
 		}
 		
-		
-		
+		//declare!
+		String extraFile = "";
 		SynapseValidator validator;
+		File file;
+		BufferedWriter out;
+		DecimalFormat fmatDecimal = new DecimalFormat("##.00%"); //% formatting
+		double [] totals = new double[TEST_NUMBER];
 		
+		for(double i : totals) { //make sure 0 totals
+			i = 0.00;
+		}
+		
+		//get the extra file name info from either path or args
+		if (args.length == 5) {
+			extraFile = args[4];
+		}
+
 		try{
+			//file saving mechanics
+			Date date = new Date();
+			SimpleDateFormat fmatDate =new SimpleDateFormat("MM_dd_yyyy_hhmmss" );
+			String fileName = new String("rdl_validation_result_" + fmatDate.format(date) + "_" + extraFile + ".txt" );
+			file = new File(fileName);
+			out = new BufferedWriter(new FileWriter(file));
+
+			//do validation
 			validator = new SynapseValidator(args[0], args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]));
 			
 			validator.validate(1);
 		
-			System.out.println("\n0: fraction \n1: Precision \n2: Recall");
-		
-			int regionCount = 1;
-			int resultCount = 0;
+			//print to console *******************************
+			//print to file	
+			
+			//headings and labels for stats
+			System.out.println("\nResults by each region:");
+			out.write("ground Truth Dir: " + args[0] + System.getProperty("line.separator") +
+					  "anno Result File: " + args[1] + System.getProperty("line.separator") +
+					  "Image Width:      " + args[2] + System.getProperty("line.separator") +
+					  "Image Height:     " + args[3] + System.getProperty("line.separator") + System.getProperty("line.separator") );
+			out.write("Results by each region:");
+			out.write(System.getProperty("line.separator"));
+			
+			String[] labels = new String[TEST_NUMBER];
+			labels[0] = "Fraction:  "; 
+			labels[1] = "Precision: ";
+			labels[2] = "Recall:    ";
+			labels[3] = "F-measure: ";
+			
+			//loop through all regions
+			int regionCount = 0;
 			for(double[] region : validator.getResults() ) {
-				System.out.println("region: "+regionCount);
+				System.out.println("region: "+(regionCount+1));
+				out.write("region: "+(regionCount+1));
+				out.write(System.getProperty("line.separator"));
+				
+				//loop through every statistic, track the totals
+				int i=0;
+				for(double result : region) {
+					System.out.println("    " + labels[i] + fmatDecimal.format(result));
+					out.write("    " + labels[i] + fmatDecimal.format(result));
+					out.write(System.getProperty("line.separator"));
+					totals[i] += result; // sum totals
+					i++;
+				}
+				
 				regionCount++;
-				for(double result : region)
-					System.out.println("Results ["+resultCount+"] = " + result);
-					 resultCount++;
 			}
-
+			
+			//run average of totals
+			System.out.println("Averages for all regions:");
+			out.write("Averages for all regions:");
+			out.write(System.getProperty("line.separator"));
+			int i=0;
+			for(double total : totals) {
+				System.out.println("    Average " + labels[i] + fmatDecimal.format(total/regionCount));
+				out.write("    Average " + labels[i] + fmatDecimal.format(total/regionCount));
+				out.write(System.getProperty("line.separator"));				
+				i++;
+			}
+			
+			
+			
+			System.out.println("\nWritten to file: " + fileName);
+			
+			out.close();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 		
+		
 	}//end main
 
+	
+	
+	
 	//****************************************
 	//File Walker inner class
 	// 	NOTE: only jdk 7+
