@@ -29,8 +29,14 @@ class Point3D
 
 	String convertToString() {
 	
-		return (""+x+","+y+","+z);
+		return ("("+x+","+y+","+z+")");
 	
+	}
+	
+	void offsetPoint(int offX, int offY, int offZ) {
+		x += offX;
+		y += offY;
+		z += offZ;
 	}
 }
 
