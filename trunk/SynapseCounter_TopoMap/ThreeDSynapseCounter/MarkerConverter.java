@@ -1,12 +1,14 @@
 /* MarkerConverter.java
 *       a program to convert between IJ marker format and Vaa3D marker format
-*       ARGUMENTS: a marker file of either IJ or Vaa3d type and image height.
+        and from .xls IJ results to IJ marker format.
+*       ARGUMENTS: a marker file of either IJ, Vaa3d, or results.xls type and image height.
 *               call from command line as: java MarkerConverter [file] [image height]
 *
 *       additionally,
 *               convert([filename], [height]) //will open file and write out results to new file
-*               v3dToIJ([file line], [height]) //returns converted string
-*               IJTov3d([file line], [height], [marker ID]) //returns converted string
+*               v3dToIJ([file line], [height])              //returns converted string as IJ
+*               IJTov3d([file line], [height], [marker ID]) //returns converted string as V3D
+                xlsToIJ([file line])                        //returnd converted string as IJ
 *       can be called as utilities.
 *               
 */
@@ -14,12 +16,17 @@
 
 import java.io.*;
 import java.util.ArrayList;
-
+import java.lang.Math.*;
 
 
 //main function to oversee the file conversion and display usage
 public class MarkerConverter {
-        
+
+        //file type constants
+        static int IJ = 0;
+        static int V3D = 1;
+        static int XLS = 2;
+    
         //do the conversion. requires image height to work.
         public static void convert(String f, int h) throws IOException, Exception{
 				ArrayList<String> outputArray =  new ArrayList<String>();
@@ -31,26 +38,31 @@ public class MarkerConverter {
                 //check file type
                 String line;
                 line = in.readLine();
-                while(line.contains(""+"#") || line.length()<=1) { //scrub header comments and blanks
+                while(line.contains(""+"#") || line.length()<=1 || line.startsWith(" ") ){ //scrub header comments and blanks
+                                if ( line.startsWith(" ") ) { //.xls comment
+                                    line = "#  x   y   z";
+                                }
                                 outputArray.add(line);//preserve blanks and comments
                                 //System.out.println(line);//debug echo to console
                                 line = in.readLine();
                         }
                         
-                boolean flagFileIsV3D;
-                flagFileIsV3D = isV3D(line); //only check after comments
+                int fileType; // 0 = IJ, 1 = V3D, 2 = XLS
+                fileType = getFileType(line); //only check after comments
                 
                 //alert user to file type and conversion being made
                 System.out.println();
-                if(flagFileIsV3D) {
+                if(fileType == V3D) {
                         System.out.println("File is v3d type. Converting to IJ type.");
                         
-                } else {
+                } else if(fileType == IJ) {
                         System.out.println("File is IJ type. Converting to v3d type.");
+                } else if(fileType == XLS) {
+                        System.out.println("File is XLS type. Converting to IJ type.");
                 }
         
                 //read and write correct conversion
-                String outputLine;
+                String outputLine = "";
                 int ID = 0;
                 while(true) {
                         //System.out.println(line);//debug
@@ -60,11 +72,13 @@ public class MarkerConverter {
                                 outputLine = line;//preserve blanks and comments
                         } 
                         //use correct converter
-                        else if(flagFileIsV3D){//for v3d->IJ
+                        else if(fileType == V3D) {//for v3d->IJ
                                 outputLine = v3dToIJ(line, h);
-                        } else {//for IJ->v3D
+                        } else if(fileType == IJ) {//for IJ->v3D
                                 ID++;
                                 outputLine = IJTov3d(line, h, ID);
+                        } else if(fileType == XLS) {
+                                outputLine = xlsToIJ(line);
                         }
                         
                         //System.out.println(outputLine);//debug
@@ -78,7 +92,7 @@ public class MarkerConverter {
                 }
 
                 //set up new file
-                String fileName = createName( flagFileIsV3D, f);
+                String fileName = createName( fileType, f);
                 File file = new File(fileName);
                 BufferedWriter out = new BufferedWriter(new FileWriter(file));
                 
@@ -99,6 +113,24 @@ public class MarkerConverter {
                 
         }//end convert
         
+        //convert a string from 'results' xls output to IJ format
+        static public String xlsToIJ(String l){
+            int x,y,z;
+            double xCent, yCent, zCent;
+            
+            String[] t = l.split("\t");
+
+            xCent = Double.parseDouble(t[4].trim());
+            yCent = Double.parseDouble(t[5].trim());
+            zCent = Double.parseDouble(t[6].trim());
+            x = (int) Math.round(xCent);
+            y = (int) Math.round(yCent);
+            z = (int) Math.round(zCent);
+            
+            String newLine = ("" + x + " " + y + " " + (z+1));
+            return newLine;
+            
+        }
         
         // convert a string from v3d fromat to IJ format
         static public String v3dToIJ(String l, int h) throws Exception{
@@ -139,37 +171,51 @@ public class MarkerConverter {
         
         //read first line, if string split(",") == v3d format (10 tokens), return true.
         //if == IJ format (1 token), return false
-        static public boolean isV3D(String line)  throws Exception{
-                String[] tokens = line.split(",");
+        static public int getFileType(String line)  throws Exception{
+                String[] tokens = line.split("\t"); //TAB
                 
-                //for vaa3d -> IJ
+                System.out.println( "tokens split by tab: " + tokens.length);
+                
+                //for object counter output
                 if(tokens.length > 1) {
-                 return true;
-                } 
-                //for IJ -> vaa3d
-                else if(tokens.length == 1) {
-                 return false;
+                 return XLS;
                 }
                 
-                else throw new Exception("file does not match possible type.");
+                else {
+                    tokens = line.split(",");
+
+                    //for vaa3d 
+                    if(tokens.length > 1) {
+                     return V3D;
+                    }
+                    //for IJ 
+                    else if(tokens.length == 1) {
+                     return IJ;
+                    }
+                } 
+                
+                //if no match
+                throw new Exception("file does not match possible type.");
         
         }//end
         
         
         // create a new file name based on the old one.
-        static private String createName(boolean flagFileIsV3D, String f) {
+        static private String createName(int fileType, String f) {
                 File tempFile = new File(f);
                 String origFileName = tempFile.getName();
                 
                 String[] filePrefix = origFileName.split("\\.");
                 
-                String fileName;
-                if(flagFileIsV3D) {
+                String fileName = "";
+                if((fileType == 1) || (fileType == 2) ) {
                         //fileName = filePrefix[0] + "_ConvertTo_IJ.marker";
                         fileName = "Converted_to_IJ_"+filePrefix[0]+".marker";
-                } else {
+                } else if(fileType == 0) {
                         //fileName = filePrefix[0] + "_ConvertTo_v3d.marker";
                         fileName = "Converted_to_v3d_"+filePrefix[0]+".marker";
+                } else {
+                        fileName = "impossible_to_reach.file";
                 }
                 
                 return fileName;
@@ -182,6 +228,10 @@ public class MarkerConverter {
         
         if(args.length != 2) {
                 System.out.println("USAGE: java MarkerConverter [file] [image height]");
+                System.out.println("makes the following conversions:");
+                System.out.println("    IJ.marker   -> V3D.marker");
+                System.out.println("    V3D.marker  -> IJ.marker");
+                System.out.println("    results.xls -> IJ.marker");
                 return;
         }
         
