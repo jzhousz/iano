@@ -65,6 +65,8 @@
  */
 
 import ij.*;
+import ij.IJ;
+import ij.io.*;
 import ij.ImagePlus.*;
 import ij.plugin.*;
 import ij.plugin.filter.*;
@@ -73,6 +75,7 @@ import ij.gui.*;
 import ij.measure.*;
 import ij.util.*;
 import java.awt.*;
+import java.awt.Button;
 import java.util.*;
 import java.awt.event.*;
 
@@ -152,6 +155,12 @@ public class Object_Counter3D_RATS_splitting implements PlugIn, AdjustmentListen
     
     //RATS vars
     RatsSliceProcessor rats;
+    
+    //marker chooser GUI
+    String    markerFile;
+    Panel     markerChooser;
+    Button    markerB;
+    TextField markerField;
 
     public void run(String arg) {
         if (! setupGUI(arg)) return;
@@ -237,6 +246,20 @@ public class Object_Counter3D_RATS_splitting implements PlugIn, AdjustmentListen
         value = gd.getNumericFields();
         ((TextField)value.elementAt(0)).addTextListener(this);
         ((TextField)value.elementAt(1)).addTextListener(this);
+        
+        //marker file
+        MyListener listener = new MyListener(); 
+        markerChooser = new Panel();
+            markerChooser.setLayout(new FlowLayout(FlowLayout.CENTER,5,0));       
+        markerB = new Button("marker");
+            markerB.addActionListener(listener);
+        markerField = new TextField(Prefs.get("batch.markerB",""), 40);      
+        markerChooser.add(markerB);
+        markerChooser.add(markerField);
+        //add markerChooser to gd
+        gd.addMessage("marker file:");
+        gd.addPanel(markerChooser);
+        
         //RATS options
         gd.addMessage("RATS options: (leave noise 0 to disable)");
         gd.addNumericField("RATS noise:",RATS_noise_default,0);
@@ -289,12 +312,36 @@ public class Object_Counter3D_RATS_splitting implements PlugIn, AdjustmentListen
         FontSize=(int)gd.getNextNumber();   FontSize_default = FontSize;
         summary=gd.getNextBoolean();        summary_default = summary;
 
+        markerFile = markerField.getText();
+        
         IJ.register(Object_Counter3D_RATS_splitting.class); // static fields preserved when plugin is restarted
         //Reset the threshold
         ip.resetThreshold();
         img.updateAndDraw();
         return true;
     }
+    
+    //crude inner class listener for custom GUI buttons
+    private class MyListener implements ActionListener {
+      public void actionPerformed(ActionEvent e) {
+      
+        Object source = e.getSource();
+        String s;
+        String path ="default";
+        OpenDialog od;
+        DirectoryChooser dc;
+        int num;
+        
+        if(source.equals(markerB)) {
+            //IJ.log("markerB button press");
+            od = new OpenDialog("select marker file", "");
+            path = od.getPath();
+            if( path.equals(null)) return;
+            markerField.setText(path);
+        }
+      }
+      
+    }//end inner listener
 
     void analyze() {
         IJ.showStatus("3D Objects Counter with RATS");
@@ -472,10 +519,10 @@ public class Object_Counter3D_RATS_splitting implements PlugIn, AdjustmentListen
             Scanner sc = null;
             try
             {
-            sc = new Scanner(new java.io.File("detected.marker.big"));
+            sc = new Scanner(new java.io.File(markerFile));
             }catch(java.io.	FileNotFoundException e)
             { 
-                IJ.log("'detected.marker' is not found."); 
+                IJ.log("marker file is not found."); 
             }
         
             
