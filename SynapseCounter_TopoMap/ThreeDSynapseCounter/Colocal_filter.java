@@ -68,9 +68,11 @@ public class Colocal_filter implements PlugIn, DialogListener{
     int x, y, z;
     Point3D p3d;
     int colocalX, colocalY, colocalZ;
+    int slice;
     
     ImagePlus img;
     ImageProcessor ip;
+    Overlay ov;
     
     //marker chooser GUI
     String    markerFile;
@@ -129,7 +131,7 @@ public class Colocal_filter implements PlugIn, DialogListener{
         
         //global threshold
         gd.addSlider("Global Threshold (if used): ",ip.getMin(), ip.getMax(),thrVal);
-  
+        gd.addSlider("Slice: ",1, NbSlices,(int) NbSlices/2);
         //RATS options
         gd.addMessage("RATS options: (leave noise 0 to disable)");
         gd.addNumericField("RATS noise:",RATS_noise_default,0);
@@ -176,6 +178,7 @@ public class Colocal_filter implements PlugIn, DialogListener{
     /**/ 
     public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
         thrVal          = (int)gd.getNextNumber();  
+        slice           = (int)gd.getNextNumber(); //ignore the selected slice.
         noise           = (int)gd.getNextNumber();
         lambda          = (int)gd.getNextNumber();
         minLeaf         = (int)gd.getNextNumber();
@@ -183,8 +186,12 @@ public class Colocal_filter implements PlugIn, DialogListener{
         colocalY        = (int)gd.getNextNumber();
         colocalZ        = (int)gd.getNextNumber();    
         debug           = gd.getNextBoolean();
-        
         markerFile      = markerField.getText();
+        
+        //draw preview
+        ip.setThreshold(thrVal,Math.pow(2,16),ImageProcessor.RED_LUT);
+        img.setSlice(slice);
+        img.updateAndDraw();
         
         return true;
     }
@@ -319,6 +326,9 @@ public class Colocal_filter implements PlugIn, DialogListener{
             IJ.log(x.getMessage());
         }
         
+        
+        
+        
         IJ.log("Completed\n\n");
         IJ.showStatus("Completed!");
     }//end run
@@ -328,6 +338,11 @@ public class Colocal_filter implements PlugIn, DialogListener{
     /**/
     private boolean colocalize(Point3D p3d, int w, int h, int d, boolean[] t, int cx, int cy, int cz){
         int index = calcIndex(p3d.x, p3d.y, p3d.z, w, h);
+        
+        if(index >= t.length){
+            if(debug) IJ.log("index " + index + " out of bounds. end array: " + t.length);
+            return false;            
+        }
         
         //1) index is ON the mask
         if (t[index] == true){
@@ -373,7 +388,7 @@ public class Colocal_filter implements PlugIn, DialogListener{
         
         //debug code
         boolean flag = false;
-        if(debug && (p.x == 49)) flag = true;
+        //if(debug && (p.x == 49)) flag = true;
         if(flag)
             IJ.log("\ndebugging point near mask at " + p.convertToString() + " roi:" + cx +"x" + cy + "x" + cz);
 
