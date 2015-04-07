@@ -40,7 +40,7 @@ public class MarkerConverter {
                 line = in.readLine();
                 while(line.contains(""+"#") || line.length()<=1 || line.startsWith(" ") ){ //scrub header comments and blanks
                                 if ( line.startsWith(" ") ) { //.xls comment
-                                    line = "#  x   y   z";
+                                    line = "x   y   z";
                                 }
                                 outputArray.add(line);//preserve blanks and comments
                                 //System.out.println(line);//debug echo to console
