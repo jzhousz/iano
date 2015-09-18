@@ -185,6 +185,7 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 	int index = 0;
     int pixelvalue;
     ImageProcessor currentimagep = null; 
+	ImageProcessor subimagep = null;
 
     float currentThresholdValue = 0;
     
@@ -208,8 +209,8 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
     }
   
   
-   ////// DILATION /////////
-   System.out.println("dilation ..");
+   ////// processing /////////
+   System.out.println("Processing ..");
    
    boolean scanFlag = false;
    int total = 0;
@@ -227,22 +228,33 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
    index =0;
    for(int z = 0; z < depth; z++) {
 	System.out.println("processing slice: " + (z+1));  
+	
+	currentimagep = imp.getStack().getProcessor(z+1); //set processor to slice
+			
     //setup for inline rats
     if(ratsFlag == true) {
         System.out.println("RATS on slice "+(z+1));
-        currentimagep = imp.getStack().getProcessor(z+1);
         ratsProcessor = new RatsSliceProcessor(noise, lambda, minLeaf, new ImagePlus("", currentimagep),0);
 
         ratsStack.addSlice(ratsProcessor.getMask().getProcessor());
     
     }   
+	
 	for(int y = 0; y < height; y++) {
 		for(int x = 0; x < width; x++) {
+			
+			//get pixel value
+			if (imageType != DataInput.COLOR_RGB)
+				pixelvalue = currentimagep.get(x,y);
+			else
+				pixelvalue = (currentimagep.getPixel(x,y, null))[channel];
+		
             max = -1;  //set max to impossible value
             scanFlag=false;
+			
             //decide to do local scan based on threshold
             //Use RATS
-			if(ratsFlag == true) {
+			if(ratsFlag) {
 				if( ratsProcessor.getMaskValue(x,y,0) > 0)
 				{
                     scanFlag = true;
@@ -266,28 +278,37 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
                 ze = z + wZ; if(ze >= depth - 1) ze = depth - 1;
 
                 for(int k = zb; k <= ze; k++) {
-                    currentimagep = imp.getStack().getProcessor(k+1);
+                    subimagep = imp.getStack().getProcessor(k+1);
                     for(int j = yb; j <= ye; j++) {
                         for(int i = xb; i <= xe; i++) {
                             if (imageType != DataInput.COLOR_RGB)
-                             pixelvalue = currentimagep.get(i,j);
+                             val = subimagep.get(i,j);
                             else
-                             pixelvalue = (currentimagep.getPixel(i,j, null))[channel];
+                             val = (subimagep.getPixel(i,j, null))[channel];
 
-                            val = pixelvalue;
                             if(max < val) max = val;
                         }
                     }
                 }
             }
             //set max to max if in threshold, or 0 if not
-            maxVal[index++] = max;
+            //maxVal[index++] = max;
             
+			//if in threshold, and is == to max, then is a Maxima
+			if( pixelvalue == max ) {
+				isMaxima[index] = true;
+				total++;
+			} else {
+				isMaxima[index] = false;
+			}	
+			
+			index++;
 		  } //End of x
 	   } //End of y
     } //End of z
 
     
+	/*
     ////// SETTING MAXIMA FLAG ///////////
     System.out.println("setting flag ..");
 
@@ -316,7 +337,7 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 			} //End of x
 		} //End of y
 	} //End of z
-
+	*/
  System.out.println("total local maximum pixels:"+total);
 
  //show the mask image as a complete stack 

@@ -10,7 +10,10 @@
   * 04/14/14 added default paths for testing ease
   *          save options added to gui
   *          uses new AnnotatorUtility file
-  *          supports user threshold, complete with preview autothreshold         
+  *          supports user threshold, complete with preview autothreshold  
+  *   
+  *          supports RATS 
+  * 02/10/15 timer for analyze()         
   *
   * TODO
   * add support to train first. report success to user, 
@@ -45,6 +48,10 @@
     HashSet<Point3D> centers;
     ThreeDROISynapseDriver anno;
 	boolean ratsOption = false;
+	
+	//timing
+	long startTime;
+	long endTime;
     
     //static and default vairables
     public static int min_roi_height = 1;
@@ -94,8 +101,9 @@
             return;
         } 
         
+		IJ.log("Annotation Start at:     "+produceTimeStamp(tick()));
         annotate();
-                
+        IJ.log("Annotation time elapsed: "+produceTimeStamp(tock()));       
         
     }
  
@@ -361,6 +369,29 @@
             IJ.log(e.toString());
         }
 	}//end annotate
+	
+	//timing functions adapted from RATSForAxon 
+    private long tick(){
+		this.startTime = System.currentTimeMillis();
+		return startTime;
+	}
+    private long tock(){
+	    return (System.currentTimeMillis() - this.startTime);
+	} 
+    private long tock(String message){
+		long elapsedTime = tock();
+		IJ.log(message + " " + elapsedTime + " ms"); 
+		return elapsedTime;
+    }  
+	
+	private String produceTimeStamp( long millis ) {
+		long second = (millis / 1000) % 60;
+		long minute = (millis / (1000 * 60)) % 60;
+		long hour = (millis / (1000 * 60 * 60)) % 24;
+
+		String time = String.format("%02d:%02d:%02d:%d", hour, minute, second, (millis/1000)) ;
+		return time;
+	}
     
     //crude inner class listener for custom buttons
     private class MyListener implements ActionListener {
