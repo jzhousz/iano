@@ -180,7 +180,6 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 	
 	int size = width * height * depth;
 	boolean[] isMaxima = new boolean[size];
-	int[] maxVal = new int[size];
 
 	int index = 0;
     int pixelvalue;
@@ -291,8 +290,6 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
                     }
                 }
             }
-            //set max to max if in threshold, or 0 if not
-            //maxVal[index++] = max;
             
 			//if in threshold, and is == to max, then is a Maxima
 			if( pixelvalue == max ) {
@@ -307,37 +304,6 @@ public static boolean[] getLocalMaxima(ImagePlus imp, int channel, int wX, int w
 	   } //End of y
     } //End of z
 
-    
-	/*
-    ////// SETTING MAXIMA FLAG ///////////
-    System.out.println("setting flag ..");
-
-    index = 0;
-	for(int z = 0; z < depth; z++) {
-		currentimagep = imp.getStack().getProcessor(z+1);
-
-		for(int y = 0; y < height; y++) {
-			for(int x = 0; x < width; x++) {
-				//pixelvalue = currentimagep.get(x,y);
-				if (imageType != DataInput.COLOR_RGB)
-				     pixelvalue = currentimagep.get(x,y);
-				else
-					pixelvalue = (currentimagep.getPixel(x,y, null))[channel];
-			
-                //decide ismaxima
-                if( pixelvalue == maxVal[index] ) {
-                    isMaxima[index] = true;
-                    total++;
-                } else {
-                    isMaxima[index] = false;
-                }
-				
-                index++;
-
-			} //End of x
-		} //End of y
-	} //End of z
-	*/
  System.out.println("total local maximum pixels:"+total);
 
  //show the mask image as a complete stack 
