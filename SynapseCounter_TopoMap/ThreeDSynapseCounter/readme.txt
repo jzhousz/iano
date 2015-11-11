@@ -6,16 +6,26 @@ including:
 	
 
       It is the home of the following:
-	   1. The class "ThreeDSynapseDriver", which takes images and outputs marker files. It can run by itself in with a IJ plugin GUI, or as a command line program.
-	   2. The ImageJ plugin GUI "Three_D_ROI_Annotator_Plugin": Jon's driver that calls the 3DROI Annotator (takes images, chain files .. and output marker file).
-	   3. The ImageJ plugin for 3D connected component analysis and splitting (Object_Counter3D_2Channel.java)  -- It is the one that outputs synapse count and other statistics.
-	   4. The validator for the Three_D_ROI_Annotator_Plugin
-	   5. The pseudo-3D RATS slice by slice processor
-	   6. Other related datasets
+	
+	(1). The class "ThreeDSynapseDriver", which takes images and outputs marker files. It can run by itself in with a IJ plugin GUI, or as a command line program.
+	   
+	(2). The ImageJ plugin GUI "Three_D_ROI_Annotator_Plugin": Jon's driver that calls the 3DROI Annotator (takes images, chain files .. and output marker file).
+	
+	(3). The ImageJ plugin for 3D connected component analysis and splitting (Object_Counter3D_2Channel.java)  -- It is the one that outputs synapse count and other statistics.
+	
+	(4). The validator for the Three_D_ROI_Annotator_Plugin
+	
+	(5). The pseudo-3D RATS slice by slice processor
+
+	(6). The ImageJ results file (results_XXXX.ij) visualizer plugin "Results_Overlay"
+	
+	(7). Other related datasets
+
+
 	This location overrides the old folder "3DSynapse_Tracing"  or any duplicate file in "SynapseCounter_topomap/Axon Topo Map"
 
 
-----HOW TO USE Three_D_ROI_Annotator_Plugin----
+(2)----HOW TO USE Three_D_ROI_Annotator_Plugin----
 
 1) Create a subfolder for an ImageJ plugin.
 
