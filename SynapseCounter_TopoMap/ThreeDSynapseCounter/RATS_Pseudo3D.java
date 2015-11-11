@@ -2,7 +2,7 @@
  * A plugin interface for RatsSliceProcessor3D to generate a mask for a complete image stack
  *
  *	INPUT: - The current selected grayscale image.
- *		   - the Rats parameters Sigma, Noise, and MinLeaf size
+ *		   - the Rats parameters Sigma(noise), lambda(scaling), and MinLeaf size
  *
  *  OUTPUT:- A new image with the points from the .ij file drawn on in pure white 1px points
  */
