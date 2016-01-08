@@ -13,9 +13,9 @@
   *		- currently no error checking for image size. This is ok, but behavior is probably
   *			degenerate if a mismatched imageJ file and image are used together. 
   * TODO:
-  * 	- possible convert to 3D overlay, instead of destructively drawing on ImageJ
+  * 	- possible convert to 3D overlay, instead of destructively drawing on ImageJ (not likely for now)
   *		- possible convert to color and draw in color instead (or adjust LUT for ease)
-  *
+  *     - add option to remove center dot
   */
 
 
@@ -29,6 +29,7 @@ import ij.plugin.filter.PlugInFilter;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.Button;
+import java.awt.Color;
 import java.util.*;
 import java.io.*;
 
@@ -37,17 +38,21 @@ public class Results_Overlay implements PlugInFilter {
 	ImagePlus imp;
 	ImagePlus outImp;
 	String resPath;
+	int radius;
+	boolean zVisOpt;
+	
     //gui elements
     GenericDialog gd;
     Panel resChooser;
     Button resB;
     TextField resField;
-
-
+	
+	
 	//IJ API setup function
 	public int setup(String arg, ImagePlus imp) {
 		this.imp = imp;
-		return DOES_8G;
+		radius = 3;
+		return DOES_ALL;
 }
 
 	//run()
@@ -92,15 +97,69 @@ public class Results_Overlay implements PlugInFilter {
 						line = in.readLine();//ignore comments and space
 					} else { //read and draw point
 						
+						
+						
 						String[] t = line.split(" ");
+						
+						if(t.length != 3) {
+							IJ.log( "line: "+ count + ": " + line + " broken."); 
+						}
+						
 						x=Integer.parseInt(t[0].trim());
 						y=Integer.parseInt(t[1].trim());
 						z=Integer.parseInt(t[2].trim());
 
+						
+						
 						copyIp = copy.getStack().getProcessor(z);
-						copyIp.setColor(255);
-						copyIp.drawOval(x,y,1,1);
-			
+						
+						//draw the oval if needed on main slice
+						if(copyIp.getNChannels() > 1) {
+							copyIp.setColor(Color.white); 
+						} else { 
+							copyIp.setColor(255); 
+						}
+						
+						if(radius > 0) {
+							copyIp.drawOval((x-radius),(y-radius),radius*2,radius*2);
+						}
+						
+						//draw center dot
+						if(copyIp.getNChannels() > 1) {
+							copyIp.setColor(Color.white); 
+						} else { 
+							copyIp.setColor(200); 
+						}
+						copyIp.drawDot(x,y);
+						
+						
+						//Z direction visualization
+						if(zVisOpt){
+							try{
+								copyIp = copy.getStack().getProcessor(z-1); //slice below
+								//draw circle
+								if(copyIp.getNChannels() > 1) {
+									copyIp.setColor(Color.gray); 
+								} else { 
+									copyIp.setColor(170); 
+								}
+								copyIp.drawOval((x-(radius/2)),(y-(radius/2)),radius,radius);
+							} catch (Exception e) {
+								continue;
+							} try {
+								copyIp = copy.getStack().getProcessor(z+1); //slice above
+								//draw circle
+								if(copyIp.getNChannels() > 1) {
+									copyIp.setColor(Color.gray); 
+								} else { 
+									copyIp.setColor(170); 
+								}
+								copyIp.drawOval((x-(radius/2)),(y-(radius/2)),radius,radius);
+							} catch (Exception e) {
+								continue;
+							}
+						}
+
 						count++;
 					}
 					
@@ -123,7 +182,7 @@ public class Results_Overlay implements PlugInFilter {
 
         
         //setup gui main panel
-        gd =  new GenericDialog("3D ROI Annotator");
+        gd =  new GenericDialog("3D ROI Annotator - Simple Results Visualizer");
        
         MyListener listener = new MyListener(); 
         
@@ -138,9 +197,15 @@ public class Results_Overlay implements PlugInFilter {
         resChooser.add(resField);
 		
         //put it all in the dialog
-        gd.addMessage("Results file:");
+        //gd.addMessage("Results file:");
+		gd.addMessage("");
         gd.addPanel(resChooser);		
 		
+        //gd.addMessage("Draw Radius: (0 for dot)");
+        gd.addSlider("Raidus (0 for dot)", 0, 20, 0);		
+		
+		gd.addMessage("\nExtra Options:");
+		gd.addCheckbox("extra Z visual", false);
 		//show it after completion
         gd.showDialog();
         
@@ -155,6 +220,8 @@ public class Results_Overlay implements PlugInFilter {
 	private boolean getDataFromFields() {
 		
 		resPath = resField.getText();
+		radius = (int) gd.getNextNumber();
+		zVisOpt = gd.getNextBoolean();
 		
 		if( resPath.length()==0) {
 			return false;
