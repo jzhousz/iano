@@ -2,10 +2,12 @@
 import ij.*;
 import ij.gui.Roi;
 import ij.process.*;
+import ij.plugin.*;
 
 import java.awt.Color;
 import java.io.*;
 import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -38,6 +40,13 @@ import annotool.io.DataInput;
  //Is there another way to do it?
  */
 
+ /* NOTES:
+ * -width, height, and depth are ROI NOT IMAGE, Image width is totalWidth and so on.
+ * -rats enabled threshold value is -1 NOT 0!
+ *
+ *
+ *
+ */
 /*
  * CHANGE LOG Jon Sanders
  * 11/03/13 - provide utility for output to file for object quantification
@@ -52,7 +61,7 @@ import annotool.io.DataInput;
  *          - switch classifier type to weka W_RandomForest.
  *          
  * 01/22/14 - begin overhaul conversion to DataInput style
- * 01/25/14 - implement new buildDataFromRoi() loic copied from annImageTable
+ * 01/25/14 - implement new buildDataFromRoi() logic copied from annImageTable
  * 01/28/14 - write main() to take command args and run without gui.
  * 			- NOTE: all gui dependent and alldata code to be deprecated soon.
  * 01/29/14	- Loading from chain files. a little scattered though, but works.
@@ -70,16 +79,19 @@ import annotool.io.DataInput;
  * 			- trainAndtest returns rate now, for gui access
  * 02/26/14 - files now can be written to any path, will make necessary dirs
  * 04/10/14 - supports passed in threshold on annotation
+ * 11/25/15 - remove local maxima calculation, switching ideology to rely more on Machine Learning step
+ * 12/21/15 - changed logic for adding Point3D to centers hashmap. add all, then do neighborhood search AFTER complete annotation.
+ * 12/23/15 - added dummy output stream to stop extra biocat prints.
  */
 
  /*TODO
   * generalize code to give control to plugins
-  * -dont draw in here, pass back ImagePlus from draw()?
   * -dont abuse System.out, pass back data structures of results for better display?
   * -edge case and error handling
   * -still need to use both ArrayList Alldata AND DataInput Problem, do not like. fix?
   * 	-requires contrived get3DFeaturesViaExtractor overloads.
-  * -is width x or y? double check for rx ry calc
+  * iclean up removal of local maxima
+  * -optimize ... a lot of stuff.
   */
 public class ThreeDROISynapseDriver {
 	
@@ -92,7 +104,7 @@ public class ThreeDROISynapseDriver {
 	
 	//data members
 	static SavableClassifier	classifier = null;
-	ImagePlus 					imp, localMax;
+	ImagePlus 					imp, localMax, mask;
 	int 						depth = 1, width = 1, height = 1;
 	int 						synapseChannel = 0;
 	annotool.io.DataInput 		problem = null;
@@ -101,7 +113,13 @@ public class ThreeDROISynapseDriver {
 	float[][] 					extractedFea = null;
 	HashSet<Point3D>  			detectedCenters;
 	
-	
+	//dummy print stream to supress output from BioCAT
+	PrintStream originalStream = System.out;
+	PrintStream dummyStream    = new PrintStream(new OutputStream(){
+		public void write(int b) {
+			//empty 
+		}
+	});	
 
 	
 	/////////////////////
@@ -134,9 +152,7 @@ public class ThreeDROISynapseDriver {
 		}
 		
 		//debug pause
-		//new java.util.Scanner(System.in).nextInt();	
-			
-			
+		//new java.util.Scanner(System.in).nextInt();		
 			
 		ChainIO chainLoader = new ChainIO();
 		
@@ -450,10 +466,51 @@ public class ThreeDROISynapseDriver {
 		ry = calcHalfDim(height);
 		rz = calcHalfDim(depth);
 		
+		//* DEBUG REMOVE LOCAL MAX *//
 		// use a window of 3*3*2 (radius, 7*7*5 actual) to get local maxim
-		System.out.println("get localmaxima");
-		boolean[] isMaxima = AnnotatorUtility.getLocalMaxima(imp, synapseChannel, 3, 3, 2, threshold, noise, lambda, minLeaf); //2nd arg is channel
-		draw(isMaxima, imp, totaldepth, totalheight, totalwidth);
+		//System.out.println("get localmaxima");
+		//boolean[] isMaxima = AnnotatorUtility.getLocalMaxima(imp, synapseChannel, 3, 3, 2, threshold, noise, lambda, minLeaf); //2nd arg is channel
+		
+		//try using just mask, relying on machine learning and meanshift to do maxima detection
+		/*
+		RatsSliceProcessor3D ratsProc = new RatsSliceProcessor3D(noise, lambda, minLeaf, imp, 1);
+		ratsProc.getMask().show(); //be warned of bug when closing this window, crashes due to throwing out mask!
+		mask = ratsProc.getMask();
+		*/
+		//IN PRGRESS MASK SELECTION CONVERSION
+		if(threshold < 0) {
+			RatsSliceProcessor3D ratsProc = new RatsSliceProcessor3D(noise, lambda, minLeaf, imp, 1);
+			//ratsProc.getMask().show(); //be warned of bug when closing this window, crashes due to throwing out mask!
+			mask = ratsProc.getMask();
+			IJ.log("Converted to RATS mask!");
+		} else {
+			Duplicator d = new Duplicator();
+			mask = d.run(imp);
+			/*
+			ImageProcessor globalIp;
+			//convert global threshold to mask
+			for (int z = 0; cz < totaldepth; cz++) {
+				globalIp = mask.getStack().getProcessor(z+1); //get the correct slice for comparison
+				globalIp.setThreshold(threshold,trheshold,)
+				
+			} // end Z
+			mask = new ImagePlus("global mask" globalStack)
+			*/
+			
+			//set all images to global threshold.
+			IJ.setThreshold(mask,threshold,255,"Black & White");
+			IJ.run(mask,"Convert to Mask","method=Default background=Default");
+			IJ.log("converted to global binary mask!");
+		} 
+		mask.show();
+		
+		//draw(isMaxima, imp, totaldepth, totalheight, totalwidth);
+		
+		
+		//swap out stream to suppress BioCAT!
+		System.setOut(dummyStream);
+		
+		// get cube around local maxima, send to classifier
 		// get cube around local maxima, send to classifier
 		int total =0;
 		int cubeDimension = (2 * rz + 1) * (2 * rx + 1) * (2 * ry + 1);
@@ -466,11 +523,14 @@ public class ThreeDROISynapseDriver {
 		float[] oneframe = new float[(2 * rx + 1) * (2 * ry + 1)];
 		int indexsmall = 0;
 		boolean cubeComplete = true; //indicates if we can get complete cube data (i.e. the pixel is not too close to boundary)
+		ImageProcessor maskIp = null;
 		//System.out.println("getting cube around each feature..."); //debug
 		for (int cz = 0; cz < totaldepth; cz++) {
+			maskIp = mask.getStack().getProcessor(cz+1); //get the correct mask for comparison
 			for (int cy = 0; cy < totalheight; cy++) {
 				for (int cx = 0; cx < totalwidth; cx++) {
-					if (isMaxima[index++]) {
+					//if (isMaxima[index++]) { //DEGUG REMOVE LOCAL MAXIMA
+					if (maskIp.getPixel(cx,cy) > 0) {	
 						cubeComplete = true;
 						// get the cube round it, order needs to be the same as training
 						indexForCube = 0;
@@ -546,22 +606,39 @@ public class ThreeDROISynapseDriver {
 						 // }
 						}
 						try {
+							
 							int result = classifier.classifyUsingModel(
-									classifier.getModel(), fea, prob);
+									classifier.getModel(), fea, prob);		
 							//System.out.println(result);
-							if(result == 1) 
+							
+							/*if(result == 1) 
 							{
-								total ++;
+								
 								//mean shift
-								Point3D shifted=getMassCenter(imp, totalwidth, totalheight, totaldepth, cx, cy, cz, 3, 3, 1);
+								
+								//old, 7x7x3 region
+								Point3D shifted=getMassCenter(imp, totalwidth, totalheight, totaldepth, cx, cy, cz, 3,3,1);
+								
+								//try 11x11x7 region
+								//Point3D shifted=getMassCenter(imp, totalwidth, totalheight, totaldepth, cx, cy, cz, 5, 5, 3);
 								
 								//remove duplicates or those that are close enough
 								//contains() not useful unless override hashcode.
 								//linear search, or use a boolean map to search neighborhood 5*5*3
-								if(!(searchForIt(centers,shifted, rx, ry, rz)))
+								//if(!(searchForIt(centers,shifted, rx, ry, rz))) {
 									centers.add(shifted);
+									total ++;
+								//}
 							}
-
+							*/
+							
+							//debug add any positive SVM result
+							
+							if(result == 1) {
+								centers.add(new Point3D(cx,cy,cz));
+								total ++;
+							}
+							
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -569,75 +646,23 @@ public class ThreeDROISynapseDriver {
 					}// end of the local maxima
 				}// end of cx
 			}// end of cy
-		}// end of cz
+		}// end of cz  
 
-		//linear search to remove duplicate
+		
+		//new 12/21/15 try post-scan search and remove for nearby centers
+		Iterator<Point3D> it = centers.iterator();
+		while (it.hasNext()){
+			if(searchForIt(centers, it.next(), rx, ry, rz)) {
+				it.remove();
+			}
+		}
+		
+		//swap back to system.out!
+		System.setOut(originalStream);		
+		
 		System.out.println("total detected positive:"+total);
 		System.out.println("total detected positive after mean-shifting:"+centers.size());
 		
-		/*
-		
-		//for file saving and naming convention
-		Date date = new Date();
-		SimpleDateFormat fmat =new SimpleDateFormat("_MM_dd_yyyy_hhmmss");
-		String extraName = "";
-		
-		// output result to a file as  V3D marker file
-		try{
-			
-			String v3DFileName = new String("V3D_detected" + "_"+ fmat.format(date)+ "_" + extraName + ".marker");
-			File file = new File(v3DFileName);
-			BufferedWriter marker = new BufferedWriter(new FileWriter(file));
-			
-		    //write each to file
-			System.out.println("Vaa3D file output format:");
-			System.out.println("x,y,z,radius,shape,name,comment,color_r,color_g,color_b");//v3d marker .csv format
-			int i=1;
-			for(Point3D p : centers)
-			{
-		    	int tmpy=totalheight-p.y;
-				System.out.println((p.x+1) + ", " + tmpy + ", " + (p.z+1) + ", 0,1,detected center " + i + "," + fmat.format(date) + ",255,50,25"); //echo to console
-				marker.write((p.x+1) + ", " + tmpy + ", " + (p.z+1) + ", 0,1,detected center " + i + "," + fmat.format(date) + ",255,50,25");
-				marker.newLine();
-				i++;
-	
-			}
-		    
-		    System.out.println("written to file: " + v3DFileName);
-		    
-			marker.close();
-			
-		} catch(IOException e){
-			System.out.println("error writing to file.");
-		  	
-		} 
-        		
-		//output result to a file as input for object quantification. No change to coordinate is needed.
-		try{
-			String markerFileName = new String("detected" + "_" + fmat.format(date) + "_" + extraName + ".marker");
-			File file = new File(markerFileName);
-			BufferedWriter marker = new BufferedWriter(new FileWriter(file));
-			
-		    //write each to file
-			System.out.println("general marker file output format:");
-			System.out.println("x,y,z,");//.marker csv format
-		    for(Point3D p : centers)
-			{
-				System.out.println(p.x + " " + p.y + " " + p.z); //echo to console
-				marker.write(p.x + " " + p.y + " " + p.z);
-				marker.newLine();
-	
-			}
-		    
-		    System.out.println("written to file: " + markerFileName);
-		    
-			marker.close();
-			
-		} catch(IOException e){
-			System.out.println("error writing to file.");
-		  	
-		} 
-		*/
 		return centers;
 	}
 	
@@ -824,11 +849,14 @@ public class ThreeDROISynapseDriver {
 		 return new Point3D(movedx,movedy, movedz);
 	}
 
+	//return true only if ther is a point nearby that is NOT at the same exact location.
+	//if there is a point at the same location, will return false.
 	private static boolean searchForIt(HashSet<Point3D> detectedCenters, Point3D input, int rx, int ry, int rz)
 	{
 	  for(Point3D p : detectedCenters)
 		//if (p.equals(input)) return true;
-		  if (p.closesTo(input, rx, ry, rz)) return true;
+	
+		if ( (!p.equals(input)) && (p.closesTo(input, rx, ry, rz) )) return true;
 	  return false;
 	}
 
@@ -966,33 +994,6 @@ public class ThreeDROISynapseDriver {
 	// return an imagePlus of the localmaxima mask.
 	private static ImagePlus draw(boolean[] isMaxima, ImagePlus imp, int totaldepth, int totalheight, int totalwidth)
 	{
-	  /*//draw on the original image
-  	  ImageConverter ic = new ImageConverter(imp);
-	  ic.convertToRGB();
-	  ImageProcessor ip;
-	  //ip = imp.getChannelProcessor();
-	
-      int index =-1;
-	  for(int z= 0; z < totaldepth; z++)
-	  {
-  		  ip = imp.getStack().getProcessor(z+1);
-  		  for(int y = 0; y < totalheight; y++) 
-  		  {
-		    for(int x = 0; x < totalwidth; x++) 
-		    {
-		      index++;	
-			  if(isMaxima[index]) {
-				ip.moveTo(x, y);						
-    			Color c = new Color(1f, 0f, 0f);
-    			ip.setColor(c);
-    			ip.fillOval(x - 1, y - 1, 2, 2);
-			}
-		  }
-  		}
-	} 
-	
-	imp.updateAndDraw();
-	*/
     
 	//draw a new one
 	ImageProcessor ip;
