@@ -1,7 +1,7 @@
 /* MarkerConverter.java
 *       a program to convert between IJ marker format and Vaa3D marker format
         and from .xls IJ results to IJ marker format.
-*       ARGUMENTS: a marker file of either IJ, Vaa3d, or results.xls type and image height.
+*       ARGUMENTS: a marker file of either IJ (including Tester.java results), Vaa3d, or results.xls type and image height.
 *               call from command line as: java MarkerConverter [file] [image height]
 *
 *       additionally,
@@ -153,17 +153,75 @@ public class MarkerConverter {
         
         //convert a string from IJ format to v3d format, properly naming the markers and filling in default v3d params
         static public String IJTov3d(String l, int h, int ID) throws Exception{
-                String[] t = l.split(" ");
+                int r=255,b=50,g=25;
+				String[] t = l.split(" ");
                 
                 int tempH = h - Integer.parseInt(t[1].trim());
                 if( tempH < 0) {
                         throw new Exception("Invalid height: " + tempH);
                 }
                 
+				//set color for Results files from Synapse Distribution Tester output.
+				if(t.length > 3) {
+					int binNum = Integer.parseInt(t[3].trim());
+					switch (binNum) {
+						/*red/blue gradient
+						case 1: r=229; g=0; b=30; //red
+							break;
+						case 2: r=221; g=0; b=121; //red-pink
+							break;
+						case 3: r=213; g=0; b=205; //pink
+							break;
+						case 4: r=128; g=0; b=206; //purple
+							break;
+						case 5: r=40; g=0; b=198; //lavender
+							break;
+						case 6: r=0; g=39; b=191; //blue
+							break;
+						default: r=255; g=255; b=255; //white
+							break;
+						*/
+						
+						/* red/blue HSV gradient
+						case 1: r=229; g=0; b=30; //red
+							break;
+						case 2: r=221; g=144; b=0; //orange
+							break;
+						case 3: r=120; g=213; b=0; //lime
+							break;
+						case 4: r=0; g=206; b=45; //green
+							break;
+						case 5: r=0; g=197; b=198; //teal
+							break;
+						case 6: r=0; g=39; b=191; //blue
+							break;
+						default: r=255; g=255; b=255; //white
+							break;
+						*/
+						
+						//red/blue HSV high saturation
+						case 1: r=229; g=0; b=30; //red
+							break;
+						case 2: r=241; g=114; b=0; //orange
+							break;
+						case 3: r=140; g=233; b=0; //lime
+							break;
+						case 4: r=0; g=226; b=65; //green
+							break;
+						case 5: r=0; g=185; b=218; //teal
+							break;
+						case 6: r=0; g=59; b=211; //blue
+							break;
+						default: r=255; g=255; b=255; //white
+							break;
+					}
+					
+				}
+				
                 //IJ format: "x y z"  IJWidth+1   
                 //v3d format: "x,y,z,radius,shape,name,comment,color_r,color_g,color_b"
                 //                                        IJHeight inverted                    IJDepth+1                               v3d additional params
-                String newLine = (""+(Integer.parseInt(t[0].trim()) + 1)+", "+(tempH)+", "+(Integer.parseInt(t[2].trim()) + 1)+", "+"0,1,detected center "+ID+",0,255,50,25");
+                String newLine = (""+(Integer.parseInt(t[0].trim()) + 1)+", "+(tempH)+", "+(Integer.parseInt(t[2].trim()) + 1)+", "+"0,1,detected center "+ID+",0,"+r+","+g+","+b);
                 
                 
                 return newLine;
