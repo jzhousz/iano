@@ -1,0 +1,26 @@
+Basic Steps for Building a BIOCAT release
+   2/26/2016
+
+1. Build an executable jar file using Eclipse.
+     biocat.jar  - It should have the images folder, and not the src folder.
+2. Clean up the biocat.jar file to remove:
+  a. src folder if it is there.
+  b. unrelated projects if there are any (e.g. cell_counting, mRMR).
+  c. the library if there are any
+  (Note: If we use maven or ant later, then the cleanup step can be avoided.)    
+3. Update ReleaseNotes.txt.  
+   Check in the ReleaseNotes.txt.
+   (Optional: update readme.txt if needed.). 
+4. Create a folder BIOCAT-mmddyyyy-multi, with all other resources to be built. Total 9 items.
+    - biocat.jar
+	- BioCAT_lib
+	- Sample Image Sets
+	- plugins folder of 3rd party algorithms.
+	- Algorithms.xml  (the newest one that you checked out)
+	- Readme.txt
+	- ReleaseNotes.txt
+	- Terms and Conditions.txt
+	- run.bat (for windows)
+	- run.sh  (for Unix/Mac)
+5. run biocat using the example set problem using a basic extractor and classifier to validate the release.
+6. Zip the folder. The zip file is: BIOCAT-mmddyyyy-multi.zip
