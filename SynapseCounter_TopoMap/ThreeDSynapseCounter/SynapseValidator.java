@@ -11,11 +11,12 @@
 *		11/22/14 - added averages
 *		11/24/14 - cleaned up decimals
 *        1/23/15 - fixed averaging error
-*
+*        1/23/16 - consolidated extra marker output to another file
+*				 - added more marker output, especially markers that fall inside each region for visualization. 
 *       TODO:
 *		-add marker output of results for each region so v3d can compare the two.
 *       -codify 'close enough' calculation.
-*		-something I forgot at the moment, will update. 
+*		
 */
 
 ///////////////////////////////////////////////////////////////
@@ -187,78 +188,149 @@ public class SynapseValidator {
 		int regionIndex = 0;
 		Point3D p3d;
 		
-		
-		
-		//scan each region for markers from arMarkers that exist here.
-		for(RegionData rData : gtRegionData){
-			System.out.println("calculating fraction for region "+(regionIndex+1));
-			arMarkersInRegion.clear();
+		try {
+				
+			//extra marker output files
+			Date d = new Date();
+			SimpleDateFormat df =new SimpleDateFormat("MM_dd_yyyy_hhmmss" );
+				//extra file 1
+			String fName = new String("Extra_Output_markers_from_test_regions" + df.format(d) + ".txt" );
+			File fileExtra = new File(fName);
+			BufferedWriter extraOut = new BufferedWriter(new FileWriter(fileExtra));
+				//extra file 2
+			String fName2 = new String("Extra_Output2_markers_from_manual_fullscale" + df.format(d) + ".txt" );
+			File fileExtra2 = new File(fName2);
+			BufferedWriter extraOut2 = new BufferedWriter(new FileWriter(fileExtra2));
+				//extra file 3
+			String fName3 = new String("Extra_Output3_precise&recall_markers" + df.format(d) + ".txt" );
+			File fileExtra3 = new File(fName3);
+			BufferedWriter extraOut3 = new BufferedWriter(new FileWriter(fileExtra3));
 			
-			//do total count. need to determine what results synapses fall in regions.
-			for(int z = rData.cornerZ; z< rData.cornerZ+rData.depth; z++){
-				System.out.print("\nz = " +z+" ");
-				for(int y = rData.cornerY; y<=rData.cornerY+rData.height; y++){
-					for(int x = rData.cornerX; x<=rData.cornerX+rData.width; x++){
-						hashIndex = calcIndex(x, y, z, width, height);
-					
-						p3d = arMarkers.get(hashIndex);
-						if(p3d != null){
-							arMarkersInRegion.add(p3d);
-							System.out.print('x');
-						} 
+			//scan each region for markers from arMarkers that exist here.
+			for(RegionData rData : gtRegionData){
+				System.out.println("calculating fraction for region "+(regionIndex+1));
+				arMarkersInRegion.clear();
+				
+				//do total count. need to determine what results synapses fall in regions.
+				for(int z = rData.cornerZ; z< rData.cornerZ+rData.depth; z++){
+					System.out.print("\nz = " +z+" ");
+					for(int y = rData.cornerY; y<=rData.cornerY+rData.height; y++){
+						for(int x = rData.cornerX; x<=rData.cornerX+rData.width; x++){
+							hashIndex = calcIndex(x, y, z, width, height);
+						
+							p3d = arMarkers.get(hashIndex);
+							if(p3d != null){
+								arMarkersInRegion.add(p3d);
+								System.out.print('x');
+							} 
+						}
+					} 
+				}
+				
+				
+				//NEW TEST output the markers in region and markers in region.
+				//////////////////
+				/*extraOut.write("\n#MARKERS IN REGION from Test File - Native coordinates "+(regionIndex+1)); 
+				extraOut.write(System.getProperty("line.separator"));
+				for( Point3D p : arMarkersInRegion) {
+					extraOut.write(p.x + " " + p.y + " " + p.z);
+					extraOut.write(System.getProperty("line.separator"));
+				}
+				*/
+				extraOut.write("\n#MARKERS IN REGION from test File - Adjusted to region "+(regionIndex+1));
+				extraOut.write(System.getProperty("line.separator"));
+				RegionData r = gtRegionData.get(regionIndex);
+				for( Point3D p : arMarkersInRegion) {
+					extraOut.write((p.x-r.cornerX) + " " + (p.y-r.cornerY) + " " + (p.z-r.cornerZ));
+					extraOut.write(System.getProperty("line.separator"));
+				}
+				
+				extraOut2.write("\n#MARKERS IN REGION manual annotation File "+(regionIndex+1));
+				extraOut2.write(System.getProperty("line.separator"));
+				for( Point3D p : gtRegionMarkers.get(regionIndex)) {
+					extraOut2.write(p.x + " " + p.y + " " + p.z);
+					extraOut2.write(System.getProperty("line.separator"));
+				}
+				///////////////////
+				
+				//fraction
+				// results for detected over real
+				double fraction =  (double)arMarkersInRegion.size() / gtRegionMarkers.get(regionIndex).size();
+				valResults[regionIndex][0] = fraction;
+				System.out.println("\nfraction = "+ arMarkersInRegion.size() + " / " + gtRegionMarkers.get(regionIndex).size() + " = " + fraction );
+			
+			
+				// precision
+				// use current arraylist of markers in region
+				int preciseMarkers = 0;
+				double precision = 0;
+				
+				//TEST EXTRA FILE OUTPUT
+				extraOut3.write("\n#PRECISE MARKERS "+(regionIndex+1));
+				extraOut3.write(System.getProperty("line.separator"));
+				for(Point3D p : arMarkersInRegion) {
+					if(markerNear(p, rData, gtRegionMarkers.get(regionIndex), 7,7,5)) {
+						preciseMarkers++; //actual counter!
+						extraOut3.write(p.x + " " + p.y + " " + p.z);
+						extraOut3.write(System.getProperty("line.separator"));
+						System.out.println("preciseMarker " + preciseMarkers);
 					}
-				} 
-			}
-			
-			//fraction
-			// results for detected over real
-			double fraction =  (double)arMarkersInRegion.size() / gtRegionMarkers.get(regionIndex).size();
-			valResults[regionIndex][0] = fraction;
-			System.out.println("\nfraction = "+ arMarkersInRegion.size() + " / " + gtRegionMarkers.get(regionIndex).size() + " = " + fraction );
-		
-		
-			// precision
-			// use current arraylist of markers in region
-			int preciseMarkers = 0;
-			double precision = 0;
-			
-			for(Point3D p : arMarkersInRegion) {
-				if(markerNear(p, rData, gtRegionMarkers.get(regionIndex), 7,7,5)) {
-					preciseMarkers++;
-					System.out.println("preciseMarker " + preciseMarkers);
+				
 				}
+				
+				
+				precision = (double) preciseMarkers / arMarkersInRegion.size();
+				valResults[regionIndex][1] = precision;
 			
-			}
-			precision = (double) preciseMarkers / arMarkersInRegion.size();
-			valResults[regionIndex][1] = precision;
-		
-		
-			// recall
-			// use current arrayList of markers in region
-			int recallMarkers =0;
-			double recall =0;
 			
-			for (Point3D p : gtRegionMarkers.get(regionIndex)) {
-				if(markerNear(p, rData, arMarkersInRegion, 7,7,5)){
-					recallMarkers++;
-					System.out.println("recallMarker "+recallMarkers);
+				// recall
+				// use current arrayList of markers in region
+				int recallMarkers =0;
+				double recall =0;
+				
+				//TEST EXTRA FILE OUTPUT
+				extraOut3.write("\n#RECALL MARKERS "+(regionIndex+1));
+				extraOut3.write(System.getProperty("line.separator"));
+				for (Point3D p : gtRegionMarkers.get(regionIndex)) {
+					if(markerNear(p, rData, arMarkersInRegion, 7,7,5)){
+						recallMarkers++; //actual counter!
+						extraOut3.write(p.x + " " + p.y + " " + p.z);
+						extraOut3.write(System.getProperty("line.separator"));
+						System.out.println("recallMarker "+recallMarkers);
+					}
+				
+				
 				}
+				
+				
+				recall = (double)recallMarkers / gtRegionMarkers.get(regionIndex).size();
+				valResults[regionIndex][2] = recall;
 			
-			
-			}
-			recall = (double)recallMarkers / gtRegionMarkers.get(regionIndex).size();
-			valResults[regionIndex][2] = recall;
+				
+				//fStat
+				//as F= 2*(p*r)/(p+r)
+				double fStat;
+				fStat = 2 * (precision * recall ) / (precision + recall);
+				valResults[regionIndex][3] = fStat;
 		
+				//last in region loop
+				regionIndex++;
+				System.out.println("...done");
+				
+				//TEST EXTRA FILE OUTPUT
+				extraOut.write(System.getProperty("line.separator"));
+				extraOut2.write(System.getProperty("line.separator"));
+				extraOut3.write(System.getProperty("line.separator"));
+			}
 			
-			//fStat
-			//as F= 2*(p*r)/(p+r)
-			double fStat;
-			fStat = 2 * (precision * recall ) / (precision + recall);
-			valResults[regionIndex][3] = fStat;
-	
-			//last in region loop
-			regionIndex++;
-			System.out.println("...done");
+			//clean up extra marker output file handle
+			extraOut.close();
+			extraOut2.close();
+			extraOut3.close();
+
+			} catch(Exception extra_write_except) {
+				System.out.println("error writing extra file");
+				extra_write_except.printStackTrace();
 		}
 		
 	
@@ -447,7 +519,7 @@ public class SynapseValidator {
 			//file saving mechanics
 			Date date = new Date();
 			SimpleDateFormat fmatDate =new SimpleDateFormat("MM_dd_yyyy_hhmmss" );
-			String fileName = new String("rdl_validation_result_" + fmatDate.format(date) + "_" + extraFile + ".txt" );
+			String fileName = new String("validation_result_" + fmatDate.format(date) + "_" + extraFile + ".txt" );
 			file = new File(fileName);
 			out = new BufferedWriter(new FileWriter(file));
 
