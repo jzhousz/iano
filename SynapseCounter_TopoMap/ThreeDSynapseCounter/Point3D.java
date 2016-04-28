@@ -46,6 +46,12 @@ class Point3D
 	
 	}
 	
+	//offset the point by any X,Y,Z
+	void offsetPoint(int offX, int offY, int offZ) {
+		x += offX;
+		y += offY;
+		z += offZ;
+	}
 	//custom hash NEEDED when override equals
 	@Override
 	public int hashCode() {
