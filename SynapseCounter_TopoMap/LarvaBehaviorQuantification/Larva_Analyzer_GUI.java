@@ -1,8 +1,5 @@
 
 import java.util.ArrayList;
-
-import javax.swing.JOptionPane;
-
 import entities.OptionComponent;
 import ij.IJ;
 import ij.ImagePlus;
@@ -10,14 +7,17 @@ import ij.gui.Roi;
 import ij.io.FileInfo;
 import ij.plugin.PlugIn;
 import ij.plugin.frame.RoiManager;
-import manager.HelperManager;
 import manager.PropertyManager;
 
 /**
- * This class will create all the interface component (e.g. label, text fields,
- * buttons) for users to enter the arguments for the image process.
- */
-public class Larva_Analyzer_GUI implements PlugIn {
+* The class will read information from the opened video and run the GUI class.
+* 
+* @author  Yaoguang Zhong
+* @version 1.1
+* @since   08-02-2016
+*/
+public class Larva_Analyzer_GUI implements PlugIn 
+{
 	
 	public void run(String arg) 
 	{
@@ -25,7 +25,7 @@ public class Larva_Analyzer_GUI implements PlugIn {
 		FileInfo info = ip.getOriginalFileInfo();
 		String dir = info.directory;
 		String fileName = info.fileName;
-		RoiManager rm = RoiManager.getInstance();
+//		RoiManager rm = RoiManager.getInstance();
 		RoiManager roiManager = RoiManager.getInstance();
 		ArrayList<Roi> listRoi = new ArrayList<Roi>();
 		
@@ -53,7 +53,6 @@ public class Larva_Analyzer_GUI implements PlugIn {
 
 			for (Roi r : rois) {
 				listRoi.add(r);
-							
 			}
 		}
 		
