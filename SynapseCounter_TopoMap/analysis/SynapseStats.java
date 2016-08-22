@@ -1,5 +1,9 @@
-package synapse.analysis;
+/* notes from Jon Sanders
 
+	-changed synaspe totaling to ONLY count synaspes that are near neurite, not all in file.
+	- closed writer to stop program from locking finished files.
+	-bins now passed by parameter to constructor. old default values still remain.
+*/
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -20,14 +24,20 @@ public class SynapseStats implements Runnable {
 
 	private AnnOutputPanel pnlStatus = null;
 
-	static final double MIN_TH = 3.6;
-	static final double MAX_TH = 16.0;
-
+	//BIN CONTROLS
+	static final double MIN_TH_DEFAULT = 3.6;
+	static final double MAX_TH_DEFAULT = 16.0;
+	static final int 	BINS_DEFAULT = 6;
+	
+	private double minTh,maxTh;
+	private int bins;
+	
+	//other options
 	static final double SEARCH_TH = 25; // Radius threshold for proximity search
 
 	static final double DENSITY_FACTOR = 1 / (2 * Math.PI);
 
-	static final int BINS = 6;
+
 
 	float[] radiusMap = null;
 
@@ -37,13 +47,18 @@ public class SynapseStats implements Runnable {
 	JFileChooser fileChooser = new JFileChooser();
 
 	public SynapseStats(File synapseFile, File[] neuronFiles,
-			AnnOutputPanel pnlStatus, int width, int height, int depth) {
+			AnnOutputPanel pnlStatus, int width, int height, int depth,
+			double min, double max, int b) {
 		this.synapseFile = synapseFile;
 		this.neuronFiles = neuronFiles;
 		this.pnlStatus = pnlStatus;
 		this.width = width;
 		this.height = height;
 		this.depth = depth;
+		
+		this.minTh = (min != 0) ? min : MIN_TH_DEFAULT;
+		this.maxTh = (max != 0) ? max : MAX_TH_DEFAULT;
+		this.bins  = (b != 0)   ? b   : BINS_DEFAULT;
 
 		// Initialize radius map to all -1 as default
 		int size = width * height * depth;
@@ -74,21 +89,28 @@ public class SynapseStats implements Runnable {
 		String line = null;
 		double totalLength = 0;
 
-		double[] binLength = new double[BINS];
+		double[] binLength = new double[bins];
 
-		double[] density = new double[BINS];
-		double[] binThreshold = new double[BINS - 1];
-		double binSize = (MAX_TH - MIN_TH) / (BINS - 2);
+		double[] density = new double[bins];
+		double[] binThreshold = new double[bins - 1];
+		double binsize = (maxTh - minTh) / (bins - 2);
 
-		// Initialize BINS - 1 thresholds for BINS bins
-		binThreshold[0] = MIN_TH;
-		binThreshold[BINS - 2] = MAX_TH;
-		for (int i = 1; i < BINS - 2; i++) {
-			binThreshold[i] = binThreshold[i - 1] + binSize;
+		// Initialize bins - 1 thresholds for bins bins
+		binThreshold[0] = minTh;
+		binThreshold[bins - 2] = maxTh;
+		for (int i = 1; i < bins - 2; i++) {
+			binThreshold[i] = binThreshold[i - 1] + binsize;
 		}
 
+		//debug bin size print
+		System.out.println("BIN SIZE:" +binsize);
+		System.out.println("BIN THRESHIOLDS:");
+		for (int i = 0; i < bins-1; i++) {
+			System.out.println(binThreshold[i]);
+		}
+		
 		// Initialize length and density to zero
-		for (int i = 0; i < BINS; i++) {
+		for (int i = 0; i < bins; i++) {
 			binLength[i] = 0;
 			density[0] = 0;
 		}
@@ -98,8 +120,8 @@ public class SynapseStats implements Runnable {
 
 		int intX, intY, intZ, r, rz;
 		double dx, dy, dz;
-		int num;
-
+		int num;         
+		
 		double xPrev, yPrev, zPrev;
 		int numPrev, parent, parentPrev;
 
@@ -127,6 +149,8 @@ public class SynapseStats implements Runnable {
 				line = scanner.nextLine();
 				line.trim();
 
+				
+				
 				if (line.startsWith("#") || line.isEmpty())
 					continue;
 
@@ -185,7 +209,7 @@ public class SynapseStats implements Runnable {
 					segmentLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
 					boolean isFine = true;
-					for (int i = BINS - 2; i >= 0; i--) {
+					for (int i = bins - 2; i >= 0; i--) {
 						if (radius > binThreshold[i]) {
 							binLength[i + 1] += segmentLength;
 							isFine = false;
@@ -205,23 +229,24 @@ public class SynapseStats implements Runnable {
 				parentPrev = parent;
 			}
 			scanner.close();
+			 
 		}
 
-		pnlStatus.setOutput("Total Length: " + totalLength);
+		pnlStatus.setOutput("Total Length: \t\t" + totalLength);
 
-		for (int i = 0; i < BINS; i++)
-			pnlStatus.setOutput("Length for bin " + (i + 1) + ": "
+		for (int i = 0; i < bins; i++)
+			pnlStatus.setOutput((i + 1) + "\t"
 					+ binLength[i]);
 
 		int synapseTotal = 0;
 
-		int[] color = new int[BINS];
-		for (int i = 0; i < BINS; i++) {
+		int[] color = new int[bins];
+		for (int i = 0; i < bins; i++) {
 			color[i] = colorPool[i % 10];
 		}
 
-		int[] synapseCount = new int[BINS];
-		for (int i = 0; i < BINS; i++)
+		int[] synapseCount = new int[bins];
+		for (int i = 0; i < bins; i++)
 			synapseCount[i] = 0;
 
 		// Read the synapse file
@@ -268,7 +293,7 @@ public class SynapseStats implements Runnable {
 				intY = (int) Math.round(y);
 				intZ = (int) Math.round(z);
 
-				synapseTotal++;
+				
 
 				// Proximity search
 				int incr = 0;
@@ -306,8 +331,12 @@ public class SynapseStats implements Runnable {
 										currRadius = radiusMap[index];
 										if (currRadius != -1) {
 											boolean isFine = true;
-											for (int i = BINS - 2; i >= 0; i--) {
+											for (int i = bins - 2; i >= 0; i--) {
 												if (currRadius > binThreshold[i]) {
+													
+													//moved synapse total count to only count colocal synapses
+													synapseTotal++;
+													
 													synapseCount[i + 1]++;
 													density[i + 1] += DENSITY_FACTOR
 															/ currRadius;
@@ -324,6 +353,10 @@ public class SynapseStats implements Runnable {
 												}
 											}
 											if (isFine) {
+												
+												//moved synapse total count to only count colocal synapses
+												synapseTotal++;
+												
 												synapseCount[0]++;
 												density[0] += DENSITY_FACTOR
 														/ currRadius;
@@ -358,56 +391,53 @@ public class SynapseStats implements Runnable {
 		}
 
 		scanner.close();
+		writer.close();
 
 		// ColorLabel legend = new ColorLabel(color);
 
-		pnlStatus
-				.setOutput("--------------------------------------------------");
+		pnlStatus.setOutput("--------------------------------------------------");
 
-		pnlStatus.setOutput("Synapse Count: " + synapseTotal);
-		for (int i = 0; i < BINS; i++)
-			pnlStatus.setOutput("Synapse count for bin " + (i + 1) + ": "
+		pnlStatus.setOutput("Synapse Count: \t\t" + synapseTotal);
+		for (int i = 0; i < bins; i++)
+			pnlStatus.setOutput((i + 1) + "\t"
 					+ synapseCount[i]);
 
-		pnlStatus
-				.setOutput("--------------------------------------------------");
+		pnlStatus.setOutput("--------------------------------------------------");
 		pnlStatus.setOutput("Density over length:");
-		pnlStatus
-				.setOutput("--------------------------------------------------");
+		//pnlStatus.setOutput("--------------------------------------------------");
 		if (totalLength != 0)
-			pnlStatus.setOutput("Total synapse density: " + synapseTotal
+			pnlStatus.setOutput("Total synapse density: \t\t\t" + synapseTotal
 					/ totalLength);
-		for (int i = 0; i < BINS; i++)
+		for (int i = 0; i < bins; i++)
 			if (binLength[i] != 0)
-				pnlStatus.setOutput("Density for bin " + (i + 1) + ": "
+				pnlStatus.setOutput((i + 1) + "\t"
 						+ synapseCount[i] / binLength[i]);
 			else
-				pnlStatus.setOutput("Density for bin " + (i + 1)
-						+ ": [BIN LENGTH 0]");
+				pnlStatus.setOutput((i + 1)
+						+ "\t[BIN LENGTH 0]");
 
-		pnlStatus
-				.setOutput("--------------------------------------------------");
+		pnlStatus.setOutput("--------------------------------------------------");
 		pnlStatus.setOutput("Density over surface:");
-		pnlStatus
-				.setOutput("--------------------------------------------------");
+		//pnlStatus.setOutput("--------------------------------------------------");
 
 		if (totalLength != 0) {
 			double densitySum = 0;
-			for (int i = 0; i < BINS; i++)
+			for (int i = 0; i < bins; i++)
 				densitySum += density[i];
 
-			pnlStatus.setOutput("Total synapse density: " + densitySum
+			pnlStatus.setOutput("Total synapse density: \t\t\t" + densitySum
 					/ totalLength);
 		}
-		for (int i = 0; i < BINS; i++)
+		for (int i = 0; i < bins; i++)
 			if (binLength[i] != 0)
-				pnlStatus.setOutput("Density for bin " + (i + 1) + ": "
+				pnlStatus.setOutput((i + 1) + "\t"
 						+ density[i] / binLength[i]);
 			else
-				pnlStatus.setOutput("Density for bin " + (i + 1)
-						+ ": [BIN LENGTH 0]");
+				pnlStatus.setOutput((i + 1)
+						+ "\t[BIN LENGTH 0]");
 
 		thread = null;
+		
 	}
 
 	public void calcStats() {

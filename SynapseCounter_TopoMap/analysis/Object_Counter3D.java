@@ -1,4 +1,4 @@
-package synapse.analysis;
+
 
 /*3D objects counter v1.4, 14/06/06
 Fabrice P Cordelires, fabrice.cordelieres at curie.u-psud.fr

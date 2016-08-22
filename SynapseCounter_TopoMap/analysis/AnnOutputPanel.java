@@ -1,4 +1,4 @@
-package synapse.analysis;
+
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;

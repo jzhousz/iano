@@ -1,4 +1,12 @@
-package synapse.analysis;
+
+/* notes from Jon Sanders
+
+	-changed default filechooser directory to user/desktop 
+	-added Binning controls to GUI 
+	-set window title
+	-added labels to gui for useability
+*/
+
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -26,18 +34,31 @@ public class Tester extends JFrame implements ActionListener{
 	private JButton btnNeuron = new JButton("Select neuron file...");
 	private JButton btnRun = new JButton("Run");
 	
-	private JTextField tfWidth = new JTextField("1296");
-	private JTextField tfHeight = new JTextField("2333");
-	private JTextField tfDepth = new JTextField("59");
+	private JTextField tfWidth = new JTextField("1024");
+	private JTextField tfHeight = new JTextField("1024");
+	private JTextField tfDepth = new JTextField("155");
+	
+	private JTextField tfMinTh = new JTextField("" + SynapseStats.MIN_TH_DEFAULT);
+	private JTextField tfMaxTh = new JTextField("" + SynapseStats.MAX_TH_DEFAULT);
+	private JTextField tfBins  = new JTextField("" + SynapseStats.BINS_DEFAULT);
 	
 	private JLabel lbSynapse = new JLabel();
 	private JLabel lbNeuron = new JLabel();
+	
+	private JLabel lbMinTh = new JLabel("Min Threshold:");
+	private JLabel lbMaxTh = new JLabel("Max Threshold:");
+	private JLabel lbBins = new JLabel("Bins:");
+	
+	private JLabel lbHeight = new JLabel("Height:");
+	private JLabel lbWidth = new JLabel("Width:");
+	private JLabel lbDepth = new JLabel("Depth:");
 	
 	private JRadioButton rbCalcStats = new JRadioButton("Calculate Stats");
 	private JRadioButton rbConvertNeuron = new JRadioButton("Amira to V3D (neuron trace)");
 	private JRadioButton rbConvertSynapse = new JRadioButton("ImageJ to V3D (synapse)");
 	
 	private final JFileChooser fileChooser = new JFileChooser();
+	private String homeDir = System.getProperty("user.home");
 	
 	private File synapseFile = null;
 	private File[] neuronFiles = null;
@@ -45,21 +66,41 @@ public class Tester extends JFrame implements ActionListener{
 	public Tester(String arg0) {
 		super(arg0);
 		this.add(mainPanel, BorderLayout.NORTH);
-		this.setPreferredSize(new Dimension(640, 480));
+		this.setPreferredSize(new Dimension(680, 720));
+	
+		setTitle("Synapse Density Calculator");
 		
-		mainPanel.setLayout(new GridLayout(4, 3, 2, 2));
+		//main layout
+		mainPanel.setLayout(new GridLayout(0, 3, 2, 2));
+		
+		//file chooser and run buttons
 		mainPanel.add(btnSynapse);
 		mainPanel.add(btnNeuron);
 		mainPanel.add(btnRun);
 		
+		//height width depth selection
+		mainPanel.add(lbWidth);
+		mainPanel.add(lbHeight);
+		mainPanel.add(lbDepth);
 		mainPanel.add(tfWidth);
 		mainPanel.add(tfHeight);
 		mainPanel.add(tfDepth);			
 		
+		//binning controls
+		mainPanel.add(lbMinTh);
+		mainPanel.add(lbMaxTh);
+		mainPanel.add(lbBins);
+		mainPanel.add(tfMinTh);
+		mainPanel.add(tfMaxTh);
+		mainPanel.add(tfBins);
+	
+		
+		//mode options
 		mainPanel.add(rbCalcStats);
 		mainPanel.add(rbConvertNeuron);
 		mainPanel.add(rbConvertSynapse);
-	
+		
+		
 		ButtonGroup group = new ButtonGroup();
 		group.add(rbCalcStats);
 		group.add(rbConvertNeuron);
@@ -85,6 +126,10 @@ public class Tester extends JFrame implements ActionListener{
 		int x = (int)(dim.getWidth() - getWidth())/2;
 		int y = (int)(dim.getHeight() - getHeight())/2;
 		setLocation(x,y);
+		
+		
+		//initialize the file chooser directory
+		fileChooser.setCurrentDirectory(new File(homeDir + System.getProperty("file.separator")+ "Desktop"));
 	}
 	
 	public static void main(String[] args) {
@@ -172,11 +217,24 @@ public class Tester extends JFrame implements ActionListener{
 				return;
 			}		
 			
+			double minTh, maxTh;
+			int bins;
+			try {
+				minTh = Double.parseDouble(tfMinTh.getText());
+				maxTh = Double.parseDouble(tfMaxTh.getText());
+				bins  = Integer.parseInt(tfBins.getText());
+			} catch (NumberFormatException ex2) {
+				pnlStatus.setOutput("Min Threshold and Max Threshold must be doubles.\nBins must be integer.");
+				return;
+			}
+			
+			
 			if(rbCalcStats.isSelected()) {
-				SynapseStats synStats = new SynapseStats(synapseFile, neuronFiles, pnlStatus, width, height, depth);
+				SynapseStats synStats = new SynapseStats(synapseFile, neuronFiles, pnlStatus, width, height, depth, minTh, maxTh, bins);
 				synStats.calcStats();
 			}
 			else {
+				fileChooser.setCurrentDirectory(new File(homeDir + System.getProperty("file.separator")+ "Desktop"));
 				int ret = fileChooser.showSaveDialog(this);
 				if(ret == JFileChooser.CANCEL_OPTION)
 					return;

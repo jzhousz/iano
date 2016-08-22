@@ -1,4 +1,4 @@
-package synapse.analysis;
+
 /*
  10/2/2011  Jie Zhou  3D object counter using 2 channels.
  //added several more GUI elements
@@ -212,6 +212,7 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener,
 		ip.setThreshold(ThrVal, Math.pow(2, 16), ImageProcessor.RED_LUT);
 		img.setSlice((int) NbSlices / 2);
 		img.updateAndDraw();
+
 
 		GenericDialog gd = new GenericDialog(
 				"3D objects counter using 2 channels");
@@ -800,6 +801,7 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener,
 			IJ.run("Fire");
 		}
 
+
 		// "Volume","Surface","Intensity","Centre X","Centre Y","Centre Z","Centre int X","Centre int Y","Centre int Z"
 
 		if (showNumbers) {
@@ -855,6 +857,7 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener,
 			Centres.getProcessor().setMinAndMax(1, nParticles);
 			Centres.updateAndDraw();
 		}
+
 
 		if (showCentresInt) {
 			CentresInt.getProcessor().setMinAndMax(1, nParticles);
@@ -977,6 +980,7 @@ public class Object_Counter3D_2Channel implements PlugIn, AdjustmentListener,
 		thread.start();
 		return thread;
 	}
+
 
 	public void run() {
 		Width = img.getWidth();
