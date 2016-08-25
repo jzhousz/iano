@@ -385,13 +385,14 @@ public class SynapseStats implements Runnable {
 			}
 
 			writer.flush();
+			writer.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		scanner.close();
-		writer.close();
+		scanner.close();  
+		
 
 		// ColorLabel legend = new ColorLabel(color);
 
