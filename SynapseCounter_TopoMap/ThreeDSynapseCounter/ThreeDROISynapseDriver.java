@@ -479,7 +479,7 @@ public class ThreeDROISynapseDriver {
 		*/
 		//IN PRGRESS MASK SELECTION CONVERSION
 		if(threshold < 0) {
-			RatsSliceProcessor3D ratsProc = new RatsSliceProcessor3D(noise, lambda, minLeaf, imp, 1);
+			RatsSliceProcessor ratsProc = new RatsSliceProcessor(noise, lambda, minLeaf, imp, 1);
 			//ratsProc.getMask().show(); //be warned of bug when closing this window, crashes due to throwing out mask!
 			mask = ratsProc.getMask();
 			IJ.log("Converted to RATS mask!");
@@ -524,6 +524,10 @@ public class ThreeDROISynapseDriver {
 		int indexsmall = 0;
 		boolean cubeComplete = true; //indicates if we can get complete cube data (i.e. the pixel is not too close to boundary)
 		ImageProcessor maskIp = null;
+		
+		//debug check ratio of classification
+		int totalPixelsClassified = 0;
+		
 		//System.out.println("getting cube around each feature..."); //debug
 		for (int cz = 0; cz < totaldepth; cz++) {
 			maskIp = mask.getStack().getProcessor(cz+1); //get the correct mask for comparison
@@ -599,41 +603,28 @@ public class ThreeDROISynapseDriver {
 						  list.add(imageStacks);
 						  float[][] fea3D = get3DFeaViaExtrator(list, imageType, height, width, depth, chainList );
 						  fea = fea3D[0];
-						  
-						 // System.out.println("Extracted features:"); //debug
-						 // for(int i=0; i<fea.length; i++ ) { //debug
-						 //	  System.out.print(fea[i] + ", ");
-						 // }
 						}
+						
 						try {
 							
 							int result = classifier.classifyUsingModel(
 									classifier.getModel(), fea, prob);		
-							//System.out.println(result);
+							
 							
 							/*if(result == 1) 
 							{
-								
 								//mean shift
-								
-								//old, 7x7x3 region
+								//7x7x3 region
 								Point3D shifted=getMassCenter(imp, totalwidth, totalheight, totaldepth, cx, cy, cz, 3,3,1);
 								
-								//try 11x11x7 region
-								//Point3D shifted=getMassCenter(imp, totalwidth, totalheight, totaldepth, cx, cy, cz, 5, 5, 3);
-								
-								//remove duplicates or those that are close enough
-								//contains() not useful unless override hashcode.
-								//linear search, or use a boolean map to search neighborhood 5*5*3
-								//if(!(searchForIt(centers,shifted, rx, ry, rz))) {
-									centers.add(shifted);
-									total ++;
-								//}
-							}
-							*/
+								//add to master list
+								centers.add(shifted);
+								total ++;	
+							}*/
+
+							totalPixelsClassified++;
 							
 							//debug add any positive SVM result
-							
 							if(result == 1) {
 								centers.add(new Point3D(cx,cy,cz));
 								total ++;
@@ -650,18 +641,24 @@ public class ThreeDROISynapseDriver {
 
 		
 		//new 12/21/15 try post-scan search and remove for nearby centers
-		Iterator<Point3D> it = centers.iterator();
+		
+		/*Iterator<Point3D> it = centers.iterator();
 		while (it.hasNext()){
 			if(searchForIt(centers, it.next(), rx, ry, rz)) {
 				it.remove();
 			}
-		}
+		}*/
+		
 		
 		//swap back to system.out!
 		System.setOut(originalStream);		
 		
-		System.out.println("total detected positive:"+total);
-		System.out.println("total detected positive after mean-shifting:"+centers.size());
+		System.out.println("total detected positive: "+total);
+		System.out.println("total detected positive after mean-shifting: "+centers.size());
+		System.out.println("total Classified voxels: "+totalPixelsClassified);
+		//PAUSE
+		//Scanner keyboard = new Scanner(System.in);
+		//keyboard.nextLine();
 		
 		return centers;
 	}
