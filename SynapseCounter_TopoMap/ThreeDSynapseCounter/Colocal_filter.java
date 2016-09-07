@@ -20,11 +20,6 @@ import java.io.*;
         
     
     
-    sections of code amalgamated from:
-        Object_Counter3D_RATS_splitting.java
-        Fit_Polynomial.java (IJ example)
-        Axon_grid.java
-        SynapseValidator.java
 */
 
 public class Colocal_filter implements PlugIn, DialogListener{

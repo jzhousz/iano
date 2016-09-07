@@ -40,7 +40,7 @@ public class MarkerConverter {
                 line = in.readLine();
                 while(line.contains(""+"#") || line.length()<=1 || line.startsWith(" ") ){ //scrub header comments and blanks
                                 if ( line.startsWith(" ") ) { //.xls comment
-                                    line = "x   y   z";
+                                    line = "#x   y   z";
                                 }
                                 outputArray.add(line);//preserve blanks and comments
                                 //System.out.println(line);//debug echo to console
@@ -120,9 +120,9 @@ public class MarkerConverter {
             
             String[] t = l.split("\t");
 
-            xCent = Double.parseDouble(t[4].trim());
-            yCent = Double.parseDouble(t[5].trim());
-            zCent = Double.parseDouble(t[6].trim());
+            xCent = Double.parseDouble(t[18].trim());
+            yCent = Double.parseDouble(t[19].trim());
+            zCent = Double.parseDouble(t[20].trim());
             x = (int) Math.round(xCent);
             y = (int) Math.round(yCent);
             z = (int) Math.round(zCent);
