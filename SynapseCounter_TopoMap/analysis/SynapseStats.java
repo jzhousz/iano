@@ -14,29 +14,39 @@ import java.util.Scanner;
 import javax.swing.JFileChooser;
 
 public class SynapseStats implements Runnable {
+	
+	//BIN CONTROLS
+	static final double MIN_TH_DEFAULT = 6.7;
+	static final double MAX_TH_DEFAULT = 16.0;
+	static final int 	BINS_DEFAULT = 5;
+	
+	//other options
+	static final double SEARCH_TH = 25; // Radius threshold for proximity search
+	static final double DENSITY_FACTOR = 1 / (2 * Math.PI);
+	
+	//mode constants
+	static final int MICRON_MODE = 1;
+	static final int VOXEL_MODE = 0;
+	
+	//scale constants
+	static final double X_SCALE_DEFAULT = 0.04697266;
+	static final double Y_SCALE_DEFAULT = 0.04697266;
+	static final double Z_SCALE_DEFAULT = 0.13;
+	
+	//datamembers
 	private File synapseFile = null;
 	private File[] neuronFiles = null; // Neuron reconstruction data can be
 										// loaded from multiple files
-
-	private int width, height, depth;
-
+	private int width, height, depth, mode;
+    private double xScale, yScale, zScale;
+	
 	private Thread thread = null;
 
 	private AnnOutputPanel pnlStatus = null;
 
-	//BIN CONTROLS
-	static final double MIN_TH_DEFAULT = 3.6;
-	static final double MAX_TH_DEFAULT = 16.0;
-	static final int 	BINS_DEFAULT = 6;
-	
 	private double minTh,maxTh;
 	private int bins;
 	
-	//other options
-	static final double SEARCH_TH = 25; // Radius threshold for proximity search
-
-	static final double DENSITY_FACTOR = 1 / (2 * Math.PI);
-
 
 
 	float[] radiusMap = null;
@@ -48,7 +58,8 @@ public class SynapseStats implements Runnable {
 
 	public SynapseStats(File synapseFile, File[] neuronFiles,
 			AnnOutputPanel pnlStatus, int width, int height, int depth,
-			double min, double max, int b) {
+			double min, double max, int b, int m,
+			double xs, double ys, double zs) {
 		this.synapseFile = synapseFile;
 		this.neuronFiles = neuronFiles;
 		this.pnlStatus = pnlStatus;
@@ -60,6 +71,12 @@ public class SynapseStats implements Runnable {
 		this.maxTh = (max != 0) ? max : MAX_TH_DEFAULT;
 		this.bins  = (b != 0)   ? b   : BINS_DEFAULT;
 
+		//mode+scaling control, TBD GUI
+		this.mode = m;
+		this.xScale = xs;
+		this.yScale = ys;
+		this.zScale = zs;
+		
 		// Initialize radius map to all -1 as default
 		int size = width * height * depth;
 		radiusMap = new float[size];
@@ -206,8 +223,19 @@ public class SynapseStats implements Runnable {
 					dy = y - yPrev;
 					dz = z - zPrev;
 
-					segmentLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
+					/* Micron mode calculation switch for length here! */
+					if(mode == MICRON_MODE) {
+						dx *= xScale;
+						dy *= yScale;
+						dz *= zScale;
+						segmentLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
+					} else if(mode == VOXEL_MODE) {
+						segmentLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
+					} else {
+						pnlStatus.setOutput("Invalid mode setting specified.");
+						return;
+					}
+					
 					boolean isFine = true;
 					for (int i = bins - 2; i >= 0; i--) {
 						if (radius > binThreshold[i]) {
@@ -405,7 +433,7 @@ public class SynapseStats implements Runnable {
 
 		pnlStatus.setOutput("--------------------------------------------------");
 		pnlStatus.setOutput("Density over length:");
-		//pnlStatus.setOutput("--------------------------------------------------");
+		pnlStatus.setOutput("--------------------------------------------------");
 		if (totalLength != 0)
 			pnlStatus.setOutput("Total synapse density: \t\t\t" + synapseTotal
 					/ totalLength);
@@ -419,7 +447,7 @@ public class SynapseStats implements Runnable {
 
 		pnlStatus.setOutput("--------------------------------------------------");
 		pnlStatus.setOutput("Density over surface:");
-		//pnlStatus.setOutput("--------------------------------------------------");
+		pnlStatus.setOutput("--------------------------------------------------");
 
 		if (totalLength != 0) {
 			double densitySum = 0;
