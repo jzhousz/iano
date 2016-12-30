@@ -55,7 +55,8 @@ public class AnnotationManager
 	* @param pointStart The point start at.
 	* @return None.
 	*/
-	public AnnotationManager(Larva featuresOfLarva, ImagePlus imagePlus, Point pointStart) {
+	public AnnotationManager(Larva featuresOfLarva, ImagePlus imagePlus, Point pointStart) 
+	{
 		this(featuresOfLarva, imagePlus);
 		this.pointCurrent = pointStart;
 	}
@@ -227,6 +228,8 @@ public class AnnotationManager
 //				+ ",angRef: " + larva.getAngleRefCenterN1());
 		
 		annotate("Number of rolls in this rolling section: " + larva.getRolls() );
+		annotate("Segmentation Technique: " + larva.getSegmentTechnique() +", Num of larvae: " +larva.getNumLarvae() 
+		+", Num of larvae: " +larva.getNumLarvaeDouble() );
 	}
 
 	/**

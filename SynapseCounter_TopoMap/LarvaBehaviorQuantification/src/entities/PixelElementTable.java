@@ -270,6 +270,21 @@ public class PixelElementTable
 		return frameSegments;
 	}
 	
+	public String toString()
+	{
+		String str = "";
+		
+		for (int y = 0; y < NUM_ROW; y++)
+		{
+			for (int x = 0; x < NUM_COLUMN; x++)
+			{
+				str += pixelElements[y][x].getValue() + ", ";
+			}
+			str += "\n";
+		}
+		
+		return str;
+	}
 
 	public void setFrameSegments(ArrayList<PixelElementSegment> frameSegments) {
 		this.frameSegments = frameSegments;

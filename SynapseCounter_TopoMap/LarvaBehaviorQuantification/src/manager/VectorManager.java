@@ -1,6 +1,7 @@
 package manager;
 
 import java.awt.Point;
+import java.util.ArrayList;
 
 import org.ejml.simple.SimpleMatrix;
 
@@ -46,12 +47,47 @@ public class VectorManager
 	* @param vals The 1D double array.
 	* @return The SimpleMatrix.
 	*/
+	public static SimpleMatrix newSimpleMatrix(ArrayList<Double> vals)
+	{
+		double[][] matr = new double[1][vals.size()];
+
+		for(int i = 0; i < vals.size(); i ++)
+		{
+			matr[0][i] = vals.get(i);
+		}
+		
+		return new SimpleMatrix(matr);
+	}
+	
+	/**
+	* New SimpleMatrix with a 1D double array.
+	* 
+	* @param vals The 1D double array.
+	* @return The SimpleMatrix.
+	*/
 	public static SimpleMatrix newSimpleMatrix(double[] vals)
 	{
 		double[][] matr = new double[1][vals.length];
 		matr[0] = vals;
 		
 		return new SimpleMatrix(matr);
+	}
+	
+	/**
+	* Covert Points array to SimpleMatrix array.
+	* 
+	* @param points The points needs to be converted to simple matrix.
+	* @return The SimpleMatrix.
+	*/
+	public static ArrayList<SimpleMatrix> convertPtToMatrixArray(ArrayList<Point> points)
+	{
+		ArrayList<SimpleMatrix> ptsMatr = new ArrayList<SimpleMatrix>();
+		for(Point point : points)
+		{
+			ptsMatr.add( convertPtToMatrix(point) );
+		}
+		
+		return ptsMatr;
 	}
 	
 	/**
@@ -62,8 +98,6 @@ public class VectorManager
 	*/
 	public static SimpleMatrix convertPtToMatrix(Point point)
 	{
-//		double[][] matr = {{point.getX()}, {point.getY()}};
-		
 		return newSimpleMatrix(new double[]{point.getX(), point.getY()});
 	}
 	

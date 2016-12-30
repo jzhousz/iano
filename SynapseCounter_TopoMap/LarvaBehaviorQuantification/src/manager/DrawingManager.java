@@ -206,7 +206,7 @@ public class DrawingManager
 		{
 			pointQuartile = MathManager.addPoints(pointBegin, pt );
 			
-			PixelPutter.putPixels(imagePlusAllFull, pointQuartile, 3, 3, Color.cyan);
+			PixelPutter.putPixels(imagePlusAllFull, pointQuartile, 3, 3, Color.red);
 		}
 	}
 	
@@ -275,10 +275,7 @@ public class DrawingManager
 				imagePlusAllFull.getProcessor().putPixel(x + pointBegin.x, y + pointBegin.y, colorBorderInts);
 		}
 		
-//		Point ptRight = new Point(pointStart.x + featuresOfLarva.getCenterPoint().x + 10, pointStart.y + featuresOfLarva.getCenterPoint().y);
 		Point ptCenter = MathManager.addPoints(pointBegin, featuresOfLarva.getCenterPoint() );
-		
-//		Point ptMiddle = MathManager.addPoints(pointBegin, featuresOfLarva.getCenterPoint() );
 		
 		int[] colorSkeletonInts = new int[] { Color.pink.getRed(), Color.pink.getGreen(), Color.pink.getBlue() };
 		for (int y = 0; y < imagePlusSkeleton.getHeight(); y++)
@@ -291,19 +288,16 @@ public class DrawingManager
 		
 		LinearLine lineCenterMassParel = MathManager.getParallelLine(featuresOfLarva.getLinearLineCenterMass().getBeta1(), ptCenter);
 		
-//		drawLine(lineCenterMassParel, ptCenter, 20, 1, Color.green);
 		drawLineRectangle(lineCenterMassParel, ptCenter, ptCenter, 20, 1, Color.green);
 		
 		LinearLine linearLineCenterPoint1 = MathManager.getLinearLine(ptCenter, 
 				MathManager.addPoints(pointBegin, featuresOfLarva.getEndPoints().get(0)) );
 
-//		drawLine(linearLineCenterPoint1, MathManager.addPoints(pointBegin, featuresOfLarva.getEndPoints().get(0)), 20, 1, Color.yellow);
 		drawLineRectangle(linearLineCenterPoint1, MathManager.addPoints(pointBegin, featuresOfLarva.getEndPoints().get(0)), ptCenter, 20, 1, Color.yellow);
 		
 		LinearLine linearLineCenterPoint2 = MathManager.getLinearLine(ptCenter, 
 				MathManager.addPoints(pointBegin, featuresOfLarva.getEndPoints().get(1)) );
 		
-//		drawLine(linearLineCenterPoint2, MathManager.addPoints(pointBegin, featuresOfLarva.getEndPoints().get(1)), 20, 1, Color.cyan);
 		drawLineRectangle(linearLineCenterPoint2, MathManager.addPoints(pointBegin, featuresOfLarva.getEndPoints().get(1)), ptCenter, 20, 1, Color.cyan);
 		
 		// mark the end points on the image
@@ -334,6 +328,69 @@ public class DrawingManager
 
 				if (x < 1 || x > imagePlusCrop.getWidth() - 2)
 					imagePlusAllFull.getProcessor().putPixel(x + pointStart.x, y + pointStart.y, colorBorderInts);
+			}
+	}
+	
+	/**
+	* Draw the color larva on the image plus but not override the previous color pixels (e.g., pixels of black).
+	* 
+	* @param imagePlusBinaryOn The image plus on which the program draw.
+	* @param imagePlusBinaryUse The image plus used to draw on imagePlusOn.
+	* @param pointStart The top left point.
+	* @param threshold If the pixel in imagePlusUse is greater than or equal to the threshold (e.g., 128)
+	*        and the pixel value in imagePlusOn is less than the threshold, override the pixel in imagePlusOn
+	*        with the pixel in imagePlusUse.
+	*/
+	public static void addImagePlus(ImagePlus imagePlusBinaryOn, ImagePlus imagePlusBinaryUse, Point pointStart, int threshold)
+	{
+		int pxlValueUse = 0;
+				
+		for (int y = 0; y < imagePlusBinaryUse.getHeight(); y++)
+			for (int x = 0; x < imagePlusBinaryUse.getWidth(); x++)
+			{
+				pxlValueUse = imagePlusBinaryUse.getProcessor().getPixel(x, y);
+				
+				if(pxlValueUse >= threshold)
+				{
+					imagePlusBinaryOn.getProcessor().putPixel(x + pointStart.x, y + pointStart.y, pxlValueUse);
+				}
+			}
+	}
+	
+	/**
+	* Draw the color larva on the image plus but not override the previous color pixels (e.g., pixels of black).
+	* 
+	* @param imagePlusOn The image plus on which the program draw.
+	* @param imagePlusUse The image plus used to draw on imagePlusOn.
+	* @param pointStart The top left point.
+	* @param threshold If the pixel in imagePlusUse is greater than or equal to the threshold (e.g., 128)
+	*        and the pixel value in imagePlusOn is less than the threshold, override the pixel in imagePlusOn
+	*        with the pixel in imagePlusUse.
+	*/
+	public static void drawOnImagePlusNotOverride7(ImagePlus imagePlusOn, ImagePlus imagePlusUse, Point pointStart, int threshold)
+	{
+		// drawing the small window with the larva
+//		int[] colorInts = new int[3];
+//		int[] colorBorderInts = new int[]{ colorBorder.getRed(), colorBorder.getGreen(), colorBorder.getBlue() };
+
+		int pxlValueUse = 0;
+//		int pxlValueOn = 0;
+				
+		for (int y = 0; y < imagePlusUse.getHeight(); y++)
+			for (int x = 0; x < imagePlusUse.getWidth(); x++)
+			{
+				pxlValueUse = imagePlusUse.getProcessor().getPixel(x, y);
+				
+				if(pxlValueUse <= threshold)
+				{
+					imagePlusOn.getProcessor().putPixel(x + pointStart.x, y + pointStart.y, pxlValueUse);
+				}
+
+//				if (x < 1 || x > imagePlusUse.getWidth() - 2)
+//					imagePlusOn.getProcessor().putPixel(x + pointStart.x, y + pointStart.y, colorBorderInts);
+//				
+//				if (y < 1 || y > imagePlusUse.getHeight() - 2)
+//					imagePlusOn.getProcessor().putPixel(x + pointStart.x, y + pointStart.y, colorBorderInts);
 			}
 	}
 	

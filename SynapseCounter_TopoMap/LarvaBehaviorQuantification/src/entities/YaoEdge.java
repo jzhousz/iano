@@ -1,6 +1,7 @@
 package entities;
 
-import org.python.google.common.collect.Multimap;
+import java.util.ArrayList;
+import java.util.Map;
 
 public class YaoEdge
 {
@@ -48,6 +49,49 @@ public class YaoEdge
 			return true;
 		
 		return false;
+	}
+	
+	/**
+	 * Get the Pixel Element Segment from a map containing YaoEdge and PixelElementSegment where the edge in the map
+	 * is the same as the edge in the argument list. (same means the edge contains two same nodes.)
+	 * 
+	 * @param peEdgeSegmentsMap The map containing YaoEdge and PixelElementSegment.
+	 * @param edge The edge.
+	 * @return The Pixel Element Segment.
+	 */
+	public static PixelElementSegment getElementSegment(Map<YaoEdge,PixelElementSegment> peEdgeSegmentsMap, YaoEdge edge)
+	{
+		PixelElementSegment pixelElementSegment = null;
+		
+		for (Map.Entry<YaoEdge,PixelElementSegment> entry : peEdgeSegmentsMap.entrySet())
+		{
+//		    System.out.println(entry.getKey() + "/" + entry.getValue());
+			if(entry.getKey().isEqual(edge))
+				pixelElementSegment = entry.getValue();
+		}
+		
+		return pixelElementSegment;
+	}
+	
+	/**
+	 * Extract the YaoEdge (the key of the map) and store it to an array list.
+	 * 
+	 * @param peEdgeSegmentsMap The map containing YaoEdge and PixelElementSegment.
+	 * @return The array list of YaoEdge.
+	 */
+	public static ArrayList<YaoEdge> getEdges(Map<YaoEdge,PixelElementSegment> peEdgeSegmentsMap)
+	{
+		ArrayList<YaoEdge> edges = new ArrayList<YaoEdge>();
+		
+		for (Map.Entry<YaoEdge,PixelElementSegment> entry : peEdgeSegmentsMap.entrySet())
+		{
+//		    System.out.println(entry.getKey() + "/" + entry.getValue());
+//			if(entry.getKey().isEqual(edge))
+//				pixelElementSegment = entry.getValue();
+			edges.add(entry.getKey());
+		}
+		
+		return edges;
 	}
 
 	public static void main(String[] args)

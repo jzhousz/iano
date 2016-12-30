@@ -103,8 +103,11 @@ public class PixelPutter
 	{
 		int[] colorMark = new int[]{color.getRed(), color.getGreen(), color.getBlue()};
 		
-		int rowNumHalf = rowNum / 2;
-		int columnNumHalf = columnNum / 2;
+		int rowNumHalf = MathManager.getRoundedInt( (double) rowNum / 2 ) ;
+		int columnNumHalf = MathManager.getRoundedInt( (double) columnNum / 2 );
+		
+//		int rowNumHalf = MathManager.getRoundedInt( (double) (rowNum - 1) / 2 ) ;
+//		int columnNumHalf = MathManager.getRoundedInt( (double) (columnNum - 1) / 2 );
 		
 		if(rowNum == 1)
 			imagePlus.getProcessor().putPixel(point.x, point.y, colorMark);

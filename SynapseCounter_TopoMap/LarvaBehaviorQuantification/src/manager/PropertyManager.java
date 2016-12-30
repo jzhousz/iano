@@ -55,6 +55,11 @@ public class PropertyManager
 	private String auto_check_skeleton = "";
 
 	private String fix_invalid_larva = "";
+	// specify whether use PCA segmentation approach
+	private String use_pca = "";
+	// whether train the model with different frames of the larva where
+	// the larva was segmented and separated correctly.
+	private String train_particular_larva = "";
 	
 	public PropertyManager()
 	{
@@ -99,6 +104,8 @@ public class PropertyManager
 		auto_check_skeleton = getProperty("auto_check_skeleton");
 		
 		fix_invalid_larva = getProperty("fix_invalid_larva");
+		use_pca = getProperty("use_pca");
+		train_particular_larva = getProperty("train_particular_larva");
 	}
 	
 	/**
@@ -107,13 +114,12 @@ public class PropertyManager
 	* @return true if succeed.
 	*/
 	public boolean saveAllProperties()
-	{	
+	{
 		Properties prop = new Properties();
 		OutputStream output = null;
 		boolean isFail = false;
 		
 		try {
-			
 			output = new FileOutputStream(filePath);
 			
 			prop.setProperty("output_speed", output_speed);
@@ -147,6 +153,9 @@ public class PropertyManager
 			prop.setProperty("auto_check_skeleton", auto_check_skeleton);
 			
 			prop.setProperty("fix_invalid_larva", fix_invalid_larva);
+			
+			prop.setProperty("use_pca", use_pca);
+			prop.setProperty("train_particular_larva", train_particular_larva);
 			
 			prop.store(output, null);
 
@@ -308,6 +317,10 @@ public class PropertyManager
 
 	public static void setFilePath(String filePath) {
 		PropertyManager.filePath = filePath;
+	}
+	
+	public static String getPath() {
+		return  StringManager.getPath(filePath) + "train_test/";
 	}
 
 	public String getOutput_speed() {
@@ -567,5 +580,23 @@ public class PropertyManager
 		this.fix_invalid_larva = fix_invalid_larva;
 	}
 
+	public String getUse_pca()
+	{
+		return use_pca;
+	}
 
+	public void setUse_pca(String use_pca)
+	{
+		this.use_pca = use_pca;
+	}
+
+	public String getTrain_particular_larva()
+	{
+		return train_particular_larva;
+	}
+
+	public void setTrain_particular_larva(String train_particular_larva)
+	{
+		this.train_particular_larva = train_particular_larva;
+	}
 }

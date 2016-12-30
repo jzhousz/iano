@@ -11,8 +11,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-import learning.Descriptor;
-
 /**
 * The class used to manage the file.
 * 
@@ -223,12 +221,16 @@ public class FileManager
 	*/
 	public static boolean deleteDir(File dir) 
     {
-      if (dir.isDirectory()) {
+      if (dir.isDirectory()) 
+      {
          String[] children = dir.list();
-         for (int i = 0; i < children.length; i++) {
-            boolean success = deleteDir
-            (new File(dir, children[i]));
-            if (!success) {
+         
+         for (int i = 0; i < children.length; i++) 
+         {
+            boolean success = deleteDir( new File(dir, children[i]) );
+            
+            if (!success) 
+            {
                return false;
             }
          }
@@ -247,14 +249,16 @@ public class FileManager
 		
 //		System.out.print("delete num: " + deleteAllFiles("E:/3/training_out/"));
 		
-		boolean isSuccessful = FileManager.createDirectory("E:/3/training_out/intermediat/");
+//		boolean isSuccessful = FileManager.createDirectory("E:/3/training_out/intermediat/");
+//		
+//		System.out.println("isSuccessful:"+isSuccessful);
+//		
+//		boolean isSuccessful2 = FileManager.createDirectory("E:/3/training_out/intermediat/");
+//		
+//		System.out.println(",isSuccessful:"+isSuccessful2);
 		
-		
-		System.out.println("isSuccessful:"+isSuccessful);
-		
-		boolean isSuccessful2 = FileManager.createDirectory("E:/3/training_out/intermediat/");
-		
-		System.out.println(",isSuccessful:"+isSuccessful2);
+//		int numFiles = FileManager.deleteAllFiles(StringManager.getPath("E:/3/training_out/aOut.csv"));
+		System.out.print("path: " + PropertyManager.getPath());
 	}
 	
 }

@@ -1,10 +1,16 @@
 package learning;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import org.ejml.simple.SimpleMatrix;
 
 import entities.CSVReader;
+import entities.TrainingData;
+import file.CSVWriter;
 import manager.MathManager;
+import manager.StringManager;
 import manager.VectorManager;
 import pca.DwVector;
 import pca.PCA;
@@ -12,13 +18,14 @@ import pca.PCA;
 public class PCACalculator
 {
 	private PCA pca = null;
-//	private final String pcaFile = "E:/3/training_out/aOut.csv";
 	
 	public void train(String fileOut)
 	{
 		ArrayList<String[]> fieldsArr = CSVReader.readCSV(fileOut);
 		
 		DwVector vectors[] = new DwVector[fieldsArr.size()];
+		
+		double[][] larvaeDescriptor = new double[fieldsArr.size()][fieldsArr.get(0).length];
 
 		// initialize DwVector array so as to use PCA class
 		for (int j = 0; j < fieldsArr.size(); j++)
@@ -34,45 +41,83 @@ public class PCACalculator
 				} catch (NumberFormatException ex)
 				{
 					int num = Integer.parseInt(fields[i]);
+					
 					fieldsDouble[i] = (double) num;
 				}
+				
+				System.out.println("(PCACalculator.java) fieldsDouble[i]: " + fieldsDouble[i]);
 			}
 
 			DwVector vector = new DwVector(fieldsDouble);
 			vectors[j] = vector;
+			
+			larvaeDescriptor[j] = fieldsDouble;
 		}
 
 		// new a PCA instance
 		pca = new PCA(vectors);
-
+		System.out.println("(PCACalculator.java) after: new PCA(vectors)");
 		pca.compute(); // start PCA calculation
 
 		// the eigenvector in double form
-//		double[][] eigenvecs = new double[pca.dim_used][pca.evec[0].evec.length]; 
-		double[][] eigenvecs = new double[pca.dim_used][pca.evec.length]; 
+		double[][] eigenvecs = new double[pca.dim_used][pca.evec[0].evec.length]; 
 		
-		// initialize eigenvector of SimpleMatrix type
+		double[] eigenValues = new double[pca.dim_used];
+		
 		for(int i = 0; i < pca.dim_used; i ++)
 		{
 			eigenvecs[i] = pca.evec[i].evec;
+			eigenValues[i] = pca.evec[i].eval;
 		}
+		
+		CSVWriter wrt = new CSVWriter(StringManager.getPath(fileOut)+"eigenvector.csv");
+		wrt.writeDouble2DArray(eigenvecs);
+		
+		CSVWriter wrtValue = new CSVWriter(StringManager.getPath(fileOut)+"eigenvalue.csv");
+		wrtValue.writeDoubleArrayVertical(eigenValues);
+		
+		// ---------- get weights coresponding to eigenvector --------
+		for(double[] larva : larvaeDescriptor)
+		{
+			SimpleMatrix larvaMatr = VectorManager.newSimpleMatrix(larva);
+			double[] probilities = saveWeights(larvaMatr);
+		}
+		// -------------- end -----------------------------------------
+		
+		// ---------- save the mean larva and larva eigen weight --------
+		
+		// calculate the mean of SimpleMatrix type
+		SimpleMatrix matrMean = new SimpleMatrix(VectorManager.convertTo2DHorizontal(pca.mean.v)); // the PCA mean vector
+		
+		CSVWriter writerLarvaMean = new CSVWriter(StringManager.getPath(Trainer.csvFileOut)+"larvaMean.csv");
+		writerLarvaMean.writeDoubleArray(pca.mean.v);
+		
+		double[] probilities = saveWeights(matrMean);
+		// -------------- end -----------------------------------------
 		
 		// the eigenvector in SimpleMatrix form
 		SimpleMatrix eigenvecMatr = new SimpleMatrix(eigenvecs);
 		
-//		System.out.println("eigenvecMatr: " + eigenvecMatr);
+		TrainingData trainingData = new TrainingData();
+		trainingData.setEigenVectors(eigenvecs);
+		trainingData.setEigenValues( eigenValues );
+		trainingData.setMeanLarva( pca.mean.v );
 		
-//		System.out.println("Before transform: dim_used: " + pca.dim_used + ",num_data: " + pca.num_data +",dim_data: " + pca.dim_data 
-//				+ ",pca.evec: " + pca.evec.length + ",pca.evec[0].evec: " + pca.evec[0].evec.length);
-		
-		System.out.println("After transform: dim_used: " + pca.dim_used + ",num_data: " + pca.num_data +",dim_data: " + pca.dim_data 
-				+ ",pca.evec: " + pca.evec.length + ",pca.evec[0].evec: " + pca.evec[0].evec.length);
-		
-		System.out.println("(Larva) Done with PCA train. pca object has been saved.");
+		try
+		{
+			FileOutputStream fileOutSeri = new FileOutputStream(StringManager.getPath(Trainer.csvFileOut) 
+					+ "trainingData.ser");
+			ObjectOutputStream out = new ObjectOutputStream(fileOutSeri);
+			out.writeObject(trainingData);
+			out.close();
+			fileOutSeri.close();
+		} catch (IOException ex)
+		{
+			ex.printStackTrace();
+		}
 	}
 	
-
-	public double[] test(SimpleMatrix larvaTest)
+	public double[] saveWeights(SimpleMatrix larvaTest)
 	{
 		double[][] eigenvecs = new double[pca.dim_used][pca.evec[0].evec.length]; // the eigenvector of double type
 		
@@ -89,12 +134,12 @@ public class PCACalculator
 		
 		// calculate the mean of SimpleMatrix type
 		SimpleMatrix matrMean = new SimpleMatrix(VectorManager.convertTo2DHorizontal(pca.mean.v)); // the PCA mean vector
+		
 		SimpleMatrix matrLarva = larvaTest; // the test larva
 		
 		SimpleMatrix matrDiff = matrLarva.minus(matrMean);
 		
 		double[][] wts = new double[1][pca.dim_used];
-//		SimpleMatrix[] wtsMatr = new SimpleMatrix[pca.dim_used];
 		
 		// calculate the weight matrix of SimpleMatrix type
 		for(int i = 0; i < pca.dim_used; i ++)
@@ -102,23 +147,16 @@ public class PCACalculator
 			wts[0][i] = eigenvec[i].dot( matrDiff );
 		}
 		
-		System.out.println("wts:");
-		MathManager.printHorizontal(wts);
+		CSVWriter writerWeight = new CSVWriter(StringManager.getPath(Trainer.csvFileOut)+"eigenWeight.csv");
+		writerWeight.writeDouble2DArray(wts);
 		
 		SimpleMatrix wtsMatr_used = new SimpleMatrix(wts);
-		System.out.println("\n wtsMatr_used: " + wtsMatr_used +"\n");
 		
 		SimpleMatrix eigenvecsMatr_used = new SimpleMatrix(eigenvecs);
 		
 		SimpleMatrix matrDiff_rec = wtsMatr_used.mult( eigenvecsMatr_used );
-		System.out.println("\n matrDiff_recs: " + matrDiff_rec +"\n");
-		
-		System.out.println("\n matrDiff: " + matrDiff +"\n");
 		
 		SimpleMatrix larva_rec = matrMean.plus( matrDiff_rec ) ;
-		
-		System.out.println("\n larva_rec: " + larva_rec +"\n");
-		System.out.println("\n matrLarva: " + matrLarva +"\n");
 		
 		double[][] diaArr = new double[pca.dim_used][pca.dim_used];
 		
@@ -136,33 +174,90 @@ public class PCACalculator
 		
 		SimpleMatrix diaMatr = new SimpleMatrix(diaArr);
 		
-		System.out.println("\n diaMatr: "+diaMatr +"\n");
-		
 		SimpleMatrix diaMatr_inverse = diaMatr.invert();
-		
-		System.out.println("\n diaMatr_inverse: "+diaMatr_inverse +"\n");
 		
 		// calculate possibility
 		SimpleMatrix probilityMatr1 = wtsMatr_used.mult(diaMatr_inverse);
 		
-		System.out.println("\n probilityMatr1: "+probilityMatr1 +"\n");
-		
 		SimpleMatrix probilityMatr2 = probilityMatr1.mult(wtsMatr_used.transpose());
 		
-		System.out.println("\n probilityMatr2: "+probilityMatr2 +"\n");
-		
 		double probility = Math.exp(probilityMatr2.get(0, 0) * -1);
-		
-		System.out.println("\n probility: "+probility +"\n");
 		
 		double[] probilities = {probilityMatr2.get(0, 0), probility };
 		return probilities;
 	}
-
-//	public String getPcaFile()
-//	{
-//		return pcaFile;
-//	}
+	
+	public static double[] test(TrainingData trainingData, SimpleMatrix larvaTest )
+	{
+		int dim_used = trainingData.getEigenValues().length;
+		int eigenVectorLen = trainingData.getEigenVectors()[0].length;
+		
+//		double[][] eigenvecs = new double[dim_used][eigenVectorLen]; // the eigenvector of double type
+		
+		double[][] eigenvecs = trainingData.getEigenVectors();
+		
+		SimpleMatrix[] eigenvec = new SimpleMatrix[dim_used];
+		
+		// initialize eigenvector of SimpleMatrix type
+		for(int i = 0; i < dim_used; i ++)
+		{
+			eigenvecs[i] = eigenvecs[i];
+			double[][] vec = new double[1][eigenVectorLen];
+			vec[0] = eigenvecs[i];
+			eigenvec[i] = new SimpleMatrix(vec);
+		}
+		
+		// calculate the mean of SimpleMatrix type
+		SimpleMatrix matrMean = new SimpleMatrix(VectorManager.convertTo2DHorizontal(trainingData.getMeanLarva())); // the PCA mean vector
+		SimpleMatrix matrLarva = larvaTest; // the test larva
+		
+		SimpleMatrix matrDiff = matrLarva.minus(matrMean);
+		
+		double[][] wts = new double[1][dim_used];
+		
+		// calculate the weight matrix of SimpleMatrix type
+		for(int i = 0; i < dim_used; i ++)
+		{
+			wts[0][i] = eigenvec[i].dot( matrDiff );
+		}
+		
+		SimpleMatrix wtsMatr_used = new SimpleMatrix(wts);
+		
+		SimpleMatrix eigenvecsMatr_used = new SimpleMatrix(eigenvecs);
+		
+		SimpleMatrix matrDiff_rec = wtsMatr_used.mult( eigenvecsMatr_used );
+		
+		SimpleMatrix larva_rec = matrMean.plus( matrDiff_rec ) ;
+		
+		double[][] diaArr = new double[dim_used][dim_used];
+		
+		// calculate the dia matrix of SimpleMatrix type
+		for(int i = 0; i < dim_used; i ++)
+		{
+			for(int j = 0; j < dim_used; j ++)
+			{
+				if(i == j)
+					diaArr[i][j] = trainingData.getEigenValues()[i];
+				else
+					// dianose elements is 0
+					diaArr[i][j] = 0; 
+			}
+		}
+		
+		SimpleMatrix diaMatr = new SimpleMatrix(diaArr);
+		
+		SimpleMatrix diaMatr_inverse = diaMatr.invert();
+		
+		// calculate possibility
+		SimpleMatrix probilityMatr1 = wtsMatr_used.mult(diaMatr_inverse);
+		
+		SimpleMatrix probilityMatr2 = probilityMatr1.mult(wtsMatr_used.transpose());
+		
+		double probility = Math.exp(probilityMatr2.get(0, 0) * -1);
+		
+		double[] probilities = {probilityMatr2.get(0, 0), probility };
+		return probilities;
+	}
 
 	public PCA getPca()
 	{

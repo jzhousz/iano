@@ -27,3 +27,5 @@ to_frame=0
 auto_check_size=true
 auto_check_skeleton=true
 fix_invalid_larva=false
+use_pca=true
+train_particular_larva=false

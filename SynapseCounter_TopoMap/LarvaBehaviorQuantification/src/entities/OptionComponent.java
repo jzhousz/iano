@@ -64,12 +64,11 @@ public class OptionComponent
 	private String directory = "";
 	private String aviFile = "";
 	private ArrayList<Roi> listRoi = null;
-	// the text area in text status window's 
-//	private JTextArea textStatus = null; 
+	// the text area in text status window'
 	private JTextPane textStatusPane = null; 
 	private JButton btnStart = null;
 	final JPanel panelMain = new JPanel();
-	// the text area in exception window's 
+	// the text area in exception window
 	private JTextArea textException = null;
 	
 	private OptionComponent self = null;
@@ -107,11 +106,13 @@ public class OptionComponent
 	final JCheckBox cbDebug = new JCheckBox("Generate Debug Images", false);
 	final JCheckBox cbCSV = new JCheckBox("Generate Complete CSV", false );
 	
-//	final JCheckBox cbInvalidFix = new JCheckBox("Auto fix invalid larva", false);
-	
 	final JCheckBox cbAutoRoll = new JCheckBox("Auto Detect Rolling", false );
 	final JCheckBox cbAutoCheckSize = new JCheckBox("Auto Set Larva Size", false );
 	final JCheckBox cbAutoCheckSkeleton = new JCheckBox("Auto Set Larva Skeleton", false );
+	
+	final JCheckBox cbStatSegmentation = new JCheckBox("Use Statistical segmentation", false);
+	final JCheckBox cbTrainParticularLarva = new JCheckBox("Train Using Frames of a Particular Larva", false);
+	
 	final TitledPanel panelRight1 = new TitledPanel("General:");
 	final TitledPanel panelRight2 = new TitledPanel("Debug:");
 	final TitledPanel panelRight3 = new TitledPanel("Status Window:");
@@ -177,7 +178,6 @@ public class OptionComponent
 		
 		addComponents();
 		
-//		changeFont ( frame, fontOption );
 		changeFont ( panelRight1, fontOption );
 		changeFont ( panelRight2, fontOption );
 		changeFont ( panelRight5, fontOption );
@@ -472,7 +472,7 @@ public class OptionComponent
 		{
 	        public void actionPerformed(ActionEvent e) 
 	        {
-	        	JOptionPane.showMessageDialog(frame, "Larva Behavior Quantification System v1.02 -\nThis software uses libraries from the FFmpeg project under the LGPLv2.1.", "System Version", JOptionPane.INFORMATION_MESSAGE);
+	        	JOptionPane.showMessageDialog(frame, "Larva Behavior Quantification System v1.03 -\nThis software uses libraries from the FFmpeg project under the LGPLv2.1.", "System Version", JOptionPane.INFORMATION_MESSAGE);
 	        }
 
 	     });
@@ -754,9 +754,25 @@ public class OptionComponent
 		final TitledPanel panelDebug3 = new TitledPanel("Debug Options 3:");
 		panelDebug3.setLayout(new GridLayout(1,1));
 		
-//		panelDebug3.add( cbInvalidFix );
-//		
 		panelRight2.add(panelDebug3, BorderLayout.SOUTH);
+		
+		panelDebug3.add( cbStatSegmentation );
+		cbStatSegmentation.setSelected( PropertyManager.getBool( prop.getUse_pca() ) );
+		
+		cbStatSegmentation.addItemListener(new ItemListener() {
+	         public void itemStateChanged(ItemEvent e) {  
+	        	 prop.setUse_pca( PropertyManager.getBoolStr( e.getStateChange()==1 ) );
+	         }          
+		});
+		
+		panelDebug3.add( cbTrainParticularLarva );
+		cbTrainParticularLarva.setSelected( PropertyManager.getBool( prop.getTrain_particular_larva() ) );
+		
+		cbTrainParticularLarva.addItemListener(new ItemListener() {
+	         public void itemStateChanged(ItemEvent e) {  
+	        	 prop.setTrain_particular_larva( PropertyManager.getBoolStr( e.getStateChange()==1 ) );
+	         }          
+		});
 		
 		// ----------------- Exceptions Panel: ---------------
 		
@@ -773,12 +789,12 @@ public class OptionComponent
 //		PrintStream printStream = new PrintStream(new CustomOutputStream(textStatus, textException));
 		PrintStream printStream = new PrintStream(new CustomOutputStream(textStatusPane));
          
-        // keeps reference of standard output stream
-        standardOut = System.out;
-         
-        // re-assigns standard output stream and error output stream
-//        System.setOut(printStream);
-        System.setErr(printStream);
+//        // keeps reference of standard output stream
+//        standardOut = System.out;
+//         
+//        // re-assigns standard output stream and error output stream
+////        System.setOut(printStream);
+//        System.setErr(printStream);
 	        
 //		panelDebugTab.add(cbAutoRoll);
 //		panelDebugTab.add(new JLabel(""));
@@ -1177,7 +1193,7 @@ public class OptionComponent
 	}
 	
 	/**
-	* Set the variables after the iamge status done.
+	* Set the sample icons on the Image Status Window to show the images have been extracted.
 	* 
 	*/
 	public void updateImageStatusDone()
@@ -1195,7 +1211,7 @@ public class OptionComponent
 	}
 	
 	/**
-	* Update the image status.
+	* Update the image status window with the newest binary and cropped images.
 	* 
 	* @param dirImageDebug The image debug directory.
 	* @param frameId The frame Id.
@@ -1281,7 +1297,7 @@ public class OptionComponent
 	}
 	
 	/**
-	* Show text status.
+	* Show text status window on the UI.
 	* 
 	*/
 	public void showTextStatusPanel()

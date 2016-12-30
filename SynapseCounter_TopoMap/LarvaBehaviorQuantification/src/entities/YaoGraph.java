@@ -160,7 +160,7 @@ public class YaoGraph
 	@Override
 	public String toString() 
 	{
-		String str = "Nodes: ";
+		String str = "\nNodes: ";
 		for(int i = 0; i < nodes.length; i++)
 			str += nodes[i] + ", ";
 		

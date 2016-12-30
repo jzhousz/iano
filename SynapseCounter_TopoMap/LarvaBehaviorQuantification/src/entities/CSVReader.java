@@ -33,8 +33,6 @@ public class CSVReader
 				{
 					System.out.print("Y");
 				}
-
-                System.out.println("fields[0]:" + fields[0] + " , fields[1]:" + fields[1] + "]");
             }
 
         } catch (FileNotFoundException e) {

@@ -17,6 +17,7 @@ public class Larva
 	private ArrayList<Point> endPoints = null; // the end points of the larva skeleton
 	private Point centerPoint = null; // the center point of the larva skeleton
 	private Point roiTopLeft = null; // the top left corner point of ROI on AVI frame
+	private Point roiTopLeftBefore = null; // the top left corner point of ROI on AVI frame before ROI shift
 	private Larva larvaPrevious = null; // the larva on the previous ROI frame
 	private double curl; // the curl of larva
 	private boolean isValid = true; // is this larva valid
@@ -138,7 +139,7 @@ public class Larva
 	// the average area of larvae
 	private int avgSkeletonLen = 0;
 	
-	private Roi roi = null; // the roi of the larva in the frame
+//	private Roi roi = null; // the roi of the larva in the frame
 	
 	// the relate frame start to roll
 	private int frameStartRoll = 0;
@@ -166,6 +167,16 @@ public class Larva
 	// e.g., if we set the size of a cluster to 5 and if the larva in frame 5-15 (cluster 1-2) is
 	// moving forward, isClusterForward is true for frame 5-15.
 	private boolean isClusterForward = false;
+	// is the larva over-size
+	private boolean isOverSize = false;
+	// is the larva's length larger than the average skeleton
+	private boolean isOverSkeleton = false;
+	// what segmenting technique used to segment the larva
+	private String segmentTechnique = "Thresholding";
+	// the number of larvae in the ROI. Normally it's 1.
+	private int numLarvae = 1;
+	// the number of larvae in the ROI. Normally it's 1.
+	private double numLarvaeDouble = 1;
 	
 	/**
 	* The default constructor.
@@ -724,13 +735,13 @@ public class Larva
 		this.avgSkeletonLen = avgSkeletonLen;
 	}
 
-	public Roi getRoi() {
-		return roi;
-	}
-
-	public void setRoi(Roi roi) {
-		this.roi = roi;
-	}
+//	public Roi getRoi() {
+//		return roi;
+//	}
+//
+//	public void setRoi(Roi roi) {
+//		this.roi = roi;
+//	}
 
 	public int getFrameStartRoll() {
 		return frameStartRoll;
@@ -839,6 +850,66 @@ public class Larva
 				larva = lv;
 		
 		return larva;
+	}
+
+	public boolean getIsOverSize()
+	{
+		return isOverSize;
+	}
+
+	public void setIsOverSize(boolean isOverSize)
+	{
+		this.isOverSize = isOverSize;
+	}
+
+	public boolean getIsOverSkeleton()
+	{
+		return isOverSkeleton;
+	}
+
+	public void setIsOverSkeleton(boolean isOverSkeleton)
+	{
+		this.isOverSkeleton = isOverSkeleton;
+	}
+
+	public String getSegmentTechnique()
+	{
+		return segmentTechnique;
+	}
+
+	public void setSegmentTechnique(String segmentTechnique)
+	{
+		this.segmentTechnique = segmentTechnique;
+	}
+
+	public Point getRoiTopLeftBefore()
+	{
+		return roiTopLeftBefore;
+	}
+
+	public void setRoiTopLeftBefore(Point roiTopLeftBefore)
+	{
+		this.roiTopLeftBefore = roiTopLeftBefore;
+	}
+
+	public int getNumLarvae()
+	{
+		return numLarvae;
+	}
+
+	public void setNumLarvae(int numLarvae)
+	{
+		this.numLarvae = numLarvae;
+	}
+
+	public double getNumLarvaeDouble()
+	{
+		return numLarvaeDouble;
+	}
+
+	public void setNumLarvaeDouble(double numLarvaeDouble)
+	{
+		this.numLarvaeDouble = numLarvaeDouble;
 	}
 
 }

@@ -200,6 +200,96 @@ public class MathManager
 		return distQuartileLargest;
 	}
 	
+//	/**
+//	* Get the shortest point (the points used to calculate the thickness of the larva).
+//	* @param imagePlusEdge The edge image plus of the larva.
+//	* @param beta1OfLine The beta 1 of the line.
+//	* @param pointPassed The point the line passes.
+//	* @return The diameter points.
+//	*/
+//	public static Point getShortestDiameterPoint( ImagePlus imagePlusEdge, double beta1OfLine, Point pointPassed )
+//	{
+//		// get the line with slope of beta1OfLine and passes pointPassed
+//		LinearLine lineQuartilePerpRoi = MathManager.getParallelLine(beta1OfLine, pointPassed);
+//		
+//		ArrayList<Point> pointsDiameter = new ArrayList<Point>();
+//		
+//		Point pointQuartile1 = null;
+//		double distQuartileLargest = 0;
+//		double distQuartile = 0;
+//
+//		for(int y = 0; y < imagePlusEdge.getHeight(); y++ )
+//			for(int x = 0; x < imagePlusEdge.getWidth(); x++)
+//			{
+//				if( imagePlusEdge.getProcessor().getPixel(x, y) >= 128 )
+//				{
+//					int yLine = (int) lineQuartilePerpRoi.getY((double)x);
+//					
+//					if( Math.abs( yLine - y ) < 3 )
+//					{
+//						Point pt = new Point(x, y);
+//						
+//						pointsDiameter.add(pt);
+//						
+//						distQuartile = MathManager.getDistance(pt, pointPassed);
+//						
+//						if(distQuartile >= distQuartileLargest)
+//						{
+//							pointQuartile1 = pt;
+//							distQuartileLargest = distQuartile;
+//						}
+//					}
+//				}
+//			}
+//		
+//		return pointsDiameter;
+//	}
+	
+	/**
+	* Calculate the diameter points (the points used to calculate the thickness of the larva).
+	* @param imagePlusEdge The edge image plus of the larva.
+	* @param beta1OfLine The beta 1 of the line.
+	* @param pointPassed The point the line passes.
+	* @return The diameter points.
+	*/
+	public static ArrayList<Point> getDiameterPoints8( ImagePlus imagePlusEdge, double beta1OfLine, Point pointPassed )
+	{
+		// get the line with slope of beta1OfLine and passes pointPassed
+		LinearLine lineQuartilePerpRoi = MathManager.getParallelLine(beta1OfLine, pointPassed);
+		
+		ArrayList<Point> pointsDiameter = new ArrayList<Point>();
+		
+		Point pointQuartile1 = null;
+		double distQuartileLargest = 0;
+		double distQuartile = 0;
+
+		for(int y = 0; y < imagePlusEdge.getHeight(); y++ )
+			for(int x = 0; x < imagePlusEdge.getWidth(); x++)
+			{
+				if( imagePlusEdge.getProcessor().getPixel(x, y) >= 128 )
+				{
+					int yLine = (int) lineQuartilePerpRoi.getY((double)x);
+					
+					if( Math.abs( yLine - y ) < 3 )
+					{
+						Point pt = new Point(x, y);
+						
+						pointsDiameter.add(pt);
+						
+						distQuartile = MathManager.getDistance(pt, pointPassed);
+						
+						if(distQuartile >= distQuartileLargest)
+						{
+							pointQuartile1 = pt;
+							distQuartileLargest = distQuartile;
+						}
+					}
+				}
+			}
+		
+		return pointsDiameter;
+	}
+	
 	/**
 	* Calculate 1st and 3rd quartile point.
 	* @param imagePlusEdge The edge image plus of the larva.
@@ -289,7 +379,7 @@ public class MathManager
 		if( PropertyManager.getBool( prop.getAuto_check_skeleton() ) )
 		{
 			// use 1.4 as the threshold for maximal skeleton
-			maxSkeletonLarva = (int) (avgSkeletonLen * 1.4);
+			maxSkeletonLarva = (int) (avgSkeletonLen * 1.3);
 			// use 0.6 as the threshold for minimal skeleton
 			minSkeletonLarva = (int) (avgSkeletonLen * 0.6);
 			
@@ -324,7 +414,7 @@ public class MathManager
 		// +++++++++++ move the below to the controller
 		if( PropertyManager.getBool( prop.getAuto_check_size() ) )
 		{
-			maxSizeLarva = (int) (avgArea * 1.4);
+			maxSizeLarva = (int) (avgArea * 1.3);
 			minSizeLarva = (int) (avgArea * 0.6);
 			
 			// +++++++++++ move the below to the controller

@@ -25,26 +25,56 @@ public class CSVWriter {
 	}
 
 	/**
-	 * Write a line to the CSV file.
+	 * Write a 2D array to a file.
 	 * 
-	 * @param text The text to be written to a CSV file.
-	 * @param append Need to append to the end of the file?
-	 * @return void
+	 * @param val The 2D double array.
 	 */
-//	public void writeln(String text, boolean append) {
-//		
-//		PrintWriter textWriter = null;
-//
-//		try {
-//			textWriter = new PrintWriter(new FileWriter(filePath, append));
-//		} catch (IOException ioe) {
-//			ioe.printStackTrace();
-//		}
-//
-//		textWriter.println(text);
-//
-//		textWriter.close();
-//	}
+	public void writeDouble2DArray(double[][] arr)
+	{
+		for(double[] val : arr)
+		{
+			writeDoubleArray(val);
+		}
+	}
+	
+	/**
+	 * Write a double array vertically.
+	 * 
+	 * @param val The double array.
+	 */
+	public void writeDoubleArrayVertical(double[] val)
+	{
+		String line = "";
+		
+		for(int i = 0; i < val.length; i++)
+		{
+			line = Double.toString(val[i]);
+			writeln(line);
+		}
+	}
+	
+	/**
+	 * Write a double array.
+	 * 
+	 * @param val The double array.
+	 */
+	public void writeDoubleArray(double[] val)
+	{
+		String line = "";
+		
+		for(int i = 0; i < val.length; i++)
+		{
+			line += Double.toString(val[i]);
+			
+			// if i is not the index of the last element
+			if(i < val.length - 1)
+			{
+				line += ",";
+			}
+		}
+		
+		writeln(line);
+	}
 	
 	/**
 	 * Write a line to the CSV file.
@@ -52,13 +82,16 @@ public class CSVWriter {
 	 * @param text The text to be written to a CSV file.
 	 * @return void
 	 */
-	public void writeln(String text) {
-		
+	public void writeln(String text)
+	{
+
 		PrintWriter textWriter = null;
 
-		try {
+		try
+		{
 			textWriter = new PrintWriter(new FileWriter(filePath, true));
-		} catch (IOException ioe) {
+		} catch (IOException ioe)
+		{
 			ioe.printStackTrace();
 		}
 
@@ -74,13 +107,15 @@ public class CSVWriter {
 	 * @param text The text to be written to a CSV file.
 	 * @return void
 	 */
-	public void write(String text) 
+	public void write(String text)
 	{
 		PrintWriter textWriter = null;
 
-		try {
+		try
+		{
 			textWriter = new PrintWriter(new FileWriter(filePath, true));
-		} catch (IOException ioe) {
+		} catch (IOException ioe)
+		{
 			ioe.printStackTrace();
 		}
 

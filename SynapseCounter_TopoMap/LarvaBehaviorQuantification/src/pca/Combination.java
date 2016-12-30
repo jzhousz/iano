@@ -42,7 +42,7 @@ public class Combination
 
 	public static void main(String[] args)
 	{
-		ArrayList<ArrayList<Integer>> list = Combination.getCombination(4,3);
+		ArrayList<ArrayList<Integer>> list = Combination.getCombination(5,2);
 		
 		System.out.println("list: " + list);
 		

@@ -34,6 +34,10 @@ public class PCA
 
 //	public Eigen[] eigen;
 	
+//	public PCA()
+//	{
+//	}
+	
 	public PCA(DwVector[] data)
 	{
 		this.data = data;

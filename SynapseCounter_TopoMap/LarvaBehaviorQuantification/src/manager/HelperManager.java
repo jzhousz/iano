@@ -358,7 +358,8 @@ public class HelperManager
 	* @param avgArea The average area of the larva.
 	* @param prop The property file.
 	*/
-	public static void setInvalidLarvaAndMessage(ArrayList<Larva> listLarva, double avgDiameter, int avgSkeletonLen, int avgArea, PropertyManager prop)
+	public static void setInvalidLarvaAndMessage7(ArrayList<Larva> listLarva, double avgDiameter
+			, int avgSkeletonLen, int avgArea, PropertyManager prop)
 	{
 		ArrayList<Integer> larvaSizes = MathManager.calcMinMaxLarvaSize(avgArea, prop);
 		int maxSizeLarva = larvaSizes.get(1);
@@ -381,8 +382,6 @@ public class HelperManager
 				String msg = "Warning: The size of this larva (" + larva.getArea()
 						+ ") is greater than the threshold (" + maxSizeLarva
 						+ ").";
-				
-//				LogWriter.writeLog(msg, prop.getAvi_file());
 				
 				larva.getMsgWarning().add(msg);
 			}
